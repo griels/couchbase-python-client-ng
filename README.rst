@@ -1,6 +1,9 @@
+
 =======================
 Couchbase Python Client
 =======================
+.. image:: https://pypip.in/d/couchbase/badge.png
+        :target: https://pypi.python.org/pypi/couchbase/
 
 Client for Couchbase_.
 
