@@ -1,0 +1,1193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
+    <generated>
+      <config projectName="couchbase_python_client" targetName="rdb" />
+      <config projectName="couchbase_python_client" targetName="vbucket-lcb" />
+      <config projectName="couchbase_python_client" targetName="couchbase_libev" />
+      <config projectName="couchbase_python_client" targetName="cliopts" />
+      <config projectName="couchbase_python_client" targetName="mc-malloc-tests" />
+      <config projectName="couchbase_python_client" targetName="lcbht" />
+      <config projectName="couchbase_python_client" targetName="nonio-tests" />
+      <config projectName="couchbase_python_client" targetName="cbc-proxy" />
+      <config projectName="couchbase_python_client" targetName="cbc-subdoc" />
+      <config projectName="couchbase_python_client" targetName="file_manifest" />
+      <config projectName="couchbase_python_client" targetName="libcouchbase_src" />
+      <config projectName="couchbase_python_client" targetName="dist" />
+      <config projectName="couchbase_python_client" targetName="cbc-pillowfight" />
+      <config projectName="couchbase_python_client" targetName="lcbssl" />
+      <config projectName="couchbase_python_client" targetName="htparse-tests" />
+      <config projectName="couchbase_python_client" targetName="gtest_main" />
+      <config projectName="couchbase_python_client" targetName="alltests" />
+      <config projectName="couchbase_python_client" targetName="lcbio" />
+      <config projectName="couchbase_python_client" targetName="gtest" />
+      <config projectName="couchbase_python_client" targetName="couchbase_select" />
+      <config projectName="couchbase_python_client" targetName="lcbio-cxx" />
+      <config projectName="couchbase_python_client" targetName="couchbase_libuv" />
+      <config projectName="couchbase_python_client" targetName="cbc" />
+      <config projectName="couchbase_python_client" targetName="vbucket-tests" />
+      <config projectName="couchbase_python_client" targetName="mcreq" />
+      <config projectName="couchbase_python_client" targetName="lcbcore-cxx" />
+      <config projectName="couchbase_python_client" targetName="rdb-tests" />
+      <config projectName="couchbase_python_client" targetName="mc-tests" />
+      <config projectName="couchbase_python_client" targetName="linenoise" />
+      <config projectName="couchbase_python_client" targetName="uninstall" />
+      <config projectName="couchbase_python_client" targetName="ioserver" />
+      <config projectName="couchbase_python_client" targetName="couchbase_python_client" />
+      <config projectName="couchbase_python_client" targetName="couchbase_utils" />
+      <config projectName="couchbase_python_client" targetName="netbuf-malloc" />
+      <config projectName="couchbase_python_client" targetName="cbc-n1qlback" />
+      <config projectName="couchbase_python_client" targetName="cbsasl-lcb" />
+      <config projectName="couchbase_python_client" targetName="lcb_snappy" />
+      <config projectName="couchbase_python_client" targetName="couchbaseS" />
+      <config projectName="couchbase_python_client" targetName="mcreq-cxx" />
+      <config projectName="couchbase_python_client" targetName="netbuf-tests" />
+      <config projectName="couchbase_python_client" targetName="lcbtools" />
+      <config projectName="couchbase_python_client" targetName="lcbcore" />
+      <config projectName="couchbase_python_client" targetName="check-all" />
+      <config projectName="couchbase_python_client" targetName="lcb_jsoncpp" />
+      <config projectName="couchbase_python_client" targetName="lcb_jsparse" />
+      <config projectName="couchbase_python_client" targetName="mocksupport" />
+      <config projectName="couchbase_python_client" targetName="unit-tests" />
+      <config projectName="couchbase_python_client" targetName="netbuf" />
+      <config projectName="couchbase_python_client" targetName="couchbase_libevent" />
+      <config projectName="couchbase_python_client" targetName="couchbase" />
+      <config projectName="couchbase_python_client" targetName="sock-tests" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" GENERATION_OPTIONS="-DPYCBC_ADD_INLINE=TRUE" GENERATION_DIR="$PROJECT_DIR$/build/temp.macosx-10.13-x86_64-3.7" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="76f948cf-923b-4bf9-8913-60bdd49ce881" name="Default" comment="squash! Data-drive checkout">
+      <change afterPath="$PROJECT_DIR$/cbuild_config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake_build.py" beforeDir="false" afterPath="$PROJECT_DIR$/cmake_build.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmodule.py" beforeDir="false" afterPath="$PROJECT_DIR$/cmodule.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
+    </list>
+    <list id="1c3478b9-8bdb-4e91-8927-1a7abc2b0151" name="Revert: PYCBC-564: Expose Synchronous Durability ops" comment="Revert: PYCBC-564: Expose Synchronous Durability ops" />
+    <ignored path="$PROJECT_DIR$/cmake-build-debug-ubuntu16_alice2/" />
+    <ignored path="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/build/temp.macosx-10.13-x86_64-3.7/" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="FileEditorManager">
+    <splitter split-orientation="horizontal" split-proportion="0.6584217">
+      <split-first>
+        <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/cmodule.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="45">
+                  <caret line="3" column="9" selection-start-line="3" selection-start-column="9" selection-end-line="3" selection-end-column="9" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/couchbase/__init__.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="2265">
+                  <caret line="151" selection-start-line="151" selection-end-line="151" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/setup.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="448">
+                  <caret line="127" column="33" selection-start-line="127" selection-start-column="33" selection-end-line="127" selection-end-column="33" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$USER_HOME$/.pyenv/versions/3.7.0/lib/python3.7/site-packages/setuptools/command/build_ext.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="915">
+                  <caret line="73" column="6" selection-start-line="73" selection-start-column="6" selection-end-line="73" selection-end-column="6" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/cbuild_config.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="1620">
+                  <caret line="116" column="6" selection-start-line="116" selection-end-line="116" selection-end-column="13" />
+                  <folding>
+                    <element signature="e#0#16#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/build/lcb_min_version.h">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="15">
+                  <caret line="1" column="31" selection-start-line="1" selection-start-column="31" selection-end-line="1" selection-end-column="31" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/cmake_build.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="2940">
+                  <caret line="208" selection-start-line="208" selection-end-line="208" />
+                  <folding>
+                    <element signature="e#0#14#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-first>
+      <split-second>
+        <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
+          <file pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/cmodule.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="15">
+                  <caret line="6" selection-start-line="6" selection-end-line="6" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/setup.py">
+              <provider selected="true" editor-type-id="text-editor" />
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/src/counter.c">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="1755">
+                  <caret line="117" selection-start-line="117" selection-end-line="117" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="3450">
+                  <caret line="230" column="29" selection-start-line="230" selection-start-column="22" selection-end-line="230" selection-end-column="29" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file:///usr/include/python2.7/abstract.h">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="9735">
+                  <caret line="649" column="21" selection-start-line="649" selection-start-column="21" selection-end-line="649" selection-end-column="21" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+        </leaf>
+      </split-second>
+    </splitter>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>CMake must</find>
+      <find>build_info</find>
+      <find>flag</find>
+      <find>executable</find>
+      <find>attrib</find>
+      <find>cmake</find>
+      <find>ascii</find>
+      <find>&quot;cmake&quot;</find>
+      <find>stat</find>
+      <find>tracing</find>
+      <find>check_sub</find>
+      <find>couchbase._libcouchbase</find>
+      <find>crypto</find>
+      <find>couchbase\._libcouchbase</find>
+      <find>_libcouc</find>
+      <find>JSONDoc</find>
+      <find>durabilityamb</find>
+      <find>bind</find>
+      <find>CLANG_SAN_OPTIONS</find>
+      <find>extoptions</find>
+      <find>_ext_opt</find>
+      <find>cppyy_deps</find>
+      <find>deps</find>
+      <find>debug_symbols</find>
+      <find>cmake_requires</find>
+      <find>b_ext</find>
+      <find>e_mods</find>
+      <find>pkgdata</find>
+      <find>module</find>
+      <find>sources</find>
+    </findStrings>
+    <replaceStrings>
+      <replace />
+      <replace>couchbase_v2\.</replace>
+      <replace>couchbase._libcouchbase</replace>
+      <replace>couchbase_v2</replace>
+      <replace>couchbase_v2.</replace>
+      <replace>couchbase_v2$1</replace>
+      <replace>couchbase_v2$1$2</replace>
+      <replace>couchbase_v2$2$3</replace>
+      <replace>$1 couchbase_v2$2$3</replace>
+      <replace>couchbase_v2\.exceptions</replace>
+      <replace>couchbase_v2\.priv_constants</replace>
+      <replace>couchbase_v2\.crypto</replace>
+      <replace>couchbase_v2\.user_constants</replace>
+      <replace>$1 couchbase_v2$3$4</replace>
+      <replace>$1 couchbase_v2.$3$4</replace>
+      <replace>couchbase.v3</replace>
+      <replace>from couchbase_v2.asynchronous.views import AsyncViewBase</replace>
+      <replace>couchbase_v2.asynchronous.view</replace>
+      <replace>couchbase_v2/</replace>
+      <replace>MutationResult</replace>
+      <replace>couchbase_core\.</replace>
+      <replace>$1 couchbase_core$2$3$4</replace>
+      <replace>$1 couchbase_core$2$4</replace>
+      <replace>couchbase_core</replace>
+      <replace>couchbase_core\._libcouchbase</replace>
+    </replaceStrings>
+    <dirStrings>
+      <dir>$PROJECT_DIR$/txcouchbase</dir>
+      <dir>$PROJECT_DIR$/acouchbase</dir>
+      <dir>$PROJECT_DIR$/couchbase</dir>
+      <dir>$PROJECT_DIR$/couchbase_v3</dir>
+      <dir>$PROJECT_DIR$/couchbase_v2</dir>
+      <dir>$PROJECT_DIR$/</dir>
+      <dir>$PROJECT_DIR$/src</dir>
+      <dir>$PROJECT_DIR$/build/</dir>
+      <dir>$PROJECT_DIR$</dir>
+    </dirStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="review/ellis_breen/109027_3" />
+      </map>
+    </option>
+    <option name="RESET_MODE" value="HARD" />
+    <option name="SWAP_SIDES_IN_COMPARE_BRANCHES" value="true" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/couchbase_v2/bucketmanager.py" />
+        <option value="$PROJECT_DIR$/couchbase_core/_ixmgmt.py" />
+        <option value="$PROJECT_DIR$/couchbase_v2/views/iterator.py" />
+        <option value="$PROJECT_DIR$/couchbase_v2/analytics.py" />
+        <option value="$PROJECT_DIR$/couchbase_v3/cluster.py" />
+        <option value="$PROJECT_DIR$/cmake-build-debug/libcouchbase_src-prefix/src/libcouchbase_src/src/internalstructs.h" />
+        <option value="$PROJECT_DIR$/cmake-build-debug/libcouchbase_src-prefix/src/libcouchbase_src/src/operations/observe-seqno.cc" />
+        <option value="$PROJECT_DIR$/src/oputil.h" />
+        <option value="$PROJECT_DIR$/src/oputil.c" />
+        <option value="$PROJECT_DIR$/couchbase/bucket.py" />
+        <option value="$PROJECT_DIR$/src/get.c" />
+        <option value="$PROJECT_DIR$/couchbase/tests/cases/v3/scenarios_t.py" />
+        <option value="$PROJECT_DIR$/couchbase/v3/durability.py" />
+        <option value="$PROJECT_DIR$/couchbase_v2/bucket.py" />
+        <option value="$PROJECT_DIR$/couchbase_v3/durability.py" />
+        <option value="$PROJECT_DIR$/couchbase/tests/cases/__init__.py" />
+        <option value="$PROJECT_DIR$/couchbase/tests/cases/crypto_t.py" />
+        <option value="$PROJECT_DIR$/src/callbacks.c" />
+        <option value="$PROJECT_DIR$/couchbase_v2/tests/cases/arithmetic_t.py" />
+        <option value="$PROJECT_DIR$/couchbase_v3/collection.py" />
+        <option value="$PROJECT_DIR$/cbuild_cfg.json" />
+        <option value="$PROJECT_DIR$/couchbase_v2/tests/cases/tracing_t.py" />
+        <option value="$PROJECT_DIR$/src/counter.c" />
+        <option value="$PROJECT_DIR$/src/miscops.c" />
+        <option value="$PROJECT_DIR$/src/pycbc.h" />
+        <option value="$PROJECT_DIR$/src/lcb_v4_backport.h" />
+        <option value="$PROJECT_DIR$/src/bucket.c" />
+        <option value="$PROJECT_DIR$/src/lcb_v4_wrapper.h" />
+        <option value="$PROJECT_DIR$/src/lcb_v4_wrapper.c" />
+        <option value="$PROJECT_DIR$/src/lcb_v4_backport.c" />
+        <option value="$PROJECT_DIR$/couchbase/tests/cases/dupkeys_t.py" />
+        <option value="$PROJECT_DIR$/couchbase/tests/cases/encodings_t.py" />
+        <option value="$PROJECT_DIR$/couchbase/tests/cases/arithmetic_t.py" />
+        <option value="$PROJECT_DIR$/couchbase/tests/base.py" />
+        <option value="$PROJECT_DIR$/couchbase/tests/cases/subdoc_t.py" />
+        <option value="$PROJECT_DIR$/MANIFEST.in" />
+        <option value="$PROJECT_DIR$/pyproject.toml" />
+        <option value="$PROJECT_DIR$/../../../cases/CBSE-6803/tmp.py" />
+        <option value="$PROJECT_DIR$/couchbase_core/__init__.py" />
+        <option value="$PROJECT_DIR$/couchbase_v2/crypto.py" />
+        <option value="$PROJECT_DIR$/couchbase_v2/exceptions.py" />
+        <option value="$PROJECT_DIR$/couchbase/tests/__init__.py" />
+        <option value="$PROJECT_DIR$/couchbase_v3/__init__.py" />
+        <option value="$PROJECT_DIR$/couchbase_v3/getspec.py" />
+        <option value="$PROJECT_DIR$/couchbase_v3/tests/cases/scenarios_t.py" />
+        <option value="$PROJECT_DIR$/couchbase_v2/tests/cases/subdoc_t.py" />
+        <option value="$PROJECT_DIR$/couchbase/__init__.py" />
+        <option value="$PROJECT_DIR$/cmake_build.py" />
+        <option value="$PROJECT_DIR$/cbuild_config.py" />
+        <option value="$PROJECT_DIR$/cmodule.py" />
+        <option value="$PROJECT_DIR$/setup.py" />
+      </list>
+    </option>
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="yWGDgZaw" />
+  </component>
+  <component name="OCFindUsagesOptions" text="true" ivars="false" properties="true" derivedClasses="false" />
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="y" value="23" />
+    <option name="width" value="1664" />
+    <option name="height" value="1577" />
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectView">
+    <navigator currentView="Scope" currentSubView="Scope 'Project Files'; set:Project Files; class com.intellij.psi.search.scope.ProjectFilesScope" proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="PackagesPane" />
+      <pane id="Scope">
+        <subPane subId="Scope 'Project Files'; set:Project Files; class com.intellij.psi.search.scope.ProjectFilesScope">
+          <expand>
+            <path>
+              <item name="couchbase_python_client" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
+              <item name="~/root/workspaces/couchbase/couchbase-python-client-working-v4-backport-reference" type="442cc68d:ScopeViewTreeModel$RootNode" />
+            </path>
+            <path>
+              <item name="couchbase_python_client" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
+              <item name="~/root/workspaces/couchbase/couchbase-python-client-working-v4-backport-reference" type="442cc68d:ScopeViewTreeModel$RootNode" />
+              <item name="build" type="9f88c78c:ScopeViewTreeModel$FileNode" />
+            </path>
+            <path>
+              <item name="couchbase_python_client" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
+              <item name="~/root/workspaces/couchbase/couchbase-python-client-working-v4-backport-reference" type="442cc68d:ScopeViewTreeModel$RootNode" />
+              <item name="couchbase_v3" type="9f88c78c:ScopeViewTreeModel$FileNode" />
+            </path>
+            <path>
+              <item name="couchbase_python_client" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
+              <item name="~/root/workspaces/couchbase/couchbase-python-client-working-v4-backport-reference" type="442cc68d:ScopeViewTreeModel$RootNode" />
+              <item name="couchbase_v3" type="9f88c78c:ScopeViewTreeModel$FileNode" />
+              <item name="tests" type="9f88c78c:ScopeViewTreeModel$FileNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="ProjectPane" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="ChangesTree.GroupingKeys" value="directory&#10;repository" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="cf.advertisement.text.has.clang-format" value="true" />
+    <property name="go.gopath.indexing.explicitly.defined" value="true" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/couchbase" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="nodejs_package_manager_path" value="npm" />
+    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.proportion" value="0.15" />
+    <property name="project.structure.side.proportion" value="0.2" />
+    <property name="settings.editor.selected.configurable" value="configurable.group.build" />
+    <property name="two.files.diff.last.used.folder" value="$PROJECT_DIR$/../couchbase-python-client-working-v4-backport-checkpoint" />
+  </component>
+  <component name="PyDebuggerOptionsProvider">
+    <option name="mySaveCallSignatures" value="true" />
+    <option name="mySupportGeventDebugging" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/couchbase_v3" />
+      <recent name="$PROJECT_DIR$/couchbase_v2" />
+      <recent name="$PROJECT_DIR$/couchbase_core" />
+      <recent name="$PROJECT_DIR$/couchbase/tests" />
+      <recent name="$PROJECT_DIR$/couchbase_v3/tests/cases" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/couchbase" />
+      <recent name="$PROJECT_DIR$/couchbase_core" />
+      <recent name="$PROJECT_DIR$/couchbase_v2" />
+      <recent name="$PROJECT_DIR$/couchbase/tests_v3" />
+    </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.setup">
+    <configuration name="scenarios_t (1)" type="PythonConfigurationType" factoryName="Python">
+      <module name="couchbase-python-client-working-v4-backport-reference" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="$USER_HOME$/.pyenv/versions/3.7.0/bin/python" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/couchbase_v3/tests/cases/scenarios_t.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="scenarios_t" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="couchbase-python-client-working-v4-backport-reference" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="$USER_HOME$/.pyenv/versions/3.7.0/bin/python" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/couchbase_v3/tests/cases/scenarios_t.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="setup" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="couchbase-python-client-working-v4-backport-reference" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="vagrant://$PROJECT_DIR$/../vagrants_ipv6/mad-hatter-testing/ubuntu16@node1/home/vagrant/root/virtualenvs/2.7/default/bin/python2.7" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/setup.py" />
+      <option name="PARAMETERS" value="build_ext --inplace" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Nosetests for couchbase_v2.tests.cases.subdoc_t" type="tests" factoryName="Nosetests" temporary="true" nameIsGenerated="true">
+      <module name="couchbase-python-client-working-v4-backport-reference" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="$USER_HOME$/.pyenv/versions/3.7.0/bin/python" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_regexPattern" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;couchbase_v2.tests.cases.subdoc_t&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Nosetests for couchbase_v3.tests.cases.scenarios_t" type="tests" factoryName="Nosetests" nameIsGenerated="true">
+      <module name="couchbase-python-client-working-v4-backport-reference" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="$USER_HOME$/.pyenv/versions/3.7.0/bin/python" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_regexPattern" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;couchbase_v3.tests.cases.scenarios_t&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Nosetests in couchbase.tests.test_sync" type="tests" factoryName="Nosetests" nameIsGenerated="true">
+      <module name="couchbase-python-client-working-v4-backport-reference" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="$USER_HOME$/.pyenv/versions/3.7.0/bin/python" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_regexPattern" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;couchbase.tests.test_sync&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest for arithmetic_t.ArithmeticTest" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="couchbase-python-client-working-v4-backport-reference" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="$USER_HOME$/.pyenv/versions/3.7.0/bin/python" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;arithmetic_t.ArithmeticTest&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.scenarios_t (1)" />
+      <item itemvalue="Python.scenarios_t" />
+      <item itemvalue="Python.setup" />
+      <item itemvalue="Python tests.Nosetests for couchbase_v3.tests.cases.scenarios_t" />
+      <item itemvalue="Python tests.Nosetests in couchbase.tests.test_sync" />
+      <item itemvalue="Python tests.pytest for arithmetic_t.ArithmeticTest" />
+      <item itemvalue="Python tests.Nosetests for couchbase_v2.tests.cases.subdoc_t" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.setup" />
+        <item itemvalue="Python tests.Nosetests for couchbase_v2.tests.cases.subdoc_t" />
+        <item itemvalue="Python tests.pytest for arithmetic_t.ArithmeticTest" />
+        <item itemvalue="Python.scenarios_t" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="76f948cf-923b-4bf9-8913-60bdd49ce881" name="Default" comment="" />
+      <changelist id="1c3478b9-8bdb-4e91-8927-1a7abc2b0151" name="Revert: PYCBC-564: Expose Synchronous Durability ops" comment="" />
+      <created>1556835192128</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1556835192128</updated>
+      <workItem from="1556835193578" duration="788000" />
+      <workItem from="1556836256180" duration="3179000" />
+      <workItem from="1556839554211" duration="3447000" />
+      <workItem from="1556873507590" duration="11996000" />
+      <workItem from="1556909054119" duration="8464000" />
+      <workItem from="1557216935606" duration="10813000" />
+      <workItem from="1557231206623" duration="40682000" />
+      <workItem from="1557394988896" duration="1325000" />
+      <workItem from="1557400309348" duration="60381000" />
+      <workItem from="1557580168814" duration="8288000" />
+      <workItem from="1557658831121" duration="2602000" />
+      <workItem from="1557661738529" duration="5728000" />
+      <workItem from="1557680329476" duration="1891000" />
+      <workItem from="1557694366102" duration="2942000" />
+      <workItem from="1557738283993" duration="224000" />
+      <workItem from="1557761712518" duration="388000" />
+      <workItem from="1557773467568" duration="2134000" />
+      <workItem from="1557775651814" duration="3540000" />
+      <workItem from="1557781268324" duration="6049000" />
+      <workItem from="1557821998035" duration="4042000" />
+      <workItem from="1557835306630" duration="1521000" />
+      <workItem from="1557839161146" duration="13713000" />
+      <workItem from="1557858384904" duration="423000" />
+      <workItem from="1557873215757" duration="9615000" />
+      <workItem from="1557907374671" duration="7605000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TestHistory">
+    <history-entry file="Nosetests_for_couchbase_v3_tests_cases_scenarios_t - 2019.05.15 at 01h 50m 07s.xml">
+      <configuration name="Nosetests for couchbase_v3.tests.cases.scenarios_t" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Nosetests_for_couchbase_v3_tests_cases_scenarios_t - 2019.05.15 at 01h 51m 29s.xml">
+      <configuration name="Nosetests for couchbase_v3.tests.cases.scenarios_t" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Nosetests_for_couchbase_v3_tests_cases_scenarios_t - 2019.05.15 at 01h 52m 17s.xml">
+      <configuration name="Nosetests for couchbase_v3.tests.cases.scenarios_t" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Nosetests_for_couchbase_v3_tests_cases_scenarios_t - 2019.05.15 at 01h 52m 49s.xml">
+      <configuration name="Nosetests for couchbase_v3.tests.cases.scenarios_t" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Nosetests_for_couchbase_v3_tests_cases_scenarios_t - 2019.05.15 at 01h 53m 40s.xml">
+      <configuration name="Nosetests for couchbase_v3.tests.cases.scenarios_t" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Nosetests_for_couchbase_v3_tests_cases_scenarios_t - 2019.05.15 at 01h 54m 10s.xml">
+      <configuration name="Nosetests for couchbase_v3.tests.cases.scenarios_t" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Nosetests_for_couchbase_v3_tests_cases_scenarios_t - 2019.05.15 at 02h 20m 46s.xml">
+      <configuration name="Nosetests for couchbase_v3.tests.cases.scenarios_t" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Nosetests_for_couchbase_v3_tests_cases_scenarios_t - 2019.05.15 at 09h 17m 11s.xml">
+      <configuration name="Nosetests for couchbase_v3.tests.cases.scenarios_t" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Nosetests_in_couchbase_tests_test_sync - 2019.05.15 at 09h 18m 31s.xml">
+      <configuration name="Nosetests in couchbase.tests.test_sync" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Nosetests_in_couchbase_tests_test_sync - 2019.05.15 at 09h 44m 10s.xml">
+      <configuration name="Nosetests in couchbase.tests.test_sync" configurationId="tests" />
+    </history-entry>
+  </component>
+  <component name="TimeTrackingManager">
+    <option name="totallyTimeSpent" value="268127000" />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-1" y="23" width="2560" height="1577" extended-state="6" />
+    <editor active="true" />
+    <layout>
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.10246227" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info id="Designer" order="3" />
+      <window_info anchor="bottom" id="Messages" order="0" sideWeight="0.49402392" weight="0.32804233" />
+      <window_info anchor="bottom" id="CMake" order="1" sideWeight="0.4868526" weight="0.038173143" />
+      <window_info anchor="bottom" id="Gerrit" order="2" sideWeight="0.7017474" weight="0.6305385" />
+      <window_info anchor="bottom" id="Event Log" order="3" sideWeight="0.5210484" side_tool="true" weight="0.31018868" />
+      <window_info anchor="bottom" id="Version Control" order="4" sideWeight="0.71961874" weight="0.3503749" />
+      <window_info anchor="bottom" id="Atlassian " order="5" sideWeight="0.4996016" weight="0.32936507" />
+      <window_info anchor="bottom" id="Message" order="6" />
+      <window_info anchor="bottom" id="Mypy Terminal" order="7" sideWeight="0.49905214" weight="0.329934" />
+      <window_info anchor="bottom" id="Docker" order="8" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Database Changes" order="9" />
+      <window_info anchor="bottom" id="Dependency Graph" order="10" />
+      <window_info anchor="bottom" id="Find" order="11" sideWeight="0.51429707" visible="true" weight="0.39263803" />
+      <window_info anchor="bottom" id="Run" order="12" sideWeight="0.54725975" weight="0.28493524" />
+      <window_info anchor="bottom" id="Debug" order="13" sideWeight="0.47895154" weight="0.31018868" />
+      <window_info anchor="bottom" id="Cvs" order="14" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="15" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="16" />
+      <window_info anchor="bottom" id="Python Console" order="17" sideWeight="0.49841145" weight="0.32981133" />
+      <window_info anchor="bottom" id="File Transfer" order="18" sideWeight="0.49876696" weight="0.32929292" />
+      <window_info anchor="right" id="GfmBrowser" order="0" />
+      <window_info anchor="right" id="Cargo" order="1" />
+      <window_info anchor="right" id="Jenkins" order="2" />
+      <window_info anchor="right" id="QuickSloth" order="3" />
+      <window_info anchor="right" id="Database" order="4" />
+      <window_info anchor="right" id="Commander" order="5" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="6" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="7" weight="0.25" />
+      <window_info active="true" anchor="right" id="Terminal" order="8" visible="true" weight="0.20452741" />
+      <window_info anchor="right" id="SciView" order="9" />
+      <window_info anchor="right" id="Maven" order="10" />
+      <window_info anchor="right" id="Palette&#9;" order="11" />
+    </layout>
+    <layout-to-restore>
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.09968229" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info id="Designer" order="3" />
+      <window_info anchor="bottom" id="Messages" order="0" sideWeight="0.49402392" weight="0.32804233" />
+      <window_info anchor="bottom" id="CMake" order="1" sideWeight="0.4868526" weight="0.49470899" />
+      <window_info anchor="bottom" id="Gerrit" order="2" sideWeight="0.7017474" weight="0.6309434" />
+      <window_info anchor="bottom" id="Event Log" order="3" sideWeight="0.5210484" side_tool="true" visible="true" weight="0.31018868" />
+      <window_info anchor="bottom" id="Version Control" order="4" sideWeight="0.71961874" weight="0.29584906" />
+      <window_info anchor="bottom" id="Atlassian " order="5" sideWeight="0.4996016" weight="0.32936507" />
+      <window_info anchor="bottom" id="Message" order="6" />
+      <window_info anchor="bottom" id="Mypy Terminal" order="7" sideWeight="0.49905214" weight="0.329934" />
+      <window_info anchor="bottom" id="Docker" order="8" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Database Changes" order="9" />
+      <window_info anchor="bottom" id="Dependency Graph" order="10" />
+      <window_info anchor="bottom" id="Find" order="11" sideWeight="0.51429707" weight="0.39320755" />
+      <window_info anchor="bottom" id="Run" order="12" sideWeight="0.54725975" weight="0.28528303" />
+      <window_info anchor="bottom" id="Debug" order="13" sideWeight="0.47895154" visible="true" weight="0.31018868" />
+      <window_info anchor="bottom" id="Cvs" order="14" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="15" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="16" />
+      <window_info anchor="bottom" id="Python Console" order="17" sideWeight="0.49841145" weight="0.32981133" />
+      <window_info anchor="bottom" id="File Transfer" order="18" sideWeight="0.49876696" weight="0.32929292" />
+      <window_info anchor="right" id="GfmBrowser" order="0" />
+      <window_info anchor="right" id="Cargo" order="1" />
+      <window_info anchor="right" id="Jenkins" order="2" />
+      <window_info anchor="right" id="QuickSloth" order="3" />
+      <window_info anchor="right" id="Database" order="4" />
+      <window_info anchor="right" id="Commander" order="5" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="6" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="7" weight="0.25" />
+      <window_info active="true" anchor="right" id="Terminal" order="8" visible="true" weight="0.25019857" />
+      <window_info anchor="right" id="SciView" order="9" />
+      <window_info anchor="right" id="Maven" order="10" />
+      <window_info anchor="right" id="Palette&#9;" order="11" />
+    </layout-to-restore>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="Vcs.Log.History.Properties">
+    <option name="COLUMN_ORDER">
+      <list>
+        <option value="0" />
+        <option value="2" />
+        <option value="3" />
+        <option value="1" />
+      </list>
+    </option>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="RECENTLY_FILTERED_USER_GROUPS">
+                <collection />
+              </option>
+              <option name="RECENTLY_FILTERED_BRANCH_GROUPS">
+                <collection />
+              </option>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="HEAD" />
+                      </list>
+                    </value>
+                  </entry>
+                  <entry key="roots">
+                    <value>
+                      <list>
+                        <option value="$PROJECT_DIR$" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+              <option name="COLUMN_WIDTH">
+                <map>
+                  <entry key="2" value="132" />
+                  <entry key="3" value="210" />
+                </map>
+              </option>
+              <option name="COLUMN_ORDER">
+                <list>
+                  <option value="0" />
+                  <option value="1" />
+                  <option value="2" />
+                  <option value="3" />
+                </list>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="HEAD" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+        <entry key="User">
+          <value>
+            <list />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$/build/temp.macosx-10.12-x86_64-2.7/libcouchbase_src-prefix/src/libcouchbase_src" />
+      <path value="$PROJECT_DIR$/build/temp.macosx-10.13-x86_64-2.7/libcouchbase_src-prefix/src/libcouchbase_src" />
+      <path value="$PROJECT_DIR$/cmake-build-debug-ubuntu16_alice2/libcouchbase_src-prefix/src/libcouchbase_src" />
+      <path value="$PROJECT_DIR$/cmake-build-debug/libcouchbase_src-prefix/src/libcouchbase_src" />
+    </ignored-roots>
+    <MESSAGE value="Relocate packages, fix up V3 tests and functionality&#10;&#10;SDKJENKINS_PIP_INSTALL SDKJENKINS_LINUX PYCBC_BYPASS_V3_FAILURES&#10;&#10;Change-Id: Id6477ad0b3a0ce3dc01fd28dc2e6af5c31e5a9f3" />
+    <MESSAGE value="PYCBC-564: Expose Synchronous Durability ops - C changes&#10;&#10;SDKJENKINS_PIP_INSTALL SDKJENKINS_LINUX PYCBC_BYPASS_V3_FAILURES&#10;&#10;Change-Id: I642b82f0bd88c3f87370d83c345a1031b419c4d4" />
+    <MESSAGE value="PYCBC-564: Expose Synchronous Durability ops - Python changes&#10;&#10;Change-Id: Ibe92f51756463b5ce07df5caff6092ca1c72cfe9" />
+    <MESSAGE value="PYCBC-564: Expose Synchronous Durability ops - Python changes&#10;&#10;Change-Id: Ibe92f51756463b5ce07df5caff6092ca1c72cfe9" />
+    <MESSAGE value="PYCBC-564: Expose Synchronous Durability ops - C changes&#10;&#10;SDKJENKINS_PIP_INSTALL SDKJENKINS_LINUX PYCBC_BYPASS_V3_FAILURES&#10;&#10;Change-Id: I642b82f0bd88c3f87370d83c345a1031b419c4d4" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/cmake_build.py</url>
+          <line>199</line>
+          <option name="timeStamp" value="49" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/cmake_build.py</url>
+          <line>96</line>
+          <option name="timeStamp" value="61" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1726199936/201544331/subprocess.py</url>
+          <line>705</line>
+          <option name="timeStamp" value="62" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+    <watches-manager>
+      <configuration name="tests">
+        <watch expression="hex(m.PYCBC_LCB_API)" language="Python" />
+      </configuration>
+      <configuration name="PythonConfigurationType">
+        <watch expression="list(comp_arg_additions)" language="Python" />
+      </configuration>
+    </watches-manager>
+  </component>
+  <component name="atlassian-ide-plugin-workspace-issues">
+    <option name="view">
+      <JiraViewConfigurationBean>
+        <option name="viewFilterId" value="" />
+      </JiraViewConfigurationBean>
+    </option>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/couchbase_python_client_working_v4_backport_reference$scenarios_t__1_.coverage" NAME="scenarios_t (1) Coverage Results" MODIFIED="1557663579317" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/couchbase_v3/tests/cases" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$setup.coverage" NAME="setup Coverage Results" MODIFIED="1557916974526" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$Nosetests_for_couchbase_v2_tests_cases_subdoc_t.coverage" NAME="Nosetests for couchbase_v2.tests.cases.subdoc_t Coverage Results" MODIFIED="1557856819582" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$Nosetests_for_couchbase_tests_test_sync_v2.coverage" NAME="Nosetests for couchbase.tests.test_sync v2 Coverage Results" MODIFIED="1557660124845" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$test_sync__1_.coverage" NAME="test_sync (1) Coverage Results" MODIFIED="1557659830621" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/couchbase_v2/tests" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client_working_v4_backport_reference$Nosetests_for_couchbase_tests_test_sync_v2__1_.coverage" NAME="scenarios_t Coverage Results" MODIFIED="1557663543661" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$Nosetests_for_couchbase_tests_test_sync.coverage" NAME="Nosetests for couchbase.tests.test_sync Coverage Results" MODIFIED="1557588758467" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client_working_v4_backport_reference$Nosetests_for_couchbase_tests_test_sync.coverage" NAME="Nosetests for couchbase.tests.test_sync Coverage Results" MODIFIED="1557669458041" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$Nosetests_for_couchbase_tests_test_sync_v2__1_.coverage" NAME="Nosetests for couchbase.tests.test_sync v2 (1) Coverage Results" MODIFIED="1557661402482" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$scenarios_t.coverage" NAME="scenarios_t Coverage Results" MODIFIED="1557660386185" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/couchbase_v2/tests/cases/v3" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$test_sync.coverage" NAME="test_sync Coverage Results" MODIFIED="1557659780968" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client_working_v4_backport_reference$Nosetests_for_couchbase_v3_tests_cases_scenarios_t.coverage" NAME="Nosetests for couchbase_v3.tests.cases.scenarios_t Coverage Results" MODIFIED="1557667627526" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+  </component>
+  <component name="debuggerHistoryManager">
+    <expressions id="watch">
+      <expression>
+        <expression-string>list(comp_arg_additions)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>hex(m.PYCBC_LCB_API)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+    </expressions>
+    <expressions id="evaluateExpression">
+      <expression>
+        <expression-string>str.format(&quot;we {}&quot;,hex(m.PYCBC_LCB_API))</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>str.format(&quot;we {0x}&quot;,m.PYCBC_LCB_API)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>str.format(&quot;we {0}&quot;,m.PYCBC_LCB_API)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>str.format(&quot;we {}&quot;,m.PYCBC_LCB_API)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+    </expressions>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/src/store.c">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/lcb_v4_backport.h" />
+    <entry file="file:///usr/lib/python2.7/shutil.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="421">
+          <caret line="82" column="37" selection-start-line="82" selection-start-column="37" selection-end-line="82" selection-end-column="37" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/couchbase_v2/n1ql.py" />
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1726199936/1444529671/setuptools/dist.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="289">
+          <caret line="832" selection-start-line="832" selection-end-line="832" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../../cases/CBSE-6803/tmp.py" />
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1726199936/201544331/subprocess.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="284">
+          <caret line="710" selection-start-line="710" selection-end-line="710" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/-712800937/201544331/subprocess.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="632">
+          <caret line="1398" column="71" selection-start-line="1398" selection-start-column="71" selection-end-line="1398" selection-end-column="71" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/python_stubs/1726199936/posix.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="296">
+          <caret line="634" column="4" selection-start-line="634" selection-start-column="4" selection-end-line="634" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1726199936/1444529671/setuptools/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="658">
+          <caret line="169" column="26" lean-forward="true" selection-start-line="169" selection-start-column="26" selection-end-line="169" selection-end-column="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1726199936/201544331/distutils/core.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="289">
+          <caret line="136" selection-start-line="136" selection-end-line="136" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/MANIFEST.in">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="10" selection-start-line="10" selection-end-line="10" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1726199936/201544331/distutils/dist.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="284">
+          <caret line="971" selection-start-line="971" selection-end-line="971" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pyproject.toml" />
+    <entry file="file://$PROJECT_DIR$/pipinstall.txt" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v2/bucket.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v2/cluster.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase.egg-info/eager_resources.txt">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/couchbase.egg-info/requires.txt">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/couchbase.egg-info/top_level.txt">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/couchbase_v2/iops/select.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v2/asynchronous/__init__.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v2/async/__init__.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v2/tests/__init__.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v2/tests/cases/__init__.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase/tests/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="75">
+          <caret line="5" lean-forward="true" selection-start-line="5" selection-end-line="5" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/couchbase_v3/result.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v3/JSONdocument.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v3/cluster.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_core/__init__.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v2/crypto.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_core/_bootstrap.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v3/__init__.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v3/subdoc.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v3/getspec.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v3/tests/cases/scenarios_t.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v3/exceptions.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v2/exceptions.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v2/tests/cases/mutationtokens_t.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase_v2/tests/cases/subdoc_t.py" />
+    <entry file="file://$PROJECT_DIR$/autobind.py" />
+    <entry file="file://$PROJECT_DIR$/couchbase/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2265">
+          <caret line="151" selection-start-line="151" selection-end-line="151" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.pyenv/versions/3.7.0/lib/python3.7/site-packages/setuptools/command/build_ext.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="915">
+          <caret line="73" column="6" selection-start-line="73" selection-start-column="6" selection-end-line="73" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cbuild_config.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1620">
+          <caret line="116" column="6" selection-start-line="116" selection-end-line="116" selection-end-column="13" />
+          <folding>
+            <element signature="e#0#16#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build/lcb_min_version.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="1" column="31" selection-start-line="1" selection-start-column="31" selection-end-line="1" selection-end-column="31" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmake_build.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2940">
+          <caret line="208" selection-start-line="208" selection-end-line="208" />
+          <folding>
+            <element signature="e#0#14#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmodule.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="45">
+          <caret line="3" column="9" selection-start-line="3" selection-start-column="9" selection-end-line="3" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/counter.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1755">
+          <caret line="117" selection-start-line="117" selection-end-line="117" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3450">
+          <caret line="230" column="29" selection-start-line="230" selection-start-column="22" selection-end-line="230" selection-end-column="29" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/include/python2.7/abstract.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9735">
+          <caret line="649" column="21" selection-start-line="649" selection-start-column="21" selection-end-line="649" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="448">
+          <caret line="127" column="33" selection-start-line="127" selection-start-column="33" selection-end-line="127" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+  </component>
+  <component name="masterDetails">
+    <states>
+      <state key="ArtifactsStructureConfigurable.UI">
+        <settings>
+          <artifact-editor />
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="FacetStructureConfigurable.UI">
+        <settings>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="GlobalLibrariesConfigurable.UI">
+        <settings>
+          <last-edited>scala-sdk-2.12.3</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="JdkListConfigurable.UI">
+        <settings>
+          <last-edited>Remote Python 2.7.11+ Vagrant VM 'node1' at ~/root/workspaces/couchbase/vagrants_ipv6/mad-hatter-testing/ubuntu16 (/home/vagrant/root/virtualenvs/2.7/default/bin/python2.7)</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ModuleStructureConfigurable.UI">
+        <settings>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ProjectLibrariesConfigurable.UI">
+        <settings>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+    </states>
+  </component>
+</project>
