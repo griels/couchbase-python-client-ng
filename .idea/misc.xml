@@ -19,7 +19,7 @@
   <component name="JavaScriptSettings">
     <option name="languageLevel" value="ES6" />
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_12" default="false" project-jdk-name="Remote Python 2.7.11+ Vagrant VM 'node1' at ~/root/workspaces/couchbase/vagrants_ipv6/mad-hatter-testing/ubuntu16 (/home/vagrant/root/virtualenvs/2.7/default/bin/python2.7)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_12" default="false" project-jdk-name="Python 3.7 (couchbase-python-client-working-v4-backport-reference)" project-jdk-type="Python SDK" />
   <component name="PyPackaging">
     <option name="earlyReleasesAsUpgrades" value="true" />
   </component>
