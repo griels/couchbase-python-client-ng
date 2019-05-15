@@ -29,7 +29,6 @@ buildall.py
 *egg-info*
 _trial*
 *.dSYM
-.idea/
 CouchbaseMock.jar
 /.cproject
 /.eclipse-pmd
