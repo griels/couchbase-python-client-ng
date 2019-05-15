@@ -105,6 +105,8 @@ def get_ext_options():
         extoptions['include_dirs'] = [os.path.join(lcb_root, 'include')]
         extoptions['define_macros'] = [('_CRT_SECURE_NO_WARNINGS', 1)]
         pkgdata['couchbase'] = ['libcouchbase.dll']
+
+    extoptions.update(get_sources())
     return extoptions, pkgdata
 
 
@@ -119,3 +121,12 @@ PYCBC_LCB_API = os.getenv("PYCBC_LCB_API", BUILD_CFG.get('comp_options', {}).get
 
 def get_all_sources():
     return BUILD_CFG.get('source', []) + BUILD_CFG.get('apis', {}).get(PYCBC_LCB_API, {}).get('sources', [])
+
+
+def get_sources():
+    sources_ext={}
+    all_sources = get_all_sources()
+    SOURCEMODS = list(filter(re.compile(r'^.*\.c$').match, all_sources))
+    SOURCEMODS_CPP = list(filter(re.compile(r'^.*\.(cpp|cxx|cc)$').match, all_sources))
+    sources_ext['sources'] = list(map(str, SOURCEMODS+SOURCEMODS_CPP))
+    return sources_ext

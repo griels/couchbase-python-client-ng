@@ -62,8 +62,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fc0f73c2-30b4-438f-a482-9a8464b8e228" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cbuild_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/cbuild_config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmodule.py" beforeDir="false" afterPath="$PROJECT_DIR$/cmodule.py" afterDir="false" />
@@ -85,7 +83,7 @@
     <option name="delegatedBuild" value="true" />
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.6567335">
+    <splitter split-orientation="horizontal" split-proportion="0.420765">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
           <file pinned="false" current-in-tab="false">
@@ -112,8 +110,8 @@
           <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/setup.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="281">
-                  <caret line="118" column="29" lean-forward="true" selection-start-line="118" selection-start-column="29" selection-end-line="118" selection-end-column="29" />
+                <state relative-caret-position="56">
+                  <caret line="103" selection-start-line="103" selection-end-line="103" />
                 </state>
               </provider>
             </entry>
@@ -127,11 +125,11 @@
               </provider>
             </entry>
           </file>
-          <file pinned="false" current-in-tab="true">
+          <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/cbuild_config.py">
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="701">
-                  <caret line="108" column="4" selection-start-line="108" selection-start-column="4" selection-end-line="108" selection-end-column="4" />
+                  <caret line="108" selection-start-line="108" selection-end-line="108" />
                   <folding>
                     <element signature="e#0#16#0" expanded="true" />
                   </folding>
@@ -140,22 +138,31 @@
             </entry>
           </file>
           <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/build/lcb_min_version.h">
+            <entry file="file://$PROJECT_DIR$/cmake_build.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="15">
-                  <caret line="1" column="31" selection-start-line="1" selection-start-column="31" selection-end-line="1" selection-end-column="31" />
+                <state relative-caret-position="241">
+                  <caret line="69" selection-start-line="69" selection-end-line="69" />
+                  <folding>
+                    <element signature="e#0#14#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
           </file>
           <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/cmake_build.py">
+            <entry file="file://$USER_HOME$/.pyenv/versions/3.7.0/lib/python3.7/subprocess.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="166">
-                  <caret line="64" column="52" lean-forward="true" selection-start-line="64" selection-start-column="52" selection-end-line="64" selection-end-column="52" />
-                  <folding>
-                    <element signature="e#0#14#0" expanded="true" />
-                  </folding>
+                <state relative-caret-position="153">
+                  <caret line="315" column="25" selection-start-line="315" selection-start-column="25" selection-end-line="315" selection-end-column="25" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/src/ext.c">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="180">
+                  <caret line="509" selection-start-line="509" selection-end-line="509" />
                 </state>
               </provider>
             </entry>
@@ -173,7 +180,7 @@
             <entry file="file://$PROJECT_DIR$/couchbase/_logutil.py">
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="690">
-                  <caret line="46" lean-forward="true" selection-start-line="46" selection-end-line="46" />
+                  <caret line="46" selection-start-line="46" selection-end-line="46" />
                 </state>
               </provider>
             </entry>
@@ -182,7 +189,7 @@
       </split-first>
       <split-second>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
-          <file pinned="false" current-in-tab="true">
+          <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/cmodule.py">
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="240">
@@ -208,11 +215,11 @@
               </provider>
             </entry>
           </file>
-          <file pinned="false" current-in-tab="false">
+          <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="3450">
-                  <caret line="230" column="29" selection-start-line="230" selection-start-column="22" selection-end-line="230" selection-end-column="29" />
+                <state relative-caret-position="324">
+                  <caret line="270" column="22" selection-start-line="270" selection-start-column="16" selection-end-line="270" selection-end-column="22" />
                 </state>
               </provider>
             </entry>
@@ -239,7 +246,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>flag</find>
       <find>executable</find>
       <find>attrib</find>
       <find>cmake</find>
@@ -269,6 +275,7 @@
       <find>CMakeExtension</find>
       <find>sources</find>
       <find>get_alls</find>
+      <find>INLINE</find>
     </findStrings>
     <replaceStrings>
       <replace />
@@ -408,6 +415,12 @@
             <path>
               <item name="couchbase_python_client" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
               <item name="couchbase-python-client-working-v4-backport-reference" type="2674bda8:ScopeViewTreeModel$GroupNode" />
+              <item name="couchbase" type="9f88c78c:ScopeViewTreeModel$FileNode" />
+              <item name="tests" type="9f88c78c:ScopeViewTreeModel$FileNode" />
+            </path>
+            <path>
+              <item name="couchbase_python_client" type="3d21c010:ScopeViewTreeModel$ProjectNode" />
+              <item name="couchbase-python-client-working-v4-backport-reference" type="2674bda8:ScopeViewTreeModel$GroupNode" />
               <item name="couchbase_v2" type="9f88c78c:ScopeViewTreeModel$FileNode" />
             </path>
           </expand>
@@ -429,10 +442,10 @@
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="nodejs_package_manager_path" value="npm" />
-    <property name="project.structure.last.edited" value="Project" />
+    <property name="project.structure.last.edited" value="Problems" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
-    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyIntegratedToolsModulesConfigurable" />
     <property name="two.files.diff.last.used.folder" value="$PROJECT_DIR$/../couchbase-python-client-working-v4-backport-checkpoint" />
   </component>
   <component name="PyDebuggerOptionsProvider">
@@ -466,7 +479,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.setup">
+  <component name="RunManager" selected="Python tests.Nosetests in test_sync.py">
     <configuration name="scenarios_t (1)" type="PythonConfigurationType" factoryName="Python">
       <module name="couchbase-python-client-working-v4-backport-reference" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -581,6 +594,22 @@
       <option name="_new_targetType" value="&quot;PATH&quot;" />
       <method v="2" />
     </configuration>
+    <configuration name="Nosetests in test_sync.py" type="tests" factoryName="Nosetests" temporary="true" nameIsGenerated="true">
+      <module name="couchbase-python-client-working-v4-backport-reference" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="$USER_HOME$/.pyenv/versions/3.7.0-default/bin/python" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_regexPattern" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/couchbase/tests/test_sync.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
     <configuration name="pytest for arithmetic_t.ArithmeticTest" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
       <module name="couchbase-python-client-working-v4-backport-reference" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -605,9 +634,11 @@
       <item itemvalue="Python tests.Nosetests in couchbase.tests.test_sync" />
       <item itemvalue="Python tests.pytest for arithmetic_t.ArithmeticTest" />
       <item itemvalue="Python tests.Nosetests for couchbase_v2.tests.cases.subdoc_t" />
+      <item itemvalue="Python tests.Nosetests in test_sync.py" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Nosetests in test_sync.py" />
         <item itemvalue="Python.setup" />
         <item itemvalue="Python tests.Nosetests for couchbase_v2.tests.cases.subdoc_t" />
         <item itemvalue="Python tests.pytest for arithmetic_t.ArithmeticTest" />
@@ -691,9 +722,8 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="1664" height="1577" extended-state="0" />
-    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.16584463" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.16584463" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info id="Designer" order="3" />
@@ -709,8 +739,8 @@
       <window_info anchor="bottom" id="Database Changes" order="9" />
       <window_info anchor="bottom" id="Dependency Graph" order="10" />
       <window_info anchor="bottom" id="Find" order="11" sideWeight="0.51429707" weight="0.39259258" />
-      <window_info anchor="bottom" id="Run" order="12" sideWeight="0.54725975" weight="0.28484848" />
-      <window_info active="true" anchor="bottom" id="Debug" order="13" sideWeight="0.47895154" visible="true" weight="0.3097643" />
+      <window_info anchor="bottom" id="Run" order="12" sideWeight="0.54725975" visible="true" weight="0.28484848" />
+      <window_info anchor="bottom" id="Debug" order="13" sideWeight="0.47895154" weight="0.3097643" />
       <window_info anchor="bottom" id="Cvs" order="14" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="15" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="16" />
@@ -918,15 +948,16 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/couchbase_python_client_working_v4_backport_reference$scenarios_t__1_.coverage" NAME="scenarios_t (1) Coverage Results" MODIFIED="1557663579317" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/couchbase_v3/tests/cases" />
-    <SUITE FILE_PATH="coverage/couchbase_python_client$setup.coverage" NAME="setup Coverage Results" MODIFIED="1557923296137" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/couchbase_python_client$Nosetests_for_couchbase_v2_tests_cases_subdoc_t.coverage" NAME="Nosetests for couchbase_v2.tests.cases.subdoc_t Coverage Results" MODIFIED="1557856819582" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/couchbase_python_client$Nosetests_for_couchbase_tests_test_sync_v2.coverage" NAME="Nosetests for couchbase.tests.test_sync v2 Coverage Results" MODIFIED="1557660124845" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/couchbase_python_client$test_sync__1_.coverage" NAME="test_sync (1) Coverage Results" MODIFIED="1557659830621" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/couchbase_v2/tests" />
-    <SUITE FILE_PATH="coverage/couchbase_python_client_working_v4_backport_reference$Nosetests_for_couchbase_tests_test_sync_v2__1_.coverage" NAME="scenarios_t Coverage Results" MODIFIED="1557663543661" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/couchbase_python_client$Nosetests_for_couchbase_tests_test_sync.coverage" NAME="Nosetests for couchbase.tests.test_sync Coverage Results" MODIFIED="1557588758467" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/couchbase_python_client_working_v4_backport_reference$Nosetests_for_couchbase_tests_test_sync.coverage" NAME="Nosetests for couchbase.tests.test_sync Coverage Results" MODIFIED="1557669458041" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/couchbase_python_client$Nosetests_for_couchbase_tests_test_sync_v2__1_.coverage" NAME="Nosetests for couchbase.tests.test_sync v2 (1) Coverage Results" MODIFIED="1557661402482" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/couchbase_python_client$scenarios_t.coverage" NAME="scenarios_t Coverage Results" MODIFIED="1557660386185" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/couchbase_v2/tests/cases/v3" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$setup.coverage" NAME="setup Coverage Results" MODIFIED="1557923611065" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$Nosetests_for_couchbase_v2_tests_cases_subdoc_t.coverage" NAME="Nosetests for couchbase_v2.tests.cases.subdoc_t Coverage Results" MODIFIED="1557856819582" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$Nosetests_for_couchbase_tests_test_sync_v2.coverage" NAME="Nosetests for couchbase.tests.test_sync v2 Coverage Results" MODIFIED="1557660124845" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client_working_v4_backport_reference$Nosetests_for_couchbase_tests_test_sync_v2__1_.coverage" NAME="scenarios_t Coverage Results" MODIFIED="1557663543661" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$Nosetests_in_test_sync_py.coverage" NAME="Nosetests in test_sync.py Coverage Results" MODIFIED="1557923675414" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/couchbase/tests" />
+    <SUITE FILE_PATH="coverage/couchbase_python_client$Nosetests_for_couchbase_tests_test_sync_v2__1_.coverage" NAME="Nosetests for couchbase.tests.test_sync v2 (1) Coverage Results" MODIFIED="1557661402482" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/couchbase_python_client$test_sync.coverage" NAME="test_sync Coverage Results" MODIFIED="1557659780968" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/" />
     <SUITE FILE_PATH="coverage/couchbase_python_client_working_v4_backport_reference$Nosetests_for_couchbase_v3_tests_cases_scenarios_t.coverage" NAME="Nosetests for couchbase_v3.tests.cases.scenarios_t Coverage Results" MODIFIED="1557667627526" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
@@ -967,14 +998,6 @@
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file:///usr/lib/python2.7/shutil.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="421">
-          <caret line="82" column="37" selection-start-line="82" selection-start-column="37" selection-end-line="82" selection-end-column="37" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/couchbase_v2/n1ql.py" />
     <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1726199936/1444529671/setuptools/dist.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="289">
@@ -1103,13 +1126,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3450">
-          <caret line="230" column="29" selection-start-line="230" selection-start-column="22" selection-end-line="230" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///usr/include/python2.7/abstract.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="9735">
@@ -1127,7 +1143,34 @@
     <entry file="file://$PROJECT_DIR$/couchbase/_logutil.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="690">
-          <caret line="46" lean-forward="true" selection-start-line="46" selection-end-line="46" />
+          <caret line="46" selection-start-line="46" selection-end-line="46" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cbuild_config.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="701">
+          <caret line="108" selection-start-line="108" selection-end-line="108" />
+          <folding>
+            <element signature="e#0#16#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="56">
+          <caret line="103" selection-start-line="103" selection-end-line="103" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cmake_build.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="241">
+          <caret line="69" selection-start-line="69" selection-end-line="69" />
+          <folding>
+            <element signature="e#0#14#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -1141,30 +1184,24 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/cmake_build.py">
+    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="166">
-          <caret line="64" column="52" lean-forward="true" selection-start-line="64" selection-start-column="52" selection-end-line="64" selection-end-column="52" />
-          <folding>
-            <element signature="e#0#14#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="324">
+          <caret line="270" column="22" selection-start-line="270" selection-start-column="16" selection-end-line="270" selection-end-column="22" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/setup.py">
+    <entry file="file://$USER_HOME$/.pyenv/versions/3.7.0/lib/python3.7/subprocess.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="281">
-          <caret line="118" column="29" lean-forward="true" selection-start-line="118" selection-start-column="29" selection-end-line="118" selection-end-column="29" />
+        <state relative-caret-position="153">
+          <caret line="315" column="25" selection-start-line="315" selection-start-column="25" selection-end-line="315" selection-end-column="25" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/cbuild_config.py">
+    <entry file="file://$PROJECT_DIR$/src/ext.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="701">
-          <caret line="108" column="4" selection-start-line="108" selection-start-column="4" selection-end-line="108" selection-end-column="4" />
-          <folding>
-            <element signature="e#0#16#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="180">
+          <caret line="509" selection-start-line="509" selection-end-line="509" />
         </state>
       </provider>
     </entry>
@@ -1185,7 +1222,7 @@
       </state>
       <state key="FacetStructureConfigurable.UI">
         <settings>
-          <last-edited>No facets are configured</last-edited>
+          <last-edited>Detection</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
