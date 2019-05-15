@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
+  <component name="CidrRootsConfiguration">
+    <sourceRoots>
+      <file path="$PROJECT_DIR$/build/temp.macosx-10.13-x86_64-3.7/install/include" />
+      <file path="$PROJECT_DIR$/build/temp.macosx-10.13-x86_64-3.7/libcouchbase_src-prefix/src/libcouchbase_src" />
+      <file path="$PROJECT_DIR$/cmake-build-debug/libcouchbase_src-prefix/src/libcouchbase_src" />
+    </sourceRoots>
+    <excludeRoots>
+      <file path="$PROJECT_DIR$/.idea" />
+      <file path="$PROJECT_DIR$/.pytest_cache" />
+      <file path="$PROJECT_DIR$/build" />
+      <file path="$PROJECT_DIR$/cmake-build-debug" />
+      <file path="$PROJECT_DIR$/cmake-build-debug-ubuntu16_alice2" />
+      <file path="$PROJECT_DIR$/couchbase.egg-info" />
+    </excludeRoots>
+  </component>
+  <component name="JavaScriptSettings">
+    <option name="languageLevel" value="ES6" />
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_12" default="false" project-jdk-name="Remote Python 2.7.11+ Vagrant VM 'node1' at ~/root/workspaces/couchbase/vagrants_ipv6/mad-hatter-testing/ubuntu16 (/home/vagrant/root/virtualenvs/2.7/default/bin/python2.7)" project-jdk-type="Python SDK" />
+  <component name="PyPackaging">
+    <option name="earlyReleasesAsUpgrades" value="true" />
+  </component>
+  <component name="PythonCompatibilityInspectionAdvertiser">
+    <option name="version" value="3" />
+  </component>
+</project>
