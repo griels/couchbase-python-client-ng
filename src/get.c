@@ -417,7 +417,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING, static, int, handle_single_lookup,
 
         PYCBC_CMD_SET_KEY_SCOPE(subdoc, cmd, keybuf);
         rv = PYCBC_TRACE_WRAP(pycbc_sd_handle_speclist, NULL, self, cv->mres,
-                              curkey, curval, cmd);
+                              curkey, curval, cmd, 0);
     }
     GT_ERR:
 GT_DONE:

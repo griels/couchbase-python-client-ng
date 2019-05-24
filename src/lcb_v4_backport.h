@@ -580,7 +580,7 @@ int pycbc_sdresult_next(const lcb_RESPSUBDOC *resp,
                         pycbc_SDENTRY *dest,
                         size_t *index);
 
-void pycbc_cmdsubdoc_flags_from_scv(unsigned int sd_doc_flags, lcb_CMDSUBDOC *cmd);
+lcb_STATUS pycbc_cmdsubdoc_flags_from_scv(unsigned int sd_doc_flags, lcb_CMDSUBDOC *cmd);
 
 typedef enum {
     LCB_PING_STATUS_OK = LCB_PINGSTATUS_OK,

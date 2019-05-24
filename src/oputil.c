@@ -101,10 +101,10 @@ pycbc_sd_metainfo pycbc_get_metainfo(const pycbc_sdspec_details_t* details)
 };
 
 lcb_STATUS pycbc_build_spec(lcb_SUBDOCOPS *subdocops,
-                            const pycbc_sdspec_details_t* details)
+                            pycbc_sdspec_details_t* details,
+                            unsigned int sd_doc_flags)
 {
     lcb_STATUS result = LCB_SUCCESS;
-
 #    define PYCBC_BUILDSPEC_PATH_ONLY(UC, LC, ...)  \
         lcb_subdocops_##LC(subdocops,               \
                            details->index,           \
@@ -733,7 +733,8 @@ int pycbc_handle_durability_args(pycbc_Bucket *self,
                                  pycbc_dur_params *params,
                                  char persist_to,
                                  char replicate_to,
-                                 pycbc_DURABILITY_LEVEL dur_level)
+                                 pycbc_DURABILITY_LEVEL dur_level
+                                 )
 {
     if (self->dur_global.persist_to || self->dur_global.replicate_to) {
         if (persist_to == 0 && replicate_to == 0) {
@@ -792,7 +793,8 @@ static int sd_convert_spec(PyObject *pyspec,
                            lcb_SUBDOCOPS *subdocops,
                            pycbc_pybuffer *pathbuf_base,
                            pycbc_pybuffer *valbuf_base,
-                           size_t index)
+                           size_t index,
+                           unsigned int sd_doc_flags)
 {
     PyObject *path = NULL;
     PyObject *val = NULL;
@@ -821,6 +823,13 @@ static int sd_convert_spec(PyObject *pyspec,
                                     .pathbuf = pathbuf,
                                     .valbuf = valbuf,
                                     .index = index};
+#ifndef PYCBC_WORKAROUND_SD_BREAKAGE
+    if (sd_doc_flags & CMDSUBDOC_F_INSERT_DOC)
+    {
+        details.op=LCB_SDCMD_FULLDOC_ADD;
+    }
+#endif
+
     if (val != NULL) {
         pycbc_sd_metainfo metainfo = pycbc_get_metainfo(&details);
         if (PyObject_IsInstance(val, pycbc_helpers.sd_multival_type)) {
@@ -864,7 +873,7 @@ static int sd_convert_spec(PyObject *pyspec,
             valbuf->length = len;
         }
     }
-    if (pycbc_build_spec(subdocops, &details)) {
+    if (pycbc_build_spec(subdocops, &details, sd_doc_flags)) {
         goto GT_ERROR;
     }
     return 0;
@@ -921,7 +930,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
 
 TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,, int,
 pycbc_sd_handle_speclist, pycbc_Bucket *self, pycbc_MultiResult *mres,
-    PyObject *key, PyObject *spectuple, lcb_CMDSUBDOC *cmd)
+    PyObject *key, PyObject *spectuple, lcb_CMDSUBDOC *cmd, unsigned int sd_doc_flags)
 {
     int rv = 0;
     lcb_STATUS err = LCB_SUCCESS;
@@ -951,7 +960,7 @@ pycbc_sd_handle_speclist, pycbc_Bucket *self, pycbc_MultiResult *mres,
             PyObject *single_spec = PyTuple_GET_ITEM(spectuple, 0);
             pathbufs = &pathbuf_s;
             valbufs = &valbuf_s;
-            rv = sd_convert_spec(single_spec, ops, pathbufs, valbufs, 0);
+            rv = sd_convert_spec(single_spec, ops, pathbufs, valbufs, 0, sd_doc_flags);
             lcb_cmdsubdoc_operations(cmd, ops);
             err = PYCBC_TRACE_WRAP(pycbc_call_subdoc,
                                    NULL,
@@ -972,7 +981,7 @@ pycbc_sd_handle_speclist, pycbc_Bucket *self, pycbc_MultiResult *mres,
 
             for (ii = 0; ii < nspecs; ++ii) {
                 PyObject *cur = PyTuple_GET_ITEM(spectuple, ii);
-                rv = sd_convert_spec(cur, ops, pathbufs, valbufs, ii);
+                rv = sd_convert_spec(cur, ops, pathbufs, valbufs, ii, sd_doc_flags);
                 if (rv != 0) {
                     break;
                 }

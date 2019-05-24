@@ -408,9 +408,14 @@ pycbc_encode_sd_keypath(pycbc_Bucket *conn, PyObject *src,
                         pycbc_pybuffer *keybuf, pycbc_pybuffer *pathbuf);
 
 TRACED_FUNCTION_DECL(,
-int,
-pycbc_sd_handle_speclist, pycbc_Bucket *self, pycbc_MultiResult *mres,
-                PyObject *key, PyObject *spectuple, lcb_CMDSUBDOC *cmd);
+                     int,
+                     pycbc_sd_handle_speclist,
+                     pycbc_Bucket *self,
+                     pycbc_MultiResult *mres,
+                     PyObject *key,
+                     PyObject *spectuple,
+                     lcb_CMDSUBDOC *cmd,
+                     unsigned int sd_doc_flags);
 
 /**
  * Macro to declare prototypes for entry points.

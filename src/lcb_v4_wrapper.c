@@ -66,10 +66,27 @@ pycbc_strn_base_const pycbc_respsubdoc_value(const pycbc_SDENTRY *ent)
     return result;
 }
 
-void pycbc_cmdsubdoc_flags_from_scv(unsigned int sd_doc_flags, lcb_CMDSUBDOC *cmd) {
-
+lcb_STATUS pycbc_cmdsubdoc_flags_from_scv(unsigned int sd_doc_flags, lcb_CMDSUBDOC *cmd) {
+    int cim=(sd_doc_flags & CMDSUBDOC_F_UPSERT_DOC);
+    lcb_STATUS err=LCB_SUCCESS;
     lcb_cmdsubdoc_create_if_missing(
-cmd, (sd_doc_flags & CMDSUBDOC_F_UPSERT_DOC) ? 1 : 0);
+cmd, cim ? 1 : 0);
+#ifdef PYCBC_WORKAROUND_SD_BREAKAGE
+    PYCBC_DEBUG_LOG("Got cmdflags %0xd and sdflags %0xd, cim %d",cmd->cmdflags, sd_doc_flags, cim)
+#endif
+    if (sd_doc_flags & CMDSUBDOC_F_INSERT_DOC)
+    {
+#ifdef PYCBC_WORKAROUND_SD_BREAKAGE
+            // hack because this combo is not currently supported
+        // not sure if this is required anymore but it is currently tested and
+        // fails without this hack
+        cmd->cmdflags|=CMDSUBDOC_F_INSERT_DOC;
+#endif
+    }
+#ifdef PYCBC_WORKAROUND_SD_BREAKAGE
+        PYCBC_DEBUG_LOG("Got cmdflags %0xd and sdflags %0xd, cim %d",cmd->cmdflags, sd_doc_flags, cim)
+#endif
+    return err;
 }
 
 

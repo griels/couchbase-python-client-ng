@@ -136,7 +136,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,static, int,
                               cv->mres,
                               curkey,
                               curvalue,
-                              cmd);
+                              cmd, scv->sd_doc_flags);
     }
 GT_ERR:
 GT_DONE:

@@ -51,10 +51,6 @@ typedef lcb_ANALYTICS_HANDLE *pycbc_ANALYTICS_HANDLE;
 #define pycbc_verb(VERB, INSTANCE, COOKIE, CMD) pycbc_verb_postfix(, VERB, INSTANCE, COOKIE, CMD)
 #define LCB_STORE_WRAPPER(b) handler(module, "LCB_" #b, LCB_STORE_##b);
 
-#ifndef LIBCOUCHBASE_couchbase_internalstructs_h__
-enum replica_legacy { LCB_REPLICA_FIRST, LCB_REPLICA_SELECT, LCB_REPLICA_ALL };
-#endif
-
 
 #define PYCBC_get_ATTR(CMD, attrib, ...) \
     lcb_cmdget_##attrib((CMD), __VA_ARGS__);
@@ -93,6 +89,14 @@ enum replica_legacy { LCB_REPLICA_FIRST, LCB_REPLICA_SELECT, LCB_REPLICA_ALL };
     PYCBC_DEBUG_LOG(                                                        \
             "Setting value %.*s on %s", (KEY).length, (KEY).buffer, #SCOPE) \
     lcb_cmd##SCOPE##_value(CMD, (KEY).buffer, (KEY).length)
+
+#define PYCBC_WORKAROUND_SD_BREAKAGE
+#ifdef PYCBC_WORKAROUND_SD_BREAKAGE
+
+#ifndef LIBCOUCHBASE_couchbase_internalstructs_h__
+#include "internalstructs.h"
+#endif
+#endif
 
 #ifndef LIBCOUCHBASE_couchbase_internalstructs_h__
 typedef lcb_SUBDOCOPS pycbc_SDSPEC;
@@ -236,6 +240,8 @@ typedef enum {
 
     LCB_SDCMD_MAX
 } lcb_SUBDOCOP;
+enum replica_legacy { LCB_REPLICA_FIRST, LCB_REPLICA_SELECT, LCB_REPLICA_ALL };
+
 #else
 
 /**
@@ -338,7 +344,7 @@ int pycbc_sdresult_next(const lcb_RESPSUBDOC *resp,
                         size_t *index);
 
 
-void pycbc_cmdsubdoc_flags_from_scv(unsigned int flags, lcb_CMDSUBDOC *cmd);
+lcb_STATUS pycbc_cmdsubdoc_flags_from_scv(unsigned int flags, lcb_CMDSUBDOC *cmd);
 
 lcb_STATUS pycbc_cmdn1ql_multiauth(lcb_CMDN1QL* cmd, int enable);
 

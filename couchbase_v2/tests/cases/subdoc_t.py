@@ -285,12 +285,11 @@ class SubdocTest(ConnectionTestCase):
         cb.mutate_in(key, SD.upsert('new.path', 'newval'), upsert_doc=True)
         self.assertEqual('newval', cb.retrieve_in(key, 'new.path')[0])
 
-        if not PYCBC_BYPASS_V3_FAILURES:
-            # Check 'insert_doc'
-            self.assertRaises(E.KeyExistsError, cb.mutate_in,
-                              key, SD.upsert('new.path', 'newval'), insert_doc=True)
+        # Check 'insert_doc'
+        self.assertRaises(E.KeyExistsError, cb.mutate_in,
+                          key, SD.upsert('new.path', 'newval'), insert_doc=True)
 
         cb.remove(key)
-        if not PYCBC_BYPASS_V3_FAILURES:
-            cb.mutate_in(key, SD.upsert('new.path', 'newval'), insert_doc=True)
-            self.assertEqual('newval', cb.retrieve_in(key, 'new.path')[0])
+
+        cb.mutate_in(key, SD.upsert('new.path', 'newval'), insert_doc=True)
+        self.assertEqual('newval', cb.retrieve_in(key, 'new.path')[0])

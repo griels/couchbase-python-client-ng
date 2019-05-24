@@ -155,11 +155,12 @@ lcb_cmdsubdoc_operations(lcb_CMDSUBDOC *cmd, const lcb_SUBDOCOPS *operations)
                 operations->specs[i].value.u_buf.contig.bytes)
 }
 #endif
-return LCB_SUCCESS;
+    return LCB_SUCCESS;
 }
 
-void pycbc_cmdsubdoc_flags_from_scv(unsigned int sd_doc_flags, lcb_CMDSUBDOC *cmd) {
+lcb_STATUS pycbc_cmdsubdoc_flags_from_scv(unsigned int sd_doc_flags, lcb_CMDSUBDOC *cmd) {
     cmd->cmdflags |= sd_doc_flags;
+    return LCB_SUCCESS;
 }
 
 
