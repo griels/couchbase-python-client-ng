@@ -6,9 +6,8 @@ from .mutate_in import mutation_result, MutationResult, MutateInSpec, MutateInOp
 from .options import OptionBlock
 from .durability import ReplicateTo, PersistTo, ClientDurableOption
 from couchbase_core._libcouchbase import Bucket as _Base
-from couchbase_v2.bucket import Bucket as SDK2Bucket
 import couchbase_v3.exceptions
-
+from couchbase_core.bucket import Bucket as CoreBucket
 import copy
 import pyrsistent
 from typing import *
@@ -97,7 +96,7 @@ class GetOptions(OptionBlock):
                 duration  # type: Seconds
                 ):
         # type: (...)->GetOptionsNonProject
-        self['ttl']=duration.__int__()
+        self['timeout']=duration.__int__()
         return GetOptionsNonProject(self)
 
     def __copy__(self):
@@ -146,10 +145,14 @@ class InsertOptions(OptionBlock, ClientDurableOption):
     pass
 
 
+class GetFromReplicaOptions(OptionBlock):
+    pass
+
+
 class CBCollection(object):
     def __init__(self,
                  parent,  # type: Scope
-                 name=None,  # type: str
+                 name=None,  # type: Optional[str]
                  options=None  # type: CollectionOptions
                  ):
         # type: (...)->None
@@ -179,7 +182,7 @@ class CBCollection(object):
         if not project:
             x = _Base.get(self.bucket, key, **options)
         else:
-            x = self.bucket.lookup_in(key, *spec, **options)
+            x = CoreBucket.lookup_in(self.bucket, key, *spec, **options)
         return x, options
 
 
@@ -194,7 +197,7 @@ class CBCollection(object):
     @overload
     def get(self,
             key,  # type:str
-            project=None,  # type: couchbase_v2.JSON
+            project=None,  # type: couchbase_core.JSON
             timeout=None,  # type: Seconds
             quiet=None,  # type: bool
             replica=False,  # type: bool
@@ -227,7 +230,7 @@ class CBCollection(object):
 
             Note that the default value is `None`, which means to use
             the :attr:`quiet`. If it is a boolean (i.e. `True` or
-            `False`) it will override the `couchbase_v2.bucket.Bucket`-level
+            `False`) it will override the `couchbase_core.bucket.Bucket`-level
             :attr:`quiet` attribute.
 
         :param bool replica: Whether to fetch this key from a replica
@@ -244,8 +247,8 @@ class CBCollection(object):
                     res = c.get("key", replica=True, quiet=True)
 
         :param bool no_format: If set to ``True``, then the value will
-            always be delivered in the :class:`~couchbase_v2.result.Result`
-            object as being of :data:`~couchbase_v2.FMT_BYTES`. This is a
+            always be delivered in the :class:`~couchbase_core.result.Result`
+            object as being of :data:`~couchbase_core.FMT_BYTES`. This is a
             item-local equivalent of using the :attr:`data_passthrough`
             option
 
@@ -272,7 +275,7 @@ class CBCollection(object):
 
         Update the expiration time::
 
-            rv = cb.get("key", ttl=10)
+            rv = cb.get("key", timeout=10)
             # Expires in ten seconds
 
         .. seealso:: :meth:`get_multi`
@@ -335,16 +338,16 @@ class CBCollection(object):
 
         :param string key: The key whose expiration time should be
             modified
-        :param int ttl: The new expiration time. If the expiration time
+        :param int timeout: The new expiration time. If the expiration time
             is `0` then the key never expires (and any existing
             expiration is removed)
         :return: :class:`.OperationResult`
 
         Update the expiration time of a key ::
 
-            cb.upsert("key", ttl=100)
+            cb.upsert("key", timeout=100)
             # expires in 100 seconds
-            cb.touch("key", ttl=0)
+            cb.touch("key", timeout=0)
             # key should never expire now
 
         :raise: The same things that :meth:`get` does
@@ -407,7 +410,7 @@ class CBCollection(object):
                id,  # type: str
                value,  # type: Any
                cas=0,  # type: int
-               ttl=0,  # type: Seconds
+               timeout=0,  # type: Seconds
                format=None,
                persist_to=PersistTo.NONE,  # type: PersistTo.Value
                replicate_to=ReplicateTo.NONE  # type: ReplicateTo.Value
@@ -446,7 +449,7 @@ class CBCollection(object):
             will only be stored if it already exists with the supplied
             CAS
 
-        :param int ttl: If specified, the key will expire after this
+        :param Seconds timeout: If specified, the key will expire after this
             many seconds
 
         :param int format: If specified, indicates the `format` to use
@@ -479,17 +482,17 @@ class CBCollection(object):
 
         Force JSON document format for value::
 
-            cb.upsert('foo', {'bar': 'baz'}, format=couchbase_v2.FMT_JSON)
+            cb.upsert('foo', {'bar': 'baz'}, format=couchbase_core.FMT_JSON)
 
         Insert JSON from a string::
 
             JSONstr = '{"key1": "value1", "key2": 123}'
             JSONobj = json.loads(JSONstr)
-            cb.upsert("documentID", JSONobj, format=couchbase_v2.FMT_JSON)
+            cb.upsert("documentID", JSONobj, format=couchbase_core.FMT_JSON)
 
         Force UTF8 document format for value::
 
-            cb.upsert('foo', "<xml></xml>", format=couchbase_v2.FMT_UTF8)
+            cb.upsert('foo', "<xml></xml>", format=couchbase_core.FMT_UTF8)
 
         Perform optimistic locking by specifying last known CAS version::
 
@@ -516,7 +519,7 @@ class CBCollection(object):
     def insert(self,
                id,  # type: str
                value,  # type: Any
-               ttl=Seconds(0),  # type: Seconds
+               timeout=Seconds(0),  # type: Seconds
                format=None,  # type: str
                persist_to=PersistTo.NONE,  # type: PersistTo.Value
                replicate_to=ReplicateTo.NONE  # type: ReplicateTo.Value
@@ -732,7 +735,7 @@ class CBCollection(object):
         Other parameters follow the same conventions as :meth:`upsert`.
 
         The `format` argument must be one of
-        :const:`~couchbase_v2.FMT_UTF8` or :const:`~couchbase_v2.FMT_BYTES`.
+        :const:`~couchbase_core.FMT_UTF8` or :const:`~couchbase_core.FMT_BYTES`.
         If not specified, it will be :const:`~.FMT_UTF8` (overriding the
         :attr:`default_format` attribute). This is because JSON or
         Pickle formats will be nonsensical when random data is appended
@@ -743,7 +746,7 @@ class CBCollection(object):
         Additionally, you must ensure the value (and flags) for the
         current value is compatible with the data to be appended. For an
         example, you may append a :const:`~.FMT_BYTES` value to an
-        existing :const:`~couchbase_v2.FMT_JSON` value, but an error will
+        existing :const:`~couchbase_core.FMT_JSON` value, but an error will
         be thrown when retrieving the value using :meth:`get` (you may
         still use the :attr:`data_passthrough` to overcome this).
 
@@ -871,8 +874,8 @@ class Scope(object):
         """
         return self._name
 
-    def default_collection(self):
-        return CBCollection(Scope(self.bucket))
+    def default_collection(self, *options, **kwargs):
+        return CBCollection(self, name=None, **forward_args(kwargs,*options))
 
     def open_collection(self,
                         collection_name,  # type: str

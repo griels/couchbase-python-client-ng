@@ -7,7 +7,7 @@ from typing import *
 
 from couchbase_v3 import OptionBlock, Bucket, forward_args, OptionBlockDeriv, SearchException, SDK2Bucket
 from .bucket import BucketOptions
-from couchbase_v2.cluster import Cluster as SDK2Cluster, Authenticator as SDK2Authenticator
+from couchbase_core.cluster import Cluster as SDK2Cluster, Authenticator as SDK2Authenticator
 import couchbase_v3.options
 
 
@@ -87,7 +87,7 @@ class QueryOptions(OptionBlock, IQueryResult):
         :except ServiceNotFoundException - service does not exist or cannot be located.
 
         """
-        super(Cluster.QueryOptions, self).__init__(statement=statement, parameters=parameters, timeout=timeout)
+        super(QueryOptions, self).__init__(statement=statement, parameters=parameters, timeout=timeout)
 
 
 class Cluster:
@@ -98,8 +98,9 @@ class Cluster:
                  connection_string=None,  # type: str
                  *options  # type: ClusterOptions
                  ):
-        self._cluster = SDK2Cluster(connection_string, bucket_class = Bucket, **couchbase_v3.forward_args(None, *options))
-        self.outerself = self  # type: Cluster
+        cluster_opts=forward_args(None, *options)
+        cluster_opts.update(bucket_class=lambda connstr, bname=None, **kwargs: Bucket(connstr,bname, BucketOptions(**kwargs)))
+        self._cluster = SDK2Cluster(connection_string, **cluster_opts)  # type: SDK2Cluster
 
     def authenticate(self,
                      authenticator=None,  # type: SDK2Authenticator
@@ -114,7 +115,9 @@ class Cluster:
                **kwargs
                ):
         # type: (...)->Bucket
-        return self._cluster.open_bucket(name, **forward_args(kwargs,*options))
+        args=forward_args(kwargs,*options)
+        args.update(bname=name)
+        return self._cluster.open_bucket(name, **args)
 
     class QueryParameters(OptionBlock):
         def __init__(self, *args, **kwargs):
@@ -202,19 +205,19 @@ class Cluster:
 
     def users(self):
         # type: (...)->IUserManager
-        pass
+        raise NotImplementedError("To be implemented in SDK3 full release")
 
     def indexes(self):
         # type: (...)->IIndexManager
-        pass
+        raise NotImplementedError("To be implemented in SDK3 full release")
 
     def nodes(self):
         # type: (...)->INodeManager
-        pass
+        return self._cluster
 
     def buckets(self):
         # type: (...)->IBucketManager
-        pass
+        return self._cluster._buckets
 
     def disconnect(self,
                    options=None  # type: DisconnectOptions
@@ -228,7 +231,7 @@ class Cluster:
         :except Any exceptions raised by the underlying platform
 
         """
-        pass
+        raise NotImplementedError("To be implemented in full SDK3 release")
 
     def manager(self):
         # type: (...)->ClusterManager
@@ -246,7 +249,7 @@ class Cluster:
 
         :return:
         """
-        pass
+        return self._cluster.cluster_manager()
 
 
 QueryParameters = Cluster.QueryParameters

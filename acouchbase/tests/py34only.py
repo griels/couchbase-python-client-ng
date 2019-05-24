@@ -1,6 +1,6 @@
 import asyncio
 
-from couchbase_v2.experimental import enable; enable()
+from couchbase_core.experimental import enable; enable()
 from fixtures import asynct, AioTestCase
 from couchbase_v2.n1ql import N1QLQuery
 from couchbase_v2.exceptions import CouchbaseError

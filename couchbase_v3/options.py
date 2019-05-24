@@ -117,7 +117,6 @@ def forward_args(arg_vars,  # type: Optional[Dict[str,Any]]
     # type: (...)->OptionBlockDeriv[str,Any]
     arg_vars = copy.copy(arg_vars) if arg_vars else {}
     temp_options = copy.copy(options[0]) if (options and options[0]) else OptionBlock()
-    print("got arg_vars {} and options {}, produced end_options {}".format(arg_vars, options, temp_options))
     kwargs = arg_vars.pop('kwargs', {})
     temp_options.update(kwargs)
     temp_options.update(arg_vars)

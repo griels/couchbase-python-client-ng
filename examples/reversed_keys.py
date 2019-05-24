@@ -1,4 +1,4 @@
-from couchbase_v2.transcoder import Transcoder
+from couchbase_core.transcoder import Transcoder
 from couchbase_v2.bucket import Bucket
 
 

@@ -16,8 +16,7 @@
 #
 
 from couchbase_tests.base import CouchbaseTestCase
-from couchbase_v2.connstr import ConnectionString
-import gc
+from couchbase_core.connstr import ConnectionString
 
 
 class ConnStrTest(CouchbaseTestCase):

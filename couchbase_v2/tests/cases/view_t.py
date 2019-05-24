@@ -16,11 +16,11 @@
 #
 
 from couchbase_tests.base import ViewTestCase
-from couchbase_v2.user_constants import FMT_JSON
+from couchbase_core.user_constants import FMT_JSON
 from couchbase_v2.exceptions import HTTPError, NotSupportedError
 from couchbase_v2.bucket import Bucket
 
-from couchbase_v2.auth_domain import AuthDomain
+from couchbase_core.auth_domain import AuthDomain
 from nose import SkipTest
 from nose.plugins.attrib import attr
 

@@ -19,8 +19,8 @@
 This file contains the base N1QL implementation for async frameworks.
 """
 
-from couchbase_v2.n1ql import N1QLRequest
-from couchbase_v2.asynchronous.rowsbase import AsyncRowsBase
+from couchbase_core.n1ql import N1QLRequest
+from .rowsbase import AsyncRowsBase
 
 
 class AsyncN1QLRequest(AsyncRowsBase, N1QLRequest):

@@ -18,7 +18,7 @@
 from couchbase_v2.exceptions import NotFoundError
 
 from couchbase_tests.base import MockTestCase
-from couchbase_v2.mockserver import MockControlClient
+from couchbase_core.mockserver import MockControlClient
 
 class ReplicaGetTest(MockTestCase):
     def setUp(self):

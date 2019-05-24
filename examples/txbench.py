@@ -21,7 +21,7 @@ from twisted.internet import reactor
 
 from txcouchbase.bucket import RawBucket, Bucket
 from couchbase_core import FMT_BYTES
-from couchbase_v2.transcoder import Transcoder
+from couchbase_core.transcoder import Transcoder
 
 ap = argparse.ArgumentParser()
 

@@ -33,9 +33,9 @@ import pickle
 
 import couchbase_core.exceptions as E
 import couchbase_core._libcouchbase as C
-from couchbase_v2.items import ItemCollection, ItemOptionDict, ItemSequence
-from couchbase_v2.result import SubdocResult
-from couchbase_v2.subdocument import MultiValue
+from couchbase_core.items import ItemCollection, ItemOptionDict, ItemSequence
+from couchbase_core.result import SubdocResult
+from couchbase_core.subdocument import MultiValue
 from .transcodable import Transcodable
 
 

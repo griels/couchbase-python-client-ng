@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from couchbase_v2.items import Item, ItemSequence
+from couchbase_core.items import Item, ItemSequence
 from couchbase_v2.bucket import Bucket
 from random import randint
 

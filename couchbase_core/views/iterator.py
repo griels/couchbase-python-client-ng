@@ -19,8 +19,8 @@ from collections import namedtuple
 from copy import deepcopy
 from warnings import warn
 
-from couchbase_v2.exceptions import ArgumentError, CouchbaseError, ViewEngineError, NotSupportedError
-from couchbase_v2.views.params import ViewQuery, SpatialQuery, QueryBase
+from ..exceptions import ArgumentError, CouchbaseError, ViewEngineError, NotSupportedError
+from .params import ViewQuery, SpatialQuery, QueryBase
 from couchbase_core._pyport import basestring
 import couchbase_core._libcouchbase as C
 

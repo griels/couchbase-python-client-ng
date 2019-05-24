@@ -19,9 +19,9 @@ import json
 import time
 
 import couchbase_core._libcouchbase as _LCB
-import couchbase_v2.exceptions as exceptions
-from couchbase_v2.exceptions import CouchbaseError, ArgumentError
-from couchbase_v2.views.params import Query, SpatialQuery, STALE_OK
+import couchbase_core.exceptions as exceptions
+from couchbase_core.exceptions import CouchbaseError, ArgumentError
+from couchbase_core.views.params import Query, SpatialQuery, STALE_OK
 from couchbase_core._pyport import single_dict_key
 from couchbase_core._ixmgmt import IxmgmtRequest, N1qlIndex, N1QL_PRIMARY_INDEX
 

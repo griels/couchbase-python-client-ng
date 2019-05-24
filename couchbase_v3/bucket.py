@@ -1,13 +1,15 @@
-from couchbase_v2.bucket import Bucket as SDK2Bucket
+from couchbase_core.bucket import Bucket as SDK2Bucket
 from .collection import CBCollection as SDK3Collection, CollectionOptions, CBCollection
 from .options import OptionBlock, forward_args
 from .result import *
+
+
 class BucketOptions(OptionBlock):
     pass
 
 
 class IViewResult(IResult):
-    def __init__(self, sdk2_result # type: couchbase_v2.ViewResult
+    def __init__(self, sdk2_result # type: couchbase_core.ViewResult
                 ):
         pass
 

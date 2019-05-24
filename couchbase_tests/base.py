@@ -140,9 +140,9 @@ except ImportError:
     from fallback import configparser
 
 from couchbase_v2.exceptions import CouchbaseError
-from couchbase_v2.admin import Admin
-from couchbase_v2.mockserver import CouchbaseMock, BucketSpec, MockControlClient
-from couchbase_v2.result import (
+from couchbase_core.admin import Admin
+from couchbase_core.mockserver import CouchbaseMock, BucketSpec, MockControlClient
+from couchbase_core.result import (
     ValueResult, OperationResult, ObserveInfo, Result)
 from couchbase_core._libcouchbase import MultiResult
 from couchbase_core._pyport import basestring
@@ -418,7 +418,7 @@ class CouchbaseTestCase(ResourcedTestCase):
         if not hasattr(self, 'factory'):
             from couchbase_v2.bucket import Bucket
             from couchbase_v2.views.iterator import View
-            from couchbase_v2.result import (
+            from couchbase_core.result import (
                 MultiResult, Result, OperationResult, ValueResult,
                 ObserveInfo)
 

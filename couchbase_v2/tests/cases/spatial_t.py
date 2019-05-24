@@ -17,7 +17,7 @@
 from unittest import SkipTest
 
 from couchbase_tests.base import RealServerTestCase
-from couchbase_v2.user_constants import FMT_JSON
+from couchbase_core.user_constants import FMT_JSON
 from couchbase_v2.views.params import SpatialQuery
 import os
 

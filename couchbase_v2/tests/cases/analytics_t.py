@@ -341,10 +341,6 @@ class CBASTestSpecific(CBASTestBase):
         result = list(query)
         logging.info("got result [{}]".format(result))
 
-    def test_cbas_alias(self):
-        import couchbase_v2.cbas
-        query = couchbase_v2.cbas.AnalyticsQuery('SELECT * FROM Metadata.`Dataverse`')
-
 
 class TestIdGenerator:
     def __init__(self):

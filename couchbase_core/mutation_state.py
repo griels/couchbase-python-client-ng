@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from couchbase_v2.exceptions import CouchbaseError
+from couchbase_core.exceptions import CouchbaseError
 from couchbase_core import _from_json, _to_json
 
 class MissingTokenError(CouchbaseError):

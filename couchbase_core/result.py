@@ -24,7 +24,7 @@ from couchbase_core._libcouchbase import (
     AsyncResult)
 from couchbase_core._pyport import long, xrange, izip
 import couchbase_core._libcouchbase as C
-import couchbase_v2.exceptions_backport as E
+import couchbase_core.exceptions as E
 
 
 class SubdocResult(C._SDResult):

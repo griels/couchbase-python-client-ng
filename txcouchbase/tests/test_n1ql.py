@@ -17,7 +17,7 @@
 from twisted.internet import defer
 
 from txcouchbase.bucket import BatchedN1QLRequest
-from couchbase_v2.asynchronous.n1ql import AsyncN1QLRequest
+from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
 
 from couchbase_tests.base import MockTestCase
 from txcouchbase.tests.base import gen_base

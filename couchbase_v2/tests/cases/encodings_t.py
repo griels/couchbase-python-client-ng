@@ -20,7 +20,7 @@ from couchbase_v2 import (
     FMT_LEGACY_MASK)
 from couchbase_v2.exceptions import ValueFormatError, CouchbaseError
 from couchbase_tests.base import ConnectionTestCase
-from couchbase_v2.transcoder import TranscoderPP, LegacyTranscoderPP
+from couchbase_core.transcoder import TranscoderPP, LegacyTranscoderPP
 
 BLOB_ORIG =  b'\xff\xfe\xe9\x05\xdc\x05\xd5\x05\xdd\x05'
 

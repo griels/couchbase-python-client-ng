@@ -18,15 +18,15 @@
 import sys
 import os
 
-from couchbase_v2.admin import Admin
+from couchbase_core.admin import Admin
 from couchbase_v2.bucket import Bucket
-from couchbase_v2.result import HttpResult
-from couchbase_v2.connstr import ConnectionString
+from couchbase_core.result import HttpResult
+from couchbase_core.connstr import ConnectionString
 from couchbase_v2.exceptions import (
     ArgumentError, AuthError, CouchbaseError,
     CouchbaseNetworkError, HTTPError)
 from couchbase_tests.base import CouchbaseTestCase, SkipTest
-from couchbase_v2.auth_domain import AuthDomain
+from couchbase_core.auth_domain import AuthDomain
 
 import time
 
@@ -98,8 +98,8 @@ class AdminSimpleTest(CouchbaseTestCase):
                           port=self.cluster_info.port)
 
     def test_bad_host(self):
-        if sys.version_info >= (3,6) and sys.platform.startswith('linux'):
-            raise SkipTest("To be fixed on Linux 3.6")
+        #if sys.version_info >= (3,6) and sys.platform.startswith('linux'):
+        #    raise SkipTest("To be fixed on Linux 3.6")
         # admin connections don't really connect until an action is performed
         admin = Admin('username', 'password', host='127.0.0.1', port=1)
         self.assertRaises(CouchbaseNetworkError, admin.bucket_info, 'default')

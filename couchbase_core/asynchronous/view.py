@@ -19,8 +19,8 @@
 This file contains the view implementation for Async
 """
 
-from couchbase_v2.views.iterator import View
-from couchbase_v2.asynchronous.rowsbase import AsyncRowsBase
+from couchbase_core.views.iterator import View
+from .rowsbase import AsyncRowsBase
 
 
 class AsyncViewBase(AsyncRowsBase, View):

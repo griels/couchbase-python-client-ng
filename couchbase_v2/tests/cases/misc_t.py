@@ -27,7 +27,7 @@ except ImportError:
 
 
 from couchbase_tests.base import ConnectionTestCaseBase
-from couchbase_v2.user_constants import FMT_AUTO, FMT_JSON, FMT_PICKLE
+from couchbase_core.user_constants import FMT_AUTO, FMT_JSON, FMT_PICKLE
 from couchbase_v2.exceptions import ClientTemporaryFailError
 from couchbase_v2.exceptions import CouchbaseError
 import re

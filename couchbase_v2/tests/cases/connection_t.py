@@ -24,7 +24,7 @@ from couchbase_core.exceptions import (AuthError, BucketNotFoundError, Couchbase
                                      NotFoundError, InvalidError,
                                      TimeoutError)
 from couchbase_tests.base import CouchbaseTestCase, SkipTest, ConnectionTestCase
-from couchbase_v2.connstr import ConnectionString
+from couchbase_core.connstr import ConnectionString
 
 
 class ConnectionTest(CouchbaseTestCase):

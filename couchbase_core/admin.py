@@ -21,9 +21,9 @@ change
 from time import time, sleep
 
 import couchbase_core._libcouchbase as LCB
-import couchbase_v2.exceptions as E
+import couchbase_core.exceptions as E
 from couchbase_core._pyport import ulp, basestring
-from couchbase_v2.auth_domain import AuthDomain
+from couchbase_core.auth_domain import AuthDomain
 from couchbase_core._libcouchbase import FMT_JSON
 
 METHMAP = {

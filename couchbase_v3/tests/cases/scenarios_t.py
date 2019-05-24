@@ -28,11 +28,11 @@ import time
 
 from couchbase_core.transcodable import Transcodable
 
-import couchbase_v2.connstr
-import couchbase_v2.exceptions
+import couchbase_core.connstr
+import couchbase_core.exceptions
 
 from couchbase_v3 import JSONDocument
-from couchbase_v3.cluster import Cluster
+from couchbase.cluster import Cluster
 from couchbase_v3 import ReplicateTo, PersistTo, FiniteDuration, copy, \
     Seconds, ReplicaNotConfiguredException, DocumentConcurrentlyModifiedException, \
     DocumentMutationLostException, ReplicaNotAvailableException, MutateSpec, CASMismatchException, \
@@ -56,7 +56,7 @@ class Scenarios(ConnectionTestCase):
         # prepare:
         # 1) Connect to a Cluster
         connargs=self.cluster_info.make_connargs()
-        connstr_abstract=couchbase_v2.connstr.ConnectionString.parse(connargs.pop('connection_string'))
+        connstr_abstract= couchbase_core.connstr.ConnectionString.parse(connargs.pop('connection_string'))
         bucket_name=connstr_abstract.bucket
         connstr_abstract.bucket=None
         self.cluster = Cluster(connstr_abstract)
@@ -179,7 +179,7 @@ class Scenarios(ConnectionTestCase):
             try:
                 callback(replicate_to)
                 success = True
-            except couchbase_v2.exceptions.KeyExistsError:
+            except couchbase_core.exceptions.KeyExistsError:
                 print("Our work here is done")
                 break
 

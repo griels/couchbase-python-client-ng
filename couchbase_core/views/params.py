@@ -22,7 +22,7 @@ import json
 from copy import deepcopy
 
 from couchbase_core._pyport import long, ulp, basestring
-from couchbase_v2.exceptions import ArgumentError
+from ..exceptions import ArgumentError
 
 # Some constants
 STALE_UPDATE_BEFORE = "false"

@@ -2,8 +2,8 @@ from gevent.event import AsyncResult, Event
 from gevent.hub import get_hub, getcurrent, Waiter
 
 from couchbase_v2.asynchronous.bucket import AsyncBucket
-from couchbase_v2.asynchronous.view import AsyncViewBase
-from couchbase_v2.asynchronous.n1ql import AsyncN1QLRequest
+from couchbase_core.asynchronous.view import AsyncViewBase
+from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
 from couchbase_v2.views.iterator import AlreadyQueriedError
 try:
     from gcouchbase.iops_gevent0x import IOPS

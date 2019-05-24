@@ -30,7 +30,6 @@ import couchbase_core._libcouchbase as _LCB
 from typing import Callable, Any, Union, NewType, Mapping, List
 JSON = Union[str, int, float, bool, None, Mapping[str, 'JSON'], List['JSON']]
 
-from couchbase_v2.crypto import *
 try:
     from couchbase_core._version import __version__
 
@@ -136,13 +135,3 @@ def enable_logging():
 def disable_logging():
     import couchbase_core._logutil
     couchbase_core._logutil.configure(False)
-
-
-class Couchbase(object):
-    @classmethod
-    def connect(self, bucket, **kwargs):
-        from couchbase_v2.bucket import _depr
-        from couchbase_v2.connection import Connection
-        _depr('Couchbase.connect()', 'Bucket()')
-        return Connection(bucket, **kwargs)
-

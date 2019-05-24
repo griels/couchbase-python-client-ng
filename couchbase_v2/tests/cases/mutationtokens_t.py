@@ -18,7 +18,7 @@ import json
 
 
 from couchbase_tests.base import ConnectionTestCase, PYCBC_BYPASS_V3_FAILURES
-from couchbase_v2.connstr import ConnectionString
+from couchbase_core.connstr import ConnectionString
 from couchbase_core._pyport import long
 from couchbase_v2.mutation_state import MutationState
 

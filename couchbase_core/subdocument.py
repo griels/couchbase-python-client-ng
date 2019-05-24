@@ -5,7 +5,7 @@ from couchbase_core._libcouchbase import (
     LCB_SDCMD_COUNTER, LCB_SDCMD_REMOVE, LCB_SDCMD_ARRAY_INSERT
 )
 
-import couchbase_v2.priv_constants as _P
+import couchbase_core.priv_constants as _P
 
 # Defined in libcouchbase's headers. We don't want to force a hard dependency
 # on a later version of libcouchbase just for these flags, especially

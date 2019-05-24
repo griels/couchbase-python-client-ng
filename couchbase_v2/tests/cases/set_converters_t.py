@@ -21,7 +21,7 @@ import pickle
 from couchbase_tests.base import ConnectionTestCase
 import couchbase_core
 import couchbase_core._libcouchbase as LCB
-from couchbase_v2.user_constants import FMT_JSON
+from couchbase_core.user_constants import FMT_JSON
 
 class ConverertSetTest(ConnectionTestCase):
     def _swap_converters(self, swapfunc, kbase, new_enc, new_dec):

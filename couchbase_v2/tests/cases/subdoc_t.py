@@ -1,6 +1,6 @@
 from couchbase_tests.base import ConnectionTestCase, PYCBC_BYPASS_V3_FAILURES
 from couchbase_core._libcouchbase import FMT_UTF8
-import couchbase_v2.subdocument as SD
+import couchbase_core.subdocument as SD
 import couchbase_v2.exceptions as E
 
 

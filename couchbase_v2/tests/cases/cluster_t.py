@@ -15,10 +15,8 @@
 # limitations under the License.
 #
 
-from unittest import SkipTest
-
 from couchbase_tests.base import CouchbaseTestCase
-from couchbase_v2.connstr import ConnectionString
+from couchbase_core.connstr import ConnectionString
 from couchbase_v2.cluster import Cluster, ClassicAuthenticator,PasswordAuthenticator, NoBucketError, MixedAuthError, CertAuthenticator
 import gc
 

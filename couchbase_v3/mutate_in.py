@@ -1,8 +1,8 @@
 from typing import *
-import couchbase_v2.subdocument
+import couchbase_core.subdocument
 from .subdoc import SubdocSpecItem
 from .result import IResult, SDK2Result
-from .options import OptionBlock, OptionBlockTimeOut
+from .options import OptionBlockTimeOut
 
 try:
     from abc import abstractmethod
@@ -33,7 +33,7 @@ class MutateReplace(MutateInSpecItemBase):
         self.value=value
 
     def _as_spec(self):
-        return couchbase_v2.subdocument.replace(self.path,self.value,**self.kwargs)
+        return couchbase_core.subdocument.replace(self.path, self.value, **self.kwargs)
 
 
 class MutateInsert(MutateInSpecItemBase):
@@ -42,7 +42,7 @@ class MutateInsert(MutateInSpecItemBase):
         self.value=value
 
     def _as_spec(self):
-        return couchbase_v2.subdocument.insert(self.path, self.value, self.create_parents,**self.kwargs)
+        return couchbase_core.subdocument.insert(self.path, self.value, self.create_parents, **self.kwargs)
 
 
 MutateInSpec = Iterable[MutateInSpecItemBase]

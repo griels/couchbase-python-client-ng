@@ -16,11 +16,11 @@
 #
 from couchbase_core._libcouchbase import FMT_JSON
 
-import couchbase_v2.n1ql as N
-import couchbase_v2.exceptions
+import couchbase_core.n1ql as N
+import couchbase_core.exceptions
 import couchbase_core._libcouchbase as LCB
 import time
-from couchbase_v2.exceptions import CouchbaseInternalError
+from couchbase_core.exceptions import CouchbaseInternalError
 try:
     import urlparse
 except:
@@ -85,14 +85,14 @@ class AnalyticsQuery(N.N1QLQuery):
     def update(self, *args, **kwargs):
         if args:
             if 'args' in self._body:
-                raise couchbase_v2.exceptions.ArgumentError(
+                raise couchbase_core.exceptions.ArgumentError(
                     "Cannot append positional args to existing query positional args")
             else:
                 self._add_pos_args(args)
         if kwargs:
             overlapping_keys = set(kwargs.keys()) & set(self._body.keys())
             if overlapping_keys:
-                raise couchbase_v2.exceptions.ArgumentError("Cannot overwrite named args in query")
+                raise couchbase_core.exceptions.ArgumentError("Cannot overwrite named args in query")
             else:
                 self._set_named_args(**kwargs)
 
@@ -142,7 +142,7 @@ class AnalyticsRequest(N.N1QLRequest):
 
         :param params: An :class:`AnalyticsQuery` object.
         :param host: the host to send the request to.
-        :param parent: The parent :class:`~.couchbase_v2.bucket.Bucket` object
+        :param parent: The parent :class:`~.couchbase_core.bucket.Bucket` object
 
         To actually receive results of the query, iterate over this
         object.
@@ -157,7 +157,7 @@ class AnalyticsRequest(N.N1QLRequest):
 
 class DeferredAnalyticsRequest(AnalyticsRequest):
     def __init__(self, params, host, parent, timeout = None, interval = None):
-        # type: (DeferredAnalyticsQuery, str, couchbase_v2.bucket.Bucket, Optional[float], Optional[float]) -> None
+        # type: (DeferredAnalyticsQuery, str, couchbase_core.bucket.Bucket, Optional[float], Optional[float]) -> None
         """
         Object representing the execution of a deferred request on the
         server.
@@ -172,7 +172,7 @@ class DeferredAnalyticsRequest(AnalyticsRequest):
 
         :param params: An :class:`DeferredAnalyticsQuery` object.
         :param host: the host to send the request to.
-        :param parent: The parent :class:`~.couchbase_v2.bucket.Bucket` object.
+        :param parent: The parent :class:`~.couchbase_core.bucket.Bucket` object.
         :param timeout: Timeout in seconds.
         :param interval: Interval in seconds for deferred polling.
 
@@ -211,10 +211,10 @@ class DeferredAnalyticsRequest(AnalyticsRequest):
             if result=='success':
                 return True
             if result=='failed':
-                raise couchbase_v2.exceptions.InternalError("Failed exception")
+                raise couchbase_core.exceptions.InternalError("Failed exception")
             time.sleep(self.interval)
 
-        raise couchbase_v2.exceptions.TimeoutError("Deferred query timed out")
+        raise couchbase_core.exceptions.TimeoutError("Deferred query timed out")
 
     class MRESWrapper:
         def __init__(self, response):
@@ -247,15 +247,15 @@ class DeferredAnalyticsRequest(AnalyticsRequest):
         except Exception as e:
             pass
         if status == 'failed':
-            raise couchbase_v2.exceptions.InternalError("Deferred Query Failed")
+            raise couchbase_core.exceptions.InternalError("Deferred Query Failed")
         if status == 'success':
             response_handle = response_value.get('handle')
             if not response_handle:
-                raise couchbase_v2.exceptions.InternalError("Got success but no handle from deferred query response")
+                raise couchbase_core.exceptions.InternalError("Got success but no handle from deferred query response")
             try:
                 parsed_response_handle = urlparse.urlparse(response_handle)
             except Exception as e:
-                raise couchbase_v2.exceptions.InternalError("Got invalid url: {}".format(e))
+                raise couchbase_core.exceptions.InternalError("Got invalid url: {}".format(e))
             final_response = self.parent._http_request(type=LCB.LCB_HTTP_TYPE_CBAS,
                                                        method=LCB.LCB_HTTP_METHOD_GET,
                                                        path=parsed_response_handle.path,

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from couchbase_tests.base import RealServerTestCase, SkipTest
-from couchbase_v2.bucketmanager import BucketManager
+from couchbase_core.bucketmanager import BucketManager
 from couchbase_v2.bucket import Bucket
 import couchbase_v2.exceptions as E
 from nose.plugins.attrib import attr

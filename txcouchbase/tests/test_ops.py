@@ -17,7 +17,7 @@ from couchbase_tests.base import ConnectionTestCase
 
 from txcouchbase.tests.base import gen_base
 from couchbase_v2.exceptions import NotFoundError
-from couchbase_v2.result import (
+from couchbase_core.result import (
     OperationResult, ValueResult)
 
 

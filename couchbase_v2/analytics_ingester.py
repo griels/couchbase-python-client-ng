@@ -18,10 +18,10 @@
 from typing import Callable, Any, Union
 
 from couchbase_v2.bucket import Bucket
-from couchbase_v2.analytics import AnalyticsQuery
+from couchbase_core.analytics import AnalyticsQuery
 from couchbase_core import JSON
 import uuid
-from couchbase_v2.exceptions import ArgumentError
+from couchbase_core.exceptions import ArgumentError
 
 IdGenerator = Callable[[JSON], str]
 DataConverter = Callable[[JSON], Any]

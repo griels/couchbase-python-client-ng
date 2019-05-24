@@ -1,6 +1,6 @@
 from typing import *
 
-from couchbase_v2.subdocument import Spec
+from couchbase_core.subdocument import Spec
 from .options import Seconds
 from couchbase_core.transcodable import Transcodable
 from couchbase_core._libcouchbase import Result as SDK2Result
@@ -13,7 +13,7 @@ try:
 except:
     pass
 
-from couchbase_v2.result import MultiResult, SubdocResult
+from couchbase_core.result import MultiResult, SubdocResult
 
 
 class ContentProxy:

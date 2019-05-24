@@ -1,6 +1,6 @@
 from txcouchbase.bucket import Bucket, RawBucket
-from couchbase_v2.bucket import _depr
-from couchbase_v2.connstr import convert_1x_args
+from couchbase_core.bucket import _depr
+from couchbase_core.connstr import convert_1x_args
 
 class TxAsyncConnection(RawBucket):
     def __init__(self, bucket, **kwargs):

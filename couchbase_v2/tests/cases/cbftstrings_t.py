@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 from couchbase_tests.base import CouchbaseTestCase
-import couchbase_v2.fulltext as cbft
+import couchbase_core.fulltext as cbft
 from couchbase_v2.mutation_state import MutationState
 
 

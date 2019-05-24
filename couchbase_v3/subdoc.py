@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from typing import *
-from couchbase_v2 import subdocument as SD
+from couchbase_core import subdocument as SD
 
 SDType = type(SD)
 

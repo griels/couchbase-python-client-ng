@@ -1,5 +1,5 @@
 #
-# Copyright 2018, Couchbase, Inc.
+# Copyright 2017, Couchbase, Inc.
 # All Rights Reserved
 #
 # Licensed under the Apache License, Version 2.0 (the "License")
@@ -14,6 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import sys
-import couchbase_v2.analytics
-sys.modules[__name__]=sys.modules['couchbase_v2.analytics']
+
+"""
+This file contains the FTS implementation for Async
+"""
+
+from couchbase_core.fulltext import SearchRequest
+from .rowsbase import AsyncRowsBase
+
+
+class AsyncSearchRequest(AsyncRowsBase, SearchRequest):
+    def __init__(self, *args, **kwargs):
+        SearchRequest.__init__(self, *args, **kwargs)

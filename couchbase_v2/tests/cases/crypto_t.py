@@ -20,7 +20,7 @@ from couchbase_tests.base import ConnectionTestCase
 import codecs
 import couchbase_v2.exceptions
 from couchbase_v2.exceptions import CryptoProviderKeySizeException
-from couchbase_v2.crypto import CTypesCryptoProvider, InMemoryKeyStore, PythonCryptoProvider
+from couchbase_core.crypto import CTypesCryptoProvider, InMemoryKeyStore, PythonCryptoProvider
 import os
 import logging
 import couchbase_core._libcouchbase as _LCB

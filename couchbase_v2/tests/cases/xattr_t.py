@@ -1,5 +1,5 @@
 from couchbase_tests.base import MockTestCase
-import couchbase_v2.subdocument as SD
+import couchbase_core.subdocument as SD
 
 
 class XattrTest(MockTestCase):

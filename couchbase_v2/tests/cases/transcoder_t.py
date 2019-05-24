@@ -17,7 +17,7 @@
 import json
 
 from couchbase_tests.base import ConnectionTestCase
-from couchbase_v2.transcoder import TranscoderPP, Transcoder
+from couchbase_core.transcoder import TranscoderPP, Transcoder
 from couchbase_v2.bucket import Bucket
 from couchbase_core import FMT_UTF8
 import couchbase_v2.exceptions as E

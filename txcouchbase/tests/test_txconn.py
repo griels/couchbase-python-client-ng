@@ -19,7 +19,7 @@ from couchbase_v2.exceptions import (
     ObjectDestroyedError)
 
 from couchbase_tests.base import ConnectionTestCase
-from couchbase_v2.connstr import ConnectionString
+from couchbase_core.connstr import ConnectionString
 from txcouchbase.tests.base import gen_base
 from txcouchbase.bucket import Bucket
 

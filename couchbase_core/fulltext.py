@@ -1,8 +1,8 @@
 import abc
 
 
-from couchbase_v2.exceptions import CouchbaseError
-from couchbase_v2.views.iterator import AlreadyQueriedError
+from couchbase_core.exceptions import CouchbaseError
+from couchbase_core.views.iterator import AlreadyQueriedError
 from couchbase_core import _to_json
 from couchbase_core._pyport import unicode
 

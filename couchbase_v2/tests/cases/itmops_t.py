@@ -16,10 +16,10 @@
 #
 
 from couchbase_tests.base import ConnectionTestCase
-from couchbase_v2.items import Item, ItemSequence, ItemOptionDict
+from couchbase_core.items import Item, ItemSequence, ItemOptionDict
 from couchbase_v2.exceptions import (
     NotFoundError, ValueFormatError, ArgumentError, KeyExistsError)
-from couchbase_v2.user_constants import FMT_BYTES, FMT_UTF8
+from couchbase_core.user_constants import FMT_BYTES, FMT_UTF8
 
 class ItemTest(ConnectionTestCase):
     """
