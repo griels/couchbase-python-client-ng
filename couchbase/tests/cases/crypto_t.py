@@ -86,9 +86,11 @@ class ROT13PythonCryptoProvider(PythonCryptoProvider):
         return 'key'
 
 
-
-
 class FieldEncryptionTests(ConnectionTestCase):
+    def setUp(self, **kwargs):
+        if _LCB.PYCBC_LCB_API>0x030000:
+            raise SkipTest("Crypto not implemented in LCB V4 API yet")
+        super(FieldEncryptionTests,self).setUp(**kwargs)
 
     def test_keystore_returns_correct_value(self):
         keystore = InMemoryKeyStore()

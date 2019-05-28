@@ -47,7 +47,7 @@ class TouchTest(ConnectionTestCase):
     def test_trivial_multi_touch(self):
         kv = self.gen_kv_dict(prefix="trivial_multi_touch")
         self.cb.upsert_multi(kv, ttl=1)
-        time.sleep(2)
+        time.sleep(10)
         rvs = self.cb.get_multi(kv.keys(), quiet=True)
         self.assertFalse(rvs.all_ok)
 
@@ -57,7 +57,7 @@ class TouchTest(ConnectionTestCase):
         self.assertTrue(rvs.all_ok)
 
         self.cb.touch_multi(kv.keys(), ttl=1)
-        time.sleep(2)
+        time.sleep(10)
         rvs = self.cb.get_multi(kv.keys(), quiet=True)
         self.assertFalse(rvs.all_ok)
 
