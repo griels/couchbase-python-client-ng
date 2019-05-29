@@ -38,6 +38,12 @@
     "PYCBC_LCB_API_ALL_SUPPORTED" : ["0x021003","0x032000"],
     "PYCBC_CORE": "couchbase_core"
   },
+  "patches": {
+    "git":{
+      "repo":"http://review.couchbase.org/libcouchbase",
+      "ref":"refs/changes/42/109842/2"
+    }
+  },
   "apis": {
     "0x021003": {
       "git": {

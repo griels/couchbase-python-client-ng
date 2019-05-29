@@ -121,7 +121,7 @@ else()
 endif()
 
 set(LCB_COLLECTIONS_REF ${build_cfg.apis.${PYCBC_LCB_API}.git.ref})
-
+set(PATCH_REF )
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPYCBC_LCB_API=${PYCBC_LCB_API}")
 set(LCB_REPO ${build_cfg.apis.${PYCBC_LCB_API}.git.repo})
 if (NOT LCB_REPO)
@@ -148,12 +148,19 @@ if (LCB_SRC)
 	        		&& git reset --hard
 	       		 	&& git clean -f
 	        		&& git checkout FETCH_HEAD)
-
     else()
         set (REF_CMDS echo "no ref required")
 	endif()
 
-    SET(LCB_BUILD_DIR "${CMAKE_BINARY_DIR}/Release/lcb_build")
+    if (${build_cfg.patches.git})
+        set (PATCH_COMMAND git fetch ${build_cfg.patches.git.repo} ${build_cfg.patches.git.ref}
+                && git reset --hard
+                && git clean -f
+                && git cherry-pick FETCH_HEAD)
+    else()
+        set (PATCH_COMMAND echo "no patch required")
+    endif()
+        SET(LCB_BUILD_DIR "${CMAKE_BINARY_DIR}/Release/lcb_build")
     SET(LCB_DBGBUILD_DIR "${CMAKE_BINARY_DIR}/Release/lcb_dbgbuild")
     if (CMAKE_BUILD_TYPE MATCHES DEBUG)
         set(LCB_SELECTED_BUILD_DIR ${LCB_DBGBUILD_DIR})
@@ -176,6 +183,7 @@ if (LCB_SRC)
         ExternalProject_Add(libcouchbase_src
             GIT_REPOSITORY ${LCB_REPO}
             GIT_TAG ${LCB_TAG}
+            PATCH_COMMAND ${PATCH_COMMAND}
             CONFIGURE_COMMAND ${CMAKE_COMMAND} -E make_directory ${LCB_BUILD_DIR}
             COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/install
             COMMAND cd <SOURCE_DIR> && ${REF_CMDS}
@@ -185,7 +193,6 @@ if (LCB_SRC)
 
             INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/install
             INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include <INSTALL_DIR>/include
-
             COMMAND ${CMAKE_COMMAND} -E make_directory <INSTALL_DIR>/bin/
             COMMAND ${CMAKE_COMMAND} -E make_directory <INSTALL_DIR>/lib/
 
@@ -227,6 +234,7 @@ if (LCB_SRC)
                 GIT_REPOSITORY ${LCB_REPO}
                 GIT_TAG ${LCB_TAG}
                 UPDATE_COMMAND ""
+                PATCH_COMMAND ${PATCH_COMMAND}
                 CONFIGURE_COMMAND ${CMAKE_COMMAND} -E make_directory "${LCB_BUILD_DIR}"
                 make_dir ${LCB_SELECTED_BUILD_DIR}
 
