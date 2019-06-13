@@ -6,7 +6,7 @@ Querying Views
 ``View`` Object
 ===============
 
-.. module:: couchbase.views.iterator
+.. module:: couchbase_core.views.iterator
 
 .. class:: View
 
@@ -108,7 +108,7 @@ Row Processing
 ``Query`` Object
 ================
 
-.. module:: couchbase.views.params
+.. module:: couchbase_core.views.params
 
 
 .. class:: Query
@@ -487,7 +487,7 @@ indexing operations.
 Value Type For Options
 ----------------------
 
-.. currentmodule:: couchbase.views.params
+.. currentmodule:: couchbase_core.views.params
 
 Different options accept different types, which shall be enumerated here
 
@@ -498,7 +498,7 @@ Different options accept different types, which shall be enumerated here
 Boolean Type
 ^^^^^^^^^^^^
 
-.. currentmodule:: couchbase.views.params
+.. currentmodule:: couchbase_core.views.params
 
 Options which accept booleans may accept the following Python types:
 
@@ -516,7 +516,7 @@ perhaps it was passed accidentally due to a bug in the application.
 Numeric Type
 ^^^^^^^^^^^^
 
-.. currentmodule:: couchbase.views.params
+.. currentmodule:: couchbase_core.views.params
 
 Options which accept numeric values accept the following Python types:
 
@@ -533,7 +533,7 @@ It is an error to pass a ``bool`` as a number, despite the fact that in Python,
 JSON Value
 ^^^^^^^^^^
 
-.. currentmodule:: couchbase.views.params
+.. currentmodule:: couchbase_core.views.params
 
 Options which accept JSON values accept native Python types (and any user-
 defined classes) which can successfully be passed through ``json.dumps``.
@@ -552,7 +552,7 @@ strings, and booleans).
 JSON Array
 ^^^^^^^^^^
 
-.. currentmodule:: couchbase.views.params
+.. currentmodule:: couchbase_core.views.params
 
 Options which accept JSON array values should be pass a Python type which
 can be converted to a JSON array. This typically means any ordered Python
@@ -567,7 +567,7 @@ at the option handling layer
 String
 ^^^^^^
 
-.. currentmodule:: couchbase.views.params
+.. currentmodule:: couchbase_core.views.params
 
 Options which accept strings accept so-called "semantic strings", specifically;
 the following Python types are acceptable:
@@ -611,7 +611,7 @@ The type of each element is parameter-specific.
 Unspecified Value
 ^^^^^^^^^^^^^^^^^
 
-.. currentmodule:: couchbase.views.params
+.. currentmodule:: couchbase_core.views.params
 
 Conventionally, it is common for APIs to treat the value ``None`` as being
 a default parameter of some sort. Unfortunately since view queries deal with
@@ -627,16 +627,16 @@ discard the option-value pair.
 Convenience Constants
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. currentmodule:: couchbase.views.params
+.. currentmodule:: couchbase_core.views.params
 
 These are convenience *value* constants for some of the options
 
-.. autoattribute:: couchbase.views.params.ONERROR_CONTINUE
-.. autoattribute:: couchbase.views.params.ONERROR_STOP
-.. autoattribute:: couchbase.views.params.STALE_OK
-.. autoattribute:: couchbase.views.params.STALE_UPDATE_BEFORE
-.. autoattribute:: couchbase.views.params.STALE_UPDATE_AFTER
-.. autoattribute:: couchbase.views.params.UNSPEC
+.. autoattribute:: couchbase_core.views.params.ONERROR_CONTINUE
+.. autoattribute:: couchbase_core.views.params.ONERROR_STOP
+.. autoattribute:: couchbase_core.views.params.STALE_OK
+.. autoattribute:: couchbase_core.views.params.STALE_UPDATE_BEFORE
+.. autoattribute:: couchbase_core.views.params.STALE_UPDATE_AFTER
+.. autoattribute:: couchbase_core.views.params.UNSPEC
 
 
 

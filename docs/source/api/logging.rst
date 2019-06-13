@@ -2,7 +2,7 @@
 Logging
 =======
 
-.. currentmodule::couchbase
+.. currentmodule::couchbase_core
 
 .. versionadded:: 2.0.0
 
@@ -24,4 +24,4 @@ library
 
 
 
-.. autofunction:: couchbase.enable_logging
+.. autofunction:: couchbase_core.enable_logging

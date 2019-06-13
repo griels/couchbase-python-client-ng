@@ -2,7 +2,7 @@
 N1QL Queries
 ############
 
-.. currentmodule:: couchbase.n1ql
+.. currentmodule:: couchbase_core.n1ql
 
 .. class:: N1QLQuery
 

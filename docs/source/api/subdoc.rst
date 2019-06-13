@@ -1,10 +1,10 @@
-.. module:: couchbase.subdocument
+.. module:: couchbase_core.subdocument
 
 ================
 Sub-Document API
 ================
 
-.. currentmodule:: couchbase.subdocument
+.. currentmodule:: couchbase.subdoc
 
 The functions in this module can be used to specify operations to the
 :cb_bmeth:`lookup_in` and :cb_bmeth:`mutate_in` methods. Both the
@@ -37,19 +37,21 @@ methods are executed, the functions in this module just acting as an interface
 to specify what sorts of operations are to be executed.
 
 Throughout the SDK documentation, this module is referred to as ``SD`` which
-is significantly easier to type than ``couchbase.subdocument``. This is done
+is significantly easier to type than ``couchbase_core.subdocument``. This is done
 via
 
 .. code-block:: python
 
-    import couchbase.subdocument as SD
+    import couchbase.subdoc as SD
 
 -----------------
 Lookup Operations
 -----------------
 
-.. autofunction:: get
 .. autofunction:: exists
+.. autofunction:: get
+.. autofunction:: count
+.. autofunction:: get_full
 
 -------------------
 Mutation Operations
@@ -70,7 +72,10 @@ Mutation Operations
 Result Object
 -------------
 
-.. autoclass:: couchbase.result.SubdocResult
+.. autoclass:: couchbase.result.LookupInResult
+    :members:
+
+.. autoclass:: couchbase.result.MutateInResult
     :members:
 
 -----------

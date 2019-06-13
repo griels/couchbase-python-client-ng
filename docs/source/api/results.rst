@@ -2,7 +2,7 @@
 Result Objects
 ##############
 
-.. currentmodule:: couchbase.result
+.. currentmodule:: couchbase_core.result
 
 This is the base class for all result operations
 
@@ -116,7 +116,7 @@ field.
 `ObserveInfo` Object
 --------------------
 
-.. module:: couchbase.result
+.. module:: couchbase_core.result
 
-.. autoclass:: couchbase.result.ObserveInfo
+.. autoclass:: couchbase_core.result.ObserveInfo
     :members:
