@@ -2,6 +2,7 @@ from warnings import warn
 
 from couchbase_core._libcouchbase import Bucket as _Base
 import couchbase_core.exceptions as E
+from couchbase_core.n1ql import N1QLQuery, N1QLRequest
 from .views.params import make_options_string, make_dvpath
 import couchbase_core._libcouchbase as _LCB
 
@@ -689,6 +690,46 @@ class Bucket(_Base):
                                        replica=replica_index, quiet=quiet)
         else:
             return _Base._rget_multi(self, keys, quiet=quiet)
+
+    def n1ql_query(self, query, *args, **kwargs):
+        """
+        Execute a N1QL query.
+
+        This method is mainly a wrapper around the :class:`~.N1QLQuery`
+        and :class:`~.N1QLRequest` objects, which contain the inputs
+        and outputs of the query.
+
+        Using an explicit :class:`~.N1QLQuery`::
+
+            query = N1QLQuery(
+                'SELECT airportname FROM `travel-sample` WHERE city=$1', "Reno")
+            # Use this option for often-repeated queries
+            query.adhoc = False
+            for row in cb.n1ql_query(query):
+                print 'Name: {0}'.format(row['airportname'])
+
+        Using an implicit :class:`~.N1QLQuery`::
+
+            for row in cb.n1ql_query(
+                'SELECT airportname, FROM `travel-sample` WHERE city="Reno"'):
+                print 'Name: {0}'.format(row['airportname'])
+
+        With the latter form, *args and **kwargs are forwarded to the
+        N1QL Request constructor, optionally selected in kwargs['iterclass'],
+        otherwise defaulting to :class:`~.N1QLRequest`.
+
+        :param query: The query to execute. This may either be a
+            :class:`.N1QLQuery` object, or a string (which will be
+            implicitly converted to one).
+        :param kwargs: Arguments for :class:`.N1QLRequest`.
+        :return: An iterator which yields rows. Each row is a dictionary
+            representing a single result
+        """
+        if not isinstance(query, N1QLQuery):
+            query = N1QLQuery(query)
+
+        itercls = kwargs.pop('itercls', N1QLRequest)
+        return itercls(query, self, *args, **kwargs)
 
 
 def _depr(fn, usage, stacklevel=3):
