@@ -6,7 +6,7 @@ Logging
 
 .. versionadded:: 2.0.0
 
-Logging may be enabled programmatically via :meth:`couchbase.enable_logging()`
+Logging may be enabled programmatically via :meth:`couchbase_core.enable_logging()`
 or via the environment, setting the ``LCB_LOGLEVEL`` environment variable
 to a value between `0` and `5`.
 

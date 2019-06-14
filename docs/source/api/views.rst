@@ -40,7 +40,7 @@ Attributes
 
     .. attribute:: raw
 
-        The actual :class:`couchbase.bucket.HttpResult` object.
+        The actual :class:`couchbase_core.bucket.HttpResult` object.
         Note that this is only the *last* result returned. If using paginated
         views, the view comprises several such objects, and is cleared each
         time a new page is fetched.
@@ -100,7 +100,7 @@ Row Processing
     .. attribute:: doc
 
         If ``include_docs`` was specified, contains the actual
-        :class:`couchbase.bucket.Result` object for the document.
+        :class:`couchbase_core.bucket.Result` object for the document.
 
 
 
@@ -342,7 +342,7 @@ and for which the ``reduce`` value is enabled
         :Value Type: :ref:`viewtype_boolean`
 
         Note that if the view specified in the query (to e.g.
-        :meth:`couchbase.bucket.Bucket.query`) does not have a
+        :meth:`couchbase.bucket.Bucket.view_query`) does not have a
         reduce function specified, an exception will be thrown once the query
         begins.
 
@@ -588,7 +588,7 @@ use it as a string, you must explicitly do so prior to passing it as an option.
 Range Value
 ^^^^^^^^^^^
 
-.. currentmodule:: couchbase.view.params
+.. currentmodule:: couchbase_core.view.params
 
 Range specifiers take a sequence (list or tuple) of one or two elements.
 
@@ -647,7 +647,7 @@ These are convenience *value* constants for some of the options
 Circumventing Parameter Constraints
 -----------------------------------
 
-.. currentmodule:: couchbase.views.params
+.. currentmodule:: couchbase_core.views.params
 
 Sometimes it may be necessary to circumvent existing constraints placed by
 the client library regarding view option validation.
@@ -674,106 +674,4 @@ functions.
     strings.
 
     This has the benefit of providing normal behavior for known options.
-
-================
-Geospatial Views
-================
-
-Geospatial views are views which can index and filter items based on one or
-more independent axes or coordinates. This allows greater application at
-query-time to filter based on more than a single attribute.
-
-Filtering at query time is done though _ranges_. These ranges contain the
-start and end values for each key passed to the `emit()` in the `map()`
-function. Unlike Map-Reduce views and compound keys for *startkey* and
-*endkey*, each item in a spatial range is independent from any other, and is
-not sorted or evaluated in any particular order.
-
-
-See `GeoCouch_<https://github.com/couchbase/geocouch/wiki/Spatial-Views-API>` for more information.
-
-^^^^^^^^^^^^^^^^^^^^^^^^^
-Creating Geospatial Views
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Creating a geospatial view may be done in a manner similar to creating
-a normal view; except that the design document defines the spatial
-view in the ``spatial`` field, rather than in the ``views`` field.
-
-.. code-block:: python
-
-    ddoc = {
-        'spatial': {
-            'geoview':
-                '''
-                if (doc.loc) {
-                    emit({
-                        type: "Point",
-                        geometry: doc.loc
-                    }, doc.name);
-                }
-                '''
-        }
-    }
-    cb.bucket_manager().design_create('geo', ddoc)
-
-
-The above snippet will create a geospatial design doc (``geo``) with a single
-view (called ``geoview``).
-
-
-^^^^^^^^^^^^^^^^^^^^^^^^^
-Querying Geospatial Views
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-To query a geospatial view, you must pass an instance of :class:`.SpatialQuery`
-as the ``query`` keyword argument to either the :class:`.View` constructor, or
-the :meth:`.Bucket.query` method.
-
-.. code-block:: python
-
-    from couchbase.views.params import SpatialQuery
-    q = SpatialQuery(start_range=[0, -90, None], end_range=[180, 90, None])
-    for row in bkt.query(query=q):
-        print "Key:", row.key
-        print "Value:", row.value
-        print "Geometry", row.geometry
-
-
-.. currentmodule:: couchbase.views.params
-
-.. class:: SpatialQuery
-
-    .. automethod:: __init__
-
-    .. attribute:: start_range
-
-        The starting range to query. If querying geometries, this should be
-        the lower bounds of the longitudes and latitudes to filter. Use
-        `None` to indicate that a given dimension should not be bounded.
-
-        .. code-block:: python
-
-            q.start_range=[0, -90]
-
-    .. attribute:: end_range
-
-        The upper limit for the range. This contains the upper bounds for
-        the ranges specified in ``start_range``.
-
-        .. code-block:: python
-
-            q.end_range[180, 90]
-
-    .. attribute:: skip
-
-        See :attr:`.Query.skip`
-
-    .. attribute:: limit
-
-        See :attr:`.Query.limit`
-
-    .. attribute:: stale
-
-        See :attr:`.Query.stale`
 

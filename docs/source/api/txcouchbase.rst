@@ -19,7 +19,7 @@ Twisted.
 .. currentmodule:: txcouchbase.bucket
 
 For the most part, the ``txcouchbase`` API functions like its synchronous
-counterpart, :class:`~couchbase.bucket.Bucket`, except for its
+counterpart, :class:`~couchbase_v2.bucket.Bucket`, except for its
 asynchronous nature. Where the synchronous API returns a
 :class:`~couchbase_core.result.Result` object, the ``txcouchbase`` API returns
 a :class:`Deferred` which will have its callback invoked with a result.

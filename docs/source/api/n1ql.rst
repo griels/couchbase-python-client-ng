@@ -19,8 +19,10 @@ N1QL Queries
 .. autodata:: REQUEST_PLUS
 .. autodata:: UNBOUNDED
 
+.. currentmodule:: couchbase_core.mutation_state
 .. autoclass:: MutationState
 
+.. currentmodule:: couchbase_core.n1ql
 .. class:: N1QLRequest
 
     .. automethod:: __init__

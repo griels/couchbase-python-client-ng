@@ -1,5 +1,5 @@
 
-.. module:: couchbase.datastructures
+.. module:: couchbase_v2.bucket
 
 ==================
 Datastructures API
@@ -29,8 +29,8 @@ efficiency.
 
 
 Couchbase datatypes are still JSON underneath, and use the
-:meth:`couchbase.bucket.Bucket.mutate_in` and
-:meth:`couchbase.bucket.Bucket.lookup_in` methods to access the structures
+:meth:`couchbase_v2.bucket.Bucket.mutate_in` and
+:meth:`couchbase_v2.bucket.Bucket.lookup_in` methods to access the structures
 themselves.
 
 The datastructures are:
@@ -59,7 +59,7 @@ The datastructures are:
     methods.
 
 
-.. currentmodule:: couchbase_core.bucket
+.. currentmodule:: couchbase_v2.bucket
 
 .. class:: Bucket
     :noindex:
