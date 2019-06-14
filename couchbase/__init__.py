@@ -6,7 +6,7 @@ from .exceptions import *
 from .JSONdocument import *
 from .options import *
 from .result import *
-from .subdoc import *
+from .subdocument import *
 
 
 import couchbase.tests
