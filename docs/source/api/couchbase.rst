@@ -10,6 +10,8 @@ Bucket object
 
 .. _argtypes:
 
+.. module:: couchbase.bucket
+.. class:: Bucket
     .. automethod:: scope
     .. automethod:: default_collection
 
@@ -23,11 +25,6 @@ Scope object
 .. class:: Scope
 
     .. automethod:: __init__
-
-Used internally by the SDK.
-This constructor is not intended for external use.
-
-
     .. automethod:: default_collection
     .. automethod:: open_collection
 
