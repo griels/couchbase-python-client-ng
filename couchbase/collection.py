@@ -1056,13 +1056,13 @@ class CBCollection(object):
            exist. If the key does not exist, this value is used, and
            `delta` is ignored. If this parameter is `None` then no
            initial value is used
-        :type SignedInt64 initial: :class:`couchbase.options.SignedInt64` or `None`
+        :param SignedInt64 initial: :class:`couchbase.options.SignedInt64` or `None`
         :param Seconds expiration: The lifetime for the key, after which it will
            expire
 
-        :raise :exc:`.NotFoundError` if the key does not exist on the
+        :raise: :exc:`.NotFoundError` if the key does not exist on the
            bucket (and `initial` was `None`)
-        :raise :exc:`.DeltaBadvalError` if the key exists, but the
+        :raise: :exc:`.DeltaBadvalError` if the key exists, but the
            existing value is not numeric
         :return: A :class:`couchbase.result.MutationResult` object.
 
@@ -1131,12 +1131,13 @@ class CBCollection(object):
            exist. If the key does not exist, this value is used, and
            `delta` is ignored. If this parameter is `None` then no
            initial value is used
-        :type SignedInt64 initial: :class:`couchbase.options.SignedInt64` or `None`
+        :param SignedInt64 initial: :class:`couchbase.options.SignedInt64` or `None`
         :param Seconds expiration: The lifetime for the key, after which it will
            expire
-        :raise :exc:`.NotFoundError` if the key does not exist on the
+
+        :raise: :exc:`.NotFoundError` if the key does not exist on the
            bucket (and `initial` was `None`)
-        :raise :exc:`.DeltaBadvalError` if the key exists, but the
+        :raise: :exc:`.DeltaBadvalError` if the key exists, but the
            existing value is not numeric
         :return: A :class:`couchbase.result.MutationResult` object.
 
@@ -1154,7 +1155,7 @@ class CBCollection(object):
         Decrement by 20, set initial value to 5 if it does not exist::
 
            rv = cb.decrement("key", DeltaValue(20), initial=SignedInt64(5))
-        
+
         """
         final_opts = self._check_delta_initial(kwargs, *options)
 
