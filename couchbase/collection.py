@@ -1059,6 +1059,7 @@ class CBCollection(object):
         :type SignedInt64 initial: :class:`couchbase.options.SignedInt64` or `None`
         :param Seconds expiration: The lifetime for the key, after which it will
            expire
+
         :raise :exc:`.NotFoundError` if the key does not exist on the
            bucket (and `initial` was `None`)
         :raise :exc:`.DeltaBadvalError` if the key exists, but the
