@@ -1,5 +1,6 @@
 pylibcouchbase
 ==============
+Reinstating out of curiosity
 
 This is an experimental repository for the next generation Couchbase Python
 SDK which is based on [libcouchbase][1].
