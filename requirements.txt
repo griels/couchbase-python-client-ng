@@ -1,0 +1,4 @@
+pyrsistent
+enum34; python_version < '3.5'
+boltons
+wrapt

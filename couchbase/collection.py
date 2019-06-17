@@ -212,11 +212,11 @@ class LookupInOptions(OptionBlock):
     pass
 
 
-class CBCollection(object):
+class CBCollection(CoreBucket):
     def __init__(self,
                  parent,  # type: Scope
                  name=None,  # type: Optional[str]
-                 options=None  # type: CollectionOptions
+                 *options  # type: CollectionOptions
                  ):
         # type: (...)->None
         """
@@ -236,10 +236,27 @@ class CBCollection(object):
         :param CollectionOptions options: miscellaneous options
         """
 
-        super(CBCollection, self).__init__()
+        super(CBCollection, self).__init__(**forward_args({},*options))
+        self._init(name, parent)
+
+    def _init(self, name, parent):
         self.parent = parent  # type: Scope
         self.name = name
         self.true_collections = self.name and self._scope
+
+    @classmethod
+    def cast(cls,
+             parent,  # type: CoreBucket
+             name,  # type Optional[str]
+             *options  # type: CollectionOptions
+            ):
+        # type: (...)->CBCollection
+        assert issubclass(type(parent), CoreBucket)
+        result=copy.copy(parent)
+        result.__class__=CBCollection.__class__
+        assert isinstance(result, CBCollection)
+        result._init(name, parent)
+        return result
 
     @property
     def bucket(self):
@@ -1210,7 +1227,15 @@ class Scope(object):
                            **kwargs  # type: Any
                            ):
         # type: (...)->CBCollection
-        return CBCollection(self, name=None, **forward_args(kwargs, *options))
+        return self._gen_collection(None, *options)
+
+    def _gen_collection(self,
+                        collection_name,  # type: Optional[str]
+                        *options  # type: CollectionOptions
+                        ):
+        # type: (...)->CBCollection
+        return CBCollection.cast(self.bucket,collection_name, *options)
+
 
     def open_collection(self,
                         collection_name,  # type: str
@@ -1228,7 +1253,7 @@ class Scope(object):
         :raises AuthorizationException
 
         """
-        return CBCollection(self, collection_name, *options)
+        return self._gen_collection(collection_name, *options)
 
 
 Collection = CBCollection

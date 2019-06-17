@@ -114,7 +114,7 @@ def gen_distutils_build(extoptions,pkgdata):
 def handle_build_type_and_gen_deps():
     cmake_build = build_type in ['CMAKE', 'CMAKE_HYBRID']
     print("Build type: {}, cmake:{}".format(build_type, cmake_build))
-    general_requires = ['pyrsistent', "enum34; python_version < '3.5'", 'boltons']
+    general_requires = open('requirements.txt').readlines()
     extoptions, pkgdata=get_ext_options()
 
     if cmake_build:
