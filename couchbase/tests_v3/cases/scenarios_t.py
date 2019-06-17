@@ -47,9 +47,6 @@ import couchbase.subdocument as SD
 
 
 class Scenarios(ConnectionTestCase):
-    # implicit val ec = ExecutionContext.Implicits.global
-
-    # private val cluster = CouchbaseCluster.create("localhost")
     coll = None  # type: CBCollection
 
     def setUp(self):
@@ -455,3 +452,5 @@ class Scenarios(ConnectionTestCase):
         self.assertEquals([{"row":"value"}],list(result))
         self.assertEquals([{"row":"value"}],result.rows())
 
+    def test_multi(self):
+        self.coll.bucket
