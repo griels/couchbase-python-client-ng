@@ -18,7 +18,7 @@ class ViewOptions(object):
     pass
 
 
-class Bucket(object):
+class Bucket(CoreBucket):
     _bucket = None  # type: CoreBucket
 
     @overload
@@ -113,8 +113,9 @@ class Bucket(object):
 
 
         """
+        super(Bucket,self).__init__(connection_string, **forward_args(kwargs, *options))
         self._name=name
-        self._bucket=CoreBucket(connection_string, **forward_args(kwargs, *options))
+        self._bucket=self
 
     @property
     def name(self):
