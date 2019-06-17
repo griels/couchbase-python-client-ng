@@ -1,19 +1,17 @@
 from couchbase_core.subdocument import Spec
 from .options import Seconds, FiniteDuration
 from couchbase_core.transcodable import Transcodable
-from couchbase_core._libcouchbase import Result as SDK2Result, Result
+from couchbase_core._libcouchbase import Result as SDK2Result
+from couchbase_core.result import MultiResult, SubdocResult
 from typing import *
 from boltons.funcutils import wraps
-
-
-Proxy_T = TypeVar('Proxy_T')
 
 try:
     from abc import abstractmethod
 except:
     pass
 
-from couchbase_core.result import MultiResult, SubdocResult
+Proxy_T = TypeVar('Proxy_T')
 
 
 def canonical_sdresult(content):
@@ -65,6 +63,26 @@ class ContentProxySubdoc(object):
 
 
 class IResult(object):
+    @property
+    @abstractmethod
+    def cas(self):
+        # type: ()->int
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def error(self):
+        # type: ()->int
+        raise NotImplementedError()
+
+    @property
+    @abstractmethod
+    def success(self):
+        # type: ()->bool
+        raise NotImplementedError()
+
+
+class Result(IResult):
     def __init__(self,
                  cas,  # type: int
                  error=None  # type: Optional[int]
@@ -101,7 +119,7 @@ class IGetResult(IResult):
         pass
 
 
-class LookupInResult(IResult):
+class LookupInResult(Result):
     def __init__(self,
                  content,  # type: SDK2Result
                  *args,  # type: Any
@@ -112,6 +130,7 @@ class LookupInResult(IResult):
         LookupInResult is the return type for lookup_in operations.
         Constructed internally by the API.
         """
+        super(LookupInResult, self).__init__(content.cas, content.rc)
         self._content = content  # type: SDK2Result
         self.dict = kwargs
 
@@ -126,7 +145,7 @@ class LookupInResult(IResult):
         return len(canonical_sdresult(self._content))>index
 
 
-class MutationResult(IResult):
+class MutationResult(Result):
     def __init__(self,
                  cas,  # type: int
                  mutation_token=None  # type: MutationToken
@@ -277,3 +296,23 @@ def _wrap_in_mutation_result(func  # type: Callable[[Any,...],SDK2Result]
     mutated.__name__=func.__name__
     mutated.__doc__=func.__doc__
     return mutated
+
+
+class IViewResult(IResult):
+    @property
+    def error(self):
+        raise NotImplementedError()
+
+    @property
+    def success(self):
+        raise NotImplementedError()
+
+    @property
+    def cas(self):
+        raise NotImplementedError()
+
+
+class ViewResult(Result):
+    def __init__(self, sdk2_result # type: SDK2Result
+                ):
+        super(ViewResult, self).__init__(sdk2_result)
