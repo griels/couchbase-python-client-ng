@@ -1,5 +1,6 @@
 from abc import abstractmethod
 
+import wrapt
 from boltons.funcutils import wraps
 from mypy_extensions import VarArg, KwArg, Arg
 
@@ -183,7 +184,7 @@ def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
                 ):
         # type: (...)->Any
         if self.true_collections:
-            if self.name and not self._scope:
+            if self.name and not self._self_parent:
                 raise couchbase.exceptions.CollectionMissingException
             if self._scope and self.name:
                 kwargs['scope'] = self._scope
@@ -212,9 +213,9 @@ class LookupInOptions(OptionBlock):
     pass
 
 
-class CBCollection(CoreBucket):
+class CBCollection(wrapt.ObjectProxy):
     def __init__(self,
-                 parent,  # type: Scope
+                 parent,  # type: CoreBucket
                  name=None,  # type: Optional[str]
                  *options  # type: CollectionOptions
                  ):
@@ -236,36 +237,37 @@ class CBCollection(CoreBucket):
         :param CollectionOptions options: miscellaneous options
         """
 
-        super(CBCollection, self).__init__(**forward_args({},*options))
+        super(CBCollection, self).__init__(parent, **forward_args({}, *options))
         self._init(name, parent)
 
-    def _init(self, name, parent):
-        self.parent = parent  # type: Scope
-        self.name = name
-        self.true_collections = self.name and self._scope
+    def _init(self,
+              name,  # type: Optional[str]
+              scope  # type: Scope
+              ):
+        self._self_scope = scope  # type: Scope
+        self._self_name = name  # type: Optional[str]
+        self._self_true_collections = name and scope
+
+    @property
+    def true_collections(self):
+        return self._self_true_collections
 
     @classmethod
     def cast(cls,
-             parent,  # type: CoreBucket
+             parent,  # type: Scope
              name,  # type Optional[str]
              *options  # type: CollectionOptions
             ):
         # type: (...)->CBCollection
         assert issubclass(type(parent), CoreBucket)
-        result=copy.copy(parent)
-        result.__class__=CBCollection.__class__
-        assert isinstance(result, CBCollection)
+        result = CBCollection(parent, name, *options)
         result._init(name, parent)
         return result
 
     @property
     def bucket(self):
         # type: (...) -> CoreBucket
-        return self.parent.bucket._bucket
-
-    @property
-    def _scope(self):
-        return self.parent.name
+        return self.__wrapped__
 
     MAX_GET_OPS = 16
 
