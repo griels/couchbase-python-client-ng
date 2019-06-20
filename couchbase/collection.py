@@ -11,11 +11,11 @@ from .result import GetResult, get_result_wrapper, SDK2Result, ResultPrecursor, 
 from .options import forward_args, Seconds, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64, AcceptableInts
 from .options import OptionBlock, AcceptableInts
 from .durability import ReplicateTo, PersistTo, ClientDurableOption, ServerDurableOption
-from couchbase_core._libcouchbase import Bucket as _Base
+from couchbase_core._libcouchbase import Bucket as _Base, Collection as _CollectionBase
 import couchbase.exceptions
 from couchbase_core.bucket import Bucket as CoreBucket
 import copy
-import pyrsistent
+
 from typing import *
 from .durability import Durability
 
@@ -185,11 +185,11 @@ def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
                 ):
         # type: (...)->Any
         if self.true_collections:
-            if self.name and not self._self_parent:
+            if self._self_name and not self._self_scope:
                 raise couchbase.exceptions.CollectionMissingException
-            if self._scope and self.name:
-                kwargs['scope'] = self._scope
-                kwargs['collection'] = self.name
+            if self._self_scope and self._self_name:
+                kwargs['scope'] = self._self_scope.name
+                kwargs['collection'] = self._self_name
 
         return func(self, *args, **kwargs)
 
@@ -1251,7 +1251,7 @@ class Scope(object):
         # type: (...)->CBCollection
         return CBCollection.cast(self, collection_name, *options)
 
-    def open_collection(self,
+    def collection(self,
                         collection_name,  # type: str
                         *options  # type: CollectionOptions
                         ):
