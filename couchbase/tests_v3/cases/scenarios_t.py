@@ -70,9 +70,9 @@ class Scenarios(ConnectionTestCase):
         except:
             pass
         self.bucket = self.cluster.bucket(bucket_name,**connargs)
-        self.scope = self.bucket.scope("scope")
+        self.scope = self.bucket.scope("flintstones")
         # 2) Open a Collection
-        self.coll = self.scope.default_collection()
+        self.coll = self.scope.open_collection("bedrock")
         self.coll.upsert("id",{"kettle":"fish"})
 
     def test_scenario_A(self):
