@@ -42,7 +42,7 @@
 #define PYCBC_AUTO_DEREF_FAILED
 
 #include "python_wrappers.h"
-#define PYCBC_COLLECTIONS
+#define PYCBC_COLLECTIONS_PROPER
 
 /**
  * This code supports both PYCBC V2 and PYCBC V3. The
@@ -660,7 +660,8 @@ typedef struct {
 /** Collection class **/
 
 typedef struct {
-    PyObject_HEAD pycbc_Bucket *bucket;
+    PyObject_HEAD
+    pycbc_Bucket *bucket;
     pycbc_Collection_coords collection;
 } pycbc_Collection;
 
@@ -683,14 +684,20 @@ typedef struct {
     pycbc_Collection *coll;
 } pycbc_coll_context;
 
-pycbc_Collection *pycbc_Bucket_init_collection(pycbc_Bucket *bucket,
-                                               PyObject *args,
-                                               PyObject *kwargs);
-
-
-void pycbc_Collection_free_unmanaged(const pycbc_Collection *collection);
+int pycbc_collection_init_from_fn_args(pycbc_Collection *self, pycbc_Bucket *bucket, PyObject *kwargs);
+pycbc_Collection pycbc_Collection_as_value(pycbc_Bucket *self, PyObject *kwargs);
+void pycbc_Collection_free_unmanaged_contents(const pycbc_Collection *collection);
+void pycbc_Collection_free_unmanaged(pycbc_Collection *collection);
 
 #    define PYCBC_COLLECTION_XARGS(X) X("collection", &collection, "O")
+
+#define PYCBC_CMD_COLLECTION(TYPE, CMD, COLLECTION)             \
+    lcb_cmd##TYPE##_collection(                                 \
+            cmd,                                                \
+            (COLLECTION)->collection.scope.content.buffer,      \
+            (COLLECTION)->collection.scope.content.length,      \
+            (COLLECTION)->collection.collection.content.buffer, \
+            (COLLECTION)->collection.collection.content.length)
 
 void *pycbc_capsule_value_or_null(PyObject *capsule, const char *capsule_name);
 

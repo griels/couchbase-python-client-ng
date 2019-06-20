@@ -150,6 +150,9 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING, static, PyObject*, keyop_common, p
                              "replicate_to",
                              "durability_level",
                              NULL};
+
+    pycbc_Collection collection = pycbc_Collection_as_value(self, kwargs);
+
     PYCBC_DEBUG_LOG_CONTEXT(context, "Parsing args %R", kwargs)
     rv = PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
@@ -164,13 +167,13 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING, static, PyObject*, keyop_common, p
 
     if (!rv) {
         PYCBC_EXCTHROW_ARGS();
-        return NULL;
+        goto GT_FAIL;
     }
 
     if (argopts & PYCBC_ARGOPT_MULTI) {
         rv = pycbc_oputil_check_sequence(kobj, 1, &ncmds, &seqtype);
         if (rv < 0) {
-            return NULL;
+            goto GT_FAIL;
         }
 
         if (casobj && PyObject_IsTrue(casobj)) {
@@ -184,7 +187,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING, static, PyObject*, keyop_common, p
 
     rv = pycbc_common_vars_init(&cv, self, argopts, ncmds, 0);
     if (rv < 0) {
-        return NULL;
+        goto GT_FAIL;
     }
 
     if (argopts & PYCBC_ARGOPT_MULTI) {
@@ -240,7 +243,11 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING, static, PyObject*, keyop_common, p
 
     GT_DONE:
     pycbc_common_vars_finalize(&cv, self);
+    pycbc_Collection_free_unmanaged_contents(&collection);
     return cv.ret;
+    GT_FAIL:
+    cv.ret=NULL;
+    goto GT_DONE;
 }
 #if PYCBC_ENDURE
 TRACED_FUNCTION_WRAPPER(endure_multi, LCBTRACE_OP_REQUEST_ENCODING, Bucket)

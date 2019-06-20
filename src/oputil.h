@@ -97,9 +97,6 @@ struct pycbc_common_vars {
 /**
  * Handler for iterations
  */
-#define PYCBC_UNITS(X) \
-    X(Bucket)          \
-    X(Collection)
 
 #define PYCBC_OPUTIL_CONTEXT_Bucket
 #define PYCBC_OPUTIL_CONTEXT_Collection \
@@ -272,10 +269,15 @@ int pycbc_common_vars_init(struct pycbc_common_vars *cv,
             const char *category,                                        \
             const char *name);
 
-#ifndef PYCBC_OPUTIL_GEN
+#ifdef PYCBC_OPUTIL_GEN
 PYCBC_UNITS(PYCBC_OPUTIL_KEYHANDLER_BUILD_DECL)
 #else
-PYCBC_UNITS(PYCBC_OPUTIL_KEYHANDLER_BUILD_DECL)
+pycbc_oputil_keyhandler_Bucket
+pycbc_oputil_keyhandler_build_Bucket(pycbc_oputil_keyhandler_raw_Bucket cb, const char *category, const char *name);
+
+pycbc_oputil_keyhandler_Collection
+pycbc_oputil_keyhandler_build_Collection(pycbc_oputil_keyhandler_raw_Collection cb, const char *category,
+                                         const char *name);
 #endif
 #define PYCBC_OPUTIL_KEYHANDLER_BUILD(UNIT, NAME) \
     pycbc_oputil_keyhandler_build_##UNIT(NAME, NAME##_category(), #NAME)
@@ -293,6 +295,18 @@ PYCBC_UNITS(PYCBC_OPUTIL_KEYHANDLER_BUILD_DECL)
 #define PYCBC_OPUTIL_ITER_MULTI(                                      \
         SELF, SEQTYPE, COLLECTION, CV, OPTYPE, HANDLER, CONTEXT, ...) \
     PYCBC_OPUTIL_ITER_MULTI_BASE(Bucket,                              \
+                                 SELF,                                \
+                                 SEQTYPE,                             \
+                                 COLLECTION,                          \
+                                 CV,                                  \
+                                 OPTYPE,                              \
+                                 HANDLER,                             \
+                                 CONTEXT,                             \
+                                 __VA_ARGS__)
+
+#define PYCBC_OPUTIL_ITER_MULTI_COLLECTION(                                      \
+        SELF, SEQTYPE, COLLECTION, CV, OPTYPE, HANDLER, CONTEXT, ...) \
+    PYCBC_OPUTIL_ITER_MULTI_BASE(Collection,                              \
                                  SELF,                                \
                                  SEQTYPE,                             \
                                  COLLECTION,                          \
