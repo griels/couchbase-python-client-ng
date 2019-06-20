@@ -559,7 +559,6 @@ int pycbc_oputil_iter_multi_Bucket(pycbc_Bucket *self,
     rv = pycbc_oputil_iter_multi_Collection(
             coll, seqtype, collection, cv, optype, wrapper, arg, context);
     pycbc_Collection_free_unmanaged(coll);
-    PYCBC_FREE(coll);
     return rv;
 }
 int pycbc_oputil_iter_multi_Collection(

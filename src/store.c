@@ -274,7 +274,7 @@ set_common, pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
     struct storecmd_vars scv = { 0 };
     char persist_to = 0, replicate_to = 0;
     pycbc_DURABILITY_LEVEL dur_level = LCB_DURABILITYLEVEL_NONE;
-
+    pycbc_Collection* collection = pycbc_Bucket_init_collection(self, args, kwargs);
     static char *kwlist_multi[] = {"kv",
                                    "ttl",
                                    "format",
@@ -327,18 +327,18 @@ set_common, pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
 
     if (!rv) {
         PYCBC_EXC_WRAP(PYCBC_EXC_ARGUMENTS, 0, "couldn't parse arguments");
-        return NULL;
+        goto GT_FAIL;
     }
 
     rv = pycbc_get_ttl(ttl_O, &scv.ttl, 1);
     if (rv < 0) {
-        return NULL;
+        goto GT_FAIL;
     }
 
     if (argopts & PYCBC_ARGOPT_MULTI) {
         rv = pycbc_oputil_check_sequence(dict, 0, &ncmds, &seqtype);
         if (rv < 0) {
-            return NULL;
+            goto GT_FAIL;
         }
 
     } else {
@@ -348,7 +348,7 @@ set_common, pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
     if (operation == LCB_STORE_APPEND || operation == LCB_STORE_PREPEND) {
         rv = handle_append_flags(self, &scv.flagsobj);
         if (rv < 0) {
-            return NULL;
+            goto GT_FAIL;
         }
 
     } else if (scv.flagsobj == NULL || scv.flagsobj == Py_None) {
@@ -357,7 +357,7 @@ set_common, pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
 
     rv = pycbc_common_vars_init(&cv, self, argopts, ncmds, 1);
     if (rv < 0) {
-        return NULL;
+        goto GT_FAIL;
     }
 
     rv = pycbc_handle_durability_args(
@@ -411,7 +411,12 @@ set_common, pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
 
     GT_DONE:
     pycbc_common_vars_finalize(&cv, self);
+    GT_FINALLY:
+    pycbc_Collection_free_unmanaged(collection);
     return cv.ret;
+    GT_FAIL:
+    cv.ret=NULL;
+    goto GT_FINALLY;
 }
 
 #define DECLFUNC(name, operation, mode) \

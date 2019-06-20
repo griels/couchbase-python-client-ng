@@ -24,17 +24,27 @@ struct arithmetic_common_vars {
     int create;
 };
 
-TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING, static, int,
-handle_single_arith, pycbc_Bucket *self, struct pycbc_common_vars *cv,
-    int optype, PyObject *curkey, PyObject *curvalue, PyObject *options,
-    pycbc_Item *item, void *arg)
+TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
+                static,
+                int,
+                handle_single_arith,
+                pycbc_oputil_keyhandler_raw_Bucket* original,
+                pycbc_Collection *collection,
+                struct pycbc_common_vars *cv,
+                int optype,
+                PyObject *curkey,
+                PyObject *curvalue,
+                PyObject *options,
+                pycbc_Item *item,
+                void *arg)
 {
+    pycbc_Bucket *self=collection->bucket;
     int rv = 0;
-
     lcb_STATUS err;
     struct arithmetic_common_vars my_params;
     static const char *kwlist[] = {"delta", "initial", "ttl", NULL};
     pycbc_pybuffer keybuf = { 0 };
+    (void)original;
     my_params = *(struct arithmetic_common_vars *)arg;
 
     (void)item;
@@ -86,6 +96,7 @@ handle_single_arith, pycbc_Bucket *self, struct pycbc_common_vars *cv,
         {
             PYCBC_DEBUG_LOG("Encoding delta %llu", my_params.delta)
             lcb_cmdcounter_delta(cmd, my_params.delta);
+            PYCBC_CMD_COLLECTION(counter,cmd,collection);
             PYCBC_DEBUG_LOG("Encoded delta %llu", my_params.delta)
             PYCBC_DEBUG_LOG_CONTEXT(
                     context, "Encoding initial %d", my_params.initial);
@@ -111,19 +122,20 @@ handle_single_arith, pycbc_Bucket *self, struct pycbc_common_vars *cv,
     GT_DONE:
     PYCBC_PYBUF_RELEASE(&keybuf);
     return rv;
-}
+    }
 
 PyObject *
-arithmetic_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
+arithmetic_common(pycbc_Collection* cb_collection, PyObject *args, PyObject *kwargs,
     int optype, int argopts, pycbc_stack_context_handle context)
 {
+    pycbc_Bucket* self=cb_collection->bucket;
     int rv;
     Py_ssize_t ncmds;
     struct arithmetic_common_vars global_params = { 0 };
     pycbc_seqtype_t seqtype;
     PyObject *all_initial_O = NULL;
     PyObject *all_ttl_O = NULL;
-    PyObject *collection;
+    PyObject *sequence;
     struct pycbc_common_vars cv = PYCBC_COMMON_VARS_STATIC_INIT;
 
     static const char *kwlist[] = {"keys", "delta", "initial", "ttl", NULL};
@@ -134,7 +146,7 @@ arithmetic_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
                                      kwargs,
                                      "O|LOO",
                                      (char **)kwlist,
-                                     &collection,
+                                     &sequence,
                                      &global_params.delta,
                                      &all_initial_O,
                                      &all_ttl_O);
@@ -149,7 +161,7 @@ arithmetic_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
     }
 
     if (argopts & PYCBC_ARGOPT_MULTI) {
-        rv = pycbc_oputil_check_sequence(collection, 1, &ncmds, &seqtype);
+        rv = pycbc_oputil_check_sequence(sequence, 1, &ncmds, &seqtype);
         if (rv < 0) {
             return NULL;
         }
@@ -166,11 +178,10 @@ arithmetic_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
     rv = pycbc_common_vars_init(&cv, self, argopts, ncmds, 0);
 
     if (argopts & PYCBC_ARGOPT_MULTI) {
-        rv = PYCBC_OPUTIL_ITER_MULTI(self, seqtype, collection, &cv, optype,
+        rv = PYCBC_OPUTIL_ITER_MULTI_COLLECTION(cb_collection, seqtype, sequence, &cv, optype,
             handle_single_arith, &global_params, context);
-
     } else {
-        rv = handle_single_arith(self, &cv, optype, collection, NULL, NULL, NULL,
+        rv = handle_single_arith(NULL, cb_collection, &cv, optype, sequence, NULL, NULL, NULL,
             &global_params, context);
     }
 
@@ -188,6 +199,17 @@ arithmetic_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
     return cv.ret;
 }
 
+PyObject *
+arithmetic_common_bucket(pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
+                  int optype, int argopts, pycbc_stack_context_handle context)
+{
+    pycbc_Collection* cb_collection=pycbc_Bucket_init_collection(self, args,kwargs);
+    PyObject* result=arithmetic_common(cb_collection,args,kwargs,optype,argopts,context);
+    pycbc_Collection_free_unmanaged(cb_collection);
+    return result;
+}
+
+
 #define DECLFUNC(name, operation, mode)                           \
     PyObject *pycbc_Bucket_##name(                                \
             pycbc_Bucket *self, PyObject *args, PyObject *kwargs) \
@@ -195,7 +217,7 @@ arithmetic_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
         PyObject *result;                                         \
         PYCBC_TRACE_WRAP_TOPLEVEL(result,                         \
                                   LCBTRACE_OP_REQUEST_ENCODING,   \
-                                  arithmetic_common,              \
+                                  arithmetic_common_bucket,       \
                                   self->tracer,                   \
                                   self,                           \
                                   args,                           \

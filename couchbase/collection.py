@@ -185,11 +185,11 @@ def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
                 ):
         # type: (...)->Any
         if self.true_collections:
-            if self.name and not self._self_parent:
+            if self._self_name and not self._self_scope:
                 raise couchbase.exceptions.CollectionMissingException
-            if self._scope and self.name:
-                kwargs['scope'] = self._scope
-                kwargs['collection'] = self.name
+            if self._self_scope and self._self_name:
+                kwargs['scope'] = self._self_scope.name
+                kwargs['collection'] = self._self_name
 
         return func(self, *args, **kwargs)
 
