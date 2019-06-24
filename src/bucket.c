@@ -932,16 +932,6 @@ static int Collection__init__(pycbc_Collection *self,
     return 0;
 }
 
-pycbc_Collection *pycbc_Bucket_init_collection(pycbc_Bucket *bucket,
-                                               PyObject *args,
-                                               PyObject *kwargs)
-{
-    pycbc_Collection *result = NULL;
-    result = PYCBC_CALLOC_TYPED(1, pycbc_Collection);
-    pycbc_collection_init_from_fn_args(result, bucket, kwargs);
-    return result;
-}
-
 static PyMethodDef Collection_TABLE_methods[] = {{NULL, NULL, 0, NULL}};
 
 static PyGetSetDef Collection_TABLE_getset[] = {

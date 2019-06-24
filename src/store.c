@@ -274,7 +274,7 @@ set_common, pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
     struct storecmd_vars scv = { 0 };
     char persist_to = 0, replicate_to = 0;
     pycbc_DURABILITY_LEVEL dur_level = LCB_DURABILITYLEVEL_NONE;
-    pycbc_Collection* collection = pycbc_Bucket_init_collection(self, args, kwargs);
+    pycbc_Collection collection = pycbc_Collection_as_value(self, kwargs);
     static char *kwlist_multi[] = {"kv",
                                    "ttl",
                                    "format",
@@ -412,7 +412,7 @@ set_common, pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
     GT_DONE:
     pycbc_common_vars_finalize(&cv, self);
     GT_FINALLY:
-    pycbc_Collection_free_unmanaged(collection);
+    pycbc_Collection_free_unmanaged_contents(&collection);
     return cv.ret;
     GT_FAIL:
     cv.ret=NULL;

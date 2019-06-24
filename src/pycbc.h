@@ -683,11 +683,8 @@ typedef struct {
     pycbc_Collection *coll;
 } pycbc_coll_context;
 
-pycbc_Collection *pycbc_Bucket_init_collection(pycbc_Bucket *bucket,
-                                               PyObject *args,
-                                               PyObject *kwargs);
-
-
+int pycbc_collection_init_from_fn_args(pycbc_Collection *self, pycbc_Bucket *bucket, PyObject *kwargs);
+pycbc_Collection pycbc_Collection_as_value(pycbc_Bucket *self, PyObject *kwargs);
 void pycbc_Collection_free_unmanaged_contents(const pycbc_Collection *collection);
 void pycbc_Collection_free_unmanaged(pycbc_Collection *collection);
 

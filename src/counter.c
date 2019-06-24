@@ -203,9 +203,9 @@ PyObject *
 arithmetic_common_bucket(pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
                   int optype, int argopts, pycbc_stack_context_handle context)
 {
-    pycbc_Collection* cb_collection=pycbc_Bucket_init_collection(self, args,kwargs);
-    PyObject* result=arithmetic_common(cb_collection,args,kwargs,optype,argopts,context);
-    pycbc_Collection_free_unmanaged(cb_collection);
+    pycbc_Collection cb_collection = pycbc_Collection_as_value(self, kwargs);
+    PyObject* result=arithmetic_common(&cb_collection,args,kwargs,optype,argopts,context);
+    pycbc_Collection_free_unmanaged_contents(&cb_collection);
     return result;
 }
 

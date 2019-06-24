@@ -549,16 +549,15 @@ int pycbc_oputil_iter_multi_Bucket(pycbc_Bucket *self,
 {
     pycbc_oputil_keyhandler_Collection wrapper;
     int rv = LCB_SUCCESS;
-    pycbc_Collection *coll = NULL;
+    pycbc_Collection coll = pycbc_Collection_as_value(self, pycbc_DummyKeywords);
     wrapper.category = handler.category;
     wrapper.name = handler.name;
     wrapper.original = &handler.cb;
     wrapper.cb = pycbc_wrap_bucket_callback;
-    coll = pycbc_Bucket_init_collection(
-            self, pycbc_DummyTuple, pycbc_DummyKeywords);
+
     rv = pycbc_oputil_iter_multi_Collection(
-            coll, seqtype, collection, cv, optype, wrapper, arg, context);
-    pycbc_Collection_free_unmanaged(coll);
+            &coll, seqtype, collection, cv, optype, wrapper, arg, context);
+    pycbc_Collection_free_unmanaged_contents(&coll);
     return rv;
 }
 int pycbc_oputil_iter_multi_Collection(

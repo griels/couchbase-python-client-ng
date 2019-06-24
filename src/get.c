@@ -247,7 +247,7 @@ get_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs, int optype,
                              "replica",
                              "no_format", NULL};
 #undef X
-    pycbc_Collection* collection = pycbc_Bucket_init_collection(self,args,kwargs);
+    pycbc_Collection collection = pycbc_Collection_as_value(self, kwargs);
     int rv = PyArg_ParseTupleAndKeywords(args,
                                          kwargs,
                                          "O|OOOO",
@@ -326,11 +326,11 @@ get_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs, int optype,
     }
     {
         // temporary wrapping code until everything is migrated to collections
-        pycbc_Collection *unit = pycbc_Bucket_init_collection(self, args, kwargs);
+        pycbc_Collection unit = pycbc_Collection_as_value(self, kwargs);
 
         if (argopts & PYCBC_ARGOPT_MULTI) {
             rv = PYCBC_OPUTIL_ITER_MULTI_COLLECTION(
-                    unit, seqtype, kobj, &cv, optype, handle_single_key, &gv, context);
+                    &unit, seqtype, kobj, &cv, optype, handle_single_key, &gv, context);
         } else {
 #ifndef PYCBC_UNIT_GEN
             rv = PYCBC_TRACE_WRAP_NOTERV(handle_single_key,
@@ -340,7 +340,7 @@ get_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs, int optype,
                                          &context,
                                          self,
                                          NULL,
-                                         unit,
+                                         &unit,
                                          &cv,
                                          optype,
                                          kobj,
@@ -370,8 +370,7 @@ get_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs, int optype,
                 cv.sched_cmds++;
             }
 #endif
-            pycbc_Collection_free_unmanaged_contents(unit);
-            PYCBC_FREE(unit);
+            pycbc_Collection_free_unmanaged_contents(&unit);
         }
     }
     PYCBC_DEBUG_LOG_CONTEXT(context,
@@ -395,7 +394,7 @@ get_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs, int optype,
 GT_DONE:
     pycbc_common_vars_finalize(&cv, self);
 GT_FINALLY:
-    pycbc_Collection_free_unmanaged(collection);
+    pycbc_Collection_free_unmanaged_contents(&collection);
     return cv.ret;
 }
 
@@ -434,7 +433,7 @@ sdlookup_common, pycbc_Bucket *self, PyObject *args, PyObject *kwargs, int argop
     pycbc_seqtype_t seqtype;
     struct pycbc_common_vars cv = PYCBC_COMMON_VARS_STATIC_INIT;
     static char *kwlist[] = { "ks", "quiet", NULL };
-
+    pycbc_Collection collection = pycbc_Collection_as_value(self, kwargs);
     if (!PyArg_ParseTupleAndKeywords(
         args, kwargs, "O|O", kwlist, &kobj, &quiet_key)) {
         PYCBC_EXCTHROW_ARGS();
