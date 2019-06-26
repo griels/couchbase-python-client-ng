@@ -846,7 +846,7 @@ static PyMethodDef Bucket_TABLE_methods[] = {
 
 void pycbc_Bucket_init_tracer(pycbc_Bucket *self);
 
-lcb_STATUS pycbc_Collection_init_coords(pycbc_Collection *self,
+lcb_STATUS pycbc_Collection_init_coords(pycbc_Collection_t *self,
                                         pycbc_Bucket *bucket,
                                         PyObject *collection,
                                         PyObject *scope)
@@ -859,25 +859,25 @@ lcb_STATUS pycbc_Collection_init_coords(pycbc_Collection *self,
 }
 
 
-void pycbc_Collection_free_unmanaged_contents(const pycbc_Collection *collection) {
+void pycbc_Collection_free_unmanaged_contents(const pycbc_Collection_t *collection) {
     pycbc_strn_free(collection->collection.scope);
     pycbc_strn_free(collection->collection.collection);
     PYCBC_XDECREF(collection->bucket);
 }
 
-void pycbc_Collection_free_unmanaged(pycbc_Collection *collection) {
+void pycbc_Collection_free_unmanaged(pycbc_Collection_t *collection) {
     pycbc_Collection_free_unmanaged_contents(collection);
     PYCBC_FREE(collection);
 }
 
-static void Collection_dtor(pycbc_Collection *collection)
+static void Collection_dtor(pycbc_Collection_t *collection)
 {
     pycbc_Collection_free_unmanaged_contents(collection);
     Py_TYPE(collection)->tp_free((PyObject*)collection);
 
 }
 
-int pycbc_collection_init_from_fn_args(pycbc_Collection *self, pycbc_Bucket *bucket, PyObject *kwargs)
+int pycbc_collection_init_from_fn_args(pycbc_Collection_t *self, pycbc_Bucket *bucket, PyObject *kwargs)
 {
     int rv = LCB_SUCCESS;
     PyObject *scope = NULL;
@@ -921,7 +921,7 @@ int pycbc_collection_init_from_fn_args(pycbc_Collection *self, pycbc_Bucket *buc
     return rv;
 }
 
-static int Collection__init__(pycbc_Collection *self,
+static int Collection__init__(pycbc_Collection_t *self,
                               PyObject *args,
                               PyObject *kwargs)
 {
@@ -967,7 +967,7 @@ int pycbc_CollectionType_init(PyObject **ptr)
     p->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
     p->tp_doc = PyDoc_STR("The collection object");
 
-    p->tp_basicsize = sizeof(pycbc_Collection);
+    p->tp_basicsize = sizeof(pycbc_Collection_t);
 
     p->tp_methods = Collection_TABLE_methods;
     p->tp_members = Collection_TABLE_members;

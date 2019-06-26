@@ -218,6 +218,7 @@ lcb_STATUS pycbc_handle_analytics(const pycbc_Bucket *self,
     (void)is_xbucket;
     lcb_STATUS rc = LCB_SUCCESS;
     {
+
         CMDSCOPE_NG(ANALYTICS, analytics)
         {
             lcb_cmdanalytics_callback(cmd, analytics_row_callback);

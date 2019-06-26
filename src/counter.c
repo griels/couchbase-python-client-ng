@@ -29,7 +29,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
                 int,
                 handle_single_arith,
                 pycbc_oputil_keyhandler_raw_Bucket* original,
-                pycbc_Collection *collection,
+                pycbc_Collection_t *collection,
                 struct pycbc_common_vars *cv,
                 int optype,
                 PyObject *curkey,
@@ -96,7 +96,6 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
         {
             PYCBC_DEBUG_LOG("Encoding delta %llu", my_params.delta)
             lcb_cmdcounter_delta(cmd, my_params.delta);
-            PYCBC_CMD_COLLECTION(counter,cmd,collection);
             PYCBC_DEBUG_LOG("Encoded delta %llu", my_params.delta)
             PYCBC_DEBUG_LOG_CONTEXT(
                     context, "Encoding initial %d", my_params.initial);
@@ -108,7 +107,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
             lcb_cmdcounter_expiration(cmd, my_params.ttl);
             PYCBC_CMD_SET_KEY_SCOPE(counter, cmd, keybuf);
             PYCBC_TRACECMD_TYPED(counter, cmd, context, cv->mres, curkey, self);
-            err = pycbc_counter(self->instance, cv->mres, cmd);
+            err = pycbc_counter(collection, cv->mres, cmd);
         }
     }
     GT_ERR:
@@ -125,7 +124,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
     }
 
 PyObject *
-arithmetic_common(pycbc_Collection* cb_collection, PyObject *args, PyObject *kwargs,
+arithmetic_common(pycbc_Collection_t* cb_collection, PyObject *args, PyObject *kwargs,
     int optype, int argopts, pycbc_stack_context_handle context)
 {
     pycbc_Bucket* self=cb_collection->bucket;
@@ -203,7 +202,7 @@ PyObject *
 arithmetic_common_bucket(pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
                   int optype, int argopts, pycbc_stack_context_handle context)
 {
-    pycbc_Collection cb_collection = pycbc_Collection_as_value(self, kwargs);
+    pycbc_Collection_t cb_collection = pycbc_Collection_as_value(self, kwargs);
     PyObject* result=arithmetic_common(&cb_collection,args,kwargs,optype,argopts,context);
     pycbc_Collection_free_unmanaged_contents(&cb_collection);
     return result;

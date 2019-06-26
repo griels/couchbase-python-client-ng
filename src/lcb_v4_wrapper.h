@@ -363,5 +363,4 @@ case LCB_PING_SERVICE_##X:        \
 typedef lcb_DURABILITY_LEVEL pycbc_DURABILITY_LEVEL;
 #    define lcb_cmdremove_durability_observe(...) LCB_EINTERNAL
 
-
 #endif // COUCHBASE_PYTHON_CLIENT_LCB_V4_WRAPPER_H

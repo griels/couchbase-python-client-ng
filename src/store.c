@@ -154,6 +154,7 @@ handle_single_kv, pycbc_Bucket *self, struct pycbc_common_vars *cv, int optype,
     pycbc_pybuffer keybuf = {NULL}, valbuf = {NULL};
     lcb_STATUS err = LCB_SUCCESS;
     lcb_U32 flags = 0;
+    pycbc_Collection_t* collection = NULL;
     if (scv->argopts & PYCBC_ARGOPT_SDMULTI) {
         return PYCBC_TRACE_WRAP(handle_multi_mutate, NULL, self, cv, optype, curkey, curvalue, options, itm, arg);
     }
@@ -205,7 +206,7 @@ handle_single_kv, pycbc_Bucket *self, struct pycbc_common_vars *cv, int optype,
             lcb_cmdstore_expiration(cmd, (uint32_t)skc.ttl);
 
             PYCBC_TRACECMD_TYPED(store, cmd, context, cv->mres, curkey, self);
-            err = pycbc_store(self->instance, cv->mres, cmd);
+            err = pycbc_store(collection, cv->mres, cmd);
         }
     }
 GT_ERR:
@@ -274,7 +275,7 @@ set_common, pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
     struct storecmd_vars scv = { 0 };
     char persist_to = 0, replicate_to = 0;
     pycbc_DURABILITY_LEVEL dur_level = LCB_DURABILITYLEVEL_NONE;
-    pycbc_Collection collection = pycbc_Collection_as_value(self, kwargs);
+    pycbc_Collection_t collection = pycbc_Collection_as_value(self, kwargs);
     static char *kwlist_multi[] = {"kv",
                                    "ttl",
                                    "format",

@@ -466,8 +466,8 @@ static char *const PYCBC_DEBUG_INFO_STR = "debug_info";
 #define CMDSCOPE_GENERIC_DONE(PREFIX, UC, LC) goto GT_##PREFIX##_##UC##_DONE;
 
 #define CMDSCOPE_GENERIC_ALL_PREFIX(                                           \
-        PREFIX, UC, LC, INITIALIZER, DESTRUCTOR, CMDS, ...)                    \
-    INITIALIZER(UC, LC, CMDS, __VA_ARGS__);                                    \
+        PREFIX, UC, LC, INITIALIZER, DESTRUCTOR,  CMD, ...)                    \
+    INITIALIZER(UC, LC, CMD, __VA_ARGS__);                                    \
     PYCBC_DEBUG_LOG("Called initialzer for %s, %s, with args %s",              \
                     #UC,                                                       \
                     #LC,                                                       \
@@ -475,19 +475,19 @@ static char *const PYCBC_DEBUG_INFO_STR = "debug_info";
     goto SKIP_##PREFIX##_##UC##_FAIL;                                          \
     goto GT_##PREFIX##_##UC##_DONE;                                            \
     GT_##PREFIX##_##UC##_DONE : PYCBC_DEBUG_LOG("Cleanup up %s %s", #UC, #LC)( \
-                                        void)(DESTRUCTOR(UC, LC, CMDS));       \
+                                        void)(DESTRUCTOR(UC, LC, CMD));       \
     goto GT_DONE;                                                              \
     goto GT_##PREFIX##_##UC##_ERR;\
-    GT_##PREFIX##_##UC##_ERR : (void)(DESTRUCTOR(UC, LC, CMDS));               \
+    GT_##PREFIX##_##UC##_ERR : (void)(DESTRUCTOR(UC, LC, CMD));               \
     goto GT_ERR;                                                               \
                                                                                \
     SKIP_##PREFIX##_##UC##_FAIL                                                \
         : for (int finished = 0, fail = 0; !(finished) && !fail;               \
-               (finished = (1 + DESTRUCTOR(UC, LC, CMDS))))
+               (finished = (1 + DESTRUCTOR(UC, LC, CMD))))
 
-#define CMDSCOPE_GENERIC_ALL(UC, LC, INITIALIZER, DESTRUCTOR, CMDS, ...) \
+#define CMDSCOPE_GENERIC_ALL(UC, LC, INITIALIZER, DESTRUCTOR, CMD, ...) \
     CMDSCOPE_GENERIC_ALL_PREFIX(                                         \
-            , UC, LC, INITIALIZER, DESTRUCTOR, CMDS, __VA_ARGS__)
+            , UC, LC, INITIALIZER, DESTRUCTOR, CMD, __VA_ARGS__)
 
 #define pycbc_verb_postfix(POSTFIX, VERB, INSTANCE, COOKIE, CMD) \
     pycbc_logging_monad_verb(__FILE__,                           \
@@ -510,27 +510,35 @@ lcb_STATUS pycbc_logging_monad_verb(const char *FILE,
                                     const char *VERB,
                                     lcb_STATUS result);
 
-#define PYCBC_CMD_PROXY(UC, LC)                                     \
-    lcb_STATUS pycbc_##LC(                                          \
-            lcb_INSTANCE *instance, void *cookie, lcb_CMD##UC *cmd) \
-    {                                                               \
-        return pycbc_verb(LC, instance, cookie, cmd);               \
-    };
-#define PYCBC_CMD_PROXY_DECL(UC, LC) \
-    lcb_STATUS pycbc_##LC(           \
-            lcb_INSTANCE *instance, void *cookie, lcb_CMD##UC *cmd);
-#define PYCBC_X_VERBS(X) \
-    X(COUNTER, counter)  \
-    X(GET, get)          \
-    X(TOUCH, touch)      \
-    X(UNLOCK, unlock)    \
-    X(REMOVE, remove)    \
-    X(STORE, store)      \
-    X(HTTP, http)        \
-    X(PING, ping)        \
-    X(SUBDOC, subdoc)
+#define IMPL_DECL(...)
+#define DECL_IMPL(...) __VA_ARGS__
+#define DECL_DECL(...) DECL_IMPL(__VA_ARGS__);
+#define IMPL_IMPL(...) __VA_ARGS__
 
-PYCBC_X_VERBS(PYCBC_CMD_PROXY_DECL);
+typedef struct pycbc_Collection pycbc_Collection_t;
+
+#define PYCBC_CMD_PROXY(UC, LC, SUBJECT, IMPL_TYPE)                          \
+    DECL_##IMPL_TYPE(lcb_STATUS pycbc_##LC(                                  \
+            SUBJECT##_##ARG, void *cookie, lcb_CMD##UC *cmd))                \
+            IMPL_##IMPL_TYPE({                                               \
+                return pycbc_verb(LC, SUBJECT##_##GETINSTANCE, cookie, cmd); \
+            };)
+#define PYCBC_X_VERBS(X, COLLECTION, NOCOLLECTION, IMPL_TYPE) \
+    X(COUNTER, counter, COLLECTION, IMPL_TYPE)                \
+    X(GET, get, COLLECTION, IMPL_TYPE)                        \
+    X(TOUCH, touch, COLLECTION, IMPL_TYPE)                    \
+    X(UNLOCK, unlock, COLLECTION, IMPL_TYPE)                  \
+    X(REMOVE, remove, COLLECTION, IMPL_TYPE)                  \
+    X(STORE, store, COLLECTION, IMPL_TYPE)                    \
+    X(HTTP, http, NOCOLLECTION, IMPL_TYPE)                    \
+    X(PING, ping, NOCOLLECTION, IMPL_TYPE)                    \
+    X(SUBDOC, subdoc, COLLECTION, IMPL_TYPE)
+
+#define COLLECTION_ARG pycbc_Collection_t* collection
+#define NOCOLLECTION_ARG lcb_INSTANCE* instance
+#define COLLECTION_GETINSTANCE collection->bucket->instance
+#define NOCOLLECTION_GETINSTANCE instance
+PYCBC_X_VERBS(PYCBC_CMD_PROXY, COLLECTION,NOCOLLECTION, DECL);
 
 #define CMDSCOPE_SDCMD_CREATE_V4(TYPE, LC, CMD, ...) \
     TYPE *CMD = NULL;                                \
@@ -556,7 +564,7 @@ PYCBC_X_VERBS(PYCBC_CMD_PROXY_DECL);
     CMDSCOPE_GENERIC_ALL(UC,                         \
                          LC,                         \
                          CMDSCOPE_CREATECMD_RAW_V4,  \
-                         CMDSCOPE_DESTROYCMD_RAW_V4, \
+                         CMDSCOPE_DESTROYCMD_RAW_V4,\
                          cmd)
 #define CMDSCOPE_NG(UC, LC) \
     CMDSCOPE_GENERIC_ALL(   \
@@ -659,11 +667,11 @@ typedef struct {
 
 /** Collection class **/
 
-typedef struct {
+struct pycbc_Collection{
     PyObject_HEAD
     pycbc_Bucket *bucket;
     pycbc_Collection_coords collection;
-} pycbc_Collection;
+} ;
 
 /**
  * Server-provided IDs/handles for collections
@@ -681,15 +689,31 @@ typedef struct {
 
 typedef struct {
     pycbc_coll_res_t result;
-    pycbc_Collection *coll;
+    pycbc_Collection_t *coll;
 } pycbc_coll_context;
 
-int pycbc_collection_init_from_fn_args(pycbc_Collection *self, pycbc_Bucket *bucket, PyObject *kwargs);
-pycbc_Collection pycbc_Collection_as_value(pycbc_Bucket *self, PyObject *kwargs);
-void pycbc_Collection_free_unmanaged_contents(const pycbc_Collection *collection);
-void pycbc_Collection_free_unmanaged(pycbc_Collection *collection);
+int pycbc_collection_init_from_fn_args(pycbc_Collection_t *self, pycbc_Bucket *bucket, PyObject *kwargs);
+pycbc_Collection_t pycbc_Collection_as_value(pycbc_Bucket *self, PyObject *kwargs);
+void pycbc_Collection_free_unmanaged_contents(const pycbc_Collection_t *collection);
+void pycbc_Collection_free_unmanaged(pycbc_Collection_t *collection);
 
 #    define PYCBC_COLLECTION_XARGS(X) X("collection", &collection, "O")
+
+#define PYCBC_UNSUPPORTED_COLLECTION_CMDS(X, DECL, IMPL)\
+    X(fts,FTS, DECL, IMPL)
+
+#define PYCBC_UNSUPPORTED_COLLECTION(UC,LC, DECL,IMPL)\
+DECL(lcb_STATUS lcb_cmd##LC##_collection(lcb_CMD##UC* cmd, const char *scope, size_t scope_len,\
+                                 const char *collection, size_t collection_len))\
+                                 IMPL({\
+    return (scope || scope_len || collection || collection_len)?LCB_NOT_SUPPORTED:LCB_SUCCESS;\
+})
+
+#define PYCBC_DUMMY(...)
+#define PYCBC_DECL(...) __VA_ARGS__;
+#define PYCBC_ECHO(...) __VA_ARGS__
+//PYCBC_UNSUPPORTED_COLLECTION_CMDS(PYCBC_UNSUPPORTED_COLLECTION,PYCBC_DECL,PYCBC_DUMMY)
+//PYCBC_UNSUPPORTED_COLLECTION_CMDS(PYCBC_UNSUPPORTED_COLLECTION,PYCBC_ECHO,PYCBC_ECHO)
 
 #define PYCBC_CMD_COLLECTION(TYPE, CMD, COLLECTION)                     \
     PYCBC_DEBUG_LOG("Setting scope %.*s and collection %.*s on cmd %p", \
@@ -697,9 +721,9 @@ void pycbc_Collection_free_unmanaged(pycbc_Collection *collection);
                     (COLLECTION)->collection.scope.content.buffer,      \
                     (COLLECTION)->collection.collection.content.length, \
                     (COLLECTION)->collection.collection.content.buffer, \
-                    cmd)                                                \
+                    CMD)                                                \
     lcb_cmd##TYPE##_collection(                                         \
-            cmd,                                                        \
+            CMD,                                                        \
             (COLLECTION)->collection.scope.content.buffer,              \
             (COLLECTION)->collection.scope.content.length,              \
             (COLLECTION)->collection.collection.content.buffer,         \

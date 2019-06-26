@@ -524,7 +524,7 @@ PYCBC_UNITS(PYCBC_OPUTIL_KEYHANDLER_BUILD_GEN)
 #endif
 
 int pycbc_wrap_bucket_callback(pycbc_oputil_keyhandler_raw_Bucket *original,
-                               pycbc_Collection *self,
+                               pycbc_Collection_t *self,
                                struct pycbc_common_vars *cv,
                                int optype,
                                PyObject *key,
@@ -549,7 +549,7 @@ int pycbc_oputil_iter_multi_Bucket(pycbc_Bucket *self,
 {
     pycbc_oputil_keyhandler_Collection wrapper;
     int rv = LCB_SUCCESS;
-    pycbc_Collection coll = pycbc_Collection_as_value(self, pycbc_DummyKeywords);
+    pycbc_Collection_t coll = pycbc_Collection_as_value(self, pycbc_DummyKeywords);
     wrapper.category = handler.category;
     wrapper.name = handler.name;
     wrapper.original = &handler.cb;
@@ -561,7 +561,7 @@ int pycbc_oputil_iter_multi_Bucket(pycbc_Bucket *self,
     return rv;
 }
 int pycbc_oputil_iter_multi_Collection(
-        pycbc_Collection *collectionself,
+        pycbc_Collection_t *collectionself,
         pycbc_seqtype_t seqtype,
         PyObject *collection,
         struct pycbc_common_vars *cv,

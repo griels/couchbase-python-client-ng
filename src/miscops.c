@@ -37,7 +37,7 @@ handle_single_keyop, pycbc_Bucket *self, struct pycbc_common_vars *cv, int optyp
     pycbc_pybuffer keybuf = { NULL };
     lcb_uint64_t cas = 0;
     lcb_STATUS err = LCB_SUCCESS;
-
+    pycbc_Collection_t* collection=NULL;
     (void)options; (void)arg;
 
 
@@ -93,7 +93,7 @@ handle_single_keyop, pycbc_Bucket *self, struct pycbc_common_vars *cv, int optyp
             CMDSCOPE_NG(UNLOCK, unlock)
             {
                 COMMON_OPTS(cmd, PYCBC_unlock_ATTR, unl, unlock);
-                err = pycbc_unlock(self->instance, cv->mres, cmd);
+                err = pycbc_unlock(collection, cv->mres, cmd);
             }
         }
     }
@@ -112,7 +112,7 @@ handle_single_keyop, pycbc_Bucket *self, struct pycbc_common_vars *cv, int optyp
                 CMDSCOPE_GENERIC_FAIL(,REMOVE,remove)
             }
             COMMON_OPTS(cmd, PYCBC_remove_ATTR, rm, remove);
-            err = pycbc_remove(self->instance, cv->mres, cmd);
+            err = pycbc_remove(collection, cv->mres, cmd);
         }
     }
 GT_ERR:
@@ -151,7 +151,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING, static, PyObject*, keyop_common, p
                              "durability_level",
                              NULL};
 
-    pycbc_Collection collection = pycbc_Collection_as_value(self, kwargs);
+    pycbc_Collection_t collection = pycbc_Collection_as_value(self, kwargs);
 
     PYCBC_DEBUG_LOG_CONTEXT(context, "Parsing args %R", kwargs)
     rv = PyArg_ParseTupleAndKeywords(args,

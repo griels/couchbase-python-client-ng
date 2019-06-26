@@ -129,7 +129,7 @@ typedef int (*pycbc_oputil_keyhandler_raw_Bucket)(
 
 typedef int (*pycbc_oputil_keyhandler_raw_Collection)(
         pycbc_oputil_keyhandler_raw_Bucket *original,
-        pycbc_Collection *self,
+        pycbc_Collection_t *self,
         struct pycbc_common_vars *cv,
         int optype,
         PyObject *key,
@@ -337,7 +337,7 @@ int pycbc_oputil_iter_multi_Bucket(pycbc_Bucket *self,
 
 #define pycbc_oputil_iter_multi(...) pycbc_oputil_iter_multi(__VA_ARGS__)
 int pycbc_oputil_iter_multi_Collection(
-        pycbc_Collection *self,
+        pycbc_Collection_t *self,
         pycbc_seqtype_t seqtype,
         PyObject *collection,
         struct pycbc_common_vars *cv,

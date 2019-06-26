@@ -81,7 +81,6 @@ const lcb_RESPGET* pycbc_view_document(const lcb_RESPVIEW *ctx)
 pycbc_strn_base_const pycbc_view_key(const lcb_RESPVIEW *ctx)
 {
     pycbc_strn_base_const temp;
-    ;
     lcb_respview_key(ctx, &temp.buffer, &temp.length);
     return temp;
 };
@@ -89,7 +88,6 @@ pycbc_strn_base_const pycbc_view_key(const lcb_RESPVIEW *ctx)
 pycbc_strn_base_const pycbc_view_geometry(const lcb_RESPVIEW *ctx)
 {
     pycbc_strn_base_const temp;
-    ;
     lcb_respview_geometry(ctx, &temp.buffer, &temp.length);
     return temp;
 };
@@ -97,7 +95,6 @@ pycbc_strn_base_const pycbc_view_geometry(const lcb_RESPVIEW *ctx)
 pycbc_strn_base_const pycbc_view_row(const lcb_RESPVIEW *ctx)
 {
     pycbc_strn_base_const temp;
-    ;
     lcb_respview_row(ctx, &temp.buffer, &temp.length);
     return temp;
 };

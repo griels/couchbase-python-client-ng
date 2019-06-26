@@ -2825,8 +2825,8 @@ void pycbc_Tracer_span_finish(const pycbc_tracer_payload_t *payload,
                               const pycbc_tracer_state *state,
                               PyObject *fresh_span);
 
-pycbc_Collection pycbc_Collection_as_value(pycbc_Bucket *self, PyObject *kwargs) {
-    pycbc_Collection unit ={{0}, 0, {{0}, {0}}};
+pycbc_Collection_t pycbc_Collection_as_value(pycbc_Bucket *self, PyObject *kwargs) {
+    pycbc_Collection_t unit ={{0}, 0, {{0}, {0}}};
     pycbc_collection_init_from_fn_args(&unit, self, kwargs);
     return unit;
 }
@@ -3114,7 +3114,7 @@ void pycbc_dict_add_text_kv(PyObject *dict, const char *key, const char *value)
 }
 
 
-PYCBC_X_VERBS(PYCBC_CMD_PROXY)
+PYCBC_X_VERBS(PYCBC_CMD_PROXY, COLLECTION,NOCOLLECTION, IMPL);
 
 lcb_STATUS pycbc_report_err(int res, const char *generic_errmsg, const char* FILE, int LINE)
 {
