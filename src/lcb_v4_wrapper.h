@@ -350,6 +350,8 @@ lcb_STATUS pycbc_cmdanalytics_host(lcb_CMDANALYTICS* CMD, const char* host);
 case LCB_PING_SERVICE_##X:        \
     return #Y;
 
+#define lcb_respview_geometry(...) LCB_NOT_SUPPORTED
+#define lcb_cmdview_spatial(...) LCB_NOT_SUPPORTED
 #define PYCBC_PP_ENCRYPT_CONSTANTS(X)
 #define PYCBC_X_SD_OPS_FULLDOC(X, NP, VAL, MVAL, CTR, ...) \
     NP(FULLDOC_GET, fulldoc_get, __VA_ARGS__)              \
