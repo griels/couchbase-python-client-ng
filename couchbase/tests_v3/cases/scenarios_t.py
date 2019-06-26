@@ -39,9 +39,8 @@ from couchbase import ReplicateTo, PersistTo, FiniteDuration, copy, \
     DocumentMutationLostException, ReplicaNotAvailableException, MutateSpec, CASMismatchException, \
     Durations, \
     MutateInOptions
-from couchbase import CBCollection, GetOptions, RemoveOptions, ReplaceOptions
+from couchbase import CBCollection, GetOptions, RemoveOptions, ReplaceOptions, Scope
 from couchbase import Bucket
-
 from couchbase_tests.base import ConnectionTestCase
 import couchbase.subdocument as SD
 import couchbase.admin
@@ -73,7 +72,7 @@ class Scenarios(ConnectionTestCase):
                     cm.insert_scope(scope_name)
             except:
                 pass
-            scope = self.bucket.scope(scope_name) if scope_name else self.bucket
+            scope = self.bucket.scope(scope_name) if scope_name else self.bucket  # type: Union[CBCollection,Scope]
             for collection_name, dest in collections.items():
                 try:
                     cm.insert_collection(collection_name,scope_name)
