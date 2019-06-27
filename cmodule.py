@@ -19,7 +19,7 @@ from setuptools import Extension
 import platform
 import warnings
 
-from cbuild_config import couchbase_core
+from cbuild_config import couchbase_core, install_headers, CBuildCommon
 
 
 def gen_cmodule(extoptions):
@@ -32,5 +32,11 @@ def gen_cmodule(extoptions):
                       'module will continue but will be unusable without couchbase_ffi')
         module = None
     return module
+
+
+def gen_distutils_build(extoptions,pkgdata):
+    e_mods = [gen_cmodule(extoptions)]
+    cmdclass = {'install_headers': install_headers, 'build_ext': CBuildCommon}
+    return e_mods, cmdclass
 
 
