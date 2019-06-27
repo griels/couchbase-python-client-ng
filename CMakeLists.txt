@@ -311,7 +311,7 @@ if (LCB_SRC)
             COMMAND cd <SOURCE_DIR> && ${REF_CMDS}
 
             COMMAND cd ${LCB_BUILD_DIR} && echo "in ${LCB_BUILD_DIR}" && cmake -DLCB_NO_PLUGINS=1  -B . -G ${WIN_PLATFORM} ${LCB_CMAKE_ARGS} -S <SOURCE_DIR>
-            BUILD_COMMAND cd ${LCB_BUILD_DIR} && cmake --build ${LCB_BUILD_DIR} --config Release
+            BUILD_COMMAND cd ${LCB_BUILD_DIR} && cmake --build ${LCB_BUILD_DIR} --config ${RELEASE_TYPE}
 
             INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/install
             INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include <INSTALL_DIR>/include
@@ -319,21 +319,12 @@ if (LCB_SRC)
             COMMAND ${CMAKE_COMMAND} -E make_directory <INSTALL_DIR>/lib/
 
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${LCB_BUILD_DIR}/generated <INSTALL_DIR>/include
-            COMMAND ${CMAKE_COMMAND} -E make_directory <INSTALL_DIR>/bin/Release
-            COMMAND ${CMAKE_COMMAND} -E make_directory <INSTALL_DIR>/lib/Release
-            COMMAND ${CMAKE_COMMAND} -E copy ${LCB_BUILD_DIR}/bin/Release/libcouchbase.dll <INSTALL_DIR>/lib/Release/
-            COMMAND ${CMAKE_COMMAND} -E copy ${LCB_BUILD_DIR}/lib/Release/libcouchbase.lib <INSTALL_DIR>/lib/Release/
-            COMMAND ${CMAKE_COMMAND} -E copy ${LCB_BUILD_DIR}/lib/Release/libcouchbase.exp <INSTALL_DIR>/lib/Release/
-
-            COMMAND cd ${LCB_BUILD_DIR} && cmake --build ${LCB_BUILD_DIR} --config Debug
-            COMMAND ${CMAKE_COMMAND} -E copy_directory ${LCB_BUILD_DIR}/generated <INSTALL_DIR>/include
-
-            COMMAND ${CMAKE_COMMAND} -E make_directory <INSTALL_DIR>/bin/Debug
-            COMMAND ${CMAKE_COMMAND} -E make_directory <INSTALL_DIR>/lib/Debug
-            COMMAND ${CMAKE_COMMAND} -E copy ${LCB_BUILD_DIR}/bin/Debug/libcouchbase_d.dll <INSTALL_DIR>/lib/Debug/
-            COMMAND ${CMAKE_COMMAND} -E copy ${LCB_BUILD_DIR}/lib/Debug/libcouchbase_d.lib <INSTALL_DIR>/lib/Debug/
-            COMMAND ${CMAKE_COMMAND} -E copy ${LCB_BUILD_DIR}/lib/Debug/libcouchbase_d.exp <INSTALL_DIR>/lib/Debug/
-            )
+            COMMAND ${CMAKE_COMMAND} -E make_directory <INSTALL_DIR>/bin/${RELEASE_TYPE}
+            COMMAND ${CMAKE_COMMAND} -E make_directory <INSTALL_DIR>/lib/${RELEASE_TYPE}
+            COMMAND ${CMAKE_COMMAND} -E copy ${LCB_BUILD_DIR}/bin/${RELEASE_TYPE}/libcouchbase.dll <INSTALL_DIR>/lib/${RELEASE_TYPE}/
+            COMMAND ${CMAKE_COMMAND} -E copy ${LCB_BUILD_DIR}/lib/${RELEASE_TYPE}/libcouchbase.lib <INSTALL_DIR>/lib/${RELEASE_TYPE}/
+            COMMAND ${CMAKE_COMMAND} -E copy ${LCB_BUILD_DIR}/lib/${RELEASE_TYPE}/libcouchbase.exp <INSTALL_DIR>/lib/${RELEASE_TYPE}/
+        )
 
 
     else (WIN32)
