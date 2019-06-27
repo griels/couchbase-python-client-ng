@@ -250,7 +250,7 @@ class Scenarios(ConnectionTestCase):
                 callback()
                 return
             except couchbase.exceptions.DurabilitySyncWriteAmbiguousException:
-                if self.coll.get("id").success():
+                if self.coll.get("id").success:
                     continue
                 logging.info("Our work here is done")
                 return
