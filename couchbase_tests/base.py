@@ -164,7 +164,7 @@ class ClusterInformation(object):
         self.protocol = "http"
         self.enable_tracing = "off"
         self.tracingparms = {}
-        self.bucket_username = None
+        self.bucket_username = "default"
 
     @staticmethod
     def filter_opts(options):
