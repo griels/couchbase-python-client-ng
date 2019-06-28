@@ -2814,7 +2814,7 @@ void pycbc_Tracer_span_finish(const pycbc_tracer_payload_t *payload,
                               PyObject *fresh_span);
 
 pycbc_Collection_t pycbc_Collection_as_value(pycbc_Bucket *self, PyObject *kwargs) {
-    pycbc_Collection_t unit ={{0}, 0, {{{0}}, {{0}}}};
+    pycbc_Collection_t unit ={0, 0, 0, {{0}}};
     pycbc_collection_init_from_fn_args(&unit, self, kwargs);
     return unit;
 }
