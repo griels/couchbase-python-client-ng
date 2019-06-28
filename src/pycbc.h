@@ -660,7 +660,7 @@ lcb_STATUS pycbc_log_coll(const char *TYPE,
                 PYCBC_DO_COLL(                                 \
                         TYPE, CMD, SCOPE, NSCOPE, COLLECTION, NCOLLECTION))
 #else
-#    define PYCBC_DO_COLL_LOGGING_IF_APPLICABLE(...) PYCBC_DO_COLL(__VA_ARGS__)
+#    define PYCBC_DO_COLL_LOGGING_IF_APPLICABLE(TYPE, CMD, SCOPE, NSCOPE, COLLECTION, NCOLLECTION) PYCBC_DO_COLL(TYPE, CMD, SCOPE, NSCOPE, COLLECTION, NCOLLECTION)
 #endif
 
 #define PYCBC_DO_COLL_IF_APPLICABLE(                                     \
@@ -952,9 +952,6 @@ void pycbc_Tracer_set_child(pycbc_Tracer_t *pTracer, lcbtrace_TRACER *pTRACER);
         }                                                          \
     }
 
-#define GENERIC_OPERAND(SCOPE, INSTANCE, CMD, HANDLE, CONTEXT, COMMAND, ...) \
-    lcb_##SCOPE##_##COMMAND(INSTANCE, __VA_ARGS__);
-
 #define PYCBC_TRACECMD_SCOPED_GENERIC(RV,           \
                                       SCOPE,        \
                                       COMMAND,      \
@@ -967,19 +964,6 @@ void pycbc_Tracer_set_child(pycbc_Tracer_t *pTracer, lcbtrace_TRACER *pTRACER);
                                       ...)          \
     SPAN_OPERAND(SCOPE, INSTANCE, CMD, HANDLE, CONTEXT);\
     RV = OPERAND(SCOPE, INSTANCE, CMD, HANDLE, CONTEXT, COMMAND, __VA_ARGS__);
-
-#    define PYCBC_TRACECMD_SCOPED(                                   \
-            RV, SCOPE, COMMAND, INSTANCE, CMD, HANDLE, CONTEXT, ...) \
-        PYCBC_TRACECMD_SCOPED_GENERIC(RV,                            \
-                                      SCOPE,                         \
-                                      COMMAND,                       \
-                                      INSTANCE,                      \
-                                      CMD,                           \
-                                      HANDLE,                        \
-                                      CONTEXT,                       \
-                                      GENERIC_SPAN_OPERAND,          \
-                                      GENERIC_OPERAND,               \
-                                      __VA_ARGS__)
 
 #    define PYCBC_TRACECMD_SCOPED_NULL(                     \
             RV, SCOPE, INSTANCE, CMD, HANDLE, CONTEXT, ...) \
@@ -995,9 +979,6 @@ void pycbc_Tracer_set_child(pycbc_Tracer_t *pTracer, lcbtrace_TRACER *pTRACER);
                                       __VA_ARGS__)
 #    define PYCBC_TRACECMD_TYPED(TYPE, CMD, CONTEXT, MRES, CURKEY, BUCKET) \
         PYCBC_TRACECMD_PURE(TYPE, CMD, CONTEXT);                           \
-        pycbc_MultiResult_init_context(MRES, CURKEY, CONTEXT, BUCKET);
-#    define PYCBC_TRACECMD(CMD, CONTEXT, MRES, CURKEY, BUCKET) \
-        PYCBC_TRACECMD_PURE(, CMD, CONTEXT);                   \
         pycbc_MultiResult_init_context(MRES, CURKEY, CONTEXT, BUCKET);
 
 #    define PYCBC_TRACE_POP_CONTEXT(CONTEXT) PYCBC_CONTEXT_DEREF((CONTEXT), 1);
