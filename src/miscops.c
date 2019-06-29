@@ -273,23 +273,23 @@ TRACED_FUNCTION_WRAPPER(endure_multi, LCBTRACE_OP_REQUEST_ENCODING, Bucket)
             "interval",
             NULL
     };
-
+    struct pycbc_Collection collection = pycbc_Collection_as_value(self,kwargs);
     rv = PyArg_ParseTupleAndKeywords(args, kwargs, "OBB|Off", kwlist,
                                      &keys,
                                      &persist_to, &replicate_to,
                                      &is_delete_O, &timeout, &interval);
     if (!rv) {
         PYCBC_EXCTHROW_ARGS();
-        return NULL;
+        goto GT_ERR;
     }
 
     rv = pycbc_oputil_check_sequence(keys, 1, &ncmds, &seqtype);
     if (rv < 0) {
-        return NULL;
+        goto GT_ERR;
     }
     rv = pycbc_common_vars_init(&cv, self, PYCBC_ARGOPT_MULTI, ncmds, 0);
     if (rv < 0) {
-        return NULL;
+        goto GT_ERR;
     }
 
     dopts.v.v0.cap_max = persist_to < 0 || replicate_to < 0;
@@ -304,7 +304,7 @@ TRACED_FUNCTION_WRAPPER(endure_multi, LCBTRACE_OP_REQUEST_ENCODING, Bucket)
         goto GT_DONE;
     }
 
-    rv = PYCBC_OPUTIL_ITER_MULTI(self, seqtype, keys, &cv, PYCBC_CMD_ENDURE, handle_single_keyop, NULL, context);
+    rv = PYCBC_OPUTIL_ITER_MULTI_COLLECTION(&collection, seqtype, keys, &cv, PYCBC_CMD_ENDURE, handle_single_keyop, NULL, context);
     if (rv < 0) {
         pycbc_wait_for_scheduled(self, kwargs, &context, &cv);
         goto GT_DONE;
@@ -316,8 +316,12 @@ TRACED_FUNCTION_WRAPPER(endure_multi, LCBTRACE_OP_REQUEST_ENCODING, Bucket)
 
     GT_DONE:
     pycbc_common_vars_finalize(&cv, self);
+    GT_FINAL:
+    pycbc_Collection_free_unmanaged_contents(&collection);
     return cv.ret;
-
+    GT_ERR:
+    cv.ret=NULL;
+    goto GT_FINAL;
 }
 #else
 TRACED_FUNCTION_WRAPPER(endure_multi, LCBTRACE_OP_REQUEST_ENCODING, Bucket)
