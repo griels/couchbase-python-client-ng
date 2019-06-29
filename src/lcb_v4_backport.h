@@ -74,6 +74,7 @@ typedef lcb_error_t lcb_STATUS;
     (cmd)->create = 1;
 #define lcb_cmdcounter_timeout(cmd, x) (cmd)->exptime = x;
 #define lcb_cmdcounter_expiration(cmd, x) (cmd)->exptime = x
+#define lcb_cmdcounter_collection(...) 0
 #define lcb_cmdstore_flags(CMD, VAL) cmd->flags = VAL;
 /*#define lcb_cmdgetreplica_create_all(ptr) (*(ptr))->strategy = LCB_REPLICA_ALL
 #define lcb_cmdgetreplica_create_select(ptr, INDEX) \
