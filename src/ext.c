@@ -675,6 +675,24 @@ void pycbc_debug_log(const char *FILE,
     fprintf(stderr,"\n");
     PYCBC_DEBUG_FLUSH
 }
+lcb_STATUS pycbc_log_coll(const char *TYPE,
+                          void *CMD,
+                          const char *SCOPE,
+                          size_t NSCOPE,
+                          const char *COLLECTION,
+                          size_t NCOLLECTION,
+                          lcb_STATUS RC)
+{
+    PYCBC_DEBUG_LOG("Setting scope %.*s and collection %.*s on %s cmd %p and got RC %d",
+                    NSCOPE,
+                    SCOPE,
+                    NCOLLECTION,
+                    COLLECTION,
+                    TYPE,
+                    CMD,
+                    RC)
+    return RC;
+}
 
 void pycbc_debug_log_prefix_nocontext(const char *FILE,
                                       const char *FUNC,
@@ -2794,6 +2812,12 @@ PyObject *pycbc_tracer_payload_start_span_args(
 void pycbc_Tracer_span_finish(const pycbc_tracer_payload_t *payload,
                               const pycbc_tracer_state *state,
                               PyObject *fresh_span);
+
+pycbc_Collection_t pycbc_Collection_as_value(pycbc_Bucket *self, PyObject *kwargs) {
+    pycbc_Collection_t unit ={{0}, 0, {{{0}}, {{0}}}};
+    pycbc_collection_init_from_fn_args(&unit, self, kwargs);
+    return unit;
+}
 pycbc_tracer_payload_t *pycbc_Tracer_propagate_span(
         pycbc_Tracer_t *tracer, pycbc_tracer_payload_t *payload)
 {
@@ -3077,8 +3101,148 @@ void pycbc_dict_add_text_kv(PyObject *dict, const char *key, const char *value)
             (pycbc_strn_base_const){.buffer = value, .length = strlen(value)});
 }
 
+#ifdef PYCBC_VERB_GEN
+PYCBC_X_VERBS(PYCBC_CMD_PROXY, COLLECTION,NOCOLLECTION, IMPL);
+#else
+lcb_STATUS pycbc_counter(pycbc_Collection_t *subject, void *cookie, lcb_CMDCOUNTER *cmd) {
+    lcb_STATUS rc = (((subject)->collection.scope.content.length && (subject)->collection.scope.content.buffer) ||
+                     ((subject)->collection.collection.content.buffer &&
+                      (subject)->collection.collection.content.length)) ? pycbc_log_coll("counter", cmd,
+                                                                                         (subject)->collection.scope.content.buffer,
+                                                                                         (subject)->collection.scope.content.length,
+                                                                                         (subject)->collection.collection.content.buffer,
+                                                                                         (subject)->collection.collection.content.length,
+                                                                                         lcb_cmdcounter_collection(cmd,
+                                                                                                                   (subject)->collection.scope.content.buffer,
+                                                                                                                   (subject)->collection.scope.content.length,
+                                                                                                                   (subject)->collection.collection.content.buffer,
+                                                                                                                   (subject)->collection.collection.content.length))
+                                                                        : LCB_SUCCESS;
+    return rc ? rc : pycbc_logging_monad_verb("_file_name_", "_function_name_", 3101, subject->bucket->instance, cookie,
+                                              cmd, "cmd", "counter",
+                                              lcb_counter(subject->bucket->instance, cookie, cmd));
+};
 
-PYCBC_X_VERBS(PYCBC_CMD_PROXY)
+lcb_STATUS pycbc_get(pycbc_Collection_t *subject, void *cookie, lcb_CMDGET *cmd) {
+    lcb_STATUS rc = (((subject)->collection.scope.content.length && (subject)->collection.scope.content.buffer) ||
+                     ((subject)->collection.collection.content.buffer &&
+                      (subject)->collection.collection.content.length)) ? pycbc_log_coll("get", cmd,
+                                                                                         (subject)->collection.scope.content.buffer,
+                                                                                         (subject)->collection.scope.content.length,
+                                                                                         (subject)->collection.collection.content.buffer,
+                                                                                         (subject)->collection.collection.content.length,
+                                                                                         lcb_cmdget_collection(cmd,
+                                                                                                               (subject)->collection.scope.content.buffer,
+                                                                                                               (subject)->collection.scope.content.length,
+                                                                                                               (subject)->collection.collection.content.buffer,
+                                                                                                               (subject)->collection.collection.content.length))
+                                                                        : LCB_SUCCESS;
+    return rc ? rc : pycbc_logging_monad_verb("_file_name_", "_function_name_", 3101, subject->bucket->instance, cookie,
+                                              cmd, "cmd", "get", lcb_get(subject->bucket->instance, cookie, cmd));
+};
+
+lcb_STATUS pycbc_touch(pycbc_Collection_t *subject, void *cookie, lcb_CMDTOUCH *cmd) {
+    lcb_STATUS rc = (((subject)->collection.scope.content.length && (subject)->collection.scope.content.buffer) ||
+                     ((subject)->collection.collection.content.buffer &&
+                      (subject)->collection.collection.content.length)) ? pycbc_log_coll("touch", cmd,
+                                                                                         (subject)->collection.scope.content.buffer,
+                                                                                         (subject)->collection.scope.content.length,
+                                                                                         (subject)->collection.collection.content.buffer,
+                                                                                         (subject)->collection.collection.content.length,
+                                                                                         lcb_cmdtouch_collection(cmd,
+                                                                                                                 (subject)->collection.scope.content.buffer,
+                                                                                                                 (subject)->collection.scope.content.length,
+                                                                                                                 (subject)->collection.collection.content.buffer,
+                                                                                                                 (subject)->collection.collection.content.length))
+                                                                        : LCB_SUCCESS;
+    return rc ? rc : pycbc_logging_monad_verb("_file_name_", "_function_name_", 3101, subject->bucket->instance, cookie,
+                                              cmd, "cmd", "touch", lcb_touch(subject->bucket->instance, cookie, cmd));
+};
+
+lcb_STATUS pycbc_unlock(pycbc_Collection_t *subject, void *cookie, lcb_CMDUNLOCK *cmd) {
+    lcb_STATUS rc = (((subject)->collection.scope.content.length && (subject)->collection.scope.content.buffer) ||
+                     ((subject)->collection.collection.content.buffer &&
+                      (subject)->collection.collection.content.length)) ? pycbc_log_coll("unlock", cmd,
+                                                                                         (subject)->collection.scope.content.buffer,
+                                                                                         (subject)->collection.scope.content.length,
+                                                                                         (subject)->collection.collection.content.buffer,
+                                                                                         (subject)->collection.collection.content.length,
+                                                                                         lcb_cmdunlock_collection(cmd,
+                                                                                                                  (subject)->collection.scope.content.buffer,
+                                                                                                                  (subject)->collection.scope.content.length,
+                                                                                                                  (subject)->collection.collection.content.buffer,
+                                                                                                                  (subject)->collection.collection.content.length))
+                                                                        : LCB_SUCCESS;
+    return rc ? rc : pycbc_logging_monad_verb("_file_name_", "_function_name_", 3101, subject->bucket->instance, cookie,
+                                              cmd, "cmd", "unlock", lcb_unlock(subject->bucket->instance, cookie, cmd));
+};
+
+lcb_STATUS pycbc_remove(pycbc_Collection_t *subject, void *cookie, lcb_CMDREMOVE *cmd) {
+    lcb_STATUS rc = (((subject)->collection.scope.content.length && (subject)->collection.scope.content.buffer) ||
+                     ((subject)->collection.collection.content.buffer &&
+                      (subject)->collection.collection.content.length)) ? pycbc_log_coll("remove", cmd,
+                                                                                         (subject)->collection.scope.content.buffer,
+                                                                                         (subject)->collection.scope.content.length,
+                                                                                         (subject)->collection.collection.content.buffer,
+                                                                                         (subject)->collection.collection.content.length,
+                                                                                         lcb_cmdremove_collection(cmd,
+                                                                                                                  (subject)->collection.scope.content.buffer,
+                                                                                                                  (subject)->collection.scope.content.length,
+                                                                                                                  (subject)->collection.collection.content.buffer,
+                                                                                                                  (subject)->collection.collection.content.length))
+                                                                        : LCB_SUCCESS;
+    return rc ? rc : pycbc_logging_monad_verb("_file_name_", "_function_name_", 3101, subject->bucket->instance, cookie,
+                                              cmd, "cmd", "remove", lcb_remove(subject->bucket->instance, cookie, cmd));
+};
+
+lcb_STATUS pycbc_store(pycbc_Collection_t *subject, void *cookie, lcb_CMDSTORE *cmd) {
+    lcb_STATUS rc = (((subject)->collection.scope.content.length && (subject)->collection.scope.content.buffer) ||
+                     ((subject)->collection.collection.content.buffer &&
+                      (subject)->collection.collection.content.length)) ? pycbc_log_coll("store", cmd,
+                                                                                         (subject)->collection.scope.content.buffer,
+                                                                                         (subject)->collection.scope.content.length,
+                                                                                         (subject)->collection.collection.content.buffer,
+                                                                                         (subject)->collection.collection.content.length,
+                                                                                         lcb_cmdstore_collection(cmd,
+                                                                                                                 (subject)->collection.scope.content.buffer,
+                                                                                                                 (subject)->collection.scope.content.length,
+                                                                                                                 (subject)->collection.collection.content.buffer,
+                                                                                                                 (subject)->collection.collection.content.length))
+                                                                        : LCB_SUCCESS;
+    return rc ? rc : pycbc_logging_monad_verb("_file_name_", "_function_name_", 3101, subject->bucket->instance, cookie,
+                                              cmd, "cmd", "store", lcb_store(subject->bucket->instance, cookie, cmd));
+};
+
+lcb_STATUS pycbc_http(lcb_INSTANCE *subject, void *cookie, lcb_CMDHTTP *cmd) {
+    lcb_STATUS rc = LCB_SUCCESS;
+    return rc ? rc : pycbc_logging_monad_verb("_file_name_", "_function_name_", 3101, subject, cookie, cmd, "cmd",
+                                              "http", lcb_http(subject, cookie, cmd));
+};
+
+lcb_STATUS pycbc_ping(lcb_INSTANCE *subject, void *cookie, lcb_CMDPING *cmd) {
+    lcb_STATUS rc = LCB_SUCCESS;
+    return rc ? rc : pycbc_logging_monad_verb("_file_name_", "_function_name_", 3101, subject, cookie, cmd, "cmd",
+                                              "ping", lcb_ping(subject, cookie, cmd));
+};
+
+lcb_STATUS pycbc_subdoc(pycbc_Collection_t *subject, void *cookie, lcb_CMDSUBDOC *cmd) {
+    lcb_STATUS rc = (((subject)->collection.scope.content.length && (subject)->collection.scope.content.buffer) ||
+                     ((subject)->collection.collection.content.buffer &&
+                      (subject)->collection.collection.content.length)) ? pycbc_log_coll("subdoc", cmd,
+                                                                                         (subject)->collection.scope.content.buffer,
+                                                                                         (subject)->collection.scope.content.length,
+                                                                                         (subject)->collection.collection.content.buffer,
+                                                                                         (subject)->collection.collection.content.length,
+                                                                                         lcb_cmdsubdoc_collection(cmd,
+                                                                                                                  (subject)->collection.scope.content.buffer,
+                                                                                                                  (subject)->collection.scope.content.length,
+                                                                                                                  (subject)->collection.collection.content.buffer,
+                                                                                                                  (subject)->collection.collection.content.length))
+                                                                        : LCB_SUCCESS;
+    return rc ? rc : pycbc_logging_monad_verb("_file_name_", "_function_name_", 3101, subject->bucket->instance, cookie,
+                                              cmd, "cmd", "subdoc", lcb_subdoc(subject->bucket->instance, cookie, cmd));
+};;
+#endif
 
 lcb_STATUS pycbc_report_err(int res, const char *generic_errmsg, const char* FILE, int LINE)
 {

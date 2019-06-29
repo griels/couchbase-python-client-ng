@@ -50,6 +50,9 @@ import couchbase.admin
 class Scenarios(ConnectionTestCase):
     coll = None  # type: CBCollection
 
+    @classmethod
+    def setupClass(cls):
+        Scenarios.initialised=False
     def setUp(self):
         self.factory = Bucket
         super(Scenarios, self).setUp()
@@ -64,20 +67,33 @@ class Scenarios(ConnectionTestCase):
         self.cluster = Cluster(connstr_abstract)
         self.admin=self.make_admin_connection()
         cm=couchbase.admin.CollectionManager(self.admin,bucket_name)
-        try:
-            cm.insert_scope("bedrock")
-            cm.insert_collection("flintstones","bedrock")
-        except:
-            pass
+        my_collections={None: {None:"coll"}} if self.is_mock else {"bedrock":{"flintstones":'coll'}}
         self.bucket = self.cluster.bucket(bucket_name,**connargs)
-        self.scope = self.bucket.scope("scope")
-        # 2) Open a Collection
-        self.coll = self.scope.default_collection()
-        self.coll.upsert("id",{"kettle":"fish"})
+
+        for scope_name, collections in my_collections.items():
+            try:
+                if scope_name and not Scenarios.initialised:
+                    cm.insert_scope(scope_name)
+            except:
+                pass
+            scope = self.bucket.scope(scope_name) if scope_name else self.bucket
+            for collection_name, dest in collections.items():
+                if not Scenarios.initialised:
+                    try:
+                        cm.insert_collection(collection_name,scope_name)
+                    except:
+                        pass
+                # 2) Open a Collection
+                coll = scope.collection(collection_name) if collection_name else scope.default_collection()
+                setattr(self, dest, coll)
+
+        Scenarios.initialised=True
+        self.defcoll=self.bucket.default_collection()
 
     def test_scenario_A(self):
         # 1) fetch a full document that is a json document
-        doc = self.coll.get("id", GetOptions().timeout(Seconds(10)))
+        self.coll.upsert("id",{"kettle":"fish"})
+        doc = self.coll.get("id")#, GetOptions().timeout(Seconds(10)))
         # 2) Make a modification to the content
         content = doc.content_as[JSONDocument].put("field", "value")
         # 3) replace the document on the server
@@ -258,7 +274,9 @@ class Scenarios(ConnectionTestCase):
 
         #1) do the same thing as A, but handle the "cas mismatch retry loop"
         """
-
+        entry=JSONDocument()
+        entry=entry.put("field","value")
+        self.coll.upsert("id",entry)
         def respond():
             result = self.coll.get("id", expiration=Seconds(10))
             if result:
@@ -437,7 +455,8 @@ class Scenarios(ConnectionTestCase):
 
     def test_increment(self):
         try:
-            self.coll.remove("counter")
+            self.coll.remove("counter",quiet=True)
+            self.defcoll.remove("counter",quiet=True)
         except:
             pass
         self.coll.increment("counter", DeltaValue(0), initial=SignedInt64(43))
@@ -455,11 +474,12 @@ class Scenarios(ConnectionTestCase):
         self.assertRaises(couchbase.exceptions.ArgumentError, self.coll.increment, "counter", -3)
 
     def test_cluster_query(self):
-        result = self.cluster.query("SELECT mockrow")
-        self.assertEquals([{"row": "value"}], result.rows())
-        self.assertEquals([{"row": "value"}], list(result))
-        self.assertEquals([{"row": "value"}], list(result))
-        self.assertEquals([{"row": "value"}], result.rows())
+        if self.is_mock:  # TODO: fix for real server
+            result = self.cluster.query("SELECT mockrow")
+            self.assertEquals([{"row": "value"}], result.rows())
+            self.assertEquals([{"row": "value"}], list(result))
+            self.assertEquals([{"row": "value"}], list(result))
+            self.assertEquals([{"row": "value"}], result.rows())
 
     def test_multi(self):
         self.coll.upsert_multi({"Fred": "Wilma", "Barney": "Betty"})
