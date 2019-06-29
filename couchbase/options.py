@@ -5,6 +5,7 @@ from typing import *
 import couchbase.exceptions
 import ctypes
 
+
 class FiniteDuration(object):
     def __init__(self, seconds  # type: Union[float,int]
                  ):
