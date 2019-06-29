@@ -45,6 +45,8 @@ from couchbase import Bucket
 from couchbase_tests.base import ConnectionTestCase
 import couchbase.subdocument as SD
 import couchbase.admin
+from couchbase_tests.base import SkipUnsupported
+import couchbase_core.exceptions
 
 
 class Scenarios(ConnectionTestCase):
@@ -219,10 +221,13 @@ class Scenarios(ConnectionTestCase):
         # Use a helper wrapper to retry our operation in the face of durability failures
         # remove is idempotent iff the app guarantees that the doc's id won't be reused (e.g. if it's a UUID).  This seems
         # a reasonable restriction.
-        for durability_type in Durability:
-            self.coll.upsert("id","fred",durability_level=Durability.NONE)
-            self.retry_idempotent_remove_server_side(
-                lambda: self.coll.remove("id", RemoveOptions().dur_server(durability_type)))
+        try:
+            for durability_type in Durability:
+                self.coll.upsert("id","fred",durability_level=Durability.NONE)
+                self.retry_idempotent_remove_server_side(
+                    lambda: self.coll.remove("id", RemoveOptions().dur_server(durability_type)))
+        except couchbase_core.exceptions.NotSupportedOnV2Error as e:
+            raise SkipUnsupported(e)
 
     def retry_idempotent_remove_server_side(self,  # type: Scenarios
                                             callback,  # type: Callable[[],Any]
