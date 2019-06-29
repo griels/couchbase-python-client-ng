@@ -549,21 +549,6 @@ const char PYCBC_UNKNOWN[] = "Unknown";
 
 pycbc_strn pycbc_invalid_strn;
 
-const char *pycbc_strn_buf(const pycbc_strn buf)
-{
-    return buf.buffer;
-}
-
-int pycbc_strn_valid(const pycbc_strn buf)
-{
-    return buf.buffer ? 1 : 0;
-}
-
-size_t pycbc_strn_len(pycbc_strn_base_const buf)
-{
-    return buf.length;
-}
-
 pycbc_strn_base_const pycbc_strn_const(pycbc_strn buf)
 {
     return (pycbc_strn_base_const){buf.buffer, buf.length};
@@ -615,22 +600,6 @@ pycbc_strn_unmanaged pycbc_strn_from_managed(PyObject *source)
     return pycbc_strn_ensure_psz_unmanaged(&original);
 }
 
-char *pycbc_strn_buf_psz(pycbc_strn_unmanaged buf)
-{
-    return buf.content.buffer;
-}
-
-void pycbc_strn_free(pycbc_strn_unmanaged buf)
-{
-    if (pycbc_strn_valid(buf.content)){
-        free((void *)buf.content.buffer);
-    }
-}
-
-pycbc_generic_array pycbc_strn_base_const_array(pycbc_strn_base_const orig)
-{
-    return (pycbc_generic_array){orig.buffer, orig.length};
-}
 #define PYCBC_STRN_FREE(BUF)                            \
     PYCBC_DEBUG_LOG("Freeing string buffer %.*s at %p", \
                     (int)(BUF).content.length,               \
@@ -706,16 +675,23 @@ void pycbc_debug_log(const char *FILE,
     fprintf(stderr,"\n");
     PYCBC_DEBUG_FLUSH
 }
-
-void pycbc_log_coll(const char* TYPE, void* CMD, const char* SCOPE, size_t NSCOPE, const char* COLLECTION, size_t NCOLLECTION)
+lcb_STATUS pycbc_log_coll(const char *TYPE,
+                          void *CMD,
+                          const char *SCOPE,
+                          size_t NSCOPE,
+                          const char *COLLECTION,
+                          size_t NCOLLECTION,
+                          lcb_STATUS RC)
 {
-    PYCBC_DEBUG_LOG("%s: Setting scope %.*s and collection %.*s on cmd %p",
+    PYCBC_DEBUG_LOG("Setting scope %.*s and collection %.*s on %s cmd %p and got RC %d",
                     TYPE,
                     NSCOPE,
                     SCOPE,
                     NCOLLECTION,
                     COLLECTION,
-                    CMD)
+                    CMD,
+                    RC)
+    return RC;
 }
 
 void pycbc_debug_log_prefix_nocontext(const char *FILE,
@@ -1267,6 +1243,7 @@ pycbc_stack_context_handle pycbc_Context_deref(
     return parent;
 }
 #include "oputil.h"
+#include "util_wrappers.h"
 
 pycbc_stack_context_handle pycbc_wrap_setup(const char *CATEGORY,
                                             const char *NAME,
@@ -2837,7 +2814,7 @@ void pycbc_Tracer_span_finish(const pycbc_tracer_payload_t *payload,
                               PyObject *fresh_span);
 
 pycbc_Collection_t pycbc_Collection_as_value(pycbc_Bucket *self, PyObject *kwargs) {
-    pycbc_Collection_t unit ={{0}, 0, {{0}, {0}}};
+    pycbc_Collection_t unit ={{0}, 0, {{{0}}, {{0}}}};
     pycbc_collection_init_from_fn_args(&unit, self, kwargs);
     return unit;
 }
@@ -3125,6 +3102,7 @@ void pycbc_dict_add_text_kv(PyObject *dict, const char *key, const char *value)
 }
 
 
+//PYCBC_X_VERBS(PYCBC_CMD_PROXY, COLLECTION,NOCOLLECTION, IMPL);
 PYCBC_X_VERBS(PYCBC_CMD_PROXY, COLLECTION,NOCOLLECTION, IMPL);
 
 lcb_STATUS pycbc_report_err(int res, const char *generic_errmsg, const char* FILE, int LINE)
