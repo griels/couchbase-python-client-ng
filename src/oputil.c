@@ -891,6 +891,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
                 pycbc__SDResult *newitm)
 {
     pycbc_Bucket* self = collection->bucket;
+    (void)self;
     if (rv == 0) {
         PYCBC_TRACECMD_PURE(subdoc, cmd, context);
         newitm->tracing_context = context;
