@@ -370,41 +370,6 @@ enum {
     PYCBC_CONN_F_ASYNC_DTOR = 1 << 5
 };
 
-#define PYCBX_X_SYNCREPERR(X)                                                 \
-    X(LCB_DURABILITY_INVALID_LEVEL,                                           \
-      0x63,                                                                   \
-      LCB_ERRTYPE_DURABILITY | LCB_ERRTYPE_INPUT | LCB_ERRTYPE_SRVGEN,        \
-      "Invalid durability level was specified")                               \
-    /** Valid request, but given durability requirements are impossible to    \
-     * achieve - because insufficient configured replicas are connected.      \
-     * Assuming level=majority and C=number of configured nodes, durability   \
-     * becomes impossible if floor((C + 1) / 2) nodes or greater are offline. \
-     */                                                                       \
-    X(LCB_DURABILITY_IMPOSSIBLE,                                              \
-      0x64,                                                                   \
-      LCB_ERRTYPE_DURABILITY | LCB_ERRTYPE_SRVGEN,                            \
-      "Given durability requirements are impossible to achieve")              \
-    /** Returned if an attempt is made to mutate a key which already has a    \
-     * SyncWrite pending. Client would typically retry (possibly with         \
-     * backoff). Similar to ELOCKED */                                                        \
-    X(LCB_DURABILITY_SYNC_WRITE_IN_PROGRESS,                                  \
-      0x65,                                                                   \
-      LCB_ERRTYPE_DURABILITY | LCB_ERRTYPE_SRVGEN | LCB_ERRTYPE_TRANSIENT,    \
-      "There is a synchronous mutation pending for given key")                \
-    /** The SyncWrite request has not completed in the specified time and has \
-     * ambiguous result - it may Succeed or Fail; but the final value is not  \
-     * yet known */                                                           \
-    X(LCB_DURABILITY_SYNC_WRITE_AMBIGUOUS,                                    \
-      0x66,                                                                   \
-      LCB_ERRTYPE_DURABILITY | LCB_ERRTYPE_SRVGEN,                            \
-      "Synchronous mutation has not completed in the specified time and has " \
-      "ambiguous result")
-
-#define PYCBC_X_DURLEVEL(X)           \
-    X(NONE)                           \
-    X(MAJORITY)                       \
-    X(MAJORITY_AND_PERSIST_ON_MASTER) \
-    X(PERSIST_TO_MAJORITY)
 
 #ifndef PYCBC_DUR_DISABLED
 #define PYCBC_DUR_ENABLED
@@ -514,34 +479,6 @@ lcb_STATUS pycbc_logging_monad_verb(const char *FILE,
 #define DECL_IMPL(...) __VA_ARGS__
 #define DECL_DECL(...) DECL_IMPL(__VA_ARGS__);
 #define IMPL_IMPL(...) __VA_ARGS__
-
-typedef struct pycbc_Collection pycbc_Collection_t;
-
-#define PYCBC_CMD_PROXY(UC, LC, SUBJECT, IMPL_TYPE)                          \
-    DECL_##IMPL_TYPE(lcb_STATUS pycbc_##LC(                                  \
-            SUBJECT##_##ARG subject, void *cookie, lcb_CMD##UC *cmd))                \
-            IMPL_##IMPL_TYPE({                                               \
-                SUBJECT##_##SET_COLL(UC,LC,cmd,subject);\
-                return pycbc_verb(LC, SUBJECT##_##GETINSTANCE, cookie, cmd); \
-            };)
-#define PYCBC_X_VERBS(X, COLLECTION, NOCOLLECTION, IMPL_TYPE) \
-    X(COUNTER, counter, COLLECTION, IMPL_TYPE)                \
-    X(GET, get, COLLECTION, IMPL_TYPE)                        \
-    X(TOUCH, touch, COLLECTION, IMPL_TYPE)                    \
-    X(UNLOCK, unlock, COLLECTION, IMPL_TYPE)                  \
-    X(REMOVE, remove, COLLECTION, IMPL_TYPE)                  \
-    X(STORE, store, COLLECTION, IMPL_TYPE)                    \
-    X(HTTP, http, NOCOLLECTION, IMPL_TYPE)                    \
-    X(PING, ping, NOCOLLECTION, IMPL_TYPE)                    \
-    X(SUBDOC, subdoc, COLLECTION, IMPL_TYPE)
-
-#define COLLECTION_ARG pycbc_Collection_t*
-#define NOCOLLECTION_ARG lcb_INSTANCE*
-#define COLLECTION_GETINSTANCE subject->bucket->instance
-#define NOCOLLECTION_GETINSTANCE subject
-#define COLLECTION_SET_COLL(UC,LC,CMD,SUBJECT) PYCBC_CMD_COLLECTION(LC,CMD,SUBJECT)
-#define NOCOLLECTION_SET_COLL(UC,LC,CMD,SUBJECT)
-PYCBC_X_VERBS(PYCBC_CMD_PROXY, COLLECTION, NOCOLLECTION, DECL);
 
 #define CMDSCOPE_SDCMD_CREATE_V4(TYPE, LC, CMD, ...) \
     TYPE *CMD = NULL;                                \
@@ -670,11 +607,13 @@ typedef struct {
 
 /** Collection class **/
 
+typedef struct pycbc_Collection pycbc_Collection_t;
+
 struct pycbc_Collection{
     PyObject_HEAD
     pycbc_Bucket *bucket;
     pycbc_Collection_coords collection;
-} ;
+};
 
 /**
  * Server-provided IDs/handles for collections
@@ -690,6 +629,7 @@ typedef struct {
     lcb_STATUS err;
 } pycbc_coll_res_t;
 
+
 typedef struct {
     pycbc_coll_res_t result;
     pycbc_Collection_t *coll;
@@ -700,26 +640,71 @@ pycbc_Collection_t pycbc_Collection_as_value(pycbc_Bucket *self, PyObject *kwarg
 void pycbc_Collection_free_unmanaged_contents(const pycbc_Collection_t *collection);
 #    define PYCBC_COLLECTION_XARGS(X) X("collection", &collection, "O")
 
-void pycbc_log_coll(const char* TYPE, void* CMD, const char* SCOPE, size_t NSCOPE, const char* COLLECTION, size_t NCOLLECTION);
+#ifdef PYCBC_DEBUG
+lcb_STATUS pycbc_log_coll(const char *TYPE,
+                          void *CMD,
+                          const char *SCOPE,
+                          size_t NSCOPE,
+                          const char *COLLECTION,
+                          size_t NCOLLECTION,
+                          lcb_STATUS RC);
+#    define PYCBC_DO_COLL_LOGGING_IF_APPLICABLE(               \
+            TYPE, CMD, SCOPE, NSCOPE, COLLECTION, NCOLLECTION) \
+        pycbc_log_coll(                                       \
+                #TYPE,                                         \
+                CMD,                                           \
+                SCOPE,                                         \
+                NSCOPE,                                        \
+                COLLECTION,                                    \
+                NCOLLECTION,                                   \
+                PYCBC_DO_COLL(                                 \
+                        TYPE, CMD, SCOPE, NSCOPE, COLLECTION, NCOLLECTION))
+#else
+#    define PYCBC_DO_COLL_LOGGING_IF_APPLICABLE(...) PYCBC_DO_COLL(__VA_ARGS__)
+#endif
 
-#define PYCBC_CMD_DO_ACTUAL_COLL(                                           \
-        TYPE, CMD, SCOPE, NSCOPE, COLLECTION, NCOLLECTION)                  \
-    if ((NSCOPE && SCOPE) || (COLLECTION && NCOLLECTION)) {                 \
-        pycbc_log_coll(#TYPE, CMD, SCOPE, NSCOPE, COLLECTION, NCOLLECTION); \
-        lcb_cmd##TYPE##_collection(                                         \
-                CMD, SCOPE, NSCOPE, COLLECTION, NCOLLECTION);               \
-    }
+#define PYCBC_DO_COLL_IF_APPLICABLE(                                     \
+        TYPE, CMD, SCOPE, NSCOPE, COLLECTION, NCOLLECTION)               \
+    ((NSCOPE && SCOPE) || (COLLECTION && NCOLLECTION))                   \
+            ? PYCBC_DO_COLL_LOGGING_IF_APPLICABLE(                       \
+                      TYPE, CMD, SCOPE, NSCOPE, COLLECTION, NCOLLECTION) \
+            : LCB_SUCCESS
 
-#define PYCBC_CMD_COLLECTION(TYPE, CMD, COLLECTION)                 \
-    {                                                               \
-        PYCBC_CMD_DO_ACTUAL_COLL(                                   \
+#define PYCBC_CMD_COLLECTION(TYPE, CMD, COLLECTION)\
+        PYCBC_DO_COLL_IF_APPLICABLE(                                \
                 TYPE,                                               \
                 CMD,                                                \
                 (COLLECTION)->collection.scope.content.buffer,      \
                 (COLLECTION)->collection.scope.content.length,      \
                 (COLLECTION)->collection.collection.content.buffer, \
                 (COLLECTION)->collection.collection.content.length) \
-    }
+
+
+#define PYCBC_CMD_PROXY(UC, LC, SUBJECT, IMPL_TYPE)                          \
+    DECL_##IMPL_TYPE(lcb_STATUS pycbc_##LC(                                  \
+            SUBJECT##_##ARG subject, void *cookie, lcb_CMD##UC *cmd))        \
+            IMPL_##IMPL_TYPE({                                               \
+                lcb_STATUS rc=SUBJECT##_##SET_COLL(UC, LC, cmd, subject);                  \
+                return rc?rc:pycbc_verb(LC, SUBJECT##_##GETINSTANCE, cookie, cmd); \
+            };)
+#define PYCBC_X_VERBS(X, COLLECTION, NOCOLLECTION, IMPL_TYPE) \
+    X(COUNTER, counter, COLLECTION, IMPL_TYPE)                \
+    X(GET, get, COLLECTION, IMPL_TYPE)                        \
+    X(TOUCH, touch, COLLECTION, IMPL_TYPE)                    \
+    X(UNLOCK, unlock, COLLECTION, IMPL_TYPE)                  \
+    X(REMOVE, remove, COLLECTION, IMPL_TYPE)                  \
+    X(STORE, store, COLLECTION, IMPL_TYPE)                    \
+    X(HTTP, http, NOCOLLECTION, IMPL_TYPE)                    \
+    X(PING, ping, NOCOLLECTION, IMPL_TYPE)                    \
+    X(SUBDOC, subdoc, COLLECTION, IMPL_TYPE)
+
+#define COLLECTION_ARG pycbc_Collection_t*
+#define NOCOLLECTION_ARG lcb_INSTANCE*
+#define COLLECTION_GETINSTANCE subject->bucket->instance
+#define NOCOLLECTION_GETINSTANCE subject
+#define COLLECTION_SET_COLL(UC,LC,CMD,SUBJECT) PYCBC_CMD_COLLECTION(LC,CMD,SUBJECT)
+#define NOCOLLECTION_SET_COLL(UC,LC,CMD,SUBJECT) LCB_SUCCESS
+PYCBC_X_VERBS(PYCBC_CMD_PROXY, COLLECTION, NOCOLLECTION, DECL);
 
 void *pycbc_capsule_value_or_null(PyObject *capsule, const char *capsule_name);
 
