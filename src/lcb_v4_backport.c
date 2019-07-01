@@ -138,7 +138,7 @@ void lcb_cmdgetreplica_create(lcb_CMDGETREPLICA **pcmd, int strategy)
     }
 }
 #include "pycbc_subdocops.h"
-LIBCOUCHBASE_API lcb_STATUS lcb_subdocops_create(lcb_SUBDOCOPS **operations,
+lcb_STATUS lcb_subdocops_create(lcb_SUBDOCOPS **operations,
                                                  size_t capacity)
 {
     lcb_SUBDOCOPS *res = (lcb_SUBDOCOPS *)calloc(1, sizeof(lcb_SUBDOCOPS));
@@ -147,7 +147,7 @@ LIBCOUCHBASE_API lcb_STATUS lcb_subdocops_create(lcb_SUBDOCOPS **operations,
     *operations = res;
     return LCB_SUCCESS;
 }
-LIBCOUCHBASE_API lcb_STATUS
+lcb_STATUS
 lcb_cmdsubdoc_operations(lcb_CMDSUBDOC *cmd, const lcb_SUBDOCOPS *operations)
 {
     cmd->specs = operations->specs;
@@ -173,7 +173,7 @@ void pycbc_cmdsubdoc_flags_from_scv(unsigned int sd_doc_flags, lcb_CMDSUBDOC *cm
 }
 
 
-LIBCOUCHBASE_API lcb_STATUS lcb_subdocops_destroy(lcb_SUBDOCOPS *operations)
+lcb_STATUS lcb_subdocops_destroy(lcb_SUBDOCOPS *operations)
 {
     if (operations) {
         if (operations->specs) {
@@ -191,7 +191,7 @@ LIBCOUCHBASE_API lcb_STATUS lcb_subdocops_destroy(lcb_SUBDOCOPS *operations)
     return LCB_SUCCESS;
 }
 
-LIBCOUCHBASE_API lcb_STATUS
+lcb_STATUS
 lcb_cmdremove_durability(lcb_CMDREMOVE *cmd, pycbc_DURABILITY_LEVEL level)
 {
 #if PYCBC_LCB_API>0x02FF00
@@ -202,7 +202,7 @@ lcb_cmdremove_durability(lcb_CMDREMOVE *cmd, pycbc_DURABILITY_LEVEL level)
 #endif
 }
 
-LIBCOUCHBASE_API lcb_STATUS
+lcb_STATUS
 lcb_cmdstore_durability(lcb_CMDSTORE *cmd, pycbc_DURABILITY_LEVEL level)
 {
 #if PYCBC_LCB_API>0x02FF00
@@ -215,15 +215,338 @@ lcb_cmdstore_durability(lcb_CMDSTORE *cmd, pycbc_DURABILITY_LEVEL level)
 
 /**
  * Implementations of all the LCB API V4 subdocument operations */
-
+#define PYCBC_SD_OPS_GEN
+#ifdef PYCBC_SD_OPS_GEN
 PYCBC_X_SD_OPS(PYCBC_SDCMD_CASE,
                PYCBC_SDCMD_CASE_NP,
                PYCBC_SDCMD_CASE_VAL,
                PYCBC_SDCMD_CASE_MVAL,
                PYCBC_SDCMD_CASE_COUNTER,
-               LITERAL,
-               LITERAL)
+               IMPL)
+#else
 
+lcb_STATUS
+lcb_subdocops_get(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path, size_t path_len) {
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_GET;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS
+lcb_subdocops_exists(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path, size_t path_len) {
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_EXISTS;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS
+lcb_subdocops_replace(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path, size_t path_len,
+                      const char *value, size_t value_len) {
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    {
+        if (value && value_len) {
+            do {
+                (&operations->specs[index])->value.vtype = LCB_KV_COPY;
+                (&operations->specs[index])->value.u_buf.contig.bytes = value;
+                (&operations->specs[index])->value.u_buf.contig.nbytes = value_len;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_REPLACE;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS
+lcb_subdocops_dict_add(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path, size_t path_len,
+                       const char *value, size_t value_len) {
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    {
+        if (value && value_len) {
+            do {
+                (&operations->specs[index])->value.vtype = LCB_KV_COPY;
+                (&operations->specs[index])->value.u_buf.contig.bytes = value;
+                (&operations->specs[index])->value.u_buf.contig.nbytes = value_len;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_DICT_ADD;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS
+lcb_subdocops_dict_upsert(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path, size_t path_len,
+                          const char *value, size_t value_len) {
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    {
+        if (value && value_len) {
+            do {
+                (&operations->specs[index])->value.vtype = LCB_KV_COPY;
+                (&operations->specs[index])->value.u_buf.contig.bytes = value;
+                (&operations->specs[index])->value.u_buf.contig.nbytes = value_len;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_DICT_UPSERT;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS lcb_subdocops_array_add_first(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path,
+                                         size_t path_len, const char *value, size_t value_len) {
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    {
+        if (value && value_len) {
+            do {
+                (&operations->specs[index])->value.vtype = LCB_KV_COPY;
+                (&operations->specs[index])->value.u_buf.contig.bytes = value;
+                (&operations->specs[index])->value.u_buf.contig.nbytes = value_len;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_ARRAY_ADD_FIRST;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS
+lcb_subdocops_array_add_last(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path, size_t path_len,
+                             const char *value, size_t value_len) {
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    {
+        if (value && value_len) {
+            do {
+                (&operations->specs[index])->value.vtype = LCB_KV_COPY;
+                (&operations->specs[index])->value.u_buf.contig.bytes = value;
+                (&operations->specs[index])->value.u_buf.contig.nbytes = value_len;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_ARRAY_ADD_LAST;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS lcb_subdocops_array_add_unique(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path,
+                                          size_t path_len, const char *value, size_t value_len) {
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    {
+        if (value && value_len) {
+            do {
+                (&operations->specs[index])->value.vtype = LCB_KV_COPY;
+                (&operations->specs[index])->value.u_buf.contig.bytes = value;
+                (&operations->specs[index])->value.u_buf.contig.nbytes = value_len;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_ARRAY_ADD_UNIQUE;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS
+lcb_subdocops_array_insert(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path, size_t path_len,
+                           const char *value, size_t value_len) {
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    {
+        if (value && value_len) {
+            do {
+                (&operations->specs[index])->value.vtype = LCB_KV_COPY;
+                (&operations->specs[index])->value.u_buf.contig.bytes = value;
+                (&operations->specs[index])->value.u_buf.contig.nbytes = value_len;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_ARRAY_INSERT;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS
+lcb_subdocops_counter(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path, size_t path_len,
+                      int64_t delta) {
+    char *value = (char *) calloc(22, sizeof(char));
+    size_t value_len = __builtin___snprintf_chk(value, 21, 0, __builtin_object_size(value, 2 > 1 ? 1 : 0), "%" "ll" "d",
+                                                delta);
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    {
+        if (value && value_len) {
+            do {
+                (&operations->specs[index])->value.vtype = LCB_KV_COPY;
+                (&operations->specs[index])->value.u_buf.contig.bytes = value;
+                (&operations->specs[index])->value.u_buf.contig.nbytes = value_len;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_COUNTER;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS
+lcb_subdocops_remove(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path, size_t path_len) {
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_REMOVE;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS lcb_subdocops_get_count(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path,
+                                   size_t path_len) {
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_GET_COUNT;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS lcb_subdocops_get_fulldoc(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags) {
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_GET_FULLDOC;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS lcb_subdocops_set_fulldoc(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags, const char *path,
+                                     size_t path_len) {
+    {
+        if (path && path_len) {
+            do {
+                (&operations->specs[index])->path.contig.bytes = path;
+                (&operations->specs[index])->path.contig.nbytes = path_len;
+                (&operations->specs[index])->path.type = LCB_KV_COPY;
+            }
+            while (0);;
+        }
+    };
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_SET_FULLDOC;
+    return LCB_SUCCESS;
+}
+
+lcb_STATUS lcb_subdocops_remove_fulldoc(lcb_SUBDOCOPS *operations, size_t index, uint32_t flags) {
+    operations->specs[index].options = flags;
+    operations->specs[index].sdcmd = LCB_SDCMD_REMOVE_FULLDOC;
+    return LCB_SUCCESS;
+}
+#endif
 void lcb_cmdhttp_path(lcb_CMDHTTP *htcmd, const char *path, size_t length)
 {
     {
@@ -244,6 +567,14 @@ lcb_STATUS pycbc_cmdanalytics_host(lcb_CMDANALYTICS *CMD, const char *host) {
     return LCB_SUCCESS;
 }
 
+lcb_STATUS lcb_n1ql(lcb_t instance, const void* cookie, const lcb_CMDN1QL* cmd)
+{
+	return lcb_n1ql_query(instance, cookie, cmd);
+}
+lcb_STATUS lcb_analytics(lcb_t instance, const void* cookie, const lcb_CMDN1QL *cmd)
+{
+    return lcb_n1ql_query(instance, cookie, cmd);
+}
 
 lcb_STATUS lcb_respfts_http_response(const lcb_RESPFTS *resp, const lcb_RESPHTTP **ptr) {
     *ptr=resp->htresp;
