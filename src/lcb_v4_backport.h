@@ -35,6 +35,12 @@ typedef lcb_CMDVIEWQUERY lcb_CMDVIEW;
 typedef lcb_RESPN1QL lcb_RESPANALYTICS;
 typedef lcb_error_t lcb_STATUS;
 
+typedef lcb_PINGSVCTYPE lcb_PING_SERVICE;
+typedef lcb_RESPVIEWQUERY lcb_RESPVIEW;
+typedef lcb_CMDVIEWQUERY lcb_CMDVIEW;
+typedef lcb_RESPN1QL lcb_RESPANALYTICS;
+typedef lcb_error_t lcb_STATUS;
+
 #define PYCBC_ENDURE 1
 
 #define pycbc_RESPGET_USE(X) &temp
@@ -62,6 +68,7 @@ typedef lcb_error_t lcb_STATUS;
 
 #define lcb_cmdget_expiration(cmd, time) cmd->exptime = time;
 #define lcb_cmdget_timeout(cmd, time) cmd->exptime = time;
+#define lcb_cmdget_collection(...) LCB_NOT_SUPPORTED
 #define lcb_cmdtouch_create(CMD) \
     lcb_CMDTOUCH cmd_real = {0}; \
     *(CMD) = &cmd_real;
@@ -75,7 +82,7 @@ typedef lcb_error_t lcb_STATUS;
     (cmd)->create = 1;
 #define lcb_cmdcounter_timeout(cmd, x) (cmd)->exptime = x;
 #define lcb_cmdcounter_expiration(cmd, x) (cmd)->exptime = x
-#define lcb_cmdcounter_collection(...) 0
+#define lcb_cmdcounter_collection(...) LCB_NOT_SUPPORTED
 #define lcb_cmdstore_flags(CMD, VAL) cmd->flags = VAL;
 #define lcb_cmdgetreplica_expiration(CMD, TTL) (CMD)->exptime = TTL
 #define lcb_cmdstore_create(CMD, OP) \
@@ -797,5 +804,7 @@ lcb_cmdremove_durability(lcb_CMDREMOVE *cmd, pycbc_DURABILITY_LEVEL level);
     X(LCB_ERRTYPE_NETWORK);   \
     X(LCB_ERRTYPE_TRANSIENT); \
     X(LCB_ERRTYPE_INPUT);
+
+#define PYCBC_DO_COLL(TYPE, CMD, SCOPE, NSCOPE, COLLECTION, NCOLLECTION) LCB_NOT_SUPPORTED
 
 #endif // COUCHBASE_PYTHON_CLIENT_LCB_V4_BACKPORT_H

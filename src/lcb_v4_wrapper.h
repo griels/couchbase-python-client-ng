@@ -390,7 +390,7 @@ typedef lcb_DURABILITY_LEVEL pycbc_DURABILITY_LEVEL;
       "Given durability requirements are impossible to achieve")              \
     /** Returned if an attempt is made to mutate a key which already has a    \
      * SyncWrite pending. Client would typically retry (possibly with         \
-     * backoff). Similar to ELOCKED */                                                        \
+     * backoff). Similar to ELOCKED */                                        \
     X(LCB_DURABILITY_SYNC_WRITE_IN_PROGRESS,                                  \
       0x65,                                                                   \
       LCB_ERRTYPE_DURABILITY | LCB_ERRTYPE_SRVGEN | LCB_ERRTYPE_TRANSIENT,    \

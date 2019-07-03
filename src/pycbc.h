@@ -19,7 +19,6 @@
  * This file contains the base header for the Python Couchbase Client
  * @author Mark Nunberg
  */
-#define PYCBC_DEBUG
 #define PYCBC_TRACE_FINISH_SPANS
 #define PYCBC_GLOBAL_SCHED
 #define PYCBC_POSTINCREMENT

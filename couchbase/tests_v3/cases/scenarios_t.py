@@ -69,7 +69,7 @@ class Scenarios(ConnectionTestCase):
         self.cluster = Cluster(connstr_abstract)
         self.admin=self.make_admin_connection()
         cm=couchbase.admin.CollectionManager(self.admin,bucket_name)
-        my_collections={None: {None:"coll"}} if self.is_mock else {"bedrock":{"flintstones":'coll'}}
+        my_collections={None: {None:"coll"}} if True or self.is_mock else {"bedrock":{"flintstones":'coll'}}
         self.bucket = self.cluster.bucket(bucket_name,**connargs)
 
         for scope_name, collections in my_collections.items():
