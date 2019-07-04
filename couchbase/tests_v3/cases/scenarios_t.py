@@ -74,7 +74,7 @@ class Scenarios(ConnectionTestCase):
         cm=couchbase.admin.CollectionManager(self.admin,bucket_name)
         my_collections={None: {None:"coll"}} if self.is_mock else {"bedrock":{"flintstones":'coll'}}
         self.bucket = self.cluster.bucket(bucket_name,**connargs)
-
+        #self.cluster.authenticate(couchbase_core.cluster.ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password))
         for scope_name, collections in my_collections.items():
             try:
                 if scope_name and not Scenarios.initialised:
