@@ -4,6 +4,7 @@ from uuid import UUID
 
 from typing import *
 
+from couchbase_core.admin import Admin
 from .n1ql import QueryResult, IQueryResult
 from .options import OptionBlock, forward_args, OptionBlockDeriv
 from .bucket import BucketOptions, Bucket, CoreBucket
@@ -42,6 +43,7 @@ def options_to_func(orig,  # type: U
 
     return invocation(orig)
 
+ClusterManager=Admin
 
 class QueryOptions(OptionBlock, IQueryResult):
     @property
@@ -184,8 +186,11 @@ class Cluster:
         """
         return self._operate_on_first_bucket(CoreBucket.diagnostics, DiagnosticsException)
 
-    def users(self):
+    def users(self  # type: Cluster
+              ):
         # type: (...)->IUserManager
+        man=self.manager()  # type: Admin
+
         raise NotImplementedError("To be implemented in SDK3 full release")
 
     def indexes(self):
@@ -194,11 +199,11 @@ class Cluster:
 
     def nodes(self):
         # type: (...)->INodeManager
-        return self._cluster
+        return self._cluster.cluster_manager()
 
     def buckets(self):
         # type: (...)->IBucketManager
-        return self._cluster._buckets
+        return self._cluster.cluster_manager()
 
     def disconnect(self,
                    options=None  # type: DisconnectOptions

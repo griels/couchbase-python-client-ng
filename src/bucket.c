@@ -1277,3 +1277,74 @@ pycbc_BucketType_init(PyObject **ptr)
 
     return PyType_Ready(p);
 }
+
+
+static PyGetSetDef Cluster_TABLE_getset[] = {
+        { NULL }
+};
+
+static struct PyMemberDef Cluster_TABLE_members[] = {
+        { NULL }
+};
+
+static PyMethodDef Cluster_TABLE_methods[] = {
+
+#define OPFUNC(name, doc) \
+{ #name, (PyCFunction)pycbc_Cluster_##name, METH_VARARGS|METH_KEYWORDS, \
+    PyDoc_STR(doc) }
+
+        /** Basic Operations */
+
+#undef OPFUNC
+
+
+
+        {NULL, NULL, 0, NULL}};
+
+static PyTypeObject ClusterType = {
+        PYCBC_POBJ_HEAD_INIT(NULL)
+        0
+};
+
+
+typedef struct {
+    PyObject_HEAD
+    pycbc_Bucket* bucket;
+} pycbc_Cluster;
+
+static int
+Cluster__init__(pycbc_Cluster *self,
+               PyObject *args, PyObject *kwargs) {
+    self->bucket=PYCBC_TYPE_CTOR(&BucketType,args,kwargs);
+    return 0;
+}
+
+
+int
+pycbc_ClusterType_init(PyObject **ptr)
+{
+    PyTypeObject *p = &BucketType;
+    *ptr = (PyObject*)p;
+
+    if (p->tp_name) {
+        return 0;
+    }
+
+    p->tp_name = "Bucket";
+    p->tp_new = PyType_GenericNew;
+    p->tp_init = (initproc)Cluster__init__;
+    p->tp_dealloc = (destructor)Bucket_dtor;
+
+    p->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+    p->tp_doc = PyDoc_STR("The cluster object");
+
+    p->tp_basicsize = sizeof(pycbc_Cluster);
+
+    p->tp_methods = Cluster_TABLE_methods;
+    p->tp_members = Cluster_TABLE_members;
+    p->tp_getset = Cluster_TABLE_getset;
+    pycbc_DummyTuple = PyTuple_New(0);
+    pycbc_DummyKeywords = PyDict_New();
+
+    return PyType_Ready(p);
+}
