@@ -67,7 +67,7 @@ class QueryOptions(OptionBlock, IQueryResult):
 
 import couchbase_core.cluster
 
-class Cluster(CoreBucket):
+class Cluster(object):
     class ClusterOptions(OptionBlock):
         def __init__(self, authenticator, *args, **kwargs):
             super(Cluster.ClusterOptions,self).__init__(*args,**kwargs)
@@ -87,15 +87,15 @@ class Cluster(CoreBucket):
                  ):
 
         cluster_opts=forward_args(None, options)
-        authenticator = cluster_opts.authenticator()  # type: couchbase_core.cluster.Authenticator
-        if authenticator:
-            self._cluster.authenticate(authenticator)
+        authenticator = options.authenticator()  # type: couchbase_core.cluster.Authenticator
         cluster_opts.update(bucket_class=lambda connstr, bname=None, **kwargs: Bucket(connstr,bname, BucketOptions(**kwargs)))
         self._cluster = SDK2Cluster(connection_string, **cluster_opts)  # type: SDK2Cluster
+        if authenticator:
+            self._cluster.authenticate(authenticator)
         cluster_opts['_conntype']=_LCB.LCB_TYPE_CLUSTER
         credentials=authenticator.get_credentials()
-        cluster_opts.update(**(credentials.get('options',{})))
-        super(Cluster,self).__init__(**cluster_opts)
+        bucket_opts=credentials.get('options',{})
+        #super(Cluster,self).__init__(connection_string,**bucket_opts)
 
     def bucket(self,
                name,  # type: str,

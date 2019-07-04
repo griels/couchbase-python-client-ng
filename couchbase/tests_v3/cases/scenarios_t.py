@@ -65,12 +65,12 @@ class Scenarios(ConnectionTestCase):
         bucket_name=connstr_abstract.bucket
         connstr_abstract.bucket=None
         connstr_abstract.set_option('enable_collections','true')
-        authenticator=couchbase_core.cluster.PasswordAuthenticator(self.cluster_info.bucket_username,connargs.get('password'))
-        self.cluster = Cluster(connstr_abstract,ClusterOptions(authenticator))
+        authenticator=couchbase_core.cluster.ClassicAuthenticator(self.cluster_info.admin_username,self.cluster_info.admin_password)
+        self.cluster = Cluster(str(connstr_abstract),ClusterOptions(authenticator))
         self.admin=self.make_admin_connection()
         cm=couchbase.admin.CollectionManager(self.admin,bucket_name)
         my_collections={None: {None:"coll"}} if self.is_mock else {"bedrock":{"flintstones":'coll'}}
-        self.bucket = self.cluster.bucket(bucket_name,**connargs)
+        self.bucket = self.cluster.bucket(bucket_name)
 
         for scope_name, collections in my_collections.items():
             try:

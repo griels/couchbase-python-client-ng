@@ -59,7 +59,7 @@
       "patches": {
         "git": {
           "repo": "http://review.couchbase.org/libcouchbase",
-          "ref": "refs/changes/64/110664/7"
+          "ref": "refs/changes/64/110664/8"
         }
       },
       "sources": [
