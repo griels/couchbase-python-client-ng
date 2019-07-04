@@ -46,7 +46,7 @@ from couchbase import Bucket
 from couchbase_tests.base import ConnectionTestCase
 import couchbase.subdocument as SD
 import couchbase.admin
-
+import couchbase_core.cluster
 
 try:
     from importlib import reload  # Python 3.4+
@@ -100,7 +100,7 @@ class Scenarios(ConnectionTestCase):
         cm=couchbase.admin.CollectionManager(self.admin,bucket_name)
         my_collections={None: {None:"coll"}} if self.is_mock else {"bedrock":{"flintstones":'coll'}}
         self.bucket = self.cluster.bucket(bucket_name,**connargs)
-
+        self.cluster.authenticate(couchbase_core.cluster.ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password))
         for scope_name, collections in my_collections.items():
             try:
                 if scope_name and not Scenarios.initialised:
@@ -501,9 +501,9 @@ class Scenarios(ConnectionTestCase):
         self.assertRaises(couchbase.exceptions.ArgumentError, self.coll.increment, "counter", -3)
 
     def test_cluster_query(self):
-        if not self.is_mock:
-            # TODO: fix for real server
-            raise SkipTest()
+        #if not self.is_mock:
+        #    # TODO: fix for real server
+        #    raise SkipTest()
         result = self.cluster.query("SELECT mockrow")
         self.assertEquals([{"row": "value"}], result.rows())
         self.assertEquals([{"row": "value"}], list(result))
