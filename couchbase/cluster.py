@@ -4,18 +4,19 @@ from uuid import UUID
 
 from typing import *
 
+from couchbase.analytics import AnalyticsResult
 from .n1ql import QueryResult, IQueryResult
 from .options import OptionBlock, forward_args, OptionBlockDeriv
 from .bucket import BucketOptions, Bucket, CoreBucket
 from couchbase_core.cluster import Cluster as SDK2Cluster, Authenticator as SDK2Authenticator
-from .exceptions import SearchException, DiagnosticsException, QueryException
+from .exceptions import SearchException, DiagnosticsException, QueryException, AnalyticsException
+import couchbase_core._libcouchbase as _LCB
 
 T = TypeVar('T')
 
 
 class QueryMetrics(object):
     pass
-
 
 CallableOnOptionBlock = Callable[[OptionBlockDeriv, Any], Any]
 
@@ -64,6 +65,7 @@ class QueryOptions(OptionBlock, IQueryResult):
 
 
 class Cluster:
+    clusterbucket=None  # type: Core
     class ClusterOptions(OptionBlock):
         pass
 
@@ -71,9 +73,11 @@ class Cluster:
                  connection_string=None,  # type: str
                  *options  # type: ClusterOptions
                  ):
+        self.connstr=connection_string
         cluster_opts=forward_args(None, *options)
         cluster_opts.update(bucket_class=lambda connstr, bname=None, **kwargs: Bucket(connstr,bname, BucketOptions(**kwargs)))
         self._cluster = SDK2Cluster(connection_string, **cluster_opts)  # type: SDK2Cluster
+        self.clusterbucket = None  # type: CoreBucket
 
     def authenticate(self,
                      authenticator=None,  # type: SDK2Authenticator
@@ -81,6 +85,10 @@ class Cluster:
                      password=None  # type: str
                      ):
         self._cluster.authenticate(authenticator, username, password)
+        credentials=authenticator.get_credentials()
+        clusteropts=credentials.get('options',{})
+        self.clusterbucket=CoreBucket(str(self.connstr),_conntype=_LCB.LCB_TYPE_CLUSTER, **clusteropts)
+
 
     def bucket(self,
                name,  # type: str,
@@ -128,13 +136,10 @@ class Cluster:
             if the query failed on the server.
 
         """
-        return QueryResult(self._operate_on_first_bucket(CoreBucket.query, QueryException, statement, **forward_args(kwargs, *options)))
+        return QueryResult(self._operate_on_cluster(CoreBucket.query, QueryException, statement, **(forward_args(kwargs, *options))))
 
-    def _operate_on_first_bucket(self, verb, failtype, *args, **kwargs):
-        first_bucket = next(iter(self._cluster._buckets.items()), None)  # type: Optional[couchbase.CoreBucket]
-        if not first_bucket:
-            raise failtype("Need at least one bucket active to perform search")
-        return verb(first_bucket[1]()._bucket, *args, **kwargs)
+    def _operate_on_cluster(self, verb, failtype, *args, **kwargs):
+        return verb(self.clusterbucket, *args, **kwargs)
 
     def analytics_query(self,
                         statement,  # type: str,
@@ -150,7 +155,7 @@ class Cluster:
         Throws Any exceptions raised by the underlying platform - HTTP_TIMEOUT for example.
         :except ServiceNotFoundException - service does not exist or cannot be located.
         """
-        return self.query(statement, *options, **kwargs)
+        return AnalyticsResult(self._operate_on_cluster(CoreBucket.analytics_query, AnalyticsException, statement, **forward_args(kwargs,*options)))
 
     def search_query(self,
                      index,  # type: str
@@ -169,7 +174,7 @@ class Cluster:
         :except    ServiceNotFoundException - service does not exist or cannot be located.
 
         """
-        return self._operate_on_first_bucket(CoreBucket.search, SearchException, index, query, **forward_args(kwargs, *options))
+        return self._operate_on_cluster(CoreBucket.search, SearchException, index, query, **forward_args(kwargs, *options))
 
 
     def diagnostics(self,
@@ -182,7 +187,7 @@ class Cluster:
         :return:A IDiagnosticsResult object with the results of the query or error message if the query failed on the server.
 
         """
-        return self._operate_on_first_bucket(CoreBucket.diagnostics, DiagnosticsException)
+        return self._operate_on_cluster(CoreBucket.diagnostics, DiagnosticsException)
 
     def users(self):
         # type: (...)->IUserManager
