@@ -4,11 +4,13 @@ from uuid import UUID
 
 from typing import *
 
+from couchbase_core.admin import Admin
 from .n1ql import QueryResult, IQueryResult
 from .options import OptionBlock, forward_args, OptionBlockDeriv
 from .bucket import BucketOptions, Bucket, CoreBucket
 from couchbase_core.cluster import Cluster as SDK2Cluster, Authenticator as SDK2Authenticator
 from .exceptions import SearchException, DiagnosticsException, QueryException
+import couchbase_core._libcouchbase as _LCB
 
 T = TypeVar('T')
 
@@ -42,6 +44,7 @@ def options_to_func(orig,  # type: U
 
     return invocation(orig)
 
+ClusterManager=Admin
 
 class QueryOptions(OptionBlock, IQueryResult):
     @property
@@ -62,25 +65,37 @@ class QueryOptions(OptionBlock, IQueryResult):
         """
         super(QueryOptions, self).__init__(statement=statement, parameters=parameters, timeout=timeout)
 
+import couchbase_core.cluster
 
-class Cluster:
+class Cluster(CoreBucket):
     class ClusterOptions(OptionBlock):
-        pass
+        def __init__(self, authenticator, *args, **kwargs):
+            super(Cluster.ClusterOptions,self).__init__(*args,**kwargs)
+            self._authenticator = authenticator
+
+        #@property
+        def authenticator(self):
+            return self._authenticator
+
+        #@authenticator.setter
+        #def authenticator(self, authenticator):
+        #    self._authenticator=authenticator
 
     def __init__(self,
-                 connection_string=None,  # type: str
-                 *options  # type: ClusterOptions
+                 connection_string,  # type: str
+                 options # type: ClusterOptions
                  ):
-        cluster_opts=forward_args(None, *options)
+
+        cluster_opts=forward_args(None, options)
+        authenticator = cluster_opts.authenticator()  # type: couchbase_core.cluster.Authenticator
+        if authenticator:
+            self._cluster.authenticate(authenticator)
         cluster_opts.update(bucket_class=lambda connstr, bname=None, **kwargs: Bucket(connstr,bname, BucketOptions(**kwargs)))
         self._cluster = SDK2Cluster(connection_string, **cluster_opts)  # type: SDK2Cluster
-
-    def authenticate(self,
-                     authenticator=None,  # type: SDK2Authenticator
-                     username=None,  # type: str
-                     password=None  # type: str
-                     ):
-        self._cluster.authenticate(authenticator, username, password)
+        cluster_opts['_conntype']=_LCB.LCB_TYPE_CLUSTER
+        credentials=authenticator.get_credentials()
+        cluster_opts.update(**(credentials.get('options',{})))
+        super(Cluster,self).__init__(**cluster_opts)
 
     def bucket(self,
                name,  # type: str,
@@ -184,8 +199,11 @@ class Cluster:
         """
         return self._operate_on_first_bucket(CoreBucket.diagnostics, DiagnosticsException)
 
-    def users(self):
+    def users(self  # type: Cluster
+              ):
         # type: (...)->IUserManager
+        man=self.manager()  # type: Admin
+
         raise NotImplementedError("To be implemented in SDK3 full release")
 
     def indexes(self):
@@ -194,11 +212,11 @@ class Cluster:
 
     def nodes(self):
         # type: (...)->INodeManager
-        return self._cluster
+        return self._cluster.cluster_manager()
 
     def buckets(self):
         # type: (...)->IBucketManager
-        return self._cluster._buckets
+        return self._cluster.cluster_manager()
 
     def disconnect(self,
                    options=None  # type: DisconnectOptions

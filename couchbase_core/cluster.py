@@ -88,7 +88,7 @@ class Cluster(object):
 
         self.authenticator = authenticator
 
-    def open_bucket(self, bucket_name, **kwargs):
+    def open_bucket(self, bucket_name = None, **kwargs):
         # type: (str, str) -> Bucket
         """
         Open a new connection to a Couchbase bucket

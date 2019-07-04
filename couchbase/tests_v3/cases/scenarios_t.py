@@ -34,7 +34,7 @@ import couchbase.exceptions
 
 from couchbase import JSONDocument, Durability, LookupInSpec, DeltaValue, SignedInt64, MutateInResult, MutationResult, \
     LookupInResult
-from couchbase.cluster import Cluster
+from couchbase.cluster import Cluster, ClusterOptions
 from couchbase import ReplicateTo, PersistTo, FiniteDuration, copy, \
     Seconds, ReplicaNotConfiguredException, DocumentConcurrentlyModifiedException, \
     DocumentMutationLostException, ReplicaNotAvailableException, MutateSpec, CASMismatchException, \
@@ -46,7 +46,7 @@ from couchbase import Bucket
 from couchbase_tests.base import ConnectionTestCase
 import couchbase.subdocument as SD
 import couchbase.admin
-
+import couchbase_core.cluster
 
 class Scenarios(ConnectionTestCase):
     coll = None  # type: CBCollection
@@ -65,7 +65,8 @@ class Scenarios(ConnectionTestCase):
         bucket_name=connstr_abstract.bucket
         connstr_abstract.bucket=None
         connstr_abstract.set_option('enable_collections','true')
-        self.cluster = Cluster(connstr_abstract)
+        authenticator=couchbase_core.cluster.PasswordAuthenticator(self.cluster_info.bucket_username,connargs.get('password'))
+        self.cluster = Cluster(connstr_abstract,ClusterOptions(authenticator))
         self.admin=self.make_admin_connection()
         cm=couchbase.admin.CollectionManager(self.admin,bucket_name)
         my_collections={None: {None:"coll"}} if self.is_mock else {"bedrock":{"flintstones":'coll'}}
