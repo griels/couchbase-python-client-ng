@@ -1,7 +1,8 @@
+from collections import defaultdict
 from typing import *
 
 from couchbase.analytics import AnalyticsResult
-from couchbase.diagnostics import DiagnosticsResult
+from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics, IDiagnosticsResult
 from .n1ql import QueryResult, QueryOptions, IQueryResult
 from .options import OptionBlock, forward_args, OptionBlockDeriv
 from .bucket import BucketOptions, Bucket, CoreBucket
@@ -35,6 +36,10 @@ def options_to_func(orig,  # type: U
             return invocator
 
     return invocation(orig)
+
+
+class AnalyticsOptions(OptionBlock):
+    pass
 
 
 class Cluster:
@@ -128,7 +133,10 @@ class Cluster:
         return QueryResult(self._operate_on_cluster(CoreBucket.query, QueryException, statement, **(forward_args(kwargs, *options))))
 
     def _operate_on_cluster(self, verb, failtype, *args, **kwargs):
-        return verb(self.clusterbucket, *args, **kwargs)
+        try:
+            return verb(self.clusterbucket, *args, **kwargs)
+        except Exception as e:
+            raise failtype(str(e))
 
     def analytics_query(self,  # type: Cluster
                         statement,  # type: str,
@@ -176,7 +184,18 @@ class Cluster:
         :return:A IDiagnosticsResult object with the results of the query or error message if the query failed on the server.
 
         """
-        return DiagnosticsResult(self._operate_on_cluster(CoreBucket.diagnostics, DiagnosticsException))
+
+        diag_results = self._operate_on_cluster(CoreBucket.diagnostics, DiagnosticsException)
+        ping_results = self._operate_on_cluster(CoreBucket.ping, DiagnosticsException)
+        root_data={'id','version','sdk'}
+        final_results={'services':defaultdict(list)}
+        for k,v in diag_results.items():
+            if k in root_data:
+                final_results[k]=v
+            else:
+                for item in v:
+                    final_results['services'][k].append(EndPointDiagnostics(k,item))
+        return DiagnosticsResult(final_results)
 
     def users(self):
         # type: (...)->IUserManager
