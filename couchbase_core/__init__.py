@@ -17,6 +17,10 @@
 import enum
 import warnings
 from collections import defaultdict
+try:
+    from abc import abstractmethod
+except:
+    import abstractmethod
 
 # Pythons > (2.7||3.2) silence deprecation warnings by default.
 # Many folks are not happy about this, as it avoids letting them
