@@ -12,3 +12,48 @@
   'sdk': 'libcouchbase/3.0.0_alpha.3_18_gccaf3c9f67 PYCBC/3.0.0a2.dev13+g4655e45',
   'version': 1
 }
+
+{
+  'id': '0x7f8e0c4b23c0/PYCBC',
+  'kv': [
+    {
+      'id': '000000005e3c9ad9',
+      'last_activity_us': 14997947,
+      'local': '10.143.193.1:54973',
+      'remote': '10.143.193.101:11210',
+      'status': 'connected'
+    }
+  ],
+  'mgmt': [
+    {
+      'id': '0x7f8e0c309ce0',
+      'last_activity_us': 14998882,
+      'local': '10.143.193.1:54975',
+      'remote': '10.143.193.101:8092',
+      'status': 'connected'
+    },
+    {
+      'id': '0x7f8e0c20e100',
+      'last_activity_us': 14998469,
+      'local': '10.143.193.1:54974',
+      'remote': '10.143.193.101:8093',
+      'status': 'connected'
+    },
+    {
+      'id': '0x7f8e07dd1660',
+      'last_activity_us': 14998633,
+      'local': '10.143.193.1:55004',
+      'remote': '10.143.193.102:8094',
+      'status': 'connected'
+    },
+    {
+      'id': '0x7f8e0c30ad80',
+      'last_activity_us': 14998992,
+      'local': '10.143.193.1:54977',
+      'remote': '10.143.193.102:8095',
+      'status': 'connected'
+    }
+  ],
+  'sdk': 'libcouchbase/3.0.0_alpha.3_18_gccaf3c9f67 PYCBC/3.0.0a2.dev13+g4655e45',
+  'version': 1
+}
