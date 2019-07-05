@@ -31,7 +31,7 @@ from couchbase_core.analytics_ingester import BucketOperators
 import traceback
 from couchbase_tests.base import PYCBC_SERVER_VERSION
 import os
-
+import couchbase_v2
 
 analytics_dir = os.path.join(os.path.dirname(__file__), "analytics")
 response_dir = analytics_dir
