@@ -1,44 +1,14 @@
 {
-  'id': '0x7fbdf09ea490/PYCBC',
-  'kv': [
+  'config': [
     {
-      'id': '000000005cda4ce4',
-      'last_activity_us': 83350603,
-      'local': '10.143.193.1:49985',
+      'id': '0x7fcd56cd79f0',
+      'last_activity_us': 331,
+      'local': '10.143.193.1:53115',
       'remote': '10.143.193.101:11210',
       'status': 'connected'
     }
   ],
-  'mgmt': [
-    {
-      'id': '0x7fbdf0d640d0',
-      'last_activity_us': 83352769,
-      'local': '10.143.193.1:49998',
-      'remote': '10.143.193.101:8092',
-      'status': 'connected'
-    },
-    {
-      'id': '0x7fbdee67cf90',
-      'last_activity_us': 83352028,
-      'local': '10.143.193.1:49997',
-      'remote': '10.143.193.101:8093',
-      'status': 'connected'
-    },
-    {
-      'id': '0x7fbdf0d64af0',
-      'last_activity_us': 83352847,
-      'local': '10.143.193.1:49999',
-      'remote': '10.143.193.102:8094',
-      'status': 'connected'
-    },
-    {
-      'id': '0x7fbdf0d651c0',
-      'last_activity_us': 83353040,
-      'local': '10.143.193.1:50000',
-      'remote': '10.143.193.102:8095',
-      'status': 'connected'
-    }
-  ],
+  'id': '0x7fcd56ccacf0/PYCBC',
   'sdk': 'libcouchbase/3.0.0_alpha.3_18_gccaf3c9f67 PYCBC/3.0.0a2.dev13+g4655e45',
   'version': 1
 }
