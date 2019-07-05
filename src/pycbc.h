@@ -522,79 +522,81 @@ lcb_STATUS pycbc_logging_monad_verb(const char *FILE,
                                 CMDNAME,                           \
                                 __VA_ARGS__)
 
-
-typedef struct {
-    PyObject_HEAD
-
-    /** LCB instance */
-    lcb_INSTANCE *instance;
-    /** Tracer **/
-    struct pycbc_Tracer *tracer;
-    PyObject *parent_tracer;
-    /** Transcoder object */
-    PyObject *tc;
-
-    /** Default format, PyInt */
-    PyObject *dfl_fmt;
-
-    /** Callback to be invoked when connected */
-    PyObject *conncb;
-
-    /**
-     * Callback to be invoked upon destruction. Because we can fall out
-     * of scope in middle of an LCB function, this is required.
-     *
-     * The dtorcb is first called when the refcount of the connection
-     */
-    PyObject *dtorcb;
-
-    /**
-     * Test hook for reacting to durability/persistence settings from within
-     * mutator functions
-     */
-    PyObject *dur_testhook;
-
-
-    /** String bucket */
-    PyObject *bucket;
-
-    /** Bucket type */
-    PyObject *btype;
-
-    /** Pipeline MultiResult container */
-    PyObject *pipeline_queue;
-
-    /** If using a custom IOPS, this contains it */
-    PyObject *iopswrap;
-
-    /** Thread state. Used to lock/unlock the GIL */
-    PyThreadState *thrstate;
-
-    PyThread_type_lock lock;
-    unsigned int lockmode;
-
-    /** Whether to not raise any exceptions */
-    unsigned int quiet;
-
-    /** Whether GIL handling is in effect */
-    unsigned int unlock_gil;
-
-    /** Don't decode anything */
-    unsigned int data_passthrough;
-
-    /** whether __init__ has already been called */
-    unsigned char init_called;
-
-    /** How many operations are waiting for a reply */
-    Py_ssize_t nremaining;
-
-    unsigned int flags;
-
-    pycbc_dur_params dur_global;
+#define PYCBC_BUCKET_HEAD                                                    \
+    PyObject_HEAD                                                            \
+                                                                             \
+            /** LCB instance */                                              \
+            lcb_INSTANCE *instance;                                          \
+    /** Tracer **/                                                           \
+    struct pycbc_Tracer *tracer;                                             \
+    PyObject *parent_tracer;                                                 \
+    /** Transcoder object */                                                 \
+    PyObject *tc;                                                            \
+                                                                             \
+    /** Default format, PyInt */                                             \
+    PyObject *dfl_fmt;                                                       \
+                                                                             \
+    /** Callback to be invoked when connected */                             \
+    PyObject *conncb;                                                        \
+                                                                             \
+    /**                                                                      \
+     * Callback to be invoked upon destruction. Because we can fall out      \
+     * of scope in middle of an LCB function, this is required.              \
+     *                                                                       \
+     * The dtorcb is first called when the refcount of the connection        \
+     */                                                                      \
+    PyObject *dtorcb;                                                        \
+                                                                             \
+    /**                                                                      \
+     * Test hook for reacting to durability/persistence settings from within \
+     * mutator functions                                                     \
+     */                                                                      \
+    PyObject *dur_testhook;                                                  \
+                                                                             \
+    /** String bucket */                                                     \
+    PyObject *bucket;                                                        \
+                                                                             \
+    /** Bucket type */                                                       \
+    PyObject *btype;                                                         \
+                                                                             \
+    /** Pipeline MultiResult container */                                    \
+    PyObject *pipeline_queue;                                                \
+                                                                             \
+    /** If using a custom IOPS, this contains it */                          \
+    PyObject *iopswrap;                                                      \
+                                                                             \
+    /** Thread state. Used to lock/unlock the GIL */                         \
+    PyThreadState *thrstate;                                                 \
+                                                                             \
+    PyThread_type_lock lock;                                                 \
+    unsigned int lockmode;                                                   \
+                                                                             \
+    /** Whether to not raise any exceptions */                               \
+    unsigned int quiet;                                                      \
+                                                                             \
+    /** Whether GIL handling is in effect */                                 \
+    unsigned int unlock_gil;                                                 \
+                                                                             \
+    /** Don't decode anything */                                             \
+    unsigned int data_passthrough;                                           \
+                                                                             \
+    /** whether __init__ has already been called */                          \
+    unsigned char init_called;                                               \
+                                                                             \
+    /** How many operations are waiting for a reply */                       \
+    Py_ssize_t nremaining;                                                   \
+                                                                             \
+    unsigned int flags;                                                      \
+                                                                             \
+    pycbc_dur_params dur_global;                                             \
     unsigned long dur_timeout;
-
+typedef struct {
+    PYCBC_BUCKET_HEAD
 } pycbc_Bucket;
 
+typedef struct {
+    PYCBC_BUCKET_HEAD
+} pycbc_Cluster;
 /**
  * Collection structures
  */

@@ -1307,15 +1307,11 @@ static PyTypeObject ClusterType = {
 };
 
 
-typedef struct {
-    PyObject_HEAD
-    pycbc_Bucket* bucket;
-} pycbc_Cluster;
-
 static int
 Cluster__init__(pycbc_Cluster *self,
                PyObject *args, PyObject *kwargs) {
-    self->bucket=PYCBC_TYPE_CTOR(&BucketType,args,kwargs);
+    PyDict_SetItemString(kwargs,"_conntype",PyLong_FromLong(LCB_TYPE_CLUSTER));
+    Bucket__init__((pycbc_Bucket*)self, args, kwargs);
     return 0;
 }
 
@@ -1343,6 +1339,7 @@ pycbc_ClusterType_init(PyObject **ptr)
     p->tp_methods = Cluster_TABLE_methods;
     p->tp_members = Cluster_TABLE_members;
     p->tp_getset = Cluster_TABLE_getset;
+    p->tp_base = &BucketType;
     pycbc_DummyTuple = PyTuple_New(0);
     pycbc_DummyKeywords = PyDict_New();
 

@@ -49,7 +49,7 @@ class OverrideDict(dict):
         super(OverrideDict, self).__init__(*args, **kwargs)
 
 
-class Cluster(object):
+class Cluster(Bucket):
     # list of all authentication types, keep up to date, used to identify connstr/kwargs auth styles
 
     def __init__(self, connection_string='couchbase://localhost',
