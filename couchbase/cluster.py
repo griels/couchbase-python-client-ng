@@ -11,6 +11,8 @@ from .bucket import BucketOptions, Bucket, CoreBucket
 from couchbase_core.cluster import Cluster as SDK2Cluster, Authenticator as SDK2Authenticator
 from .exceptions import SearchException, DiagnosticsException, QueryException, AnalyticsException, AuthenticationException, ArgumentError
 import couchbase_core._libcouchbase as _LCB
+from couchbase_core import abstractmethod, CompatibilityEnum, JSON
+from enum import IntEnum
 
 T = TypeVar('T')
 
@@ -38,6 +40,133 @@ def options_to_func(orig,  # type: U
             return invocator
 
     return invocation(orig)
+
+
+class ServiceTypeRaw(CompatibilityEnum):
+    @classmethod
+    def prefix(cls):
+        return "LCB_PING_SERVICE_"
+
+    KV = ()
+    VIEWS = ()
+    N1QL = ()
+    FTS = ()
+    ANALYTICS = ()
+
+
+class ServiceType(IntEnum):
+    View = ServiceTypeRaw.VIEWS
+    KeyValue = ServiceTypeRaw.KV
+    Query = ServiceTypeRaw.N1QL
+    Search = ServiceTypeRaw.FTS
+    Analytics = ServiceTypeRaw.ANALYTICS
+
+
+class IEndPointDiagnostics:
+    @abstractmethod
+    def type(self):
+        # type: (...)->ServiceType
+        pass
+
+    @abstractmethod
+    def id(self):
+        # type: (...)->str
+       pass
+
+    @abstractmethod
+    def local(self):
+        # type: (...)->str
+        pass
+
+    @abstractmethod
+    def remote(self):
+        # type: (...)->str
+        pass
+
+    @abstractmethod
+    def last_activity(self):
+        # type: (...)->int
+        pass
+
+    @abstractmethod
+    def latency(self):
+        # type: (...)->int
+        pass
+
+    @abstractmethod
+    def scope(self):
+        # type: (...)->str
+        pass
+
+
+class IDiagnosticResult:
+    @abstractmethod
+    def id(self):
+        # type: (...)->str
+        pass
+
+    @abstractmethod
+    def version(self):
+        # type: (...)->int
+        pass
+
+    @abstractmethod
+    def sdk(self):
+        # type: (...)->str
+        pass
+
+    @abstractmethod
+    def services(self):
+        # type: (...)->Mapping[str, IEndPointDiagnostics]
+        pass
+
+
+class EndPointDiagnostics(IEndPointDiagnostics):
+    def type(self):
+        # type: (...)->ServiceType
+        pass
+
+    def id(self):
+        # type: (...)->str
+        pass
+
+    def local(self):
+        # type: (...)->str
+        pass
+
+    def remote(self):
+        # type: (...)->str
+        pass
+
+    def last_activity(self):
+        # type: (...)->int
+        pass
+
+    def latency(self):
+        # type: (...)->int
+        pass
+
+    def scope(self):
+        # type: (...)->str
+        pass
+
+
+class DiagnosticsResult(IDiagnosticResult):
+    def __init__(self,  # type: DiagnosticsResult
+                 raw_diagnostics  # type: JSON
+                 ):
+        self._id=raw_diagnostics
+    def id(self):
+        pass
+    def version(self):
+        pass
+
+    def sdk(self):
+        pass
+
+    def services(self):
+        pass
+
 
 
 class Cluster:
@@ -179,7 +308,7 @@ class Cluster:
         :return:A IDiagnosticsResult object with the results of the query or error message if the query failed on the server.
 
         """
-        return self._operate_on_cluster(CoreBucket.diagnostics, DiagnosticsException)
+        return DiagnosticsResult(self._operate_on_cluster(CoreBucket.diagnostics, DiagnosticsException))
 
     def users(self):
         # type: (...)->IUserManager
