@@ -1,15 +1,13 @@
-import abc
-
-from uuid import UUID
-
 from typing import *
 
 from .n1ql import QueryResult, IQueryResult
 from .options import OptionBlock, forward_args, OptionBlockDeriv
 from .bucket import BucketOptions, Bucket, CoreBucket
 from couchbase_core.cluster import Cluster as SDK2Cluster, Authenticator as SDK2Authenticator
-from .exceptions import SearchException, DiagnosticsException, QueryException, ArgumentError
+from .exceptions import SearchException, DiagnosticsException, QueryException, ArgumentError, AnalyticsException
 import couchbase_core._libcouchbase as _LCB
+from couchbase_core import abstractmethod
+from .analytics import AnalyticsResult
 
 T = TypeVar('T')
 
@@ -45,7 +43,7 @@ def options_to_func(orig,  # type: U
 
 class QueryOptions(OptionBlock, IQueryResult):
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def is_live(self):
         return False
 
@@ -154,7 +152,10 @@ class Cluster:
         return QueryResult(self._operate_on_cluster(CoreBucket.query, QueryException, statement, **(forward_args(kwargs, *options))))
 
     def _operate_on_cluster(self, verb, failtype, *args, **kwargs):
-        return verb(self.clusterbucket, *args, **kwargs)
+        try:
+            return verb(self.clusterbucket, *args, **kwargs)
+        except Exception as e:
+            raise failtype(str(e))
 
     def analytics_query(self,
                         statement,  # type: str,
