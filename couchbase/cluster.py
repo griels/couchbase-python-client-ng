@@ -11,7 +11,7 @@ from .bucket import BucketOptions, Bucket, CoreBucket
 from couchbase_core.cluster import Cluster as SDK2Cluster, Authenticator as SDK2Authenticator
 from .exceptions import SearchException, DiagnosticsException, QueryException, AnalyticsException, AuthenticationException, ArgumentError
 import couchbase_core._libcouchbase as _LCB
-from couchbase_core import abstractmethod, CompatibilityEnum, JSON
+from couchbase_core import abstractmethod, CompatibilityEnum, JSON, JSONMapping
 from enum import IntEnum
 
 T = TypeVar('T')
@@ -71,7 +71,7 @@ class IEndPointDiagnostics:
     @abstractmethod
     def id(self):
         # type: (...)->str
-       pass
+        pass
 
     @abstractmethod
     def local(self):
@@ -122,6 +122,11 @@ class IDiagnosticResult:
 
 
 class EndPointDiagnostics(IEndPointDiagnostics):
+    def __init__(self,  # type: EndPointDiagnostics
+                 raw_endpoint  # type: JSON
+                 ):
+        self.raw_endpoint = raw_endpoint
+
     def type(self):
         # type: (...)->ServiceType
         pass
@@ -151,22 +156,28 @@ class EndPointDiagnostics(IEndPointDiagnostics):
         pass
 
 
-class DiagnosticsResult(IDiagnosticResult):
+class DiagnosticsResult(IDiagnosticResult, JSONMapping):
     def __init__(self,  # type: DiagnosticsResult
                  raw_diagnostics  # type: JSON
                  ):
-        self._id=raw_diagnostics
+        super(DiagnosticsResult, self).__init__(raw_diagnostics)
+        self._services = {k: EndPointDiagnostics(v) for k, v in raw_diagnostics.get('services', {})}
+
     def id(self):
-        pass
+        # type: (...)->str
+        return self._raw_diagnostics.get('id')
+
     def version(self):
-        pass
+        # type: (...)->int
+        return self._raw_diagnostics.get('version')
 
     def sdk(self):
-        pass
+        # type: (...)->str
+        return self._raw_diagnostics.get('sdk')
 
     def services(self):
-        pass
-
+        # type: (...)->Mapping[str, IEndPointDiagnostics]
+        return self._services
 
 
 class Cluster:
