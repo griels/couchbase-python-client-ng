@@ -19,6 +19,8 @@
 from typing import *
 from unittest import SkipTest
 
+from couchbase_tests.base import CouchbaseTestCase
+
 try:
     from abc import ABC
 except:
@@ -32,8 +34,7 @@ from couchbase_core.transcodable import Transcodable
 import couchbase_core.connstr
 import couchbase.exceptions
 
-from couchbase import JSONDocument, Durability, LookupInSpec, DeltaValue, SignedInt64, MutateInResult, MutationResult, \
-    LookupInResult
+from couchbase import JSONDocument, Durability, DeltaValue, SignedInt64, MutateInResult, ServiceType
 from couchbase.cluster import Cluster
 from couchbase import ReplicateTo, PersistTo, FiniteDuration, copy, \
     Seconds, ReplicaNotConfiguredException, DocumentConcurrentlyModifiedException, \
@@ -47,6 +48,8 @@ from couchbase_tests.base import ConnectionTestCase
 import couchbase.subdocument as SD
 import couchbase.admin
 import couchbase_core.cluster
+from couchbase_core._pyport import ANY_STR
+
 
 class Scenarios(ConnectionTestCase):
     coll = None  # type: CBCollection
@@ -484,16 +487,25 @@ class Scenarios(ConnectionTestCase):
         self.assertEquals([{"row": "value"}], result.rows())
 
     def test_cluster_analytics(self):
-        x=self.cluster.analytics_query("SELECT x FROM Y")
-        y=list(x)
+        x = self.cluster.analytics_query("SELECT mockrow")
 
     def test_cluster_search(self):
-        x=self.cluster.search_query("testindex","testquery")
-        y=list(x)
+        x = self.cluster.search_query("testindex", "testquery")
 
-    def test_diagnostics(self):
-        x=self.cluster.diagnostics()
-        self.assertEquals("fish",x)
+    def test_diagnostics(self  # type: Scenarios
+                         ):
+        if self.is_mock:
+            raise SkipTest("LCB Diagnostics still blocks indefinitely with mock")
+        diagnostics = self.cluster.diagnostics()
+        self.assertRegex(diagnostics.sdk(), r'.*PYCBC.*')
+        self.assertGreaterEqual(diagnostics.version(), 1)
+        self.assertIsNotNone(diagnostics.id())
+        config = diagnostics.services().get('config')
+        self.assertEquals(config.type(), ServiceType.Config)
+        for key, value in diagnostics.services().items():
+            self.assertIn(type(value.type()), (ServiceType, str))
+            self.assertIn(type(value.id()), ANY_STR)
+            self.assertIn(type(value.local()), ANY_STR)
 
     def test_multi(self):
         self.coll.upsert_multi({"Fred": "Wilma", "Barney": "Betty"})
