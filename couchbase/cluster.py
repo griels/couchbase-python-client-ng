@@ -1,7 +1,3 @@
-import abc
-
-from uuid import UUID
-
 from typing import *
 
 from couchbase.analytics import AnalyticsResult
@@ -131,7 +127,10 @@ class Cluster:
         return QueryResult(self._operate_on_cluster(CoreBucket.query, QueryException, statement, **(forward_args(kwargs, *options))))
 
     def _operate_on_cluster(self, verb, failtype, *args, **kwargs):
-        return verb(self.clusterbucket, *args, **kwargs)
+        try:
+            return verb(self.clusterbucket, *args, **kwargs)
+        except Exception as e:
+            raise failtype(str(e))
 
     def analytics_query(self,  # type: Cluster
                         statement,  # type: str,
