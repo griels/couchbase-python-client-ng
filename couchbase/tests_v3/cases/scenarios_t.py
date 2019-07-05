@@ -34,8 +34,7 @@ from couchbase_core.transcodable import Transcodable
 import couchbase_core.connstr
 import couchbase.exceptions
 
-from couchbase import JSONDocument, Durability, LookupInSpec, DeltaValue, SignedInt64, MutateInResult, MutationResult, \
-    LookupInResult
+from couchbase import JSONDocument, Durability, DeltaValue, SignedInt64, MutateInResult, ServiceType
 from couchbase.cluster import Cluster
 from couchbase import ReplicateTo, PersistTo, FiniteDuration, copy, \
     Seconds, ReplicaNotConfiguredException, DocumentConcurrentlyModifiedException, \
@@ -492,9 +491,20 @@ class Scenarios(ConnectionTestCase):
         x=self.cluster.search_query("testindex","testquery")
         y=list(x)
 
-    def test_diagnostics(self):
-        x=self.cluster.diagnostics()
-        self.assertEquals("fish",x)
+    def test_diagnostics(self  # type: Scenarios
+                         ):
+        if self.is_mock:
+            raise SkipTest("LCB Diagnostics still blocks indefinitely with mock")
+        diagnostics = self.cluster.diagnostics()
+        self.assertRegex(diagnostics.sdk(), r'.*PYCBC.*')
+        self.assertGreaterEqual(diagnostics.version(), 1)
+        self.assertIsNotNone(diagnostics.id())
+        config = diagnostics.services().get('config')
+        self.assertEquals(config.type(), ServiceType.Config)
+        for key, value in diagnostics.services().items():
+            self.assertIn(type(value.type()), (ServiceType, str))
+            self.assertIn(type(value.id()), ANY_STR)
+            self.assertIn(type(value.local()), ANY_STR)
 
     def test_multi(self):
         self.coll.upsert_multi({"Fred": "Wilma", "Barney": "Betty"})
