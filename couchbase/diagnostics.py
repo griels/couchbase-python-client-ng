@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from enum import IntEnum
+from typing import Optional, Mapping
 
 from couchbase_core import CompatibilityEnum, JSONMapping
 
@@ -52,16 +53,16 @@ class IEndPointDiagnostics:
 
     @abstractmethod
     def latency(self):
-        # type: (...)->int
+        # type: (...)->Optional[int]
         pass
 
     @abstractmethod
     def scope(self):
-        # type: (...)->str
+        # type: (...)-Optional[>str]
         pass
 
 
-class IDiagnosticResult:
+class IDiagnosticsResult:
     @abstractmethod
     def id(self):
         # type: (...)->str
@@ -85,45 +86,46 @@ class IDiagnosticResult:
 
 class EndPointDiagnostics(IEndPointDiagnostics):
     def __init__(self,  # type: EndPointDiagnostics
+                 service_type,  # type: str
                  raw_endpoint  # type: JSON
                  ):
-        self.raw_endpoint = raw_endpoint
+        self._raw_endpoint = raw_endpoint
+        self._service_type = service_type
 
     def type(self):
         # type: (...)->ServiceType
-        pass
+        return self._service_type
 
     def id(self):
         # type: (...)->str
-        pass
+        return self._raw_endpoint.get('id')
 
     def local(self):
         # type: (...)->str
-        pass
+        return self._raw_endpoint.get('local')
 
     def remote(self):
         # type: (...)->str
-        pass
+        return self._raw_endpoint.get('remote')
 
     def last_activity(self):
         # type: (...)->int
-        pass
+        return self._raw_endpoint.get('last_activity_us')
 
     def latency(self):
-        # type: (...)->int
-        pass
+        # type: (...)->Optional[int]
+        return self._raw_endpoint.get('latency')
 
     def scope(self):
         # type: (...)->str
-        pass
+        return self._raw_endpoint.get('scope')
 
 
-class DiagnosticsResult(IDiagnosticResult, JSONMapping):
+class DiagnosticsResult(IDiagnosticsResult):
     def __init__(self,  # type: DiagnosticsResult
                  raw_diagnostics  # type: JSON
                  ):
-        super(DiagnosticsResult, self).__init__(raw_diagnostics)
-        self._services = {k: EndPointDiagnostics(v) for k, v in raw_diagnostics.get('services', {})}
+        self._raw_diagnostics = raw_diagnostics
 
     def id(self):
         # type: (...)->str
@@ -139,4 +141,4 @@ class DiagnosticsResult(IDiagnosticResult, JSONMapping):
 
     def services(self):
         # type: (...)->Mapping[str, IEndPointDiagnostics]
-        return self._services
+        return self._raw_diagnostics.get('services', {})
