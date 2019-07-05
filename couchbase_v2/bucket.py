@@ -1116,7 +1116,8 @@ class Bucket(CoreBucket):
     n1ql_query = CoreBucket.query
     query = CoreBucket.view_query
 
-    _analytics_query = CoreBucket.analytics_query
+    _analytics_query = CoreBucket._analytics_query
+    analytics_query = CoreBucket._analytics_query
 
     # "items" interface
     def append_items(self, items, **kwargs):

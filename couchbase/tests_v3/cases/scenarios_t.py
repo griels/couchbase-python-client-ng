@@ -504,8 +504,6 @@ class Scenarios(ConnectionTestCase):
         if self.is_realserver:
             raise SkipTest()
             try:
-                import couchbase_v2.bucket
-                couchbase_v2.bucket.BucketManager.n1ql_index_create()
                 list(self.cluster.query("CREATE INDEX `mockrow` ON default;"))
             except:
                 pass
@@ -514,6 +512,14 @@ class Scenarios(ConnectionTestCase):
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], result.rows())
+
+    def test_cluster_analytics(self):
+        x=self.cluster.analytics_query("SELECT x FROM Y")
+        y=list(x)
+
+    def test_cluster_search(self):
+        x=self.cluster.search_query("testindex","testquery")
+        y=list(x)
 
     def test_multi(self):
         self.coll.upsert_multi({"Fred": "Wilma", "Barney": "Betty"})
