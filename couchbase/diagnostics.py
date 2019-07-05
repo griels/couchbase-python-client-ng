@@ -1,28 +1,16 @@
 from abc import abstractmethod
-from enum import IntEnum
-from typing import Optional, Mapping
-
-from couchbase_core import CompatibilityEnum, JSONMapping
-
-
-class ServiceTypeRaw(CompatibilityEnum):
-    @classmethod
-    def prefix(cls):
-        return "LCB_PING_SERVICE_"
-
-    KV = ()
-    VIEWS = ()
-    N1QL = ()
-    FTS = ()
-    ANALYTICS = ()
+from typing import Optional, Mapping, Union, Any
+from enum import Enum
+from couchbase_core import JSON
 
 
-class ServiceType(IntEnum):
-    View = ServiceTypeRaw.VIEWS
-    KeyValue = ServiceTypeRaw.KV
-    Query = ServiceTypeRaw.N1QL
-    Search = ServiceTypeRaw.FTS
-    Analytics = ServiceTypeRaw.ANALYTICS
+class ServiceType(Enum):
+    View = "view"
+    KeyValue = "kv"
+    Query = "n1ql"
+    Search = "fts"
+    Analytics = "cbas"
+    Config = "config"
 
 
 class IEndPointDiagnostics:
@@ -86,14 +74,20 @@ class IDiagnosticsResult:
 
 class EndPointDiagnostics(IEndPointDiagnostics):
     def __init__(self,  # type: EndPointDiagnostics
-                 service_type,  # type: str
+                 service_type,  # type: Union[ServiceType,str]
                  raw_endpoint  # type: JSON
                  ):
         self._raw_endpoint = raw_endpoint
-        self._service_type = service_type
+        if isinstance(service_type, ServiceType):
+            self._service_type = service_type
+        else:
+            try:
+                self._service_type = ServiceType(service_type)
+            except:
+                self._service_type = service_type
 
     def type(self):
-        # type: (...)->ServiceType
+        # type: (...)->Union[ServiceType,str]
         return self._service_type
 
     def id(self):
@@ -123,22 +117,22 @@ class EndPointDiagnostics(IEndPointDiagnostics):
 
 class DiagnosticsResult(IDiagnosticsResult):
     def __init__(self,  # type: DiagnosticsResult
-                 raw_diagnostics  # type: JSON
+                 source_diagnostics  # type: Mapping[str,Any]
                  ):
-        self._raw_diagnostics = raw_diagnostics
+        self._src_diagnostics = source_diagnostics
 
     def id(self):
         # type: (...)->str
-        return self._raw_diagnostics.get('id')
+        return self._src_diagnostics.get('id')
 
     def version(self):
         # type: (...)->int
-        return self._raw_diagnostics.get('version')
+        return self._src_diagnostics.get('version')
 
     def sdk(self):
         # type: (...)->str
-        return self._raw_diagnostics.get('sdk')
+        return self._src_diagnostics.get('sdk')
 
     def services(self):
         # type: (...)->Mapping[str, IEndPointDiagnostics]
-        return self._raw_diagnostics.get('services', {})
+        return self._src_diagnostics.get('services', {})

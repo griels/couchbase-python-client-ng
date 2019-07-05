@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import *
 
 from couchbase.analytics import AnalyticsResult
-from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics, IDiagnosticsResult
+from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics, IDiagnosticsResult, ServiceType
 from .n1ql import QueryResult, QueryOptions, IQueryResult
 from .options import OptionBlock, forward_args, OptionBlockDeriv
 from .bucket import BucketOptions, Bucket, CoreBucket
@@ -188,13 +188,13 @@ class Cluster:
         diag_results = self._operate_on_cluster(CoreBucket.diagnostics, DiagnosticsException)
         ping_results = self._operate_on_cluster(CoreBucket.ping, DiagnosticsException)
         root_data={'id','version','sdk'}
-        final_results={'services':defaultdict(list)}
+        final_results={'services':{}}
         for k,v in diag_results.items():
             if k in root_data:
                 final_results[k]=v
             else:
                 for item in v:
-                    final_results['services'][k].append(EndPointDiagnostics(k,item))
+                    final_results['services'][k]=EndPointDiagnostics(k, item)
         return DiagnosticsResult(final_results)
 
     def users(self):
