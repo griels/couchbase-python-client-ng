@@ -485,9 +485,11 @@ class Scenarios(ConnectionTestCase):
 
     def test_cluster_analytics(self):
         x=self.cluster.analytics_query("SELECT x FROM Y")
+        y=list(x)
 
     def test_cluster_search(self):
         x=self.cluster.search_query("testindex","testquery")
+        y=list(x)
 
     def test_multi(self):
         self.coll.upsert_multi({"Fred": "Wilma", "Barney": "Betty"})
