@@ -501,17 +501,16 @@ class Scenarios(ConnectionTestCase):
         self.assertRaises(couchbase.exceptions.ArgumentError, self.coll.increment, "counter", -3)
 
     def test_cluster_query(self):
-        #if not self.is_mock:
-        #    # TODO: fix for real server
-        #    raise SkipTest()
-        try:
-            x=self.cluster.query("CREATE PRIMARY INDEX ON default;")
-            list(x)
-        except:
-            pass
-        result = self.cluster.query("SELECT * FROM `default`")
-        rows=result.rows()
-        self.assertEquals([{"row": "value"}],rows)
+        if self.is_realserver:
+            raise SkipTest()
+            try:
+                import couchbase_v2.bucket
+                couchbase_v2.bucket.BucketManager.n1ql_index_create()
+                list(self.cluster.query("CREATE INDEX `mockrow` ON default;"))
+            except:
+                pass
+        result = self.cluster.query("SELECT mockrow")
+        self.assertEquals([{"row": "value"}], result.rows())
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], result.rows())
