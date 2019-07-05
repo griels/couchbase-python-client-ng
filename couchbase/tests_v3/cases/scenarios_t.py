@@ -504,8 +504,14 @@ class Scenarios(ConnectionTestCase):
         #if not self.is_mock:
         #    # TODO: fix for real server
         #    raise SkipTest()
-        result = self.cluster.query("SELECT mockrow")
-        self.assertEquals([{"row": "value"}], result.rows())
+        try:
+            x=self.cluster.query("CREATE PRIMARY INDEX ON default;")
+            list(x)
+        except:
+            pass
+        result = self.cluster.query("SELECT * FROM `default`")
+        rows=result.rows()
+        self.assertEquals([{"row": "value"}],rows)
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], result.rows())
