@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import *
 
 from couchbase.analytics import AnalyticsResult
@@ -9,6 +8,10 @@ from .bucket import BucketOptions, Bucket, CoreBucket
 from couchbase_core.cluster import Cluster as SDK2Cluster, Authenticator as SDK2Authenticator
 from .exceptions import SearchException, DiagnosticsException, QueryException, AnalyticsException
 import couchbase_core._libcouchbase as _LCB
+import multiprocessing
+from multiprocessing.pool import ThreadPool
+import couchbase.exceptions
+
 
 T = TypeVar('T')
 
@@ -159,8 +162,11 @@ class Cluster:
         """
         return self._operate_on_cluster(CoreBucket.search, SearchException, index, query, **forward_args(kwargs, *options))
 
+    _root_diag_data = {'id', 'version', 'sdk'}
+
     def diagnostics(self,
-                    reportId=None  # type: str
+                    reportId=None,  # type: str
+                    timeout=None
                     ):
         # type: (...)->IDiagnosticsResult
         """
@@ -170,16 +176,22 @@ class Cluster:
 
         """
 
-        diag_results = self._operate_on_cluster(CoreBucket.diagnostics, DiagnosticsException)
-        ping_results = self._operate_on_cluster(CoreBucket.ping, DiagnosticsException)
-        root_data={'id','version','sdk'}
-        final_results={'services':{}}
-        for k,v in diag_results.items():
-            if k in root_data:
-                final_results[k]=v
+        pool = ThreadPool(processes=1)
+        diag_results_async_result = pool.apply_async(self._operate_on_cluster,
+                                                     (CoreBucket.diagnostics, DiagnosticsException))
+        try:
+            diag_results = diag_results_async_result.get(timeout)
+        except multiprocessing.TimeoutError as e:
+            raise couchbase.exceptions.TimeoutError(params=dict(inner_cause=e))
+
+        final_results = {'services': {}}
+
+        for k, v in diag_results.items():
+            if k in Cluster._root_diag_data:
+                final_results[k] = v
             else:
                 for item in v:
-                    final_results['services'][k]=EndPointDiagnostics(k, item)
+                    final_results['services'][k] = EndPointDiagnostics(k, item)
         return DiagnosticsResult(final_results)
 
     def users(self):
