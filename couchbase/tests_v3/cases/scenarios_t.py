@@ -49,7 +49,7 @@ import couchbase.subdocument as SD
 import couchbase.admin
 import couchbase_core.cluster
 from couchbase_core._pyport import ANY_STR
-
+from couchbase.admin import SourceType, IndexType
 
 try:
     from importlib import reload  # Python 3.4+
@@ -523,6 +523,9 @@ class Scenarios(ConnectionTestCase):
     def test_cluster_search(self):
         if self.is_mock:
             raise SkipTest("FTS not supported by mock")
+        import couchbase.admin
+        self.cluster.search_indexes().upsert('testindex', IndexType.INDEX,
+                                             SourceType.COUCHBASE, "default")
         x = list(self.cluster.search_query("testindex", "testquery"))
 
     def test_diagnostics(self  # type: Scenarios
@@ -532,6 +535,8 @@ class Scenarios(ConnectionTestCase):
         except couchbase.exceptions.TimeoutError:
             if self.is_mock:
                 raise SkipTest("LCB Diagnostics still blocks indefinitely with mock: {}".format(traceback.format_exc()))
+            else:
+                raise
 
         self.assertRegex(diagnostics.sdk(), r'.*PYCBC.*')
         self.assertGreaterEqual(diagnostics.version(), 1)
