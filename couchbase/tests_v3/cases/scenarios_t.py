@@ -15,11 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
 import traceback
 from typing import *
 from unittest import SkipTest
-
-from couchbase_tests.base import CouchbaseTestCase
 
 try:
     from abc import ABC
@@ -50,6 +49,9 @@ import couchbase.admin
 import couchbase_core.cluster
 from couchbase_core._pyport import ANY_STR
 from couchbase.admin import SourceType, IndexType
+import couchbase.admin
+import couchbase_core.tests.analytics_harness
+
 
 class Scenarios(ConnectionTestCase):
     coll = None  # type: CBCollection
@@ -488,15 +490,14 @@ class Scenarios(ConnectionTestCase):
     def test_cluster_analytics(self):
         if self.is_mock:
             raise SkipTest("Analytics not supported by mock")
-        x = list(self.cluster.analytics_query("SELECT mockrow"))
+        list(self.cluster.analytics_query("SELECT VALUE bw FROM breweries bw WHERE bw.name = 'Kona Brewing'"))
 
     def test_cluster_search(self):
         if self.is_mock:
             raise SkipTest("FTS not supported by mock")
-        import couchbase.admin
         self.cluster.search_indexes().upsert('testindex', IndexType.INDEX,
                                              SourceType.COUCHBASE, "default")
-        x = list(self.cluster.search_query("testindex", "testquery"))
+        list(self.cluster.search_query("testindex", "testquery"))
 
     def test_diagnostics(self  # type: Scenarios
                          ):
@@ -522,3 +523,10 @@ class Scenarios(ConnectionTestCase):
         self.coll.upsert_multi({"Fred": "Wilma", "Barney": "Betty"})
         self.assertEquals(self.coll.get("Fred").content, "Wilma")
         self.assertEquals(self.coll.get("Barney").content, "Betty")
+
+
+if os.getenv("PYCBC_CBAS_V3"):
+    class AnalyticsTest(couchbase_core.tests.analytics_harness.CBASTestSpecific):
+        def setUp(self):
+            self.factory = Bucket
+            super(AnalyticsTest,self).setUp()
