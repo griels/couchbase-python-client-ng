@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
 import traceback
 from typing import *
 from unittest import SkipTest
@@ -53,6 +54,8 @@ import couchbase_core._libcouchbase as _LCB
 import couchbase_core.cluster
 from couchbase_core._pyport import ANY_STR
 from couchbase.admin import SourceType, IndexType
+import couchbase.admin
+import couchbase_core.tests.analytics_harness
 from couchbase_core.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
 
@@ -480,9 +483,6 @@ class Scenarios(ConnectionTestCase):
         self.assertRaises(couchbase.exceptions.ArgumentError, self.coll.increment, "counter", -3)
 
     def test_cluster_query(self):
-        if not self.is_mock:
-            # TODO: fix for real server
-            raise SkipTest()
         if self.is_realserver:
             try:
                 list(self.cluster.query("CREATE INDEX `mockrow` ON default;"))
@@ -497,15 +497,14 @@ class Scenarios(ConnectionTestCase):
     def test_cluster_analytics(self):
         if self.is_mock:
             raise SkipTest("Analytics not supported by mock")
-        x = list(self.cluster.analytics_query("SELECT mockrow"))
+        list(self.cluster.analytics_query("SELECT VALUE bw FROM breweries bw WHERE bw.name = 'Kona Brewing'"))
 
     def test_cluster_search(self):
         if self.is_mock:
             raise SkipTest("FTS not supported by mock")
-        import couchbase.admin
         self.cluster.search_indexes().upsert('testindex', IndexType.INDEX,
                                              SourceType.COUCHBASE, "default")
-        x = list(self.cluster.search_query("testindex", "testquery"))
+        list(self.cluster.search_query("testindex", "testquery"))
 
     def test_diagnostics(self  # type: Scenarios
                          ):
@@ -550,3 +549,10 @@ class Scenarios(ConnectionTestCase):
         self.assertRaises(Exception, do_upsert)
         rreload(couchbase)
         do_upsert()
+
+
+if os.getenv("PYCBC_CBAS_V3"):
+    class AnalyticsTest(couchbase_core.tests.analytics_harness.CBASTestSpecific):
+        def setUp(self):
+            self.factory = Bucket
+            super(AnalyticsTest,self).setUp()
