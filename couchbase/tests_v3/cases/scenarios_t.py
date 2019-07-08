@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+import traceback
 from typing import *
 from unittest import SkipTest
 
@@ -480,6 +480,11 @@ class Scenarios(ConnectionTestCase):
         if not self.is_mock:
             # TODO: fix for real server
             raise SkipTest()
+        if self.is_realserver:
+            try:
+                list(self.cluster.query("CREATE INDEX `mockrow` ON default;"))
+            except:
+                raise SkipTest()
         result = self.cluster.query("SELECT mockrow")
         self.assertEquals([{"row": "value"}], result.rows())
         self.assertEquals([{"row": "value"}], list(result))
@@ -489,16 +494,25 @@ class Scenarios(ConnectionTestCase):
     def test_cluster_analytics(self):
         x=self.cluster.analytics_query("SELECT x FROM Y")
         y=list(x)
+        if self.is_mock:
+            raise SkipTest("Analytics not supported by mock")
+        x = list(self.cluster.analytics_query("SELECT mockrow"))
 
     def test_cluster_search(self):
         x=self.cluster.search_query("testindex","testquery")
         y=list(x)
+        if self.is_mock:
+            raise SkipTest("FTS not supported by mock")
+        x = list(self.cluster.search_query("testindex", "testquery"))
 
     def test_diagnostics(self  # type: Scenarios
                          ):
-        if self.is_mock:
-            raise SkipTest("LCB Diagnostics still blocks indefinitely with mock")
-        diagnostics = self.cluster.diagnostics()
+        try:
+            diagnostics = self.cluster.diagnostics(timeout=(5 if self.is_mock else None))
+        except couchbase.exceptions.TimeoutError:
+            if self.is_mock:
+                raise SkipTest("LCB Diagnostics still blocks indefinitely with mock: {}".format(traceback.format_exc()))
+
         self.assertRegex(diagnostics.sdk(), r'.*PYCBC.*')
         self.assertGreaterEqual(diagnostics.version(), 1)
         self.assertIsNotNone(diagnostics.id())
