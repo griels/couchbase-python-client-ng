@@ -49,6 +49,9 @@ import couchbase.subdocument as SD
 import couchbase.admin
 import couchbase_core._bootstrap
 import couchbase_core._libcouchbase as _LCB
+import couchbase_core.cluster
+from couchbase_core._pyport import ANY_STR
+from couchbase.admin import SourceType, IndexType
 
 
 class Scenarios(ConnectionTestCase):
@@ -489,17 +492,16 @@ class Scenarios(ConnectionTestCase):
         self.assertEquals([{"row": "value"}], result.rows())
 
     def test_cluster_analytics(self):
-        x=self.cluster.analytics_query("SELECT x FROM Y")
-        y=list(x)
         if self.is_mock:
             raise SkipTest("Analytics not supported by mock")
         x = list(self.cluster.analytics_query("SELECT mockrow"))
 
     def test_cluster_search(self):
-        x=self.cluster.search_query("testindex","testquery")
-        y=list(x)
         if self.is_mock:
             raise SkipTest("FTS not supported by mock")
+        import couchbase.admin
+        self.cluster.search_indexes().upsert('testindex', IndexType.INDEX,
+                                             SourceType.COUCHBASE, "default")
         x = list(self.cluster.search_query("testindex", "testquery"))
 
     def test_diagnostics(self  # type: Scenarios
@@ -509,6 +511,8 @@ class Scenarios(ConnectionTestCase):
         except couchbase.exceptions.TimeoutError:
             if self.is_mock:
                 raise SkipTest("LCB Diagnostics still blocks indefinitely with mock: {}".format(traceback.format_exc()))
+            else:
+                raise
 
         self.assertRegex(diagnostics.sdk(), r'.*PYCBC.*')
         self.assertGreaterEqual(diagnostics.version(), 1)
