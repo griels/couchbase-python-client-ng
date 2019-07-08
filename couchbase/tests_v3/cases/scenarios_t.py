@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
 import traceback
 from typing import *
 from unittest import SkipTest
@@ -50,6 +51,8 @@ import couchbase.admin
 import couchbase_core.cluster
 from couchbase_core._pyport import ANY_STR
 from couchbase.admin import SourceType, IndexType
+import couchbase.admin
+import couchbase_core.tests.analytics_harness
 
 try:
     from importlib import reload  # Python 3.4+
@@ -60,6 +63,7 @@ except ImportError:
 
 from types import ModuleType
 import os, sys
+
 
 def rreload(module, paths=None, mdict=None):
     """Recursively reload modules."""
@@ -80,6 +84,7 @@ def rreload(module, paths=None, mdict=None):
                         mdict[module].append(attribute)
                         rreload(attribute, paths, mdict)
     reload(module)
+
 
 class Scenarios(ConnectionTestCase):
     coll = None  # type: CBCollection
@@ -518,15 +523,14 @@ class Scenarios(ConnectionTestCase):
     def test_cluster_analytics(self):
         if self.is_mock:
             raise SkipTest("Analytics not supported by mock")
-        x = list(self.cluster.analytics_query("SELECT mockrow"))
+        list(self.cluster.analytics_query("SELECT VALUE bw FROM breweries bw WHERE bw.name = 'Kona Brewing'"))
 
     def test_cluster_search(self):
         if self.is_mock:
             raise SkipTest("FTS not supported by mock")
-        import couchbase.admin
         self.cluster.search_indexes().upsert('testindex', IndexType.INDEX,
                                              SourceType.COUCHBASE, "default")
-        x = list(self.cluster.search_query("testindex", "testquery"))
+        list(self.cluster.search_query("testindex", "testquery"))
 
     def test_diagnostics(self  # type: Scenarios
                          ):
@@ -565,3 +569,10 @@ class Scenarios(ConnectionTestCase):
 
         rreload(couchbase)
         self.coll.upsert('king_arthur', {'name': 'Arthur', 'email': 'kingarthur@couchbase.com', 'interests': ['Holy Grail', 'African Swallows']})
+
+
+if os.getenv("PYCBC_CBAS_V3"):
+    class AnalyticsTest(couchbase_core.tests.analytics_harness.CBASTestSpecific):
+        def setUp(self):
+            self.factory = Bucket
+            super(AnalyticsTest,self).setUp()
