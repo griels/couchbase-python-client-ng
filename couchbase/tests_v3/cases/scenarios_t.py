@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+import traceback
 from typing import *
 from unittest import SkipTest
 
@@ -489,6 +489,11 @@ class Scenarios(ConnectionTestCase):
     def test_cluster_analytics(self):
         x=self.cluster.analytics_query("SELECT x FROM Y")
         y=list(x)
+
+    def test_cluster_search(self):
+        if self.is_mock:
+            raise SkipTest("FTS not supported by mock")
+        x = list(self.cluster.search_query("testindex", "testquery"))
 
     def test_multi(self):
         self.coll.upsert_multi({"Fred": "Wilma", "Barney": "Betty"})
