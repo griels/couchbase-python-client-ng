@@ -511,6 +511,7 @@ TRACED_FUNCTION_WRAPPER(_diagnostics,LCBTRACE_OP_REQUEST_ENCODING,Bucket)
 
         lcb_sched_enter(self->instance);
         PYCBC_CONN_THR_BEGIN(self);
+
         err = lcb_diag(self->instance, cv.mres, cmd);
     }
     GT_ERR:
