@@ -145,7 +145,7 @@ class Cluster:
         :except ServiceNotFoundException - service does not exist or cannot be located.
         """
 
-        return AnalyticsResult(self._operate_on_cluster(CoreBucket._analytics_query, AnalyticsException, statement, self._cluster.connstr.hosts[0], **forward_args(kwargs,*options)))
+        return AnalyticsResult(self._operate_on_cluster(CoreBucket.analytics_query, AnalyticsException, statement, **forward_args(kwargs,*options)))
 
     def search_query(self,
                      index,  # type: str
