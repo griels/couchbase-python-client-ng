@@ -14,7 +14,7 @@ from couchbase_core.analytics_ingester import BucketOperators
 import traceback
 from couchbase_tests.base import PYCBC_SERVER_VERSION
 import os
-import couchbase_v2
+import couchbase_core.analytics
 
 analytics_dir = os.path.join(os.path.dirname(__file__), "analytics")
 response_dir = analytics_dir
@@ -99,7 +99,7 @@ class CBASTestBase(RealServerTestCase):
 
     def initiate_query(self, statement, options, *args, **kwargs):
         logging.info("initiating query {} : {}, {}".format(statement,args,kwargs))
-        query=couchbase_v2.analytics.AnalyticsQuery(statement, *args, **kwargs)
+        query=couchbase_core.analytics.AnalyticsQuery(statement, *args, **kwargs)
         for k,v in options.items():
             query.set_option(k, v)
         return self.cb.analytics_query(query, self.cluster_info.analytics_host)
@@ -220,13 +220,15 @@ class DeferredAnalyticsTest(CBASTestQueriesBase):
                 if 'setup-dataset' in query_file or 'initiate-shadow' in query_file:
                     continue
                 args, kwargs, statement, options = self.gen_query_params(query_file, cbas_response)
-                real_statement = couchbase_v2.analytics.DeferredAnalyticsQuery(statement,*args, **kwargs)
+                real_statement = couchbase_core.analytics.DeferredAnalyticsQuery(statement, *args, **kwargs)
                 real_statement.timeout = 100
-                logging.error("scheduling query {} with args{} kwargs {} and options {}".format(real_statement, args, kwargs, options))
-                logging.error("query content; {}, body: {}".format(real_statement,real_statement._body))
+                logging.error(
+                    "scheduling query {} with args{} kwargs {} and options {}".format(real_statement, args, kwargs,
+                                                                                      options))
+                logging.error("query content; {}, body: {}".format(real_statement, real_statement._body))
                 deferred_query = self.cb.analytics_query(real_statement, self.cluster_info.analytics_host)
-                logging.error("scheduled query {}, got response {}".format(real_statement,deferred_query))
-                DeferredAnalyticsTest._responses[query_file]=deferred_query, real_statement.encoded
+                logging.error("scheduled query {}, got response {}".format(real_statement, deferred_query))
+                DeferredAnalyticsTest._responses[query_file] = deferred_query, real_statement.encoded
         logging.error("finished scheduling")
         return DeferredAnalyticsTest._responses
 
@@ -245,7 +247,7 @@ class DeferredAnalyticsTest(CBASTestQueriesBase):
 
     def test_single(self):
         self.init_if_not_setup()
-        x=couchbase_v2.analytics.DeferredAnalyticsQuery("SELECT VALUE bw FROM breweries bw WHERE bw.name = 'Kona Brewing'")
+        x=couchbase_core.analytics.DeferredAnalyticsQuery("SELECT VALUE bw FROM breweries bw WHERE bw.name = 'Kona Brewing'")
         x.timeout = 100
         response=self.cb.analytics_query(x,self.cluster_info.analytics_host)
         list_resp = list(response)
@@ -259,7 +261,7 @@ class DeferredAnalyticsTest(CBASTestQueriesBase):
 
     def test_correct_timeout_via_query_property(self):
         self.init_if_not_setup()
-        x = couchbase_v2.analytics.DeferredAnalyticsQuery(
+        x = couchbase_core.analytics.DeferredAnalyticsQuery(
             "SELECT VALUE bw FROM breweries bw WHERE bw.name = 'Kona Brewing'")
 
         def creator(query, host, timeout):
@@ -270,9 +272,9 @@ class DeferredAnalyticsTest(CBASTestQueriesBase):
 
     def test_correct_timeout_in_constructor(self):
         self.init_if_not_setup()
-        x = couchbase_v2.analytics.DeferredAnalyticsQuery(
+        x = couchbase_core.analytics.DeferredAnalyticsQuery(
             "SELECT VALUE bw FROM breweries bw WHERE bw.name = 'Kona Brewing'")
-        creator = lambda query, host, timeout: couchbase_v2.analytics.DeferredAnalyticsRequest(query, host, self.cb,
+        creator = lambda query, host, timeout: couchbase_core.analytics.DeferredAnalyticsRequest(query, host, self.cb,
                                                                                                timeout=timeout)
         self._check_finish_time_in_bounds(x, creator, 500)
 
