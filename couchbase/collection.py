@@ -781,7 +781,8 @@ class CBCollection(wrapt.ObjectProxy):
                cas=0,  # type: int
                persist_to=PersistTo.NONE,  # type: PersistTo.Value
                replicate_to=ReplicateTo.NONE,  # type: ReplicateTo.Value
-               durability_level=Durability.NONE  # type: Durability
+               durability_level=Durability.NONE,  # type: Durability
+               quiet=False
                ):
         # type: (...)->MutationResult
         pass
