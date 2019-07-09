@@ -58,16 +58,10 @@ import couchbase.admin
 import couchbase_core.tests.analytics_harness
 
 
-class CollectionTestCase(ConnectionTestCase):
-    coll = None  # type: CBCollection
-    initialised = defaultdict(lambda: {})
-
-    def setUp(self, mock_collections, real_collections):
+class ClusterTestCase(ConnectionTestCase):
+    def setUp(self, **kwargs):
         self.factory = Bucket
-        super(CollectionTestCase, self).setUp()
-        my_collections = mock_collections if self.is_mock else real_collections
-        # prepare:
-        # 1) Connect to a Cluster
+        super(ClusterTestCase, self).setUp()
         connargs = self.cluster_info.make_connargs()
         connstr_abstract = couchbase_core.connstr.ConnectionString.parse(connargs.pop('connection_string'))
         bucket_name = connstr_abstract.bucket
@@ -75,10 +69,22 @@ class CollectionTestCase(ConnectionTestCase):
         connstr_abstract.set_option('enable_collections', 'true')
         self.cluster = Cluster(connstr_abstract)
         self.admin = self.make_admin_connection()
-        cm = couchbase.admin.CollectionManager(self.admin, bucket_name)
         self.bucket = self.cluster.bucket(bucket_name, **connargs)
         #self.cluster.authenticate(couchbase_core.cluster.ClassicAuthenticator(self.cluster_info.admin_username,
         #                                                                      self.cluster_info.admin_password))
+        self.bucket_name=bucket_name
+
+
+class CollectionTestCase(ClusterTestCase):
+    coll = None  # type: CBCollection
+    initialised = defaultdict(lambda: {})
+
+    def setUp(self, mock_collections, real_collections):
+        # prepare:
+        # 1) Connect to a Cluster
+        super(CollectionTestCase,self).setUp()
+        cm = couchbase.admin.CollectionManager(self.admin, self.bucket_name)
+        my_collections = mock_collections if self.is_mock else real_collections
         for scope_name, collections in my_collections.items():
             CollectionTestCase._upsert_scope(cm, scope_name)
             scope = self.bucket.scope(scope_name) if scope_name else self.bucket
@@ -559,8 +565,21 @@ class Scenarios(CollectionTestCase):
         do_upsert()
 
 
-if os.getenv("PYCBC_CBAS_V3"):
-    class AnalyticsTest(couchbase_core.tests.analytics_harness.CBASTestSpecific):
+if os.getenv("PYCBC_CBAS_V3") or True:
+    class AnalyticsTest(couchbase_core.tests.analytics_harness.CBASTestSpecific, ClusterTestCase):
         def setUp(self):
-            self.factory = Bucket
-            super(AnalyticsTest,self).setUp()
+            self.factory=Bucket
+            ClusterTestCase.setUp(self)
+            couchbase_core.tests.analytics_harness.CBASTestSpecific.setUp(self)
+
+        def get_fixture(self):
+            return self.cluster
+
+        def do_analytics_query(self, query, **kwargs):
+            return self.cluster.analytics_query(query, **kwargs)
+
+        from couchbase.analytics import AnalyticsResult
+        def get_query_params(self,
+                             query  # type: AnalyticsResult
+        ):
+            return query
