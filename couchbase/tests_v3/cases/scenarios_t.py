@@ -48,6 +48,36 @@ import couchbase.subdocument as SD
 import couchbase.admin
 
 
+try:
+    from importlib import reload  # Python 3.4+
+except ImportError:
+    # Needed for Python 3.0-3.3; harmless in Python 2.7 where imp.reload is just an
+    # alias for the builtin reload.
+    from imp import reload
+
+from types import ModuleType
+import os, sys
+
+def rreload(module, paths=None, mdict=None):
+    """Recursively reload modules."""
+    if paths is None:
+        paths = ['']
+    if mdict is None:
+        mdict = {}
+    if module not in mdict:
+        # modules reloaded from this module
+        mdict[module] = []
+    reload(module)
+    for attribute_name in dir(module):
+        attribute = getattr(module, attribute_name)
+        if type(attribute) is ModuleType:
+            if attribute not in mdict[module]:
+                if attribute.__name__ not in sys.builtin_module_names:
+                    if os.path.dirname(attribute.__file__) in paths:
+                        mdict[module].append(attribute)
+                        rreload(attribute, paths, mdict)
+    reload(module)
+
 class Scenarios(ConnectionTestCase):
     coll = None  # type: CBCollection
 
@@ -484,3 +514,16 @@ class Scenarios(ConnectionTestCase):
         self.coll.upsert_multi({"Fred": "Wilma", "Barney": "Betty"})
         self.assertEquals(self.coll.get("Fred").content, "Wilma")
         self.assertEquals(self.coll.get("Barney").content, "Betty")
+
+    def test_PYCBC_607(self):
+        import couchbase_core._bootstrap
+        import couchbase_core._libcouchbase as _LCB
+        messed_helpers=copy.deepcopy(couchbase_core._bootstrap._default_helpers)
+        def dummy_call(*args,**kwargs):
+            raise Exception("failed")
+        messed_helpers['json_encode']=dummy_call
+        messed_helpers['pickle_encode']=dummy_call
+        _LCB._init_helpers(**messed_helpers)
+
+        rreload(couchbase)
+        self.coll.upsert('king_arthur', {'name': 'Arthur', 'email': 'kingarthur@couchbase.com', 'interests': ['Holy Grail', 'African Swallows']})
