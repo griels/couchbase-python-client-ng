@@ -486,6 +486,10 @@ class Scenarios(ConnectionTestCase):
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], result.rows())
 
+    def test_cluster_analytics(self):
+        x=self.cluster.analytics_query("SELECT x FROM Y")
+        y=list(x)
+
     def test_multi(self):
         self.coll.upsert_multi({"Fred": "Wilma", "Barney": "Betty"})
         self.assertEquals(self.coll.get("Fred").content, "Wilma")

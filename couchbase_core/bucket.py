@@ -10,7 +10,7 @@ from couchbase_core.views.iterator import View
 from .views.params import make_options_string, make_dvpath
 import couchbase_core._libcouchbase as _LCB
 
-from couchbase_core import priv_constants as _P, fulltext as _FTS
+from couchbase_core import priv_constants as _P, fulltext as _FTS, analytics
 
 
 class Bucket(_Base):
@@ -767,7 +767,7 @@ class Bucket(_Base):
             :class:`~.View`
                 contains more extensive documentation and examples
 
-            :class:`couchbase_v2.views.params.Query`
+            :class:`couchbase_core.views.params.Query`
                 contains documentation on the available query options
 
             :class:`~.SpatialQuery`
@@ -835,7 +835,10 @@ class Bucket(_Base):
         """
         return json.loads(self._diagnostics()['health_json'])
 
-    def analytics_query(self, query, host, *args, **kwargs):
+    def analytics_query(self, query, *args, **kwargs):
+        return self._analytics_query(query, None, *args, **kwargs)
+
+    def _analytics_query(self, query, host, *args, **kwargs):
         """
         Execute an Analytics query.
 
@@ -870,7 +873,7 @@ class Bucket(_Base):
         else:
             query.update(*args, **kwargs)
 
-        return couchbase_v2.analytics.gen_request(query, host, self)
+        return analytics.gen_request(query, host, self)
 
     def search(self, index, query, **kwargs):
         """

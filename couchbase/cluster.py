@@ -133,7 +133,7 @@ class Cluster:
     def _operate_on_cluster(self, verb, failtype, *args, **kwargs):
         return verb(self.clusterbucket, *args, **kwargs)
 
-    def analytics_query(self,
+    def analytics_query(self,  # type: Cluster
                         statement,  # type: str,
                         *options,  # type: AnalyticsOptions
                         **kwargs
@@ -147,6 +147,7 @@ class Cluster:
         Throws Any exceptions raised by the underlying platform - HTTP_TIMEOUT for example.
         :except ServiceNotFoundException - service does not exist or cannot be located.
         """
+
         return AnalyticsResult(self._operate_on_cluster(CoreBucket.analytics_query, AnalyticsException, statement, **forward_args(kwargs,*options)))
 
     def search_query(self,
