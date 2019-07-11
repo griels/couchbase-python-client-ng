@@ -41,6 +41,10 @@ def options_to_func(orig,  # type: U
     return invocation(orig)
 
 
+class AnalyticsOptions(OptionBlock):
+    pass
+
+
 class Cluster:
     clusterbucket = None  # type: CoreBucket
 
@@ -137,12 +141,12 @@ class Cluster:
         except Exception as e:
             raise failtype(str(e))
 
-    def analytics_query(self,
+    def analytics_query(self,  # type: Cluster
                         statement,  # type: str,
                         *options,  # type: AnalyticsOptions
                         **kwargs
                         ):
-        # type: (...)->AnalyticsResult
+        # type: (...)->IAnalyticsResult
         """
         Executes an Analytics query against the remote cluster and returns a IAnalyticsResult with the results of the query.
         :param statement: the analytics statement to execute
@@ -151,6 +155,7 @@ class Cluster:
         Throws Any exceptions raised by the underlying platform - HTTP_TIMEOUT for example.
         :except ServiceNotFoundException - service does not exist or cannot be located.
         """
+
         return AnalyticsResult(self._operate_on_cluster(CoreBucket.analytics_query, AnalyticsException, statement, **forward_args(kwargs,*options)))
 
     def search_query(self,
