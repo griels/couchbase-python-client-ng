@@ -72,6 +72,18 @@ class OptionBlock(dict):
         super(OptionBlock, self).__init__(**kwargs)
 
 
+class JSONOptionBlock(OptionBlock):
+    def __init__(self, *args, **kwargs):
+        super(JSONOptionBlock, self).__init__(*args, **kwargs)
+
+    def as_json(self  # type: JSONOptionBlock
+                ):
+        return {self._mappings().get(k, k): v for k, v in self.items()}
+
+    def _mappings(self):
+        return {}
+
+
 T = TypeVar('T', bound=OptionBlock)
 
 
