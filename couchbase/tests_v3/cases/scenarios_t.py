@@ -510,11 +510,6 @@ class Scenarios(CollectionTestCase):
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], result.rows())
 
-    def test_cluster_analytics(self):
-        if self.is_mock:
-            raise SkipTest("Analytics not supported by mock")
-        list(self.cluster.analytics_query("SELECT VALUE bw FROM breweries bw WHERE bw.name = 'Kona Brewing'"))
-
     def test_cluster_search(self):
         if self.is_mock:
             raise SkipTest("FTS not supported by mock")
