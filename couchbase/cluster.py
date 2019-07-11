@@ -170,7 +170,7 @@ class Cluster:
         Throws Any exceptions raised by the underlying platform - HTTP_TIMEOUT for example.
         :except ServiceNotFoundException - service does not exist or cannot be located.
         """
-        return self.query(statement, *options, **kwargs)
+        return AnalyticsResult(self._operate_on_cluster(CoreBucket.analytics_query, AnalyticsException, statement, **forward_args(kwargs,*options)))
 
     def search_query(self,
                      index,  # type: str
