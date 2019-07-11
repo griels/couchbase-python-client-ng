@@ -509,11 +509,6 @@ class Scenarios(CollectionTestCase):
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], result.rows())
 
-    def test_cluster_analytics(self):
-        if self.is_mock:
-            raise SkipTest("Analytics not supported by mock")
-        list(self.cluster.analytics_query("SELECT VALUE bw FROM breweries bw WHERE bw.name = 'Kona Brewing'"))
-
     def test_cluster_search(self):
         if self.is_mock:
             raise SkipTest("FTS not supported by mock")
@@ -566,8 +561,16 @@ class Scenarios(CollectionTestCase):
         do_upsert()
 
 
-if os.getenv("PYCBC_CBAS_V3"):
-    class AnalyticsTest(couchbase_core.tests.analytics_harness.CBASTestSpecific):
+if os.getenv("PYCBC_CBAS_V3") or True:
+    from couchbase.analytics import AnalyticsResult
+    class AnalyticsTest(couchbase_core.tests.analytics_harness.CBASTestSpecific, ClusterTestCase):
         def setUp(self):
-            self.factory = Bucket
-            super(AnalyticsTest,self).setUp()
+            self.factory=Bucket
+            ClusterTestCase.setUp(self)
+            couchbase_core.tests.analytics_harness.CBASTestSpecific.setUp(self)
+
+        def get_fixture(self):
+            return self.cluster
+
+        def do_analytics_query(self, query, **kwargs):
+            return self.cluster.analytics_query(query, **kwargs)
