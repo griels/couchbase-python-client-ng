@@ -16,6 +16,8 @@
 #
 from couchbase_core import IterableWrapper
 
+from .options import OptionBlock
+
 try:
     from abc import abstractmethod
 except:
@@ -57,6 +59,30 @@ class IQueryResult(object):
     def metrics(self):
         # type: (...)->QueryMetrics
         pass
+
+
+class QueryOptions(OptionBlock, IQueryResult):
+    @property
+    @abstractmethod
+    def is_live(self):
+        return False
+
+    def __init__(self, statement=None, parameters=None, timeout=None):
+
+        """
+        Executes a N1QL query against the remote cluster returning a IQueryResult with the results of the query.
+        :param statement: N1QL query
+        :param options: the optional parameters that the Query service takes. See The N1QL Query API for details or a SDK 2.0 implementation for detail.
+        :return: An IQueryResult object with the results of the query or error message if the query failed on the server.
+        :except Any exceptions raised by the underlying platform - HTTP_TIMEOUT for example.
+        :except ServiceNotFoundException - service does not exist or cannot be located.
+
+        """
+        super(QueryOptions, self).__init__(statement=statement, parameters=parameters, timeout=timeout)
+
+
+class QueryMetrics(object):
+    pass
 
 
 class QueryResult(IterableWrapper, IQueryResult):
