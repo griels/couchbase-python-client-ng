@@ -152,13 +152,10 @@ class Cluster:
             if the query failed on the server.
 
         """
-        return QueryResult(self._operate_on_first_bucket(CoreBucket.query, QueryException, statement, **forward_args(kwargs, *options)))
+        return QueryResult(self._operate_on_cluster(CoreBucket.query, QueryException, statement, **(forward_args(kwargs, *options))))
 
-    def _operate_on_first_bucket(self, verb, failtype, *args, **kwargs):
-        first_bucket = next(iter(self._cluster._buckets.items()), None)  # type: Optional[couchbase.CoreBucket]
-        if not first_bucket:
-            raise failtype("Need at least one bucket active to perform search")
-        return verb(first_bucket[1]()._bucket, *args, **kwargs)
+    def _operate_on_cluster(self, verb, failtype, *args, **kwargs):
+        return verb(self.clusterbucket, *args, **kwargs)
 
     def analytics_query(self,
                         statement,  # type: str,
@@ -174,7 +171,7 @@ class Cluster:
         Throws Any exceptions raised by the underlying platform - HTTP_TIMEOUT for example.
         :except ServiceNotFoundException - service does not exist or cannot be located.
         """
-        return self.query(statement, *options, **kwargs)
+        return AnalyticsResult(self._operate_on_cluster(CoreBucket.analytics_query, AnalyticsException, statement, **forward_args(kwargs,*options)))
 
     def search_query(self,
                      index,  # type: str
@@ -193,7 +190,7 @@ class Cluster:
         :except    ServiceNotFoundException - service does not exist or cannot be located.
 
         """
-        return self._operate_on_first_bucket(CoreBucket.search, SearchException, index, query, **forward_args(kwargs, *options))
+        return self._operate_on_cluster(CoreBucket.search, SearchException, index, query, **forward_args(kwargs, *options))
 
 
     def diagnostics(self,
@@ -206,7 +203,7 @@ class Cluster:
         :return:A IDiagnosticsResult object with the results of the query or error message if the query failed on the server.
 
         """
-        return self._operate_on_first_bucket(CoreBucket.diagnostics, DiagnosticsException)
+        return self._operate_on_cluster(CoreBucket.diagnostics, DiagnosticsException)
 
     def users(self):
         # type: (...)->IUserManager
