@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
 import traceback
 from collections import defaultdict
 from typing import *
@@ -54,6 +55,8 @@ import couchbase_core._libcouchbase as _LCB
 import couchbase_core.cluster
 from couchbase_core._pyport import ANY_STR
 from couchbase.admin import SourceType, IndexType
+import couchbase.admin
+import couchbase_core.tests.analytics_harness
 from couchbase_core.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
 
@@ -507,15 +510,14 @@ class Scenarios(CollectionTestCase):
     def test_cluster_analytics(self):
         if self.is_mock:
             raise SkipTest("Analytics not supported by mock")
-        x = list(self.cluster.analytics_query("SELECT mockrow"))
+        list(self.cluster.analytics_query("SELECT VALUE bw FROM breweries bw WHERE bw.name = 'Kona Brewing'"))
 
     def test_cluster_search(self):
         if self.is_mock:
             raise SkipTest("FTS not supported by mock")
-        import couchbase.admin
         self.cluster.search_indexes().upsert('testindex', IndexType.INDEX,
                                              SourceType.COUCHBASE, "default")
-        x = list(self.cluster.search_query("testindex", "testquery"))
+        list(self.cluster.search_query("testindex", "testquery"))
 
     def test_diagnostics(self  # type: Scenarios
                          ):
@@ -560,3 +562,10 @@ class Scenarios(CollectionTestCase):
         self.assertRaises(Exception, do_upsert)
         recursive_reload(couchbase)
         do_upsert()
+
+
+if os.getenv("PYCBC_CBAS_V3"):
+    class AnalyticsTest(couchbase_core.tests.analytics_harness.CBASTestSpecific):
+        def setUp(self):
+            self.factory = Bucket
+            super(AnalyticsTest,self).setUp()
