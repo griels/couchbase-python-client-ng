@@ -835,7 +835,10 @@ class Bucket(_Base):
         """
         return json.loads(self._diagnostics()['health_json'])
 
-    def analytics_query(self, query, host, *args, **kwargs):
+    def analytics_query(self, query, *args, **kwargs):
+        return self._analytics_query(query, None, *args, **kwargs)
+
+    def _analytics_query(self, query, host, *args, **kwargs):
         """
         Execute an Analytics query.
 
