@@ -136,7 +136,7 @@ class Cluster:
               *options,  # type: QueryOptions
               **kwargs  # type: Any
               ):
-        # type: (...) -> QueryResult
+        # type: (...) -> IQueryResult
         """
         Perform a N1QL query.
 
