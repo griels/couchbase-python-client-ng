@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
 import traceback
 from collections import defaultdict
 from typing import *
@@ -52,6 +53,10 @@ import couchbase.subdocument as SD
 import couchbase.admin
 import couchbase_core._bootstrap
 import couchbase_core._libcouchbase as _LCB
+import couchbase_core.cluster
+from couchbase_core._pyport import ANY_STR
+import couchbase.admin
+import couchbase_core.tests.analytics_harness
 from couchbase_core.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
 
@@ -502,13 +507,6 @@ class Scenarios(CollectionTestCase):
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], result.rows())
 
-    def test_cluster_analytics(self):
-        x=self.cluster.analytics_query("SELECT x FROM Y")
-        y=list(x)
-        if self.is_mock:
-            raise SkipTest("Analytics not supported by mock")
-        x = list(self.cluster.analytics_query("SELECT mockrow"))
-
     def test_cluster_search(self):
         x=self.cluster.search_query("testindex","testquery")
         y=list(x)
@@ -557,3 +555,18 @@ class Scenarios(CollectionTestCase):
         self.assertRaises(Exception, do_upsert)
         recursive_reload(couchbase)
         do_upsert()
+
+
+if os.getenv("PYCBC_CBAS_V3") or True:
+    from couchbase.analytics import AnalyticsResult
+    class AnalyticsTest(couchbase_core.tests.analytics_harness.CBASTestSpecific, ClusterTestCase):
+        def setUp(self):
+            self.factory=Bucket
+            ClusterTestCase.setUp(self)
+            couchbase_core.tests.analytics_harness.CBASTestSpecific.setUp(self)
+
+        def get_fixture(self):
+            return self.cluster
+
+        def do_analytics_query(self, query, **kwargs):
+            return self.cluster.analytics_query(query, **kwargs)
