@@ -1,11 +1,12 @@
 from typing import *
 
+from .analytics import AnalyticsResult
 from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics, IDiagnosticsResult
 from .n1ql import QueryResult, QueryOptions, IQueryResult
 from .options import OptionBlock, forward_args, OptionBlockDeriv
 from .bucket import BucketOptions, Bucket, CoreBucket
 from couchbase_core.cluster import Cluster as SDK2Cluster, Authenticator as SDK2Authenticator
-from .exceptions import SearchException, DiagnosticsException, QueryException, ArgumentError
+from .exceptions import SearchException, DiagnosticsException, QueryException, AnalyticsException, ArgumentError
 import couchbase_core._libcouchbase as _LCB
 import multiprocessing
 from multiprocessing.pool import ThreadPool
@@ -41,6 +42,10 @@ def options_to_func(orig,  # type: U
             return invocator
 
     return invocation(orig)
+
+
+class AnalyticsOptions(OptionBlock):
+    pass
 
 
 class Cluster:
@@ -139,7 +144,7 @@ class Cluster:
         except Exception as e:
             raise failtype(str(e))
 
-    def analytics_query(self,
+    def analytics_query(self,  # type: Cluster
                         statement,  # type: str,
                         *options,  # type: AnalyticsOptions
                         **kwargs
@@ -153,7 +158,8 @@ class Cluster:
         Throws Any exceptions raised by the underlying platform - HTTP_TIMEOUT for example.
         :except ServiceNotFoundException - service does not exist or cannot be located.
         """
-        return self.query(statement, *options, **kwargs)
+
+        return AnalyticsResult(self._operate_on_cluster(CoreBucket.analytics_query, AnalyticsException, statement, **forward_args(kwargs,*options)))
 
     def search_query(self,
                      index,  # type: str
