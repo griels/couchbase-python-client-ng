@@ -269,7 +269,7 @@ class SearchIndexes(object):
         params.update(NewSearchIndexOptions.as_json(final_opts))
 
         content = self.admin_bucket._mk_formstr(params)
-        return self.admin_bucket.http_request("/api/index/{}".format(index_name), 'PUT', content)
+        return self.admin_bucket.http_request("/api/index/{}".format(index_name), 'POST', content)
 
     def drop(self,  # type: SearchIndexes
              index_name,  # type: str

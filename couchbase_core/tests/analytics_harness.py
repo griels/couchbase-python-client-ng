@@ -3,6 +3,7 @@ from __future__ import print_function
 import logging
 from unittest import SkipTest
 
+from couchbase_core.analytics import AnalyticsRequest
 from couchbase_tests.base import RealServerTestCase, version_to_tuple
 from parameterized import parameterized
 import json
@@ -146,7 +147,9 @@ class CBASTestBase(RealServerTestCase):
             result = result[0]
         return result
 
-    def get_query_params(self, query):
+    def get_query_params(self,
+                         query
+                         ):
         return query._params
 
 

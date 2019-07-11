@@ -37,7 +37,7 @@ import couchbase_core.connstr
 import couchbase.exceptions
 
 from couchbase import JSONDocument, Durability, LookupInSpec, DeltaValue, SignedInt64, MutateInResult, MutationResult, \
-    LookupInResult, ServiceType
+    LookupInResult, ServiceType, AnalyticsResult
 from couchbase.cluster import Cluster, ClusterOptions
 from couchbase import ReplicateTo, PersistTo, FiniteDuration, copy, \
     Seconds, ReplicaNotConfiguredException, DocumentConcurrentlyModifiedException, \
@@ -59,6 +59,7 @@ import couchbase.admin
 import couchbase_core.tests.analytics_harness
 from couchbase_core.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
+from couchbase.analytics import AnalyticsResult
 
 
 class ClusterTestCase(ConnectionTestCase):
@@ -578,9 +579,3 @@ if os.getenv("PYCBC_CBAS_V3") or True:
 
         def do_analytics_query(self, query, **kwargs):
             return self.cluster.analytics_query(query, **kwargs)
-
-        from couchbase.analytics import AnalyticsResult
-        def get_query_params(self,
-                             query  # type: AnalyticsResult
-        ):
-            return query
