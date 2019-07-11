@@ -491,11 +491,6 @@ class Scenarios(ConnectionTestCase):
         x=self.cluster.analytics_query("SELECT x FROM Y")
         y=list(x)
 
-    def test_cluster_search(self):
-        if self.is_mock:
-            raise SkipTest("FTS not supported by mock")
-        x = list(self.cluster.search_query("testindex", "testquery"))
-
     def test_diagnostics(self  # type: Scenarios
                          ):
         try:
