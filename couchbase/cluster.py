@@ -12,6 +12,9 @@ import multiprocessing
 from multiprocessing.pool import ThreadPool
 import couchbase.exceptions
 
+from couchbase_core.admin import Admin
+import couchbase.admin
+
 T = TypeVar('T')
 
 
@@ -46,6 +49,9 @@ def options_to_func(orig,  # type: U
 
 class AnalyticsOptions(OptionBlock):
     pass
+
+
+ClusterManager = Admin
 
 
 class Cluster:
@@ -260,6 +266,8 @@ class Cluster:
         """
         return self._cluster.cluster_manager()
 
+    def search_indexes(self):
+        return couchbase.admin.SearchIndexes(self.manager())
 
 QueryParameters = Cluster.QueryParameters
 ClusterOptions = Cluster.ClusterOptions

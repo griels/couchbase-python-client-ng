@@ -55,6 +55,7 @@ import couchbase.admin
 import couchbase_core.tests.analytics_harness
 from couchbase_core.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
+from couchbase.admin import IndexType, SourceType
 from couchbase.diagnostics import ServiceType
 
 
@@ -503,6 +504,13 @@ class Scenarios(CollectionTestCase):
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], result.rows())
+
+    def test_cluster_search(self):
+        if self.is_mock:
+            raise SkipTest("FTS not supported by mock")
+        self.cluster.search_indexes().upsert('testindex', IndexType.INDEX,
+                                             SourceType.COUCHBASE, "default")
+        x = list(self.cluster.search_query("testindex", "testquery"))
 
     def test_diagnostics(self  # type: Scenarios
                          ):
