@@ -142,7 +142,7 @@ class Cluster:
                         *options,  # type: AnalyticsOptions
                         **kwargs
                         ):
-        # type: (...)->AnalyticsResult
+        # type: (...)->IAnalyticsResult
         """
         Executes an Analytics query against the remote cluster and returns a IAnalyticsResult with the results of the query.
         :param statement: the analytics statement to execute
