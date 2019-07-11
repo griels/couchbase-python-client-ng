@@ -886,8 +886,8 @@ class Bucket(_Base):
             The full-text search API is experimental and subject to change
 
         :param str index: Name of the index to query
-        :param couchbase_v2.fulltext.SearchQuery query: Query to issue
-        :param couchbase_v2.fulltext.Params params: Additional query options
+        :param couchbase_core.fulltext.SearchQuery query: Query to issue
+        :param couchbase_core.fulltext.Params params: Additional query options
         :return: An iterator over query hits
 
         .. note:: You can avoid instantiating an explicit `Params` object
