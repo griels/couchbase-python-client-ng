@@ -58,6 +58,7 @@ import couchbase.admin
 import couchbase_core.tests.analytics_harness
 from couchbase_core.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
+from couchbase.admin import IndexType, SourceType
 
 
 class ClusterTestCase(ConnectionTestCase):
@@ -510,6 +511,13 @@ class Scenarios(CollectionTestCase):
         x=self.cluster.analytics_query("SELECT x FROM Y")
         y=list(x)
 
+    def test_cluster_search(self):
+        if self.is_mock:
+            raise SkipTest("FTS not supported by mock")
+        self.cluster.search_indexes().upsert('testindex', IndexType.INDEX,
+                                             SourceType.COUCHBASE, "default")
+        x = list(self.cluster.search_query("testindex", "testquery"))
+
     def test_diagnostics(self  # type: Scenarios
                          ):
         try:
@@ -517,6 +525,8 @@ class Scenarios(CollectionTestCase):
         except couchbase.exceptions.TimeoutError:
             if self.is_mock:
                 raise SkipTest("LCB Diagnostics still blocks indefinitely with mock: {}".format(traceback.format_exc()))
+            else:
+                raise
 
         self.assertRegex(diagnostics.sdk(), r'.*PYCBC.*')
         self.assertGreaterEqual(diagnostics.version(), 1)
@@ -527,6 +537,10 @@ class Scenarios(CollectionTestCase):
             self.assertIn(type(value.type()), (ServiceType, str))
             self.assertIn(type(value.id()), ANY_STR)
             self.assertIn(type(value.local()), ANY_STR)
+
+    def test_cluster_search(self):
+        x=self.cluster.search_query("testindex","testquery")
+        y=list(x)
 
     def test_multi(self):
         self.coll.upsert_multi({"Fred": "Wilma", "Barney": "Betty"})
