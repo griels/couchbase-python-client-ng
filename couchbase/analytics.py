@@ -19,3 +19,4 @@ class AnalyticsResult(QueryResult):
                  parent  # type: N1QLRequest
                  ):
         super(AnalyticsResult, self).__init__(parent)
+        self._params=parent._params

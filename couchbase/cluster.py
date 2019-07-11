@@ -41,6 +41,10 @@ def options_to_func(orig,  # type: U
     return invocation(orig)
 
 
+class AnalyticsOptions(OptionBlock):
+    pass
+
+
 class Cluster:
     clusterbucket = None  # type: CoreBucket
 
