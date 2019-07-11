@@ -499,9 +499,12 @@ class Scenarios(ConnectionTestCase):
 
     def test_diagnostics(self  # type: Scenarios
                          ):
-        if self.is_mock:
-            raise SkipTest("LCB Diagnostics still blocks indefinitely with mock")
-        diagnostics = self.cluster.diagnostics()
+        try:
+            diagnostics = self.cluster.diagnostics(timeout=(5 if self.is_mock else None))
+        except couchbase.exceptions.TimeoutError:
+            if self.is_mock:
+                raise SkipTest("LCB Diagnostics still blocks indefinitely with mock: {}".format(traceback.format_exc()))
+
         self.assertRegex(diagnostics.sdk(), r'.*PYCBC.*')
         self.assertGreaterEqual(diagnostics.version(), 1)
         self.assertIsNotNone(diagnostics.id())
