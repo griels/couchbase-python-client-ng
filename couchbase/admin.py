@@ -241,21 +241,38 @@ class SearchIndexes(object):
                ):
         # type: (...)->None
 
-        final_opts=forward_args(kwargs,*options)
+        final_opts = forward_args(kwargs, *options)
         index_params_fn = {IndexType.ALIAS: SearchIndexes._alias,
                            IndexType.BLEVE: SearchIndexes._bleve}.get(index_type)
-        params = {'indexParams': index_params_fn(source_type=source_type,
-                                                 source_name=source_name,
-                                                 **final_opts)} if index_params_fn else {}
 
+        index_params = {'indexParams': index_params_fn(source_type=source_type,
+                                                       source_name=source_name,
+                                                       **final_opts)} if index_params_fn else {}
+
+        source_params = {'sourceParams': {
+            "authUser": self.admin_bucket,
+            "authPassword": "",
+            "authSaslUser": "",
+            "authSaslPassword": "",
+            "clusterManagerBackoffFactor": 0,
+            "clusterManagerSleepInitMS": 0,
+            "clusterManagerSleepMaxMS": 20000,
+            "dataManagerBackoffFactor": 0,
+            "dataManagerSleepInitMS": 0,
+            "dataManagerSleepMaxMS": 20000,
+            "feedBufferSizeBytes": 0,
+            "feedBufferAckThreshold": 0
+        }}
+        params = index_params
+        params.update(source_params)
         params.update(indexType=index_type.value)
         params.update(NewSearchIndexOptions.as_json(final_opts))
 
-        content=self.admin_bucket._mk_formstr(params)
+        content = self.admin_bucket._mk_formstr(params)
         return self.admin_bucket.http_request("/api/index/{}".format(index_name), 'PUT', content)
 
     def drop(self,  # type: SearchIndexes
-             indexName,  # type: str
+             index_name,  # type: str
              options  # type: DropSearchIndexOptions
              ):
         # type: (...)->None
