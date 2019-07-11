@@ -16,10 +16,7 @@
 #
 from .options import OptionBlock
 
-try:
-    from abc import abstractmethod
-except:
-    import abstractmethod
+from couchbase_core import abstractmethod
 
 try:
     StopAsyncIteration = StopAsyncIteration
