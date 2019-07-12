@@ -57,6 +57,7 @@ import couchbase.admin
 import couchbase_core.tests.analytics_harness
 from couchbase_core.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
+from couchbase.admin import IndexType, SourceType
 from couchbase.diagnostics import ServiceType
 import couchbase_core.fulltext as FT
 
@@ -511,6 +512,11 @@ class Scenarios(CollectionTestCase):
                             ):
         if self.is_mock:
             raise SkipTest("FTS not supported by mock")
+        try:
+            self.cluster.search_indexes().upsert('beer-search', IndexType.INDEX,
+                                             SourceType.COUCHBASE, "bear-sample")
+        except:
+            pass
         most_common_term_max = 10
         initial=time.time()
         x = self.cluster.search_query("beer-search", FT.TermQuery("category"),
