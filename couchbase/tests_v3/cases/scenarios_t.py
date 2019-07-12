@@ -56,6 +56,7 @@ import couchbase.admin
 import couchbase_core.tests.analytics_harness
 from couchbase_core.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
+from couchbase.admin import IndexType, SourceType
 from couchbase.diagnostics import ServiceType
 import couchbase_core.fulltext as FT
 
@@ -506,9 +507,15 @@ class Scenarios(CollectionTestCase):
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], result.rows())
 
-    def test_cluster_search(self):
+    def test_cluster_search(self  # type: ConnectionTestCase
+                            ):
         if self.is_mock:
             raise SkipTest("FTS not supported by mock")
+        try:
+            self.cluster.search_indexes().upsert('beer-search', IndexType.INDEX,
+                                             SourceType.COUCHBASE, "bear-sample")
+        except:
+            pass
         x = list(self.cluster.search_query("beer-search", FT.TermQuery("category")))
         first_entry = x[0]
         self.assertEquals("brasserie_de_brunehaut-mont_st_aubert", first_entry.get('id'))
