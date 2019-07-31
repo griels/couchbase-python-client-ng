@@ -1026,7 +1026,8 @@ Bucket__init__(pycbc_Bucket *self,
     X("lockmode", &self->lockmode, "i")                    \
     X("_flags", &self->flags, "I")                         \
     X("_conntype", &conntype, "i")                         \
-    X("_iops", &iops_O, "O")
+    X("_iops", &iops_O, "O")                               \
+    X("_check_inconsistent", &self->check_type, "I")
 
 #define XCTOR_ARGS(X)\
     XCTOR_ARGS_NOTRACING(X)\
