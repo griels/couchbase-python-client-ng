@@ -519,6 +519,13 @@ lcb_STATUS pycbc_logging_monad_verb(const char *FILE,
                                 CMDNAME,                           \
                                 __VA_ARGS__)
 
+
+typedef enum {
+    PYCBC_CHECK_STRICT,
+    PYCBC_CHECK_NONE,
+    PYCBC_CHECK_FAIL
+} pycbc_check_type;
+
 typedef struct {
 
 #define PYCBC_BUCKET_BASE                                                    \
@@ -587,7 +594,9 @@ typedef struct {
     unsigned int flags;                                                      \
                                                                              \
     pycbc_dur_params dur_global;                                             \
-    unsigned long dur_timeout;
+    unsigned long dur_timeout;                                               \
+    pycbc_check_type check_type;
+
     PYCBC_BUCKET_BASE
 } pycbc_Bucket;
 
