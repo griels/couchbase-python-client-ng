@@ -1185,37 +1185,6 @@ class Bucket(CoreBucket):
     Lists the names of all the memcached operations. This is useful
     for classes which want to wrap all the methods
     """
-    _MEMCACHED_OPERATIONS = ('upsert', 'get', 'insert', 'append', 'prepend',
-                             'replace', 'remove', 'counter', 'touch',
-                             'lock', 'unlock', 'endure',
-                             'observe', 'rget', 'stats',
-                             'set', 'add', 'delete', 'lookup_in', 'mutate_in')
-
-    _MEMCACHED_NOMULTI = ('stats', 'lookup_in', 'mutate_in')
-
-    @classmethod
-    def _gen_memd_wrappers(cls, factory):
-        """Generates wrappers for all the memcached operations.
-        :param factory: A function to be called to return the wrapped
-            method. It will be called with two arguments; the first is
-            the unbound method being wrapped, and the second is the name
-            of such a method.
-
-          The factory shall return a new unbound method
-
-        :return: A dictionary of names mapping the API calls to the
-            wrapped functions
-        """
-        d = {}
-        for n in cls._MEMCACHED_OPERATIONS:
-            for variant in (n, n + "_multi"):
-                try:
-                    d[variant] = factory(getattr(cls, variant), variant)
-                except AttributeError:
-                    if n in cls._MEMCACHED_NOMULTI:
-                        continue
-                    raise
-        return d
 
     def design_get(self, *args, **kwargs):
         _depr('design_get', 'bucket_manager().design_get')

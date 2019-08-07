@@ -19,6 +19,7 @@ from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_v2.bucket import Bucket
 from couchbase_core.exceptions import ArgumentError
 from couchbase_core.asynchronous.bucket import AsyncBucket as CoreAsyncBucket
+from couchbase_core.bucket import Bucket as CoreBucket
 
 
 class AsyncBucket(Bucket):
@@ -52,26 +53,5 @@ class AsyncBucket(Bucket):
 
         CoreAsyncBucket.__init__(self, iops=iops, superclass=Bucket, *args, **kwargs)
 
-    def query(self, *args, **kwargs):
-        """
-        Reimplemented from base class.
-
-        This method does not add additional functionality of the
-        base class' :meth:`~couchbase_v2.bucket.Bucket.query` method (all the
-        functionality is encapsulated in the view class anyway). However it
-        does require one additional keyword argument
-
-        :param class itercls: A class used for instantiating the view
-          object. This should be a subclass of
-          :class:`~couchbase_v2.asynchronous.view.AsyncViewBase`.
-        """
-        if not issubclass(kwargs.get('itercls', None), AsyncViewBase):
-            raise ArgumentError.pyexc("itercls must be defined "
-                                      "and must be derived from AsyncViewBase")
-
-        return super(AsyncBucket, self).query(*args, **kwargs)
-
-    def endure(self, key, *args, **kwargs):
-        res = super(AsyncBucket, self).endure_multi([key], *args, **kwargs)
-        res._set_single()
-        return res
+    query = CoreAsyncBucket.view_query
+    n1ql_query = CoreAsyncBucket.query

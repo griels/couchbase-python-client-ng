@@ -24,8 +24,10 @@ from couchbase_core._libcouchbase import (
 from couchbase_core.result import AsyncResult
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase.exceptions import ArgumentError
+from couchbase_core.bucket import Bucket as CoreBucket
 
-class AsyncBucket(object):
+
+class AsyncBucket(CoreBucket):
     """
     This class contains the low-level async implementation of the
     :class:`~couchbase.bucket.Bucket` interface. **This module is not intended to be
@@ -152,7 +154,7 @@ class AsyncBucket(object):
 
         self._super.__init__(self, *args, **kwargs)
 
-    def query(self, *args, **kwargs):
+    def view_query(self, *args, **kwargs):
         """
         Reimplemented from base class.
 
@@ -169,7 +171,7 @@ class AsyncBucket(object):
             raise ArgumentError.pyexc("itercls must be defined "
                                       "and must be derived from AsyncViewBase")
 
-        return self._super.query(self, *args, **kwargs)
+        return self._super.view_query(self, *args, **kwargs)
 
     def endure(self, key, *args, **kwargs):
         res = self._super.endure_multi([key], *args, **kwargs)
