@@ -30,7 +30,7 @@ class CouchbaseBeerTest(AioTestCase):
         beer_bucket = self.cb
 
         yield from (beer_bucket.connect() or asyncio.sleep(0.01))
-        viewiter = beer_bucket.query("beer", "brewery_beers", limit=10)
+        viewiter = beer_bucket.view_query("beer", "brewery_beers", limit=10)
         yield from viewiter.future
 
         count = len(list(viewiter))
@@ -64,7 +64,7 @@ class CouchbaseDefaultTest(AioTestCase):
         yield from (default_bucket.connect() or asyncio.sleep(0.01))
 
         q = N1QLQuery("SELECT mockrow")
-        it = default_bucket.n1ql_query(q)
+        it = default_bucket.query(q)
         yield from it.future
 
         data = list(it)

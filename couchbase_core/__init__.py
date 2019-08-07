@@ -92,7 +92,7 @@ def set_json_converters(encode, decode):
 def set_pickle_converters(encode, decode):
     """
     Modify the default Pickle conversion functions. This affects all
-    :class:`~couchbase_v2.bucket.Bucket` instances.
+    :class:`~couchbase_core.bucket.Bucket` instances.
 
     These functions will be called instead of the default ones
     (``pickle.dumps`` and ``pickle.loads``) to encode and decode values to and
