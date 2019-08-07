@@ -5,14 +5,15 @@ except ImportError:
 
 from acouchbase.asyncio_iops import IOPS
 from acouchbase.iterator import AView, AN1QLRequest
-from couchbase_v2.asynchronous.bucket import AsyncBucket
+from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
 
 
-class Bucket(AsyncBucket):
+class AsyncAdapter(object):
+    _super=V2AsyncBucket
     def __init__(self, *args, **kwargs):
         loop = asyncio.get_event_loop()
-        super(Bucket, self).__init__(IOPS(loop), *args, **kwargs)
+        self._super.__init__(self, IOPS(loop), *args, **kwargs)
         self._loop = loop
 
         cft = asyncio.Future(loop=loop)
@@ -46,16 +47,22 @@ class Bucket(AsyncBucket):
     def query(self, *args, **kwargs):
         if "itercls" not in kwargs:
             kwargs["itercls"] = AView
-        return super().query(*args, **kwargs)
+        return self._super.query(self, *args, **kwargs)
 
     def n1ql_query(self, *args, **kwargs):
         if "itercls" not in kwargs:
             kwargs["itercls"] = AN1QLRequest
-        return super().n1ql_query(*args, **kwargs)
+        return self._super.n1ql_query(self, *args, **kwargs)
 
-    locals().update(AsyncBucket._gen_memd_wrappers(_meth_factory))
+    locals().update(V2AsyncBucket._gen_memd_wrappers(_meth_factory))
 
     def connect(self):
         if not self.connected:
             self._connect()
             return self._cft
+
+class V2Bucket(AsyncAdapter, V2AsyncBucket):
+    def __init__(self, *args, **kwargs):
+        AsyncAdapter.__init__(self, *args, **kwargs)
+
+Bucket=V2Bucket
