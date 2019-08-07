@@ -21,12 +21,11 @@ from couchbase_core._libcouchbase import (
     PYCBC_CONN_F_ASYNC,
     PYCBC_CONN_F_ASYNC_DTOR)
 
-from couchbase_core.result import AsyncResult
 from couchbase_core.asynchronous.view import AsyncViewBase
-from couchbase_v2.bucket import Bucket
+from couchbase_core.bucket import Bucket as CoreBucket
 from couchbase.exceptions import ArgumentError
 
-class AsyncBucket(Bucket):
+class AsyncBucket(CoreBucket):
     """
     This class contains the low-level async implementation of the
     :class:`~couchbase.bucket.Bucket` interface. **This module is not intended to be
@@ -149,9 +148,9 @@ class AsyncBucket(Bucket):
         # kwargs['unlock_gil'] = False
         # This is always set to false in connection.c
 
-        super(AsyncBucket, self).__init__(*args, **kwargs)
+        self.syncbucket.__init__(self, *args, **kwargs)
 
-    def query(self, *args, **kwargs):
+    def view_query(self, *args, **kwargs):
         """
         Reimplemented from base class.
 
@@ -168,9 +167,24 @@ class AsyncBucket(Bucket):
             raise ArgumentError.pyexc("itercls must be defined "
                                       "and must be derived from AsyncViewBase")
 
-        return super(AsyncBucket, self).query(*args, **kwargs)
+        return CoreBucket.view_query(self, *args, **kwargs)
 
     def endure(self, key, *args, **kwargs):
-        res = super(AsyncBucket, self).endure_multi([key], *args, **kwargs)
+        res = CoreBucket.endure_multi(self, [key], *args, **kwargs)
         res._set_single()
         return res
+
+
+class AsyncBucketFactory(type):
+    def __new__(cls, name, bases, attrs):
+        attrs['syncbucket']=bases[0]
+        return super(AsyncBucketFactory,cls).__new__(cls, name,tuple([AsyncBucket])+bases, attrs)
+
+
+class V3AsyncCoreBucket(CoreBucket):
+    syncbucket=CoreBucket
+
+    def __init__(self, iops=None, *args, **kwargs):
+        kwargs['_iops']=iops
+        #kwargs['_no_connect_exceptions']=True
+        super(V3AsyncCoreBucket,self).__init__(*args,**kwargs)
