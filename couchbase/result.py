@@ -6,6 +6,8 @@ from couchbase_core.result import MultiResult, SubdocResult
 from typing import *
 from boltons.funcutils import wraps
 from couchbase_core import abstractmethod
+from couchbase_core.result import AsyncResult
+from couchbase_core._pyport import with_metaclass
 
 
 Proxy_T = TypeVar('Proxy_T')
@@ -99,7 +101,7 @@ class Result(IResult):
 
     def success(self):
         # type: ()->bool
-        return not self._error
+        return not self.error
 
 
 class IGetResult(IResult):
@@ -154,12 +156,19 @@ class LookupInResult(Result):
         return len(canonical_sdresult(self._content))>index
 
 
+class IMutationResult(IResult):
+    @property
+    @abstractmethod
+    def mutation_token(self):
+        pass
+
 class MutationResult(Result):
     def __init__(self,
                  cas,  # type: int
+                 error=None,  # type: int
                  mutation_token=None  # type: MutationToken
                  ):
-        super(MutationResult, self).__init__(cas)
+        super(MutationResult, self).__init__(cas,error)
         self.mutationToken = mutation_token
 
     def mutation_token(self):
@@ -219,13 +228,61 @@ class GetResult(Result, IGetResult):
         return self._expiry
 
 
-class SDK2ResultWrapped(GetResult):
+T=TypeVar('T', bound=Tuple[IResult,...])
+
+
+class AsyncWrapper(type):
+    def __new__(cls,  # type: Type
+                name,  # type: str
+                bases,  # type: T
+                attrs  # type: Mapping[str,Any]
+                ):
+        # type: (...)->T[0]
+        base=bases[0]
+        class Wrapped(base):
+            def __init__(self,
+                         sdk2_result,
+                         **kwargs):
+
+
+                self._original = sdk2_result
+                self._kwargs=kwargs
+
+            @property
+            def cas(self):  # type: ()->int
+                return self._original.cas
+
+            def set_callbacks(self,on_ok_orig,on_err_orig):
+                def on_ok(res):
+                    on_ok_orig(base(res,**self._kwargs))
+
+                def on_err(res, excls, excval, exctb):
+                    on_err_orig(res,excls, excval, exctb)
+                self._original.set_callbacks(on_ok,on_err)
+
+            def clear_callbacks(self,*args):
+                self._original.clear_callbacks(*args)
+
+            def result(self):
+                return self._original
+
+            @property
+            def error(self):
+                # type: ()->int
+                return self._original.rc
+        return Wrapped
+
+
+class SDK2GetResult(GetResult):
     def __init__(self,
                  sdk2_result,  # type: SDK2Result
                  expiry=None,  # type: Seconds
                  **kwargs):
-        super(SDK2ResultWrapped, self).__init__(sdk2_result.key, sdk2_result.cas, sdk2_result.rc, expiry, **kwargs)
-        self._original = sdk2_result
+        #super(SDK2ResultWrappedBase,self).__init__(sdk2_result, expiry, **kwargs)
+        key, value = (
+            sdk2_result.key, sdk2_result)
+        super(SDK2GetResult,self).__init__(key, value.cas, value.rc, expiry, **kwargs)
+        self._original=sdk2_result
 
     @property
     def content_as(self):
@@ -238,6 +295,30 @@ class SDK2ResultWrapped(GetResult):
         return extract_value(self._original, lambda x: x)
 
 
+class SDK2AsyncResult(with_metaclass(AsyncWrapper, SDK2GetResult)):
+    def __init__(self,
+                 sdk2_result,  # type: SDK2Result
+                 expiry=None,  # type: Seconds
+                 **kwargs):
+        super(SDK2AsyncResult, self).__init__(sdk2_result, expiry=expiry, **kwargs)
+
+
+class SDK2MutationResult(MutationResult):
+
+    def __init__(self, sdk2_result, **kwargs):
+        mutinfo=getattr(sdk2_result,'_mutinfo',None)
+        muttoken=SDK2MutationToken(mutinfo) if mutinfo else None
+        super(SDK2MutationResult,self).__init__(sdk2_result.cas,muttoken)
+
+
+class SDK2AsyncMutationResult(with_metaclass(AsyncWrapper, SDK2MutationResult)):
+    def __init__(self,
+                 sdk2_result  # type: SDK2Result
+                 ):
+        # type (...)->None
+        super(SDK2AsyncMutationResult, self).__init__(sdk2_result)
+
+
 ResultPrecursor = NamedTuple('ResultPrecursor', [('orig_result', SDK2Result), ('orig_options', Mapping[str, Any])])
 
 
@@ -247,7 +328,8 @@ def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
     @wraps(func)
     def wrapped(*args, **kwargs):
         x, options = func(*args, **kwargs)
-        return SDK2ResultWrapped(x, **(options or {}))
+        factory_class=SDK2AsyncResult if issubclass(type(x), AsyncResult) else SDK2GetResult
+        return factory_class(x, **(options or {}))
 
     wrapped.__name__ = func.__name__
     wrapped.__doc__ = func.__name__
@@ -289,13 +371,15 @@ class SDK2MutationToken(MutationToken):
 def get_mutation_result(result  # type: ResultPrecursor
                         ):
     # type (...)->MutationResult
-    return MutationResult(result.orig_result.cas, SDK2MutationToken(result.orig_result._mutinfo) if hasattr(result.orig_result, '_mutinfo') else None)
+    factory_class=SDK2AsyncMutationResult if issubclass(type(result.orig_result), AsyncResult) else SDK2MutationResult
+    return factory_class(result.orig_result)
 
 
 def get_multi_mutation_result(target, wrapped, keys, *options, **kwargs):
     final_options = forward_args(kwargs, *options)
     raw_result = wrapped(target, keys, **final_options)
     return {k: get_mutation_result(ResultPrecursor(v, final_options)) for k, v in raw_result.items()}
+
 
 def _wrap_in_mutation_result(func  # type: Callable[[Any,...],SDK2Result]
                              ):
@@ -325,6 +409,6 @@ class IViewResult(IResult):
 
 
 class ViewResult(Result):
-    def __init__(self, sdk2_result # type: SDK2Result
+    def __init__(self, sdk2_result  # type: SDK2Result
                 ):
         super(ViewResult, self).__init__(sdk2_result)
