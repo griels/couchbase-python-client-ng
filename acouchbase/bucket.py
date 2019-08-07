@@ -5,14 +5,16 @@ except ImportError:
 
 from acouchbase.asyncio_iops import IOPS
 from acouchbase.iterator import AView, AN1QLRequest
-from couchbase_v2.asynchronous.bucket import AsyncBucket
+from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
+from couchbase_core._pyport import with_metaclass
+from couchbase_core.bucket import Bucket as CoreBucket
 
 
-class Bucket(AsyncBucket):
+class AIOBucket(CoreBucket):
     def __init__(self, *args, **kwargs):
         loop = asyncio.get_event_loop()
-        super(Bucket, self).__init__(IOPS(loop), *args, **kwargs)
+        self.asyncbucketbase.__init__(self, IOPS(loop), *args, **kwargs)
         self._loop = loop
 
         cft = asyncio.Future(loop=loop)
@@ -24,6 +26,29 @@ class Bucket(AsyncBucket):
 
         self._cft = cft
         self._conncb = ftresult
+
+    def query(self, *args, **kwargs):
+        if "itercls" not in kwargs:
+            kwargs["itercls"] = AView
+        return self.asyncbucketbase.query(self, *args, **kwargs)
+
+    def n1ql_query(self, *args, **kwargs):
+        if "itercls" not in kwargs:
+            kwargs["itercls"] = AN1QLRequest
+        return self.asyncbucketbase.n1ql_query(self, *args, **kwargs)
+
+    def connect(self):
+        if not self.connected:
+            self._connect()
+            return self._cft
+
+class AsyncAdapter(type):
+    def __new__(cls, name, bases, attr):
+        asyncbucketbase=bases[0]
+        bases=(AIOBucket,)+bases
+        attr.update(asyncbucketbase.syncbucket._gen_memd_wrappers(AsyncAdapter._meth_factory))
+        attr['asyncbucketbase']=asyncbucketbase
+        return super(AsyncAdapter,cls).__new__(cls, name, bases, attr)
 
     def _meth_factory(meth, name):
         def ret(self, *args, **kwargs):
@@ -43,19 +68,8 @@ class Bucket(AsyncBucket):
 
         return ret
 
-    def query(self, *args, **kwargs):
-        if "itercls" not in kwargs:
-            kwargs["itercls"] = AView
-        return super().query(*args, **kwargs)
+class V2Bucket(with_metaclass(AsyncAdapter,V2AsyncBucket)):
+    def __init__(self, *args, **kwargs):
+        super(V2Bucket,self).__init__(*args, **kwargs)
 
-    def n1ql_query(self, *args, **kwargs):
-        if "itercls" not in kwargs:
-            kwargs["itercls"] = AN1QLRequest
-        return super().n1ql_query(*args, **kwargs)
-
-    locals().update(AsyncBucket._gen_memd_wrappers(_meth_factory))
-
-    def connect(self):
-        if not self.connected:
-            self._connect()
-            return self._cft
+Bucket=V2Bucket
