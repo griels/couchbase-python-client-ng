@@ -218,19 +218,39 @@ class GetResult(Result, IGetResult):
         # type: () -> Seconds
         return self._expiry
 
+from couchbase_core.result import AsyncResult
+try:
+    from asyncio.futures import Future
+except:
+    Future=object
 
-class SDK2ResultWrapped(GetResult):
+class ValueWrapper(object):
+    def __init__(self,value):
+        self.value=value
+
+
+class SDK2ResultWrapped(GetResult, Future):
     def __init__(self,
                  sdk2_result,  # type: SDK2Result
                  expiry=None,  # type: Seconds
                  **kwargs):
-        super(SDK2ResultWrapped, self).__init__(sdk2_result.key, sdk2_result.cas, sdk2_result.rc, expiry, **kwargs)
+        key, value = next(iter(sdk2_result.items()), (None, None)) if isinstance(sdk2_result, AsyncResult) else (
+            sdk2_result.key, sdk2_result)
+        super(SDK2ResultWrapped, self).__init__(key, value.cas, value.rc, expiry, **kwargs)
+        try:
+            Future.__init__(self)
+            self.set_result(ValueWrapper(sdk2_result))
+        except:
+            pass
         self._original = sdk2_result
 
     @property
     def content_as(self):
         # type: (...)->ContentProxy
         return ContentProxy(self._original)
+
+    def result(self):
+        return self._original
 
     @property
     def content(self):
@@ -297,6 +317,7 @@ def get_multi_mutation_result(target, wrapped, keys, *options, **kwargs):
     raw_result = wrapped(target, keys, **final_options)
     return {k: get_mutation_result(ResultPrecursor(v, final_options)) for k, v in raw_result.items()}
 
+
 def _wrap_in_mutation_result(func  # type: Callable[[Any,...],SDK2Result]
                              ):
     # type: (...)->Callable[[Any,...],MutationResult]
@@ -325,6 +346,6 @@ class IViewResult(IResult):
 
 
 class ViewResult(Result):
-    def __init__(self, sdk2_result # type: SDK2Result
+    def __init__(self, sdk2_result  # type: SDK2Result
                 ):
         super(ViewResult, self).__init__(sdk2_result)

@@ -314,7 +314,7 @@ class CBCollection(wrapt.ObjectProxy):
                 raise couchbase.exceptions.ArgumentError(
                     "Project only accepts {} operations or less".format(CBCollection.MAX_GET_OPS))
         if not project:
-            x = _Base.get(self.bucket, key, **options)
+            x = self.bucket.get(key, **options)
         else:
             x = self.bucket.lookup_in(key, *spec, **options)
         return ResultPrecursor(x, options)
