@@ -1,3 +1,5 @@
+from unittest import SkipTest
+
 from fixtures import asynct, AioTestCase
 from couchbase_core.exceptions import CouchbaseError
 class CouchbasePy35Test(AioTestCase):

@@ -23,10 +23,9 @@ from couchbase_core._libcouchbase import (
 
 from couchbase_core.result import AsyncResult
 from couchbase_core.asynchronous.view import AsyncViewBase
-from couchbase_v2.bucket import Bucket
 from couchbase.exceptions import ArgumentError
 
-class AsyncBucket(Bucket):
+class AsyncBucket(object):
     """
     This class contains the low-level async implementation of the
     :class:`~couchbase.bucket.Bucket` interface. **This module is not intended to be
@@ -134,6 +133,8 @@ class AsyncBucket(Bucket):
         :param kwargs: Additional arguments to pass to
           the :class:`~couchbase.bucket.Bucket` constructor
         """
+
+        self._super=kwargs.pop('superclass')
         if not iops:
             raise ValueError("Must have IOPS")
 
@@ -149,7 +150,7 @@ class AsyncBucket(Bucket):
         # kwargs['unlock_gil'] = False
         # This is always set to false in connection.c
 
-        super(AsyncBucket, self).__init__(*args, **kwargs)
+        self._super.__init__(self, *args, **kwargs)
 
     def query(self, *args, **kwargs):
         """
@@ -168,9 +169,9 @@ class AsyncBucket(Bucket):
             raise ArgumentError.pyexc("itercls must be defined "
                                       "and must be derived from AsyncViewBase")
 
-        return super(AsyncBucket, self).query(*args, **kwargs)
+        return self._super.query(self, *args, **kwargs)
 
     def endure(self, key, *args, **kwargs):
-        res = super(AsyncBucket, self).endure_multi([key], *args, **kwargs)
+        res = self._super.endure_multi([key], *args, **kwargs)
         res._set_single()
         return res
