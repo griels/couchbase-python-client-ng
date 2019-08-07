@@ -28,6 +28,7 @@ class Bucket(object):
     def __init__(self,
                  connection_string,  # type: str
                  name=None,
+                 corebucket_class=CoreBucket,  # type: Type[CoreBucket]
                  *options,
                  **kwargs
                 ):
@@ -109,7 +110,7 @@ class Bucket(object):
 
         """
         self._name = name
-        self._bucket = CoreBucket(connection_string, **forward_args(kwargs, *options))
+        self._bucket = corebucket_class(connection_string, **forward_args(kwargs, *options))
 
     @property
     def name(self):
@@ -172,3 +173,4 @@ class Bucket(object):
              ):
         # type: (...)->IPingResult
         pass
+
