@@ -28,6 +28,7 @@ class Bucket(object):
     def __init__(self,
                  connection_string,  # type: str
                  name=None,
+                 corebucket_class=CBCollection,  # type: Type[CoreBucket]
                  *options,
                  **kwargs
                 ):
@@ -109,7 +110,11 @@ class Bucket(object):
 
         """
         self._name = name
-        self._bucket = CoreBucket(connection_string, **forward_args(kwargs, *options))
+        self._connstr=connection_string
+        self._bucket_args=forward_args(kwargs, *options)
+        self._corebucket_class=corebucket_class
+
+        self._bucket = CoreBucket(connection_string, **self._bucket_args)
 
     @property
     def name(self):
