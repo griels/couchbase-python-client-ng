@@ -190,6 +190,7 @@ error.
 ~~~~~~~~~~
 GEvent API
 ~~~~~~~~~~
+et
 
 *NOTE: this API is from SDK2 and is currently only supports SDK2-style
 access. It will be updated to support SDK3 shortly.*
