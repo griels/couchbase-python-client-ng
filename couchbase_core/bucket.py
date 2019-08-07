@@ -16,7 +16,14 @@ import couchbase_core.analytics
 from typing import *
 
 
+
 class Bucket(_Base):
+    _MEMCACHED_NOMULTI = ('stats', 'lookup_in', 'mutate_in')
+    _MEMCACHED_OPERATIONS = ('upsert', 'get', 'insert', 'append', 'prepend',
+                             'replace', 'remove', 'counter', 'touch',
+                             'lock', 'unlock', 'stats',
+                             'lookup_in', 'mutate_in')
+
     @classmethod
     def get_doc(cls, item):
         return getattr(item,'__doc__')
@@ -1201,6 +1208,30 @@ class Bucket(_Base):
         """
         return _Base.counter_multi(self, kvs, initial=initial, delta=delta,
                                    ttl=ttl)
+
+    @classmethod
+    def _gen_memd_wrappers(cls, factory):
+        """Generates wrappers for all the memcached operations.
+        :param factory: A function to be called to return the wrapped
+            method. It will be called with two arguments; the first is
+            the unbound method being wrapped, and the second is the name
+            of such a method.
+
+          The factory shall return a new unbound method
+
+        :return: A dictionary of names mapping the API calls to the
+            wrapped functions
+        """
+        d = {}
+        for n in cls._MEMCACHED_OPERATIONS:
+            for variant in (n, n + "_multi"):
+                try:
+                    d[variant] = factory(getattr(cls, variant), variant)
+                except AttributeError:
+                    if n in cls._MEMCACHED_NOMULTI:
+                        continue
+                    raise
+        return d
 
 
 def _depr(fn, usage, stacklevel=3):
