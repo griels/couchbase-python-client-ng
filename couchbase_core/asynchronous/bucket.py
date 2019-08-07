@@ -25,7 +25,7 @@ from couchbase_core.result import AsyncResult
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.exceptions import ArgumentError
 from couchbase_core._pyport import with_metaclass
-from couchbase_core.client import Client as CoreBucket
+from couchbase_core.client import Client as CoreClient
 
 
 class AsyncBucketFactory(type):
@@ -183,6 +183,6 @@ class AsyncBucketFactory(type):
         return AsyncBucket
 
 
-class AsyncBucket(with_metaclass(AsyncBucketFactory,CoreBucket)):
+class AsyncBucket(with_metaclass(AsyncBucketFactory,CoreClient)):
     def __init__(self, *args, **kwargs):
         super(AsyncBucket,self).__init__(*args,**kwargs)
