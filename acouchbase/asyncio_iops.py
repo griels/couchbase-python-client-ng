@@ -60,4 +60,7 @@ class IOPS(object):
     def stop_watching(self):
         pass
     def timer_event_factory(self):
-        return AsyncioTimer()
+        try:
+            return AsyncioTimer()
+        except Exception as e:
+            raise
