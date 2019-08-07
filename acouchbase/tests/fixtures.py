@@ -2,7 +2,7 @@ import asyncio
 import unittest
 
 from couchbase_tests.base import ConnectionConfiguration, MockResourceManager, MockTestCase
-from acouchbase.bucket import Bucket
+from acouchbase.bucket import Bucket, V3AIOBucket
 
 from functools import wraps
 
@@ -17,5 +17,8 @@ def asynct(f):
     return wrapper
 
 class AioTestCase(MockTestCase):
-    factory = Bucket
+    @staticmethod
+    def gen_collection(*args,**kwargs):
+        return V3AIOBucket(*args,**kwargs).default_collection()
+    factory = gen_collection
     should_check_refcount = False
