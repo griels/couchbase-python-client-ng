@@ -566,7 +566,7 @@ class ConnectionTestCaseBase(CouchbaseTestCase):
         #self.assertEqual(oldrc, 2)
 
     def setUp(self, **kwargs):
-        # type: (**Any) pyth-> None
+        # type: (**Any) -> None
         super(ConnectionTestCaseBase, self).setUp()
         self.cb = self.make_connection(**kwargs)
 

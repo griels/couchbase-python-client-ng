@@ -22,8 +22,8 @@ from couchbase_core.asynchronous.bucket import AsyncBucket as CoreAsyncBucket
 from couchbase_core.bucket import Bucket as CoreBucket
 
 
-class AsyncBucket(Bucket):
-
+class AsyncBucket(CoreAsyncBucket):
+    SyncBucketBase=Bucket
     def __init__(self, iops=None, *args, **kwargs):
         """
         Create a new Async Bucket. An async Bucket is an object
@@ -51,7 +51,7 @@ class AsyncBucket(Bucket):
           the :class:`~couchbase_v2.bucket.Bucket` constructor
         """
 
-        CoreAsyncBucket.__init__(self, iops=iops, superclass=Bucket, *args, **kwargs)
+        super(AsyncBucket,self).__init__(iops=iops, *args, **kwargs)
 
     query = CoreAsyncBucket.view_query
     n1ql_query = CoreAsyncBucket.query
