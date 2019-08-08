@@ -8,8 +8,10 @@ from acouchbase.iterator import AView, AN1QLRequest
 from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
 from couchbase_core._pyport import with_metaclass
+from couchbase_core.bucket import Bucket as CoreBucket
 
-class AIOBucket(object):
+
+class AIOBucket(CoreBucket):
     def __init__(self, *args, **kwargs):
         loop = asyncio.get_event_loop()
         self.asyncbucketbase.__init__(self, IOPS(loop), *args, **kwargs)
@@ -43,8 +45,8 @@ class AIOBucket(object):
 class AsyncAdapter(type):
     def __new__(cls, name, bases, attr):
         asyncbucketbase=bases[0]
-        bases=(AIOBucket,)+bases#.insert(bases,0,AIOBucket)
-        attr.update(asyncbucketbase.SyncBucketBase._gen_memd_wrappers(AsyncAdapter._meth_factory))
+        bases=(AIOBucket,)+bases
+        attr.update(asyncbucketbase.syncbucket._gen_memd_wrappers(AsyncAdapter._meth_factory))
         attr['asyncbucketbase']=asyncbucketbase
         return super(AsyncAdapter,cls).__new__(cls, name, bases, attr)
 

@@ -150,7 +150,7 @@ class AsyncBucket(CoreBucket):
         # kwargs['unlock_gil'] = False
         # This is always set to false in connection.c
 
-        super(AsyncBucket, self).__init__(*args, **kwargs)
+        self.syncbucket.__init__(self, *args, **kwargs)
 
     def view_query(self, *args, **kwargs):
         """
@@ -169,9 +169,16 @@ class AsyncBucket(CoreBucket):
             raise ArgumentError.pyexc("itercls must be defined "
                                       "and must be derived from AsyncViewBase")
 
-        return super(AsyncBucket,self).view_query(*args, **kwargs)
+        return CoreBucket.view_query(self, *args, **kwargs)
 
     def endure(self, key, *args, **kwargs):
-        res = super(AsyncBucket,self).endure_multi([key], *args, **kwargs)
+        res = CoreBucket.endure_multi(self, [key], *args, **kwargs)
         res._set_single()
         return res
+
+
+class AsyncBucketFactory(type):
+    def __new__(cls, name, bases, attrs):
+        attrs['syncbucket']=bases[0]
+        bases=(AsyncBucket,)+bases
+        return super(AsyncBucketFactory,cls).__new__(cls, name,bases,attrs)
