@@ -26,7 +26,8 @@ from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase.exceptions import ArgumentError
 from couchbase_core.bucket import Bucket as CoreBucket
 
-class AsyncBucketFactory(type):
+
+class AsyncBucket(CoreBucket):
     """
     This class contains the low-level async implementation of the
     :class:`~couchbase.bucket.Bucket` interface. **This module is not intended to be
@@ -107,9 +108,9 @@ class AsyncBucketFactory(type):
       class (above) and returns Deferred objects.
 
     """
-    def __new__(cls, name, bases, attr):
-        attr['syncbucket']=bases[0]
-        return super(AsyncBucketFactory,cls).__new__(cls, name, bases, attr)
+    #def __new__(cls, name, bases, attr):
+    #    attr['syncbucket']=bases[0]
+    #    return super(AsyncBucketFactory,cls).__new__(cls, name, bases, attr)
 
     def __init__(self, iops=None, *args, **kwargs):
         """
@@ -138,6 +139,7 @@ class AsyncBucketFactory(type):
           the :class:`~couchbase.bucket.Bucket` constructor
         """
 
+        self._super=kwargs.pop('superclass')
         if not iops:
             raise ValueError("Must have IOPS")
 
@@ -153,7 +155,7 @@ class AsyncBucketFactory(type):
         # kwargs['unlock_gil'] = False
         # This is always set to false in connection.c
 
-        self.syncbucket.__init__(self,*args, **kwargs)
+        super(AsyncBucket,self).__init__(*args, **kwargs)
 
     def view_query(self, *args, **kwargs):
         """
@@ -178,4 +180,3 @@ class AsyncBucketFactory(type):
         res = self._super.endure_multi([key], *args, **kwargs)
         res._set_single()
         return res
-
