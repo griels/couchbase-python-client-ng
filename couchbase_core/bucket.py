@@ -13,6 +13,7 @@ import couchbase_core._libcouchbase as _LCB
 from couchbase_core import priv_constants as _P, fulltext as _FTS
 import couchbase_core.analytics
 
+
 class Bucket(_Base):
     _MEMCACHED_NOMULTI = ('stats', 'lookup_in', 'mutate_in')
     _MEMCACHED_OPERATIONS = ('upsert', 'get', 'insert', 'append', 'prepend',

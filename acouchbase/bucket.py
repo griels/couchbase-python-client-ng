@@ -16,13 +16,15 @@ from couchbase.bucket import Bucket as V3SyncBucket
 class AsyncAdapter(type):
     def __new__(cls, name, bases, attr):
         asyncbucketbase=bases[0]
+
         class AIOBucket(asyncbucketbase):
             def __init__(self, *args, **kwargs):
                 loop = asyncio.get_event_loop()
-                super(AIOBucket,self).__init__(IOPS(loop), *args, **kwargs)
+                asyncbucketbase.__init__(self, IOPS(loop), *args, **kwargs)
                 self._loop = loop
 
                 cft = asyncio.Future(loop=loop)
+
                 def ftresult(err):
                     if err:
                         cft.set_exception(err)
@@ -55,6 +57,7 @@ class AsyncAdapter(type):
         def ret(self, *args, **kwargs):
             rv = meth(self, *args, **kwargs)
             ft = asyncio.Future()
+
             def on_ok(res):
                 ft.set_result(res)
                 rv.clear_callbacks()

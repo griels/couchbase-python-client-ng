@@ -180,12 +180,13 @@ class AsyncBucket(CoreBucket):
 class AsyncBucketFactory(type):
     def __new__(cls, name, bases, attrs):
         attrs['syncbucket']=bases[0]
-        bases=(AsyncBucket,)+bases
-        return super(AsyncBucketFactory,cls).__new__(cls, name,bases,attrs)
+        return super(AsyncBucketFactory,cls).__new__(cls, name,tuple([AsyncBucket])+bases, attrs)
 
 
 class V3AsyncCoreBucket(CoreBucket):
     syncbucket=CoreBucket
+
     def __init__(self, iops=None, *args, **kwargs):
-        kwargs['iops']=iops
+        kwargs['_iops']=iops
+        #kwargs['_no_connect_exceptions']=True
         super(V3AsyncCoreBucket,self).__init__(*args,**kwargs)

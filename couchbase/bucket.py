@@ -14,7 +14,6 @@ class ViewOptions(OptionBlock):
 
 
 class Bucket(object):
-    _corebucket_class = None  # type: Type[CoreBucket]
     _bucket = None  # type: CoreBucket
 
     @overload
@@ -29,7 +28,7 @@ class Bucket(object):
     def __init__(self,
                  connection_string,  # type: str
                  name=None,
-                 corebucket_class=CoreBucket,
+                 corebucket_class=CoreBucket,  # type: Type[CoreBucket]
                  *options,
                  **kwargs
                 ):

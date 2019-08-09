@@ -4,8 +4,8 @@ from couchbase_core.experimental import enable; enable()
 from fixtures import asynct, AioTestCase
 from couchbase_core.n1ql import N1QLQuery
 from couchbase_core.exceptions import CouchbaseError
-
-
+from ..bucket import V3AIOBucket
+from unittest import SkipTest
 
 class CouchbaseBeerTest(AioTestCase):
 
