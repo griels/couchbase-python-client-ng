@@ -74,6 +74,18 @@ class V2Bucket(with_metaclass(AsyncAdapter,V2AsyncBucket)):
 
 Bucket=V2Bucket
 
+from couchbase_core.asynchronous.bucket import V3AsyncCoreBucket
+# class V3AIOCoreBucket(with_metaclass(AsyncAdapter,V3AsyncCoreBucket)):
+#     def __init__(self, *args, **kwargs):
+#         super(V3AIOCoreBucket,self).__init__(*args, **kwargs)
+#
+# from couchbase.bucket import Bucket as V3SyncBucket
+#
+# class V3Bucket(V3SyncBucket):
+#     def __init__(self, *args, **kwargs):
+#         kwargs['corebucket_class']=V3AIOCoreBucket
+#         super(V3Bucket,self).__init__(*args,**kwargs)
+
 #from couchbase.bucket import Bucket
 #
 #

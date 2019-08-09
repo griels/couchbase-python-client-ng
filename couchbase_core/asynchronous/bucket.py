@@ -186,4 +186,5 @@ class AsyncBucketFactory(type):
 
 class V3AsyncCoreBucket(with_metaclass(AsyncBucketFactory,CoreBucket)):
     def __init__(self, iops=None, *args, **kwargs):
-        super(V3AsyncCoreBucket,self).__init__(iops=iops,*args,**kwargs)
+        kwargs['iops']=iops
+        super(V3AsyncCoreBucket,self).__init__(*args,**kwargs)

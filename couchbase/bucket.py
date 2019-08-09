@@ -14,6 +14,7 @@ class ViewOptions(OptionBlock):
 
 
 class Bucket(object):
+    _corebucket_class = None  # type: Type[CoreBucket]
     _bucket = None  # type: CoreBucket
 
     @overload
@@ -28,6 +29,7 @@ class Bucket(object):
     def __init__(self,
                  connection_string,  # type: str
                  name=None,
+                 corebucket_class=CoreBucket,
                  *options,
                  **kwargs
                 ):
@@ -109,7 +111,7 @@ class Bucket(object):
 
         """
         self._name = name
-        self._bucket = CoreBucket(connection_string, **forward_args(kwargs, *options))
+        self._bucket = corebucket_class(connection_string, **forward_args(kwargs, *options))
 
     @property
     def name(self):
