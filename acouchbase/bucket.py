@@ -13,40 +13,41 @@ from couchbase_core.asynchronous.bucket import V3AsyncCoreBucket
 from couchbase.bucket import Bucket as V3SyncBucket
 
 
-class AIOBucket(CoreSyncBucket):
-    def __init__(self, *args, **kwargs):
-        loop = asyncio.get_event_loop()
-        self.asyncbucketbase.__init__(self, IOPS(loop), *args, **kwargs)
-        self._loop = loop
-
-        cft = asyncio.Future(loop=loop)
-        def ftresult(err):
-            if err:
-                cft.set_exception(err)
-            else:
-                cft.set_result(True)
-
-        self._cft = cft
-        self._conncb = ftresult
-
-    def query(self, *args, **kwargs):
-        if "itercls" not in kwargs:
-            kwargs["itercls"] = AView
-        return self.asyncbucketbase.query(self, *args, **kwargs)
-
-    def n1ql_query(self, *args, **kwargs):
-        if "itercls" not in kwargs:
-            kwargs["itercls"] = AN1QLRequest
-        return self.asyncbucketbase.n1ql_query(self, *args, **kwargs)
-
-    def connect(self):
-        if not self.connected:
-            self._connect()
-            return self._cft
-
 class AsyncAdapter(type):
     def __new__(cls, name, bases, attr):
         asyncbucketbase=bases[0]
+        class AIOBucket(asyncbucketbase):
+            def __init__(self, *args, **kwargs):
+                loop = asyncio.get_event_loop()
+                super(AIOBucket,self).__init__(IOPS(loop), *args, **kwargs)
+                self._loop = loop
+
+                cft = asyncio.Future(loop=loop)
+                def ftresult(err):
+                    if err:
+                        cft.set_exception(err)
+                    else:
+                        cft.set_result(True)
+
+                self._cft = cft
+                self._conncb = ftresult
+
+            def query(self, *args, **kwargs):
+                if "itercls" not in kwargs:
+                    kwargs["itercls"] = AView
+                return self.asyncbucketbase.query(self, *args, **kwargs)
+
+            def n1ql_query(self, *args, **kwargs):
+                if "itercls" not in kwargs:
+                    kwargs["itercls"] = AN1QLRequest
+                return self.asyncbucketbase.n1ql_query(self, *args, **kwargs)
+
+            def connect(self):
+                if not self.connected:
+                    self._connect()
+                    return self._cft
+
+
         bases=(AIOBucket,)+bases
         attr.update(asyncbucketbase.syncbucket._gen_memd_wrappers(AsyncAdapter._meth_factory))
         attr['asyncbucketbase']=asyncbucketbase
@@ -71,12 +72,12 @@ class AsyncAdapter(type):
         return ret
 
 
-class V2Bucket(with_metaclass(AsyncAdapter, V2AsyncBucket)):
+class V2AIOBucket(with_metaclass(AsyncAdapter, V2AsyncBucket)):
     def __init__(self, *args, **kwargs):
-        super(V2Bucket, self).__init__(*args, **kwargs)
+        super(V2AIOBucket, self).__init__(*args, **kwargs)
 
 
-Bucket = V2Bucket
+Bucket = V2AIOBucket
 
 
 class V3AIOCoreBucket(with_metaclass(AsyncAdapter, V3AsyncCoreBucket)):
@@ -84,7 +85,7 @@ class V3AIOCoreBucket(with_metaclass(AsyncAdapter, V3AsyncCoreBucket)):
         super(V3AIOCoreBucket, self).__init__(*args, **kwargs)
 
 
-class V3Bucket(V3SyncBucket):
+class V3AIOBucket(V3SyncBucket):
     def __init__(self, *args, **kwargs):
         kwargs['corebucket_class'] = V3AIOCoreBucket
-        super(V3Bucket, self).__init__(*args, **kwargs)
+        super(V3AIOBucket, self).__init__(*args, **kwargs)
