@@ -17,9 +17,8 @@ class Bucket(_Base):
     _MEMCACHED_NOMULTI = ('stats', 'lookup_in', 'mutate_in')
     _MEMCACHED_OPERATIONS = ('upsert', 'get', 'insert', 'append', 'prepend',
                              'replace', 'remove', 'counter', 'touch',
-                             'lock', 'unlock', 'endure',
-                             'observe', 'rget', 'stats',
-                             'set', 'add', 'delete', 'lookup_in', 'mutate_in')
+                             'lock', 'unlock', 'stats',
+                             'lookup_in', 'mutate_in')
 
     def __init__(self, *args, **kwargs):
         """Connect to a bucket.

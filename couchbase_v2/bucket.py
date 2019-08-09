@@ -110,6 +110,9 @@ def _dsop(create_type=None, wrap_missing_path=True):
 
 
 class Bucket(CoreBucket):
+    _MEMCACHED_OPERATIONS = CoreBucket._MEMCACHED_OPERATIONS+('endure',
+                                                   'observe', 'rget', 'set', 'add', 'delete')
+
 
     def pipeline(self):
         """
