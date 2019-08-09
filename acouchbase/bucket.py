@@ -8,10 +8,10 @@ from acouchbase.iterator import AView, AN1QLRequest
 from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
 from couchbase_core._pyport import with_metaclass
-from couchbase_core.bucket import Bucket as CoreBucket
+from couchbase_core.bucket import Bucket as CoreSyncBucket
 
 
-class AIOBucket(CoreBucket):
+class AIOBucket(CoreSyncBucket):
     def __init__(self, *args, **kwargs):
         loop = asyncio.get_event_loop()
         self.asyncbucketbase.__init__(self, IOPS(loop), *args, **kwargs)
@@ -73,3 +73,16 @@ class V2Bucket(with_metaclass(AsyncAdapter,V2AsyncBucket)):
         super(V2Bucket,self).__init__(*args, **kwargs)
 
 Bucket=V2Bucket
+
+from couchbase.bucket import Bucket
+#
+#
+# class CoreAsyncBucket(with_metaclass(AsyncAdapter,CoreAsyncBucket)):
+#     def __init__(self, *args, **kwargs):
+#         super(CoreAsyncBucket,self).__init__(*args,**kwargs)
+#
+# class V3Bucket(Bucket):
+#     def __init__(self, *args, **kwargs):
+#         kwargs['corebucket_class']=CoreAsyncBucket
+#         super(V3Bucket,self).__init__(*args, **kwargs)
+
