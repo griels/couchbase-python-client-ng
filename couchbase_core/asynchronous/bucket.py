@@ -21,11 +21,9 @@ from couchbase_core._libcouchbase import (
     PYCBC_CONN_F_ASYNC,
     PYCBC_CONN_F_ASYNC_DTOR)
 
-from couchbase_core.result import AsyncResult
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.bucket import Bucket as CoreBucket
 from couchbase.exceptions import ArgumentError
-from couchbase_core._pyport import with_metaclass
 
 class AsyncBucket(CoreBucket):
     """
