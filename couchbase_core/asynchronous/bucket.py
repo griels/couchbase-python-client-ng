@@ -25,7 +25,7 @@ from couchbase_core.result import AsyncResult
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.bucket import Bucket as CoreBucket
 from couchbase.exceptions import ArgumentError
-
+from couchbase_core._pyport import with_metaclass
 
 class AsyncBucket(CoreBucket):
     """
@@ -182,3 +182,8 @@ class AsyncBucketFactory(type):
         attrs['syncbucket']=bases[0]
         bases=(AsyncBucket,)+bases
         return super(AsyncBucketFactory,cls).__new__(cls, name,bases,attrs)
+
+
+class V3AsyncCoreBucket(with_metaclass(AsyncBucketFactory,CoreBucket)):
+    def __init__(self, iops=None, *args, **kwargs):
+        super(V3AsyncCoreBucket,self).__init__(iops=iops,*args,**kwargs)

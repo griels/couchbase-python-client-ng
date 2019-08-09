@@ -53,7 +53,7 @@ class AsyncBucket(Bucket):
           the :class:`~couchbase_v2.bucket.Bucket` constructor
         """
 
-        CoreAsyncBucket.__init__(self,iops=iops, *args, **kwargs)
+        CoreAsyncBucket.__init__(self, iops=iops, *args, **kwargs)
 
     query = CoreAsyncBucket.view_query
     n1ql_query = CoreAsyncBucket.query
