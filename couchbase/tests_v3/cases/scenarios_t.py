@@ -59,6 +59,7 @@ from couchbase_core.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
 from couchbase.diagnostics import ServiceType
 import couchbase_core.fulltext as FT
+from couchbase.exceptions import KeyNotFoundException, KeyExistsException
 
 
 class ClusterTestCase(ConnectionTestCase):
@@ -558,10 +559,41 @@ class Scenarios(CollectionTestCase):
             self.assertIn(type(value.id()), ANY_STR)
             self.assertIn(type(value.local()), ANY_STR)
 
+    @staticmethod
+    def get_multi_result_as_dict(result):
+        return {k: v.content for k, v in result.items()}
+
+    @staticmethod
+    def get_multi_mutationresult_as_dict(result):
+        return {k: v.success() for k, v in result.items()}
+
     def test_multi(self):
-        self.coll.upsert_multi({"Fred": "Wilma", "Barney": "Betty"})
+        test_dict = {"Fred": "Wilma", "Barney": "Betty"}
+        try:
+            self.coll.remove_multi(test_dict.keys())
+        except:
+            pass
+        self.assertRaises(KeyNotFoundException, self.coll.get, "Fred")
+        self.assertRaises(KeyNotFoundException, self.coll.get, "Barney")
+        self.coll.upsert_multi(test_dict)
+        result = self.coll.get_multi(test_dict.keys())
+        self.assertEquals(Scenarios.get_multi_result_as_dict(result), test_dict)
+        self.coll.remove_multi(test_dict.keys())
+        self.assertRaises(KeyNotFoundException, self.coll.get_multi, test_dict.keys())
+        self.coll.insert_multi(test_dict)
+        self.assertRaises(KeyExistsException, self.coll.insert_multi, test_dict)
+        result = self.coll.get_multi(test_dict.keys())
+        self.assertEquals(Scenarios.get_multi_result_as_dict(result), test_dict)
         self.assertEquals(self.coll.get("Fred").content, "Wilma")
         self.assertEquals(self.coll.get("Barney").content, "Betty")
+        self.coll.remove_multi(test_dict.keys())
+        self.assertRaises(KeyNotFoundException, self.coll.get_multi, test_dict.keys())
+        self.coll.insert_multi(test_dict)
+        test_dict_2 = {"Fred": "Cassandra", "Barney": "Raquel"}
+        result = self.coll.replace_multi(test_dict_2)
+        expected_result = {k: True for k,v in test_dict_2.items()}
+        self.assertEquals(Scenarios.get_multi_mutationresult_as_dict(result), expected_result)
+        self.assertEquals(Scenarios.get_multi_result_as_dict(self.coll.get_multi(test_dict_2.keys())),test_dict_2)
 
     def test_PYCBC_607(self  # type: Scenarios
                        ):
