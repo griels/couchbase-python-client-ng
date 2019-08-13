@@ -966,13 +966,16 @@ class Bucket(_Base):
             which will be used for _all_ the keys.
         :param int persist_to: Durability constraint for persistence.
             Note that it is more efficient to use :meth:`endure_multi`
-            on the returned :class:`~couchbase_v2.result.MultiResult` than
+            on the returned :class:`~couchbase.result.MultiResult` than
             using these parameters for a high volume of keys. Using
             these parameters however does save on latency as the
             constraint checking for each item is performed as soon as it
             is successfully stored.
         :param int replicate_to: Durability constraints for replication.
             See notes on the `persist_to` parameter for usage.
+        :param Durability durability_level: Sync replication durability level.
+            You should either use this or the old-style durability params above,
+            but not both.
         :return: A :class:`~.MultiResult` object, which is a
             `dict`-like object
 
@@ -1032,6 +1035,9 @@ class Bucket(_Base):
             is successfully stored.
         :param int replicate_to: Durability constraints for replication.
             See notes on the `persist_to` parameter for usage.
+        :param Durability durability_level: Sync replication durability level.
+            You should either use this or the old-style durability params above,
+            but not both.
         :return:
 
         .. seealso:: :meth:`replace`, :meth:`upsert_multi`, :meth:`upsert`
@@ -1097,6 +1103,8 @@ class Bucket(_Base):
             Whether the results should be obtained from a replica
             instead of the master. See :meth:`get` for more information
             about this parameter.
+        :param Durability durability_level: Sync replication durability level.
+
         :return: A :class:`~.MultiResult` object. This is a dict-like
             object  and contains the keys (passed as) `keys` as the
             dictionary keys, and :class:`~.Result` objects as values
@@ -1106,7 +1114,8 @@ class Bucket(_Base):
 
     def touch_multi(self,  # type: Bucket
                     keys,  # type: Iterable[str]
-                    ttl=0  # type: int
+                    ttl=0,  # type: int
+                    durability_level=Durability.NONE  # type: Durability
                     ):
         # type: (...)->Result
         """Touch multiple keys. Multi variant of :meth:`touch`
@@ -1118,6 +1127,8 @@ class Bucket(_Base):
             as the TTL instead of the global one (i.e. the one passed to
             this function)
         :param int ttl: The new expiration time
+        :param Durability durability_level: Sync replication durability level.
+
         :return: A :class:`~.MultiResult` object
 
         Update three keys to expire in 10 seconds ::
@@ -1130,7 +1141,7 @@ class Bucket(_Base):
 
         .. seealso:: :meth:`touch`
         """
-        return _Base.touch_multi(self, keys, ttl=ttl)
+        return _Base.touch_multi(self, keys, ttl=ttl, durability_level=durability_level)
 
     def lock_multi(self,  # type: Bucket
                    keys,  # type: Iterable[str]
@@ -1203,7 +1214,10 @@ class Bucket(_Base):
                                   timeout=timeout, interval=interval,
                                   check_removed=check_removed)
 
-    def remove_multi(self, kvs, quiet=None, durability_level=Durability.NONE):
+    def remove_multi(self,
+                     kvs,
+                     quiet=None,
+                     durability_level=Durability.NONE):
         """Remove multiple items from the cluster
 
         :param kvs: Iterable of keys to delete from the cluster. If you wish
@@ -1213,16 +1227,23 @@ class Bucket(_Base):
             items were not found
         :return: A :class:`~.MultiResult` containing :class:`~.OperationResult`
             values.
+        :param Durability durability_level: Sync replication durability level.
         """
         return _Base.remove_multi(self, kvs, quiet=quiet, durability_level=durability_level)
 
-    def counter_multi(self, kvs, initial=None, delta=1, ttl=0):
+    def counter_multi(self,
+                      kvs,
+                      initial=None,
+                      delta=1,
+                      ttl=0,
+                      durability_level=Durability.NONE):
         """Perform counter operations on multiple items
 
         :param kvs: Keys to operate on. See below for more options
         :param initial: Initial value to use for all keys.
         :param delta: Delta value for all keys.
         :param ttl: Expiration value to use for all keys
+        :param Durability durability_level: Sync replication durability level.
 
         :return: A :class:`~.MultiResult` containing :class:`~.ValueResult`
             values
@@ -1259,7 +1280,7 @@ class Bucket(_Base):
         specified.
         """
         return _Base.counter_multi(self, kvs, initial=initial, delta=delta,
-                                   ttl=ttl)
+                                   ttl=ttl, durability_level=durability_level)
 
 
 def _depr(fn, usage, stacklevel=3):
