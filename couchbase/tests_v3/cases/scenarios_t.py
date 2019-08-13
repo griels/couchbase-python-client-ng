@@ -59,7 +59,7 @@ from couchbase_core.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
 from couchbase.diagnostics import ServiceType
 import couchbase_core.fulltext as FT
-from couchbase.exceptions import KeyNotFoundException, KeyExistsException
+from couchbase.exceptions import KeyNotFoundException, KeyExistsException, NotSupportedError
 
 
 class ClusterTestCase(ConnectionTestCase):
@@ -176,16 +176,35 @@ class Scenarios(CollectionTestCase):
         self.assertIsInstance(result, MutateInResult)
 
     def test_mutatein(self):
-        somecontents={'some':{'path':'keith'}}
-        self.coll.upsert('somekey',somecontents)
-        self.coll.mutate_in('somekey', (
-            SD.replace('some.path', "fred"),
-            SD.insert('some.other.path', 'martha', create_parents=True),
-        ))
 
-        somecontents['some']['path']='fred'
-        somecontents['some'].update({'other':{'path':'martha'}})
-        self.assertEqual(somecontents,self.coll.get('somekey').content)
+        count = 0
+
+        for durability in Durability:
+            somecontents = {'some': {'path': 'keith'}}
+            key="somekey_{}".format(count)
+            try:
+                self.coll.remove(key)
+            except:
+                pass
+            self.coll.insert(key, somecontents)
+            inserted_value = "inserted_{}".format(count)
+            replacement_value = "replacement_{}".format(count)
+            count += 1
+            try:
+                self.coll.mutate_in(key, (
+                    SD.replace('some.path', replacement_value),
+                    SD.insert('some.other.path', inserted_value, create_parents=True),
+                ), durability_level=durability)
+
+
+                somecontents['some']['path'] = replacement_value
+                somecontents['some'].update({'other': {'path': inserted_value}})
+                self.assertEqual(somecontents, self.coll.get(key).content)
+            except NotSupportedError as e:
+                if not self.is_mock:
+                    raise
+                else:
+                    logging.error("Assuming failure is due to mock not supporting durability")
 
     def test_scenario_C_clientSideDurability(self):
         """
