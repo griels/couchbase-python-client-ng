@@ -1,5 +1,5 @@
 notifications:
-  email: false
+  email: ellis.breen@couchbase.com
 
 matrix:
   include:
