@@ -176,16 +176,22 @@ class Scenarios(CollectionTestCase):
         self.assertIsInstance(result, MutateInResult)
 
     def test_mutatein(self):
-        somecontents={'some':{'path':'keith'}}
-        self.coll.upsert('somekey',somecontents)
-        self.coll.mutate_in('somekey', (
-            SD.replace('some.path', "fred"),
-            SD.insert('some.other.path', 'martha', create_parents=True),
-        ))
+        somecontents = {'some': {'path': 'keith'}}
+        self.coll.remove('somekey')
+        self.coll.upsert('somekey', somecontents)
+        count = 0
+        for durability in Durability:
+            inserted_value = "inserted_{}".format(count)
+            replacement_value = "replacement_{}".format(count)
+            count += 1
+            self.coll.mutate_in('somekey', (
+                SD.replace('some.path', replacement_value),
+                SD.insert('some.other.path', inserted_value, create_parents=True),
+            ))
 
-        somecontents['some']['path']='fred'
-        somecontents['some'].update({'other':{'path':'martha'}})
-        self.assertEqual(somecontents,self.coll.get('somekey').content)
+            somecontents['some']['path'] = replacement_value
+            somecontents['some'].update({'other': {'path': inserted_value}})
+            self.assertEqual(somecontents, self.coll.get('somekey').content)
 
     def test_scenario_C_clientSideDurability(self):
         """

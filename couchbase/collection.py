@@ -1028,9 +1028,10 @@ class CBCollection(wrapt.ObjectProxy):
     def mutate_in(self,
                   id,  # type: str
                   spec,  # type: MutateInSpec
-                  create_doc = False,  # type: bool
-                  insert_doc = False,  # type: bool
-                  upsert_doc = False  # type: bool
+                  create_doc=False,  # type: bool
+                  insert_doc=False,  # type: bool
+                  upsert_doc=False,  # type: bool
+                  durability=Durability.NONE  # type: Durability
                   ):
         # type: (...)->MutationResult
         pass
