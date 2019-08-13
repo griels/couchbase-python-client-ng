@@ -858,7 +858,7 @@ class CBCollection(wrapt.ObjectProxy):
         """
 
         final_options = forward_args(kwargs, *options)
-        return ResultPrecursor(_Base.insert(self.bucket, key, value, final_options), final_options)
+        return ResultPrecursor(_Base.insert(self.bucket, key, value, **final_options), final_options)
 
     @overload
     def replace(self,
@@ -1028,9 +1028,10 @@ class CBCollection(wrapt.ObjectProxy):
     def mutate_in(self,
                   id,  # type: str
                   spec,  # type: MutateInSpec
-                  create_doc = False,  # type: bool
-                  insert_doc = False,  # type: bool
-                  upsert_doc = False  # type: bool
+                  create_doc=False,  # type: bool
+                  insert_doc=False,  # type: bool
+                  upsert_doc=False,  # type: bool
+                  durability_level=Durability.NONE  # type: Durability
                   ):
         # type: (...)->MutationResult
         pass
