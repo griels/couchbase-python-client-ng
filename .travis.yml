@@ -1,14 +1,6 @@
 notifications:
   email: false
 
-language: python
-sudo: false
-
-python:
-  - "2.7"
-  - "3.6"
-  - "3.7"
-
 matrix:
   include:
     - sudo: required
