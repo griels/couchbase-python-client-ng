@@ -30,6 +30,7 @@ struct getcmd_vars_st {
             int strategy;
         } replica;
     } u;
+    pycbc_DURABILITY_LEVEL durability_level;
 };
 
 TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
@@ -54,6 +55,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
     unsigned long ttl = gv->u.ttl;
     lcb_STATUS err = LCB_SUCCESS;
     pycbc_pybuffer keybuf = { NULL };
+    pycbc_DURABILITY_LEVEL durability_level = LCB_DURABILITYLEVEL_NONE;
 
     PYCBC_DEBUG_LOG_CONTEXT(context,"Started processing")
     (void)itm;
@@ -69,7 +71,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
         options = curval;
     }
     if (options) {
-        static char *kwlist[] = { "ttl", NULL };
+        static char *kwlist[] = { "ttl", "durability_level", NULL };
         PyObject *ttl_O = NULL;
         if (gv->u.ttl) {
             PYCBC_EXC_WRAP(PYCBC_EXC_ARGUMENTS, 0, "Both global and single TTL specified");
@@ -87,7 +89,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
 
         if (PyDict_Check(curval)) {
             rv = PyArg_ParseTupleAndKeywords(pycbc_DummyTuple,
-                curval, "|O", kwlist, &ttl_O);
+                curval, "|O", kwlist, &ttl_O, &durability_level);
             if (!rv) {
                 PYCBC_EXC_WRAP_KEY(PYCBC_EXC_ARGUMENTS, 0, "Couldn't get sub-parmeters for key", curkey);
                 rv = -1;
@@ -140,6 +142,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
             CMDSCOPE_NG_V4(TOUCH, touch)
             {
                 COMMON_OPTS(PYCBC_touch_ATTR, touch, touch);
+                PYCBC_SYNCREP_INIT(err, cmd, touch, durability_level);
                 err = pycbc_touch(collection, cv->mres, cmd);
             }
         } break;
