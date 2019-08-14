@@ -20,5 +20,5 @@ class AioTestCase(MockTestCase):
     @staticmethod
     def gen_collection(*args,**kwargs):
         return V3AIOBucket(*args,**kwargs).default_collection()
-    factory = gen_collection
+    factory = Bucket
     should_check_refcount = False

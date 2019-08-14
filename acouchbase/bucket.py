@@ -9,7 +9,6 @@ from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
 from couchbase_core._pyport import with_metaclass
 from couchbase_core.bucket import Bucket as CoreSyncBucket
-from couchbase_core.asynchronous.bucket import V3AsyncCoreBucket
 from couchbase.bucket import Bucket as V3SyncBucket
 
 
@@ -20,7 +19,7 @@ class AsyncAdapter(type):
         class AIOBucket(asyncbucketbase):
             def __init__(self, *args, **kwargs):
                 loop = asyncio.get_event_loop()
-                asyncbucketbase.__init__(self, IOPS(loop), *args, **kwargs)
+                super(AIOBucket,self).__init__(IOPS(loop), *args, **kwargs)
                 self._loop = loop
 
                 cft = asyncio.Future(loop=loop)
@@ -81,12 +80,12 @@ class V2AIOBucket(with_metaclass(AsyncAdapter, V2AsyncBucket)):
 Bucket = V2AIOBucket
 
 
-class V3AIOCoreBucket(with_metaclass(AsyncAdapter, V3AsyncCoreBucket)):
-    def __init__(self, *args, **kwargs):
-        super(V3AIOCoreBucket, self).__init__(*args, **kwargs)
+#class V3AIOCoreBucket(with_metaclass(AsyncAdapter, V3SyncBucket)):
+#    def __init__(self, *args, **kwargs):
+#        super(V3AIOCoreBucket, self).__init__(*args, **kwargs)
 
 
 class V3AIOBucket(V3SyncBucket):
     def __init__(self, *args, **kwargs):
-        kwargs['corebucket_class'] = V3AIOCoreBucket
+        kwargs['corebucket_class'] = None#V3AIOCoreBucket
         super(V3AIOBucket, self).__init__(*args, **kwargs)
