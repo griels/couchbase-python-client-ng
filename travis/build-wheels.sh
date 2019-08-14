@@ -2,11 +2,11 @@
 set -e -x
 
 # Install a system package required by our library
-yum install -y cmake
+#yum install -y cmake
 
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
-    "${PYBIN}/pip" install -r dev-requirements.txt
+    "${PYBIN}/pip" install -r /io/dev-requirements.txt
     "${PYBIN}/pip" wheel /io/ -w wheelhouse/
 done
 
@@ -17,6 +17,6 @@ done
 
 # Install packages and test
 for PYBIN in /opt/python/*/bin/; do
-    "${PYBIN}/pip" install python-manylinux-demo --no-index -f /io/wheelhouse
+    "${PYBIN}/pip" install --pre couchbase --no-index -f /io/wheelhouse
     (cd "$HOME"; "${PYBIN}/nosetests" pymanylinuxdemo)
 done
