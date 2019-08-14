@@ -1,7 +1,7 @@
 from couchbase_core.subdocument import Spec
 from .options import Seconds, FiniteDuration, forward_args
 from couchbase_core.transcodable import Transcodable
-from couchbase_core._libcouchbase import Result as SDK2Result
+from couchbase_core._libcouchbase import Result as SDK2Result, AsyncResult as SDK2AsyncResult
 from couchbase_core.result import MultiResult, SubdocResult
 from typing import *
 from boltons.funcutils import wraps
@@ -237,6 +237,23 @@ class SDK2ResultWrapped(GetResult):
         # type: () -> Any
         return extract_value(self._original, lambda x: x)
 
+class SDK2AsyncResultWrapped(GetResult):
+    def __init__(self,
+                 sdk2_result,  # type: SDK2Result
+                 expiry=None,  # type: Seconds
+                 **kwargs):
+        super(SDK2ResultWrapped, self).__init__(sdk2_result.key, sdk2_result.cas, sdk2_result.rc, expiry, **kwargs)
+        self._original = sdk2_result
+
+    @property
+    def content_as(self):
+        # type: (...)->ContentProxy
+        return ContentProxy(self._original)
+
+    @property
+    def content(self):
+        # type: () -> Any
+        return extract_value(self._original, lambda x: x)
 
 ResultPrecursor = NamedTuple('ResultPrecursor', [('orig_result', SDK2Result), ('orig_options', Mapping[str, Any])])
 
@@ -247,7 +264,8 @@ def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
     @wraps(func)
     def wrapped(*args, **kwargs):
         x, options = func(*args, **kwargs)
-        return SDK2ResultWrapped(x, **(options or {}))
+        wrapper_class={SDK2Result:SDK2ResultWrapped,SDK2AsyncResult:SDK2AsyncResultWrapped}.get(type(x))
+        return wrapper_class(x, **(options or {}))
 
     wrapped.__name__ = func.__name__
     wrapped.__doc__ = func.__name__
