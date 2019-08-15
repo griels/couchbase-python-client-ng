@@ -19,8 +19,16 @@ from couchbase_v2.bucket import Bucket
 from couchbase_core.asynchronous.bucket import AsyncBucketFactory as CoreAsyncBucketFactory
 from couchbase_core._pyport import with_metaclass
 
+class AsyncBucketFactory(type):
+    def __new__(cls, name, bases, attrs):
+        original=bases[0]
+        class AsyncBucketBase(with_metaclass(CoreAsyncBucketFactory,original)):
+            pass
+        attrs['query']=AsyncBucketBase.view_query
+        attrs['n1ql_query']=AsyncBucketBase.query
+        return super(AsyncBucketFactory,cls).__new__(cls, name, tuple([AsyncBucketBase])+bases[1:], attrs)
+
 class AsyncBucket(with_metaclass(CoreAsyncBucketFactory,Bucket)):
-    syncbucket = None
     def __init__(self, *args, **kwargs):
         """
         Create a new Async Bucket. An async Bucket is an object
@@ -50,5 +58,5 @@ class AsyncBucket(with_metaclass(CoreAsyncBucketFactory,Bucket)):
 
         super(AsyncBucket,self).__init__(*args, **kwargs)
 
-    query = syncbucket.view_query
-    n1ql_query = syncbucket.query
+AsyncBucket.query=AsyncBucket.view_query
+AsyncBucket.n1ql_query=AsyncBucket.query
