@@ -218,14 +218,26 @@ class GetResult(Result, IGetResult):
         # type: () -> Seconds
         return self._expiry
 
+from couchbase_core.result import AsyncResult
+from asyncio.futures import Future
 
-class SDK2ResultWrapped(GetResult):
+class ValueWrapper(object):
+    def __init__(self,value):
+        self.value=value
+
+class SDK2ResultWrapped(GetResult, Future):
     def __init__(self,
                  sdk2_result,  # type: SDK2Result
                  expiry=None,  # type: Seconds
                  **kwargs):
-        super(SDK2ResultWrapped, self).__init__(sdk2_result.key, sdk2_result.cas, sdk2_result.rc, expiry, **kwargs)
+        key, value=next(iter(sdk2_result.items()),(None,None)) if isinstance(sdk2_result,AsyncResult) else (sdk2_result.key, sdk2_result)
+        super(SDK2ResultWrapped, self).__init__(key, value.cas, value.rc, expiry, **kwargs)
+        Future.__init__(self)
+        self.set_result(ValueWrapper(sdk2_result))
         self._original = sdk2_result
+
+    #def result(self):
+    #    yield self._original
 
     @property
     def content_as(self):

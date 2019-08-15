@@ -5,11 +5,10 @@ except ImportError:
 
 from acouchbase.asyncio_iops import IOPS
 from acouchbase.iterator import AView, AN1QLRequest
-from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
 from couchbase_core._pyport import with_metaclass
-from couchbase_core.asynchronous.bucket import AsyncBucketFactory as CoreAsyncBucketFactory
 from couchbase_core.bucket import Bucket as CoreBucket
+from couchbase_core.asynchronous.bucket import AsyncBucket as CoreAsyncBucket
 
 class AsyncBucketFactory(type):
     def __new__(cls, name, bases, attrs):
@@ -69,16 +68,19 @@ class AsyncBucketFactory(type):
 
         return super(AsyncBucketFactory,cls).__new__(cls, name, (Bucket,)+bases[1:], attrs)
 
+from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 class Bucket(with_metaclass(AsyncBucketFactory,V2AsyncBucket)):
     def __init__(self, *args, **kwargs):
         super(Bucket,self).__init__(*args,**kwargs)
 
 
+from couchbase.bucket import Bucket as V3SyncBucket
 
-class V3AsyncBucket(with_metaclass(CoreAsyncBucketFactory,CoreBucket)):
+class V3CoreBucket(with_metaclass(AsyncBucketFactory,CoreAsyncBucket)):
     def __init__(self, *args, **kwargs):
-        super(V3AsyncBucket,self).__init__(*args,**kwargs)
+        super(V3CoreBucket,self).__init__(*args,**kwargs)
 
-class V3Bucket(with_metaclass(AsyncBucketFactory,V3AsyncBucket)):
+class V3Bucket(V3SyncBucket):
     def __init__(self, *args, **kwargs):
+        kwargs['corebucket_class']=V3CoreBucket
         super(V3Bucket,self).__init__(*args,**kwargs)
