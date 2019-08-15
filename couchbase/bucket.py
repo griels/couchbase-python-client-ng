@@ -173,3 +173,10 @@ class Bucket(object):
              ):
         # type: (...)->IPingResult
         pass
+
+
+
+from couchbase_core.asynchronous.bucket import AsyncBucketFactory
+from couchbase_core._pyport import with_metaclass
+class AsyncBucket(with_metaclass(AsyncBucketFactory,CBCollection)):
+    pass

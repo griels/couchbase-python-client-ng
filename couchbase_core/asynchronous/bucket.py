@@ -23,7 +23,7 @@ from couchbase_core._libcouchbase import (
 
 from couchbase_core.result import AsyncResult
 from couchbase_core.asynchronous.view import AsyncViewBase
-from couchbase.exceptions import ArgumentError
+from couchbase_core.exceptions import ArgumentError
 from couchbase_core._pyport import with_metaclass
 
 

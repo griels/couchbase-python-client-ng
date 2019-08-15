@@ -963,7 +963,7 @@ class Bucket(_Base):
             which will be used for _all_ the keys.
         :param int persist_to: Durability constraint for persistence.
             Note that it is more efficient to use :meth:`endure_multi`
-            on the returned :class:`~couchbase_v2.result.MultiResult` than
+            on the returned :class:`~couchbase_core.result.MultiResult` than
             using these parameters for a high volume of keys. Using
             these parameters however does save on latency as the
             constraint checking for each item is performed as soon as it
@@ -1007,7 +1007,7 @@ class Bucket(_Base):
             which will be used for _all_ the keys.
         :param int persist_to: Durability constraint for persistence.
             Note that it is more efficient to use :meth:`endure_multi`
-            on the returned :class:`~couchbase_v2.result.MultiResult` than
+            on the returned :class:`~couchbase_core.result.MultiResult` than
             using these parameters for a high volume of keys. Using
             these parameters however does save on latency as the
             constraint checking for each item is performed as soon as it
@@ -1105,7 +1105,7 @@ class Bucket(_Base):
         """Unlock multiple keys. Multi variant of :meth:`unlock`
 
         :param dict keys: the keys to unlock
-        :return: a :class:`~couchbase_v2.result.MultiResult` object
+        :return: a :class:`~couchbase_core.result.MultiResult` object
 
         The value of the ``keys`` argument should be either the CAS, or
         a previously returned :class:`Result` object from a :meth:`lock`
@@ -1135,9 +1135,9 @@ class Bucket(_Base):
 
         The type of keys may be one of the following:
             * Sequence of keys
-            * A :class:`~couchbase_v2.result.MultiResult` object
+            * A :class:`~couchbase_core.result.MultiResult` object
             * A ``dict`` with CAS values as the dictionary value
-            * A sequence of :class:`~couchbase_v2.result.Result` objects
+            * A sequence of :class:`~couchbase_core.result.Result` objects
 
         :return: A :class:`~.MultiResult` object
             of :class:`~.OperationResult` items.
