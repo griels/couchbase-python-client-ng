@@ -25,7 +25,7 @@ from couchbase_core.result import AsyncResult
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.exceptions import ArgumentError
 from couchbase_core._pyport import with_metaclass
-
+from copy import deepcopy
 
 class AsyncBucketFactory(type):
     def __new__(cls, name, bases, attrs):
@@ -178,5 +178,5 @@ class AsyncBucketFactory(type):
                 res._set_single()
                 return res
 
-        return AsyncBucket
+        return deepcopy(AsyncBucket)
 

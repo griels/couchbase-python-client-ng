@@ -5,7 +5,7 @@ from couchbase_tests.base import ConnectionConfiguration, MockResourceManager, M
 from acouchbase.bucket import Bucket
 
 from functools import wraps
-
+from acouchbase.bucket import V3Bucket
 
 def asynct(f):
     @wraps(f)
@@ -17,5 +17,8 @@ def asynct(f):
     return wrapper
 
 class AioTestCase(MockTestCase):
+    @staticmethod
+    def gen_collection(*args, **kwargs):
+        return V3Bucket(*args,**kwargs)
     factory = Bucket
     should_check_refcount = False
