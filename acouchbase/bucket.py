@@ -5,9 +5,10 @@ except ImportError:
 
 from acouchbase.asyncio_iops import IOPS
 from acouchbase.iterator import AView, AN1QLRequest
-from couchbase_v2.asynchronous.bucket import AsyncBucket
+from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
 from couchbase_core._pyport import with_metaclass
+#from couchbase_core.asynchronous.bucket import AsyncBucket
 
 class AsyncBucketFactory(type):
     def __new__(cls, name, bases, attrs):
@@ -56,7 +57,7 @@ class AsyncBucketFactory(type):
                     kwargs["itercls"] = AN1QLRequest
                 return super().n1ql_query(*args, **kwargs)
 
-            locals().update(AsyncBucket._gen_memd_wrappers(_meth_factory))
+            locals().update(V2AsyncBucket._gen_memd_wrappers(_meth_factory))
 
             def connect(self):
                 if not self.connected:
@@ -65,6 +66,6 @@ class AsyncBucketFactory(type):
 
         return super(AsyncBucketFactory,cls).__new__(cls, name, (Bucket,)+bases[1:], attrs)
 
-class Bucket(with_metaclass(AsyncBucketFactory,AsyncBucket)):
+class Bucket(with_metaclass(AsyncBucketFactory,V2AsyncBucket)):
     pass
 
