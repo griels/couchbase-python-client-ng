@@ -16,11 +16,10 @@
 #
 
 from couchbase_v2.bucket import Bucket
-from couchbase_core.asynchronous.bucket import AsyncBucket as CoreAsyncBucket
+from couchbase_core.asynchronous.bucket import AsyncBucket as CoreAsyncBucket, AsyncBucketFactory as CoreAsyncBucketFactory
+from couchbase_core._pyport import with_metaclass
 
-
-class AsyncBucket(Bucket):
-    syncbucket=Bucket
+class AsyncBucket(with_metaclass(CoreAsyncBucketFactory,Bucket)):
     def __init__(self, iops=None, *args, **kwargs):
         """
         Create a new Async Bucket. An async Bucket is an object

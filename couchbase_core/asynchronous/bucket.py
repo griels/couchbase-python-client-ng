@@ -178,7 +178,7 @@ class AsyncBucket(CoreBucket):
 class AsyncBucketFactory(type):
     def __new__(cls, name, bases, attrs):
         attrs['syncbucket']=bases[0]
-        return super(AsyncBucketFactory,cls).__new__(cls, name,tuple([AsyncBucket])+bases, attrs)
+        return super(AsyncBucketFactory,cls).__new__(cls, name,tuple([AsyncBucket])+bases[1:], attrs)
 
 
 class V3AsyncCoreBucket(CoreBucket):
