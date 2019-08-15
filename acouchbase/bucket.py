@@ -8,7 +8,7 @@ from acouchbase.iterator import AView, AN1QLRequest
 from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
 from couchbase_core._pyport import with_metaclass
-#from couchbase_core.asynchronous.bucket import AsyncBucket
+from couchbase_core.asynchronous import AsyncBucketFactory as CoreAsyncBucketFactory
 
 class AsyncBucketFactory(type):
     def __new__(cls, name, bases, attrs):

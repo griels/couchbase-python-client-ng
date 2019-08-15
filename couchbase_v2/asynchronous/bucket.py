@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-from couchbase_core.asynchronous.bucket import CoreAsyncBucket
+from couchbase_core.asynchronous.bucket import AsyncBucket as CoreAsyncBucket
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.exceptions import ArgumentError
 
