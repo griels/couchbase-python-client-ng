@@ -23,7 +23,6 @@ from couchbase_core._libcouchbase import (
 
 from couchbase_core.result import AsyncResult
 from couchbase_core.asynchronous.view import AsyncViewBase
-from couchbase_v2.bucket import Bucket
 from couchbase.exceptions import ArgumentError
 from couchbase_core._pyport import with_metaclass
 
@@ -181,6 +180,3 @@ class AsyncBucketFactory(type):
 
         return AsyncBucket
 
-
-class AsyncBucket(with_metaclass(AsyncBucketFactory, Bucket)):
-    pass
