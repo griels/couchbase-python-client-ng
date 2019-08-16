@@ -8,7 +8,7 @@ ls -alr /io
 
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
-    "${PYBIN}/pip" wheel /io/ -w wheelhouse/ -v -v -v
+    "${PYBIN}/pip" wheel /io/ -w wheelhouse/ -v
 done
 
 # Bundle external shared libraries into the wheels
