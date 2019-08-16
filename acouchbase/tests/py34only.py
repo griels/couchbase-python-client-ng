@@ -64,7 +64,7 @@ class CouchbaseDefaultTest(AioTestCase):
         yield from (default_bucket.connect() or asyncio.sleep(0.01))
 
         q = N1QLQuery("SELECT mockrow")
-        it = default_bucket.n1ql_query(q)
+        it = default_bucket.query(q)
         yield from it.future
 
         data = list(it)

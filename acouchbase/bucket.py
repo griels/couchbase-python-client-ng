@@ -54,7 +54,7 @@ class AsyncBucketFactory(type):
                     kwargs["itercls"] = AView
                 return view_query(self, *args, **kwargs)
 
-            def n1ql_query(self, *args, **kwargs):
+            def query(self, *args, **kwargs):
                 if "itercls" not in kwargs:
                     kwargs["itercls"] = AN1QLRequest
                 return n1ql_query(self,*args, **kwargs)
