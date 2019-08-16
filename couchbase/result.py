@@ -219,7 +219,10 @@ class GetResult(Result, IGetResult):
         return self._expiry
 
 from couchbase_core.result import AsyncResult
-from asyncio.futures import Future
+try:
+    from asyncio.futures import Future
+except:
+    Future=object
 
 class ValueWrapper(object):
     def __init__(self,value):
