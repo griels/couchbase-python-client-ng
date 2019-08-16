@@ -23,3 +23,7 @@ done
 #    "${PYBIN}/pip" install . --no-index -f /io/wheelhouse
 #    (cd "$HOME"; "${PYBIN}/nosetests" pymanylinuxdemo)
 #done
+
+echo `ls /io/wheelhouse`
+echo `ls /wheelhouse`
+echo `ls wheelhouse`
