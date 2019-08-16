@@ -21,12 +21,13 @@ script:
 - chmod ugo+x travis/build-wheels.sh
 - docker run --rm -e PLAT=$PLAT -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/travis/build-wheels.sh
 - ls wheelhouse/
-- tar cvjf couchbase.tar.bz2 wheelhouse/*
 deploy:
   provider: releases
   api_key:
     secure: RyNXTgjtHkmlGK+X3Raa79udYa+V04mT64CP5uFp5OvnVxNIaLraca2zdXanLx1JuwfSmsUbXSAYWc/5H8JS3R9Lswsk1TI9ocCoDL61uAHSdZkWxb48jibzbysQoMSybEmi3lQXoGLsi8JAJ8mMBkNU04lRo9PovRLzjENILQpmfPtAYS3wUenvBMtJMqFL4M0TDAZEnY6iCH7UpKTcOQwyQL2KT8cnrGpxGscWehst3Bjeg/cQSxO3mA3rUH36S8noCNn5uZRpuV2uNecEpSjap4KAG746Ivo9J2+hlM2o65Scplw9jU0xS4yp1IwId+z/jvhFBDf/suMRRWuUtC0FvUu8GRE2ftZkkbsk6RFds/uOP2PLnq7GMdOWN89oeOFON+ivbnVYWPFHLi6j+/Yyl3X2yGJJ091YSuSuPGznB1fprmc4C2jw3960vSU1KFFwSza2UQ8QAQKe0qExtlE7m7AfPeSuVJmCUqej9RQW8ttByn9OzaAJyJ2M2Kmd3c3HZJi8uGQ9l/CaHxZCLxWCq+LfUHnRz0EqEaHewzjQI9QTTbH73O5tjZM7EV2NGWuqrEst5u/SHS38h5zzS/LVbBMnH/trmgs4hqJsrrHeBvvsMi7sF6GQMjabhpIr5YUUaZ2za0cQ/OWwLY3KvQznohkdOs0jGAUGf110cBE=
-  file: couchbase.tar.bz2
+  file_glob: true
+  file: wheelhouse/*
+  skip_cleanup: true
   on:
     repo: griels/couchbase-python-client-ng
     branch: async_working_mk21
