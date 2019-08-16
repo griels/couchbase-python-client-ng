@@ -155,7 +155,7 @@ class AsyncBucketFactory(type):
 
                 super(AsyncBucket, self).__init__(*args, **kwargs)
 
-            def query(self, *args, **kwargs):
+            def view_query(self, *args, **kwargs):
                 """
                 Reimplemented from base class.
 
@@ -172,7 +172,7 @@ class AsyncBucketFactory(type):
                     raise ArgumentError.pyexc("itercls must be defined "
                                               "and must be derived from AsyncViewBase")
 
-                return super(AsyncBucket, self).query(*args, **kwargs)
+                return super(AsyncBucket, self).view_query(*args, **kwargs)
 
             def endure(self, key, *args, **kwargs):
                 res = super(AsyncBucket, self).endure_multi([key], *args, **kwargs)

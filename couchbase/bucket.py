@@ -173,4 +173,3 @@ class Bucket(object):
              ):
         # type: (...)->IPingResult
         pass
-

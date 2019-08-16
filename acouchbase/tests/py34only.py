@@ -30,7 +30,7 @@ class CouchbaseBeerTest(AioTestCase):
         beer_bucket = self.cb
 
         yield from (beer_bucket.connect() or asyncio.sleep(0.01))
-        viewiter = beer_bucket.query("beer", "brewery_beers", limit=10)
+        viewiter = beer_bucket.view_query("beer", "brewery_beers", limit=10)
         yield from viewiter.future
 
         count = len(list(viewiter))

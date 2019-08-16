@@ -14,7 +14,7 @@ class AsyncBucketFactory(type):
     def __new__(cls, name, bases, attrs):
         asyncbase=bases[0]
         n1ql_query=getattr(asyncbase,'n1ql_query',getattr(asyncbase,'query'))
-
+        view_query=getattr(asyncbase,'view_query',getattr(asyncbase,'query'))
         class Bucket(*bases):
             def __init__(self, *args, **kwargs):
                 loop = asyncio.get_event_loop()
@@ -49,10 +49,10 @@ class AsyncBucketFactory(type):
 
                 return ret
 
-            def query(self, *args, **kwargs):
+            def view_query(self, *args, **kwargs):
                 if "itercls" not in kwargs:
                     kwargs["itercls"] = AView
-                return super(Bucket,self).query(*args, **kwargs)
+                return view_query(self, *args, **kwargs)
 
             def n1ql_query(self, *args, **kwargs):
                 if "itercls" not in kwargs:
