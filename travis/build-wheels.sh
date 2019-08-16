@@ -8,7 +8,6 @@ ls -alr /io
 
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
-    "${PYBIN}/pip" install -r /io/dev_requirements.txt
     "${PYBIN}/pip" wheel /io/ -w wheelhouse/ -v -v -v
 done
 
@@ -20,6 +19,7 @@ done
 # Install packages and test
 
 #for PYBIN in /opt/python/*/bin/; do
+#    "${PYBIN}/pip" install -r /io/dev_requirements.txt
 #    "${PYBIN}/pip" install . --no-index -f /io/wheelhouse
 #    (cd "$HOME"; "${PYBIN}/nosetests" pymanylinuxdemo)
 #done
