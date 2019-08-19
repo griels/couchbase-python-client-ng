@@ -7,7 +7,7 @@ from mypy_extensions import VarArg, KwArg, Arg
 from .subdocument import LookupInSpec, SubdocSpec, MutateInSpec, MutateInOptions, \
     gen_projection_spec
 from .result import GetResult, get_result_wrapper, SDK2Result, ResultPrecursor, LookupInResult, MutateInResult, \
-    MutationResult, _wrap_in_mutation_result
+    MutationResult, _wrap_in_mutation_result, SDK2ResultWrapped, get_mutation_result, get_multi_mutation_result
 from .options import forward_args, Seconds, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64, AcceptableInts
 from .options import OptionBlock, AcceptableInts
 from .durability import ReplicateTo, PersistTo, ClientDurableOption, ServerDurableOption
@@ -217,7 +217,7 @@ class LookupInOptions(OptionBlock):
 CoreBucketOp = TypeVar("CoreBucketOp", Callable[[Any], SDK2Result], Callable[[Any], MutationResult])
 
 
-def wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
+def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
                                ):
     # type: (...)->CoreBucketOp
     @wraps(wrapped)
@@ -566,13 +566,13 @@ class CBCollection(wrapt.ObjectProxy):
         """
         return get_multi_mutation_result(self.bucket, CoreBucket.remove_multi, keys, *options, **kwargs)
 
-    replace_multi = wrap_multi_mutation_result(CoreBucket.replace_multi)
-    touch_multi = wrap_multi_mutation_result(CoreBucket.touch_multi)
-    lock_multi = wrap_multi_mutation_result(CoreBucket.lock_multi)
-    unlock_multi = wrap_multi_mutation_result(CoreBucket.unlock_multi)
-    append_multi = wrap_multi_mutation_result(CoreBucket.unlock_multi)
-    prepend_multi = wrap_multi_mutation_result(CoreBucket.prepend_multi)
-    counter_multi = wrap_multi_mutation_result(CoreBucket.counter_multi)
+    replace_multi = _wrap_multi_mutation_result(CoreBucket.replace_multi)
+    touch_multi = _wrap_multi_mutation_result(CoreBucket.touch_multi)
+    lock_multi = _wrap_multi_mutation_result(CoreBucket.lock_multi)
+    unlock_multi = _wrap_multi_mutation_result(CoreBucket.unlock_multi)
+    append_multi = _wrap_multi_mutation_result(CoreBucket.unlock_multi)
+    prepend_multi = _wrap_multi_mutation_result(CoreBucket.prepend_multi)
+    counter_multi = _wrap_multi_mutation_result(CoreBucket.counter_multi)
 
     def touch(self,
               id,  # type: str
