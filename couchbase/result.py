@@ -6,6 +6,11 @@ from couchbase_core.result import MultiResult, SubdocResult
 from typing import *
 from boltons.funcutils import wraps
 from couchbase_core import abstractmethod
+from couchbase_core.result import AsyncResult
+try:
+    from asyncio.futures import Future
+except:
+    Future=object
 
 
 Proxy_T = TypeVar('Proxy_T')
@@ -218,15 +223,11 @@ class GetResult(Result, IGetResult):
         # type: () -> Seconds
         return self._expiry
 
-from couchbase_core.result import AsyncResult
-try:
-    from asyncio.futures import Future
-except:
-    Future=object
 
 class ValueWrapper(object):
     def __init__(self,value):
         self.value=value
+
 
 class SDK2ResultWrapped(GetResult, Future):
     def __init__(self,
@@ -296,15 +297,30 @@ class MutationToken(object):
 
 
 class SDK2MutationToken(MutationToken):
-    def __init__(self, token):
-        token=token or (None,None,None)
+    def __init__(self, orig_result):
+        token=getattr(orig_result, '_mutinfo',(None,None,None))
         super(SDK2MutationToken,self).__init__(token[2],token[0],token[1])
 
+class AsyncMutationResult(MutationResult, Future):
+    def __init__(self,
+                 result  # type: ResultPrecursor
+                 ):
+        orig_result=next(iter(result.orig_result.values()))
+        MutationResult.__init__(self, orig_result.cas, SDK2MutationToken(orig_result))
+        Future.__init__(self)
+        try:
+            self.set_result(orig_result)
+        except:
+            pass
 
 def get_mutation_result(result  # type: ResultPrecursor
                         ):
     # type (...)->MutationResult
-    return MutationResult(result.orig_result.cas, SDK2MutationToken(result.orig_result._mutinfo) if hasattr(result.orig_result, '_mutinfo') else None)
+    if isinstance(result.orig_result, AsyncResult):
+        return AsyncMutationResult(result)
+    else:
+        orig_result=result.orig_result
+        return MutationResult(orig_result.cas, SDK2MutationToken(orig_result))
 
 
 def get_multi_mutation_result(target, wrapped, keys, *options, **kwargs):

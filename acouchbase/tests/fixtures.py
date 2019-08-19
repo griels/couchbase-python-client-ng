@@ -19,6 +19,6 @@ def asynct(f):
 class AioTestCase(MockTestCase):
     @staticmethod
     def gen_collection(*args, **kwargs):
-        return V3CoreBucket(*args,**kwargs)#.default_collection()
+        return V3Bucket(*args,**kwargs).default_collection()
     factory = gen_collection if True else Bucket
     should_check_refcount = False
