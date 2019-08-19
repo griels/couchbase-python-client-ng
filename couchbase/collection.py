@@ -1,4 +1,4 @@
-from couchbase_core import abstractmethod
+from couchbase_core import abstractmethod, JSON
 
 import wrapt
 from boltons.funcutils import wraps
@@ -7,7 +7,7 @@ from mypy_extensions import VarArg, KwArg, Arg
 from .subdocument import LookupInSpec, SubdocSpec, MutateInSpec, MutateInOptions, \
     gen_projection_spec
 from .result import GetResult, get_result_wrapper, SDK2Result, ResultPrecursor, LookupInResult, MutateInResult, \
-    MutationResult, _wrap_in_mutation_result
+    MutationResult, _wrap_in_mutation_result, SDK2ResultWrapped, get_mutation_result, get_multi_mutation_result
 from .options import forward_args, Seconds, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64, AcceptableInts
 from .options import OptionBlock, AcceptableInts
 from .durability import ReplicateTo, PersistTo, ClientDurableOption, ServerDurableOption
@@ -17,7 +17,12 @@ from couchbase_core.bucket import Bucket as CoreBucket
 import copy
 
 from typing import *
-from .durability import Durability
+from couchbase_core.durability import Durability
+
+
+@wrapt.decorator
+def multi_mutate_wrap(wrapped, instance, args, kwargs):
+    return wrapped(*args, **kwargs)
 
 
 class DeltaValue(ConstrainedInt):
@@ -212,6 +217,19 @@ class IExistsResult(object):
 
 class LookupInOptions(OptionBlock):
     pass
+
+
+CoreBucketOp = TypeVar("CoreBucketOp", Callable[[Any], SDK2Result], Callable[[Any], MutationResult])
+
+
+def wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
+                               ):
+    # type: (...)->CoreBucketOp
+    @wraps(wrapped)
+    def wrapper(target, keys, *options, **kwargs
+                ):
+        return get_multi_mutation_result(target.bucket, wrapped, keys, *options, **kwargs)
+    return _inject_scope_and_collection(wrapper)
 
 
 class CBCollection(wrapt.ObjectProxy):
@@ -438,6 +456,128 @@ class CBCollection(wrapt.ObjectProxy):
         # type: (...)->ResultPrecursor
         final_options = forward_args(kwargs, *options)
         return ResultPrecursor(self.bucket.rget(id, replica_index, **final_options), final_options)
+
+    @_inject_scope_and_collection
+    def get_multi(self,  # type: CBCollection
+                  keys,  # type: Iterable[str]
+                  *options,  # type: GetOptions
+                  **kwargs
+                  ):
+        # type: (...)->Dict[str,GetResult]
+        """
+        Get multiple keys from the collection
+
+        :param keys: list of keys to get
+        :type Iterable[str]
+        :return: a dictionary of :class:`~.GetResult` objects by key
+        :rtype: dict
+        """
+        raw_result = self.bucket.get_multi(keys, **forward_args(kwargs, *options))
+        return {k: SDK2ResultWrapped(v) for k, v in raw_result.items()}
+
+    @overload
+    def upsert_multi(self,  # type: CBCollection
+                     keys,  # type: Mapping[str,Any]
+                     ttl=0,  # type: int
+                     format=None,  # type: int
+                     persist_to=0,  # type: int
+                     replicate_to=0,  # type: int
+                     durability_level=Durability.NONE  # type: Durability
+                     ):
+        pass
+
+    @_inject_scope_and_collection
+    def upsert_multi(self,  # type: CBCollection
+                     keys,  # type: Dict[str,JSON]
+                     *options,  # type: GetOptions
+                     **kwargs
+                     ):
+        # type: (...)->Dict[str,MutationResult]
+        """
+        Write multiple items to the cluster. Multi version of :meth:`upsert`
+
+        :param dict keys: A dictionary of keys to set. The keys are the
+            keys as they should be on the server, and the values are the
+            values for the keys to be stored.
+
+            `keys` may also be a :class:`~.ItemCollection`. If using a
+            dictionary variant for item collections, an additional
+            `ignore_cas` parameter may be supplied with a boolean value.
+            If not specified, the operation will fail if the CAS value
+            on the server does not match the one specified in the
+            `Item`'s `cas` field.
+        :param int ttl: If specified, sets the expiration value
+            for all keys
+        :param int format: If specified, this is the conversion format
+            which will be used for _all_ the keys.
+        :param int persist_to: Durability constraint for persistence.
+            Note that it is more efficient to use :meth:`endure_multi`
+            on the returned :class:`~couchbase_v2.result.MultiResult` than
+            using these parameters for a high volume of keys. Using
+            these parameters however does save on latency as the
+            constraint checking for each item is performed as soon as it
+            is successfully stored.
+        :param int replicate_to: Durability constraints for replication.
+            See notes on the `persist_to` parameter for usage.
+        :param Durability durability_level: Sync replication durability level.
+            You should either use this or the old-style durability params above,
+            but not both.
+
+        :return: A :class:`~.MultiResult` object, which is a
+            `dict`-like object
+
+        The multi methods are more than just a convenience, they also
+        save on network performance by batch-scheduling operations,
+        reducing latencies. This is especially noticeable on smaller
+        value sizes.
+
+        .. seealso:: :meth:`upsert`
+        """
+        return get_multi_mutation_result(self.bucket, CoreBucket.upsert_multi, keys, *options, **kwargs)
+
+    @_inject_scope_and_collection
+    def insert_multi(self,  # type: CBCollection
+                     keys,  # type: Dict[str,JSON]
+                     *options,  # type: GetOptions
+                     **kwargs
+                     ):
+        # type: (...)->Dict[str, MutationResult]
+        """
+        Insert multiple items into the collection.
+
+        :param dict keys: dictionary of items to insert, by key
+        :return: a dictionary of :class:`~.MutationResult` objects by key
+        :rtype: dict
+
+        .. seealso:: :meth:`upsert_multi` - for other optional arguments
+        """
+        return get_multi_mutation_result(self.bucket, CoreBucket.insert_multi, keys, *options, **kwargs)
+
+    @_inject_scope_and_collection
+    def remove_multi(self,  # type: CBCollection
+                     keys,  # type: Iterable[str]
+                     *options,  # type: GetOptions
+                     **kwargs
+                     ):
+        # type: (...)->Dict[str, MutationResult]
+        """
+        Remove multiple items from the collection.
+
+        :param list keys: list of items to remove, by key
+        :return: a dictionary of :class:`~.MutationResult` objects by key
+        :rtype: dict
+
+        .. seealso:: :meth:`upsert_multi` - for other optional arguments
+        """
+        return get_multi_mutation_result(self.bucket, CoreBucket.remove_multi, keys, *options, **kwargs)
+
+    replace_multi = wrap_multi_mutation_result(CoreBucket.replace_multi)
+    touch_multi = wrap_multi_mutation_result(CoreBucket.touch_multi)
+    lock_multi = wrap_multi_mutation_result(CoreBucket.lock_multi)
+    unlock_multi = wrap_multi_mutation_result(CoreBucket.unlock_multi)
+    append_multi = wrap_multi_mutation_result(CoreBucket.unlock_multi)
+    prepend_multi = wrap_multi_mutation_result(CoreBucket.prepend_multi)
+    counter_multi = wrap_multi_mutation_result(CoreBucket.counter_multi)
 
     def touch(self,
               id,  # type: str
@@ -734,7 +874,7 @@ class CBCollection(wrapt.ObjectProxy):
         """
 
         final_options = forward_args(kwargs, *options)
-        return ResultPrecursor(_Base.insert(self.bucket, key, value, final_options), final_options)
+        return ResultPrecursor(_Base.insert(self.bucket, key, value, **final_options), final_options)
 
     @overload
     def replace(self,
