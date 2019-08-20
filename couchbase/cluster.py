@@ -106,7 +106,7 @@ class Cluster:
         authenticator=cluster_opts.pop('authenticator',None)
         if not authenticator:
             raise ArgumentError("Authenticator is mandatory")
-        cluster_opts.update(bucket_class=lambda connstr, bname=None, **kwargs: Bucket(connstr,name=bname,corebucket_class=CoreBucket,**kwargs))
+        cluster_opts.update(bucket_class=lambda connstr, bname=None, **kwargs: Bucket(connstr,name=bname,**kwargs))
         self._cluster = SDK2Cluster(connection_string, **cluster_opts)  # type: SDK2Cluster
         self._authenticate(authenticator)
 

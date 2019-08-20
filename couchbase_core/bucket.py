@@ -703,6 +703,9 @@ class Bucket(_Base):
         """
         return super(Bucket, self).lookup_in({key: specs}, **kwargs)
 
+    def get(self, *args, **kwargs):
+        return super(Bucket,self).get(*args,**kwargs)
+
     def rget(self, key, replica_index=None, quiet=None):
         """Get an item from a replica node
 

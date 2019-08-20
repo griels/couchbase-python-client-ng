@@ -10,7 +10,7 @@ enable()
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
 from couchbase_core._pyport import with_metaclass
 from couchbase_core.bucket import Bucket as CoreBucket
-from couchbase_core.asynchronous.bucket import AsyncBucket as CoreAsyncBucket
+from couchbase_core.asynchronous.bucket import AsyncBucket as CoreAsyncBucket, AsyncBucketFactory as CoreAsyncBucketFactory
 from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase.bucket import Bucket as V3SyncBucket
 
@@ -35,23 +35,7 @@ class AsyncBucketFactory(type):
                 self._cft = cft
                 self._conncb = ftresult
 
-            def _meth_factory(meth, name):
-                def ret(self, *args, **kwargs):
-                    rv = meth(self, *args, **kwargs)
-                    ft = asyncio.Future()
-                    def on_ok(res):
-                        ft.set_result(res)
-                        rv.clear_callbacks()
 
-                    def on_err(res, excls, excval, exctb):
-                        err = excls(excval)
-                        ft.set_exception(err)
-                        rv.clear_callbacks()
-
-                    rv.set_callbacks(on_ok, on_err)
-                    return ft
-
-                return ret
 
             def view_query(self, *args, **kwargs):
                 if "itercls" not in kwargs:
@@ -63,13 +47,31 @@ class AsyncBucketFactory(type):
                     kwargs["itercls"] = AN1QLRequest
                 return n1ql_query(self,*args, **kwargs)
 
-            locals().update(CoreBucket._gen_memd_wrappers(_meth_factory))
+
 
             def connect(self):
                 if not self.connected:
                     self._connect()
                     return self._cft
 
+        def _meth_factory(meth, name):
+            def ret(self, *args, **kwargs):
+                rv = meth(self, *args, **kwargs)
+                ft = asyncio.Future()
+                def on_ok(res):
+                    ft.set_result(res)
+                    rv.clear_callbacks()
+
+                def on_err(res, excls, excval, exctb):
+                    err = excls(excval)
+                    ft.set_exception(err)
+                    rv.clear_callbacks()
+
+                rv.set_callbacks(on_ok, on_err)
+                return ft
+
+            return ret
+        attrs.update(asyncbase._gen_memd_wrappers(_meth_factory))
         return super(AsyncBucketFactory,cls).__new__(cls, name, (Bucket,)+bases[1:], attrs)
 
 class Bucket(with_metaclass(AsyncBucketFactory,V2AsyncBucket)):
@@ -80,15 +82,18 @@ class V3CoreBucket(with_metaclass(AsyncBucketFactory,CoreAsyncBucket)):
     def __init__(self, *args, **kwargs):
         super(V3CoreBucket,self).__init__(*args,**kwargs)
 
-from couchbase.collection import CBCollection
+from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
 
-class AsyncCBCollection(with_metaclass(AsyncBucketFactory, CBCollection)):
-    def __init__(self, *args, **kwargs):
-        super(CBCollection,self).__init__(*args,**kwargs)
+class AsyncCBCollection(with_metaclass(AsyncBucketFactory, BaseAsyncCBCollection)):
+    def __init__(self,
+                 *args,
+                 **kwargs
+                 ):
+        super(AsyncCBCollection,self).__init__(*args,**kwargs)
 
 Collection = AsyncCBCollection
 
 class V3Bucket(V3SyncBucket):
     def __init__(self, *args, **kwargs):
-        kwargs['corebucket_class']=V3CoreBucket
+        kwargs['corebucket_class']=AsyncCBCollection
         super(V3Bucket,self).__init__(*args,**kwargs)

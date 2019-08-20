@@ -22,7 +22,7 @@ class CouchbaseBeerTest(AioTestCase):
         yield from (beer_bucket.connect() or asyncio.sleep(0.01))
 
         data = yield from beer_bucket.get('21st_amendment_brewery_cafe')
-        self.assertEqual("21st Amendment Brewery Cafe", data.value["name"])
+        self.assertEqual("21st Amendment Brewery Cafe", self.details.get_value(data)["name"])
 
     @asynct
     @asyncio.coroutine
@@ -53,7 +53,7 @@ class CouchbaseDefaultTest(AioTestCase):
         yield from default_bucket.upsert('hello', {"key": expected})
 
         obtained = yield from default_bucket.get('hello')
-        self.assertEqual({"key": expected}, obtained.value)
+        self.assertEqual({"key": expected}, self.details.get_value(obtained))
 
 
     @asynct

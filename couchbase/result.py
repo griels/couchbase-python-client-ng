@@ -99,7 +99,7 @@ class Result(IResult):
 
     def success(self):
         # type: ()->bool
-        return not self._error
+        return not self.error
 
 
 class IGetResult(IResult):
@@ -228,34 +228,73 @@ class ValueWrapper(object):
     def __init__(self,value):
         self.value=value
 
+class AsyncWrapper(Future):
+    def __init__(self,
+                 otherbase,
+                 sdk2_result,
+                 expiry=None,  # type: Seconds
+                 **kwargs):
 
-class SDK2ResultWrapped(GetResult, Future):
+
+        self._original = sdk2_result
+
+    @property
+    def cas(self):  # type: ()->int
+        return self._original.cas
+
+    def set_callbacks(self,on_ok_orig,on_err_orig):
+        def on_ok(res):
+            on_ok_orig(type(self)(res))
+
+        def on_err(res, excls, excval, exctb):
+            on_err_orig(res,excls, excval, exctb)
+        self._original.set_callbacks(on_ok,on_err)
+
+    def clear_callbacks(self,*args):
+        self._original.clear_callbacks(*args)
+
+    def result(self):
+        return self._original
+
+    @property
+    def error(self):
+        # type: ()->int
+        return self._original.rc
+
+class SDK2ResultWrapped(GetResult, AsyncWrapper):
     def __init__(self,
                  sdk2_result,  # type: SDK2Result
                  expiry=None,  # type: Seconds
                  **kwargs):
+        AsyncWrapper.__init__(self, GetResult, sdk2_result, expiry, **kwargs)
         key, value = next(iter(sdk2_result.items()), (None, None)) if isinstance(sdk2_result, AsyncResult) else (
             sdk2_result.key, sdk2_result)
-        super(SDK2ResultWrapped, self).__init__(key, value.cas, value.rc, expiry, **kwargs)
-        try:
-            Future.__init__(self)
-            self.set_result(ValueWrapper(sdk2_result))
-        except:
-            pass
-        self._original = sdk2_result
+        GetResult.__init__(self, key, value.cas, value.rc, expiry, **kwargs)
 
     @property
     def content_as(self):
         # type: (...)->ContentProxy
         return ContentProxy(self._original)
 
-    def result(self):
-        return self._original
+
 
     @property
     def content(self):
         # type: () -> Any
         return extract_value(self._original, lambda x: x)
+
+
+class SDK2MutationResult(MutationResult,AsyncWrapper):
+    def __init__(self,
+                 sdk2_result  # type: SDK2Result
+                 ):
+        # type (...)->None
+        AsyncWrapper.__init__(self, None, sdk2_result)
+
+    @property
+    def mutation_token(self):  # type: () -> MutationToken
+        mutinfo=getattr(self._original,'_mutinfo')
+        return SDK2MutationToken(mutinfo) if mutinfo else None
 
 
 ResultPrecursor = NamedTuple('ResultPrecursor', [('orig_result', SDK2Result), ('orig_options', Mapping[str, Any])])
@@ -309,7 +348,7 @@ class SDK2MutationToken(MutationToken):
 def get_mutation_result(result  # type: ResultPrecursor
                         ):
     # type (...)->MutationResult
-    return MutationResult(result.orig_result.cas, SDK2MutationToken(result.orig_result._mutinfo) if hasattr(result.orig_result, '_mutinfo') else None)
+    return SDK2MutationResult(result.orig_result)
 
 
 def get_multi_mutation_result(target, wrapped, keys, *options, **kwargs):
