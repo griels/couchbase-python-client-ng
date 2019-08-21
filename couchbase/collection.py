@@ -7,7 +7,7 @@ from mypy_extensions import VarArg, KwArg, Arg
 from .subdocument import LookupInSpec, SubdocSpec, MutateInSpec, MutateInOptions, \
     gen_projection_spec
 from .result import GetResult, get_result_wrapper, SDK2Result, ResultPrecursor, LookupInResult, MutateInResult, \
-    MutationResult, _wrap_in_mutation_result, SDK2ResultWrapped, get_mutation_result, get_multi_mutation_result
+    MutationResult, _wrap_in_mutation_result, SDK2AsyncResult, get_mutation_result, get_multi_mutation_result
 from .options import forward_args, Seconds, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64, AcceptableInts
 from .options import OptionBlock, AcceptableInts
 from .durability import ReplicateTo, PersistTo, ClientDurableOption, ServerDurableOption
@@ -480,7 +480,7 @@ class CBCollection(CoreBucket):
         :rtype: dict
         """
         raw_result = super(CBCollection,self).get_multi(keys, **forward_args(kwargs, *options))
-        return {k: SDK2ResultWrapped(v) for k, v in raw_result.items()}
+        return {k: SDK2AsyncResult(v) for k, v in raw_result.items()}
 
     @overload
     def upsert_multi(self,  # type: CBCollection
