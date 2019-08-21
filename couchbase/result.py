@@ -6,6 +6,8 @@ from couchbase_core.result import MultiResult, SubdocResult
 from typing import *
 from boltons.funcutils import wraps
 from couchbase_core import abstractmethod
+from couchbase_core.result import AsyncResult
+from couchbase_core._pyport import with_metaclass
 
 
 Proxy_T = TypeVar('Proxy_T')
@@ -225,16 +227,6 @@ class GetResult(Result, IGetResult):
         # type: () -> Seconds
         return self._expiry
 
-from couchbase_core.result import AsyncResult
-try:
-    from asyncio.futures import Future
-except:
-    Future=object
-
-class ValueWrapper(object):
-    def __init__(self,value):
-        self.value=value
-
 
 T=TypeVar('T', bound=Tuple[IResult,...])
 
@@ -279,8 +271,6 @@ class AsyncWrapper(type):
                 # type: ()->int
                 return self._original.rc
         return Wrapped
-
-from couchbase_core._pyport import with_metaclass
 
 
 class SDK2GetResult(GetResult):
@@ -381,7 +371,7 @@ class SDK2MutationToken(MutationToken):
 def get_mutation_result(result  # type: ResultPrecursor
                         ):
     # type (...)->MutationResult
-    factory_class=SDK2AsyncMutationResult if issubclass(type(result), AsyncResult) else SDK2MutationResult
+    factory_class=SDK2AsyncMutationResult if issubclass(type(result.orig_result), AsyncResult) else SDK2MutationResult
     return factory_class(result.orig_result)
 
 
