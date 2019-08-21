@@ -17,8 +17,8 @@ from couchbase.bucket import Bucket as V3SyncBucket
 class AsyncBucketFactory(type):
     def __new__(cls, name, bases, attrs):
         asyncbase=bases[0]
-        n1ql_query=getattr(asyncbase,'n1ql_query',getattr(asyncbase,'query',None))
-        view_query=getattr(asyncbase,'view_query',getattr(asyncbase,'query',None))
+        n1ql_query_orig=getattr(asyncbase,'n1ql_query',getattr(asyncbase,'query',None))
+        view_query_orig=getattr(asyncbase,'view_query',getattr(asyncbase,'query',None))
         class Bucket(asyncbase):
             def __init__(self, *args, **kwargs):
                 loop = asyncio.get_event_loop()
@@ -37,15 +37,9 @@ class AsyncBucketFactory(type):
 
 
 
-            def view_query(self, *args, **kwargs):
-                if "itercls" not in kwargs:
-                    kwargs["itercls"] = AView
-                return view_query(self, *args, **kwargs)
 
-            def query(self, *args, **kwargs):
-                if "itercls" not in kwargs:
-                    kwargs["itercls"] = AN1QLRequest
-                return n1ql_query(self,*args, **kwargs)
+
+
 
 
 
@@ -71,7 +65,28 @@ class AsyncBucketFactory(type):
                 return ft
 
             return ret
-        attrs.update(asyncbase._gen_memd_wrappers(_meth_factory))
+
+        def query(self, *args, **kwargs):
+            if "itercls" not in kwargs:
+                kwargs["itercls"] = AN1QLRequest
+            return n1ql_query_orig(self,*args, **kwargs)
+
+        def view_query(self, *args, **kwargs):
+            if "itercls" not in kwargs:
+                kwargs["itercls"] = AView
+            return view_query_orig(self, *args, **kwargs)
+
+        if n1ql_query_orig:
+            attrs['query']=query
+
+        if view_query_orig:
+            attrs['view_query']=view_query
+
+        try:
+            attrs.update(asyncbase._gen_memd_wrappers(_meth_factory))
+        except Exception as e:
+            raise
+
         return super(AsyncBucketFactory,cls).__new__(cls, name, (Bucket,)+bases[1:], attrs)
 
 class Bucket(with_metaclass(AsyncBucketFactory,V2AsyncBucket)):

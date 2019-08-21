@@ -156,30 +156,34 @@ class AsyncBucketFactory(type):
 
                 super(AsyncBucket, self).__init__(*args, **kwargs)
 
-            def view_query(self, *args, **kwargs):
-                """
-                Reimplemented from base class.
 
-                This method does not add additional functionality of the
-                base class' :meth:`~couchbase.bucket.Bucket.query` method (all the
-                functionality is encapsulated in the view class anyway). However it
-                does require one additional keyword argument
-
-                :param class itercls: A class used for instantiating the view
-                  object. This should be a subclass of
-                  :class:`~couchbase.asynchronous.view.AsyncViewBase`.
-                """
-                if not issubclass(kwargs.get('itercls', None), AsyncViewBase):
-                    raise ArgumentError.pyexc("itercls must be defined "
-                                              "and must be derived from AsyncViewBase")
-
-                return super(AsyncBucket, self).view_query(*args, **kwargs)
 
             def endure(self, key, *args, **kwargs):
                 res = super(AsyncBucket, self).endure_multi([key], *args, **kwargs)
                 res._set_single()
                 return res
 
+        def view_query(self, *args, **kwargs):
+            """
+            Reimplemented from base class.
+
+            This method does not add additional functionality of the
+            base class' :meth:`~couchbase.bucket.Bucket.query` method (all the
+            functionality is encapsulated in the view class anyway). However it
+            does require one additional keyword argument
+
+            :param class itercls: A class used for instantiating the view
+              object. This should be a subclass of
+              :class:`~couchbase.asynchronous.view.AsyncViewBase`.
+            """
+            if not issubclass(kwargs.get('itercls', None), AsyncViewBase):
+                raise ArgumentError.pyexc("itercls must be defined "
+                                          "and must be derived from AsyncViewBase")
+
+            return super(AsyncBucket, self).view_query(*args, **kwargs)
+
+        if hasattr(AsyncBucket,'view_query'):
+            AsyncBucket.view_query=view_query
         return AsyncBucket
 
 

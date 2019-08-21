@@ -13,14 +13,13 @@ from .options import OptionBlock, AcceptableInts
 from .durability import ReplicateTo, PersistTo, ClientDurableOption, ServerDurableOption
 from couchbase_core._libcouchbase import Bucket as _Base
 import couchbase.exceptions
-from couchbase_core.bucket import Bucket as CoreBucket
+from couchbase_core.bucket import Bucket as CoreBucket, gen_memd_wrappers
 import copy
 
 from typing import *
 from couchbase_core.durability import Durability
 from couchbase_core._pyport import with_metaclass
 from couchbase_core.asynchronous.bucket import AsyncBucketFactory
-
 
 @wrapt.decorator
 def multi_mutate_wrap(wrapped, instance, args, kwargs):
@@ -234,7 +233,7 @@ def wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
     return _inject_scope_and_collection(wrapper)
 
 
-class CBCollection(CoreBucket):
+class CBCollection(wrapt.ObjectProxy):
     def __init__(self,
                  *args,
                  **kwargs
@@ -261,9 +260,12 @@ class CBCollection(CoreBucket):
         args = list(args)
         connstr = kwargs.pop('connection_string', kwargs.pop('connstr', args.pop(0)))
         final_args = [connstr] + args
-        super(CBCollection, self).__init__(*final_args, **kwargs)
+        wrapped=CoreBucket(*final_args,**kwargs)
+        super(CBCollection, self).__init__(wrapped)#*final_args, **kwargs)
         self._init(name, parent)
 
+    _MEMCACHED_OPERATIONS=set(CoreBucket._MEMCACHED_OPERATIONS).difference({'counter'})
+    _MEMCACHED_NOMULTI=CoreBucket._MEMCACHED_NOMULTI
     def _init(self,
               name,  # type: Optional[str]
               scope  # type: Scope
@@ -271,7 +273,25 @@ class CBCollection(CoreBucket):
         self._self_scope = scope  # type: Scope
         self._self_name = name  # type: Optional[str]
         self._self_true_collections = name and scope
-    
+
+    @classmethod
+    def _gen_memd_wrappers(cls, factory):
+        return gen_memd_wrappers(cls, cls, factory)
+
+    # def __getattr__(self, item):
+    #     attr = getattr(self.__wrapped__, item)
+    #     if attr and hasattr(attr, '__call__'):
+    #         def wrapped(*args, **kwargs):
+    #             scope_name=self._self_scope.name
+    #             collection_name=self._self_name
+    #             if scope_name and collection_name:
+    #                 kwargs.update(scope=scope_name, collection=collection_name)
+    #             return attr(*args, **kwargs)
+    #
+    #         return wrapped
+    #     else:
+    #         return attr
+
     @property
     def true_collections(self):
         return self._self_true_collections
@@ -291,7 +311,7 @@ class CBCollection(CoreBucket):
     @property
     def bucket(self):
         # type: (...) -> CoreBucket
-        return super(CBCollection,self)
+        return self.__wrapped__
 
     MAX_GET_OPS = 16
 
@@ -307,9 +327,9 @@ class CBCollection(CoreBucket):
                 raise couchbase.exceptions.ArgumentError(
                     "Project only accepts {} operations or less".format(CBCollection.MAX_GET_OPS))
         if not project:
-            x = super(CBCollection,self).get(key, **options)
+            x = self.bucket.get(key, **options)
         else:
-            x = super(CBCollection,self).lookup_in(key, *spec, **options)
+            x = self.bucket.lookup_in(key, *spec, **options)
         return ResultPrecursor(x, options)
 
     @overload
