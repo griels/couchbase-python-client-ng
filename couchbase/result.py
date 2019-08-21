@@ -160,12 +160,13 @@ class IMutationResult(IResult):
     def mutation_token(self):
         pass
 
-class MutationResult(IMutationResult):
+class MutationResult(Result):
     def __init__(self,
                  cas,  # type: int
+                 error=None,  # type: int
                  mutation_token=None  # type: MutationToken
                  ):
-        super(MutationResult, self).__init__(cas)
+        super(MutationResult, self).__init__(cas,error)
         self.mutationToken = mutation_token
 
     def mutation_token(self):
@@ -290,15 +291,13 @@ class SDK2GetResult(GetResult):
         #super(SDK2ResultWrappedBase,self).__init__(sdk2_result, expiry, **kwargs)
         key, value = (
             sdk2_result.key, sdk2_result)
-        GetResult.__init__(self, key, value.cas, value.rc, expiry, **kwargs)
+        super(SDK2GetResult,self).__init__(key, value.cas, value.rc, expiry, **kwargs)
+        self._original=sdk2_result
 
     @property
     def content_as(self):
         # type: (...)->ContentProxy
         return ContentProxy(self._original)
-
-    def id(self):  # type: ()->str
-        return self._original.key
 
     @property
     def content(self):
@@ -314,19 +313,12 @@ class SDK2AsyncResult(with_metaclass(AsyncWrapper, SDK2GetResult)):
         super(SDK2AsyncResult, self).__init__(sdk2_result, expiry=expiry, **kwargs)
 
 
-class SDK2MutationResult(IMutationResult):
+class SDK2MutationResult(MutationResult):
 
     def __init__(self, sdk2_result, **kwargs):
-        self._original=sdk2_result
-
-    @property
-    def cas(self):
-        return self._original.cas
-
-    @property
-    def mutation_token(self):  # type: () -> MutationToken
-        mutinfo=getattr(self._original,'_mutinfo')
-        return SDK2MutationToken(mutinfo) if mutinfo else None
+        mutinfo=getattr(sdk2_result,'_mutinfo',None)
+        muttoken=SDK2MutationToken(mutinfo) if mutinfo else None
+        super(SDK2MutationResult,self).__init__(sdk2_result.cas,muttoken)
 
 
 class SDK2AsyncMutationResult(with_metaclass(AsyncWrapper, SDK2MutationResult)):
@@ -346,7 +338,7 @@ def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
     @wraps(func)
     def wrapped(*args, **kwargs):
         x, options = func(*args, **kwargs)
-        factory_class=SDK2GetResult if issubclass(type(x), AsyncResult) else SDK2AsyncResult
+        factory_class=SDK2AsyncResult if issubclass(type(x), AsyncResult) else SDK2GetResult
         return factory_class(x, **(options or {}))
 
     wrapped.__name__ = func.__name__
@@ -389,8 +381,8 @@ class SDK2MutationToken(MutationToken):
 def get_mutation_result(result  # type: ResultPrecursor
                         ):
     # type (...)->MutationResult
-    factory_class=SDK2MutationResult if issubclass(type(result), AsyncResult) else SDK2AsyncMutationResult
-    return SDK2AsyncMutationResult(result.orig_result)
+    factory_class=SDK2AsyncMutationResult if issubclass(type(result), AsyncResult) else SDK2MutationResult
+    return factory_class(result.orig_result)
 
 
 def get_multi_mutation_result(target, wrapped, keys, *options, **kwargs):
