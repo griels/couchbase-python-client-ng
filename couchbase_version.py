@@ -41,6 +41,9 @@ class VersionInfo(object):
 
         # Split up the X.Y.Z
         match = RE_XYZ.match(vinfo)
+        if not match:
+            print("Could not parse tag {}".format(vinfo))
+            raise MalformedGitTag("Could not parse tag {}".format(vinfo))
         (self.ver_maj, self.ver_min, self.ver_patch, self.ver_extra) =\
             match.groups()
 
