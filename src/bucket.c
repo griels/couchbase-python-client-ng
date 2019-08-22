@@ -288,7 +288,12 @@ Bucket_server_nodes(pycbc_Bucket *self, void *unused)
     const char * const *cnodes;
     const char **curnode;
     PyObject *ret_list;
-    cnodes = self->instance?lcb_get_server_list(self->instance):NULL;
+    if (!self->instance)
+    {
+        Py_RETURN_NONE;
+    }
+
+    cnodes = lcb_get_server_list(self->instance);
 
     if (!cnodes) {
         PYCBC_EXC_WRAP(PYCBC_EXC_INTERNAL, 0, "Can't get server nodes");
@@ -314,7 +319,11 @@ Bucket_server_nodes(pycbc_Bucket *self, void *unused)
 static PyObject *
 Bucket_get_configured_replica_count(pycbc_Bucket *self, void *unused)
 {
-    PyObject *iret = pycbc_IntFromUL(lcb_get_num_replicas(self->instance));
+    PyObject *iret = self->instance?pycbc_IntFromUL(lcb_get_num_replicas(self->instance)):NULL;
+    if (!iret)
+    {
+        Py_RETURN_NONE;
+    }
 
     (void)unused;
     return iret;
@@ -328,6 +337,11 @@ Bucket_connected(pycbc_Bucket *self, void *unused)
     if (ret == Py_False) {
         void *handle = NULL;
         lcb_STATUS err=LCB_SUCCESS;
+        if (!self->instance)
+        {
+            Py_RETURN_FALSE;
+        }
+
         err = lcb_cntl(self->instance, LCB_CNTL_GET, LCB_CNTL_VBCONFIG, &handle);
         if (err == LCB_SUCCESS && handle != NULL) {
             self->flags |= PYCBC_CONN_F_CONNECTED;
