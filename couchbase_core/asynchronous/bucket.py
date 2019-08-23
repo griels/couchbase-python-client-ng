@@ -25,7 +25,7 @@ from couchbase_core.result import AsyncResult
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.exceptions import ArgumentError
 from couchbase_core._pyport import with_metaclass
-from couchbase_core.bucket import Bucket as CoreBucket
+from couchbase_core.client import Client as CoreBucket
 
 
 class AsyncBucketFactory(type):

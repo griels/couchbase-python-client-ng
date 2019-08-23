@@ -9,7 +9,7 @@ from couchbase_core.experimental import enable
 enable()
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
 from couchbase_core._pyport import with_metaclass
-from couchbase_core.bucket import Bucket as CoreBucket
+from couchbase_core.client import Client as CoreBucket
 from couchbase_core.asynchronous.bucket import AsyncBucket as CoreAsyncBucket, AsyncBucketFactory as CoreAsyncBucketFactory
 from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase.bucket import Bucket as V3SyncBucket

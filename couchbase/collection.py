@@ -348,7 +348,7 @@ class CBCollection(CoreBucket):
 
             Note that the default value is `None`, which means to use
             the :attr:`quiet`. If it is a boolean (i.e. `True` or
-            `False`) it will override the `couchbase_core.bucket.Bucket`-level
+            `False`) it will override the `couchbase_core.client.Client`-level
             :attr:`quiet` attribute.
 
         :param bool replica: Whether to fetch this key from a replica
