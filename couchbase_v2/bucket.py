@@ -20,8 +20,7 @@ import couchbase_core._libcouchbase as _LCB
 from couchbase_core._libcouchbase import Bucket as _Base
 
 import couchbase_v2
-from couchbase_core.bucket import Bucket as CoreBucket, _depr
-from couchbase_v2.exceptions_shim import *
+from couchbase_core.client import Client as CoreBucket, _depr
 from couchbase_core.result import *
 from couchbase_core.bucketmanager import BucketManager
 
@@ -1119,7 +1118,7 @@ class Bucket(CoreBucket):
     def _analytics_query(self, query, _, *args, **kwargs):
         # we used to take the CBAS host as the second parameter, but
         # LCB now retrieves the hostname from the cluster
-        return super(Bucket,self).analytics_query(query, *args, **kwargs)
+        return super(Bucket, self).analytics_query(query, *args, **kwargs)
 
     analytics_query = _analytics_query
 
@@ -1643,6 +1642,3 @@ class Bucket(CoreBucket):
             :return:
             """
             return self.decrypt_fields_real(document, fieldspec, prefix)
-
-class HLBucket(Bucket):
-    pass
