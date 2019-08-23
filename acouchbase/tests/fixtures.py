@@ -7,7 +7,7 @@ Details = namedtuple('Details', ['factory', 'get_value'])
 
 try:
     from acouchbase.bucket import Bucket
-    from acouchbase.bucket import V3CoreClient
+    from acouchbase.bucket import V2Bucket, V3CoreClient
     from acouchbase.bucket import asyncio
 
 
@@ -29,7 +29,8 @@ try:
             raise
 
 
-    target_dict = {'V3CoreClient': Details(V3CoreClient, lambda x: x.value),
+    target_dict = {'V2Bucket': Details(V2Bucket, lambda x: x.value),
+                   'V3CoreClient': Details(V3CoreClient, lambda x: x.value),
                    'Collection': Details(gen_collection, lambda x: x.content)}
 
 except (ImportError, SyntaxError):

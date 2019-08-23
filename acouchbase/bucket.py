@@ -9,6 +9,7 @@ from couchbase_core.experimental import enable; enable()
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
 from couchbase_core._pyport import with_metaclass
 from couchbase_core.asynchronous.bucket import AsyncClient as CoreAsyncClient
+from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase.bucket import Bucket as V3SyncBucket
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
 
@@ -72,6 +73,11 @@ class AsyncBucketFactory(type):
 
         attrs.update(asyncbase._gen_memd_wrappers(_meth_factory))
         return super(AsyncBucketFactory, cls).__new__(cls, name, (Bucket,) + bases[1:], attrs)
+
+
+class V2Bucket(with_metaclass(AsyncBucketFactory, V2AsyncBucket)):
+    def __init__(self, *args, **kwargs):
+        super(V2Bucket, self).__init__(*args, **kwargs)
 
 
 class V3CoreClient(with_metaclass(AsyncBucketFactory, CoreAsyncClient)):
