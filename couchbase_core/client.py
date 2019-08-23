@@ -88,25 +88,25 @@ class Client(_Base):
         :raise: :exc:`.InvalidError` if the connection string
             was malformed.
 
-        :return: instance of :class:`~couchbase_core.bucket.Bucket`
+        :return: instance of :class:`~couchbase_core.client.Client`
 
 
         Initialize bucket using default options::
 
-            from couchbase_core.bucket import Bucket
-            cb = Bucket('couchbase:///mybucket')
+            from couchbase_core.bucket import Client
+            cb = Client('couchbase:///mybucket')
 
         Connect to protected bucket::
 
-            cb = Bucket('couchbase:///protected', password='secret')
+            cb = Client('couchbase:///protected', password='secret')
 
         Connect using a list of servers::
 
-            cb = Bucket('couchbase://host1,host2,host3/mybucket')
+            cb = Client('couchbase://host1,host2,host3/mybucket')
 
         Connect using SSL::
 
-            cb = Bucket('couchbases://securehost/bucketname?certpath=/var/cb-cert.pem')
+            cb = Client('couchbases://securehost/bucketname?certpath=/var/cb-cert.pem')
 
         """
         _no_connect_exceptions = kwargs.pop('_no_connect_exceptions', False)

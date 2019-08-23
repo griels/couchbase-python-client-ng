@@ -58,7 +58,7 @@ class Cluster(object):
         Creates a new Cluster object
         :param connection_string: Base connection string. It is an error to
             specify a bucket in the string.
-        :param bucket_class: :class:`couchbase_core.bucket.Bucket` implementation to
+        :param bucket_class: :class:`couchbase_core.client.Client` implementation to
             use.
         """
         self.connstr = ConnectionString.parse(str(connection_string))
