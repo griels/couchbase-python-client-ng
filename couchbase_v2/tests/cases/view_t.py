@@ -157,7 +157,7 @@ class ViewTest(ViewTestCase):
             admin.user_upsert(AuthDomain.Local, userid, password, roles)
             admin.wait_ready(bucket_name, timeout=10)
             conn_str = "couchbase://{0}/{1}".format(self.cluster_info.host, bucket_name)
-            bucket = Bucket(connection_string=conn_str,username=userid,password=password)
+            bucket = Bucket(connection_string=conn_str, username=userid, password=password)
             self.assertIsNotNone(bucket)
             self.assertRaisesRegex(NotSupportedError, "Ephemeral", lambda: bucket.query("beer", "brewery_beers", streaming=True, limit=100))
         finally:
