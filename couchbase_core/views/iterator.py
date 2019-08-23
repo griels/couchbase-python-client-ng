@@ -140,7 +140,7 @@ class View(object):
         results.
 
         :param parent: The parent Bucket object
-        :type parent: :class:`~couchbase_core.bucket.Bucket`
+        :type parent: :class:`~couchbase_core.client.Client`
         :param string design: The design document
         :param string view: The name of the view within the design document
         :param callable row_processor: See :attr:`row_processor` for more

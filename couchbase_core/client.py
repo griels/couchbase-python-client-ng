@@ -18,11 +18,7 @@ from .durability import Durability
 from .result import Result
 
 
-class Bucket(_Base):
-    @classmethod
-    def get_doc(cls, item):
-        return getattr(item,'__doc__')
-
+class Client(_Base):
     def __init__(self, *args, **kwargs):
         """Connect to a bucket.
 
@@ -133,7 +129,7 @@ class Bucket(_Base):
         if isinstance(tc, type):
             kwargs['transcoder'] = tc()
 
-        super(Bucket, self).__init__(*args, **kwargs)
+        super(Client, self).__init__(*args, **kwargs)
         # Enable detailed error codes for network errors:
         self._cntlstr("detailed_errcodes", "1")
 
@@ -669,7 +665,7 @@ class Bucket(_Base):
                     raise E.NotSupportedError("Subdoc upsert + fulldoc insert Not supported in SDK 3 yet")
 
         kwargs['_sd_doc_flags'] = sdflags
-        return super(Bucket, self).mutate_in(key, specs, **kwargs)
+        return super(Client, self).mutate_in(key, specs, **kwargs)
 
     def lookup_in(self, key, *specs, **kwargs):
         """Atomically retrieve one or more paths from a document.
@@ -694,7 +690,7 @@ class Bucket(_Base):
 
         .. seealso:: :meth:`retrieve_in` which acts as a convenience wrapper
         """
-        return super(Bucket, self).lookup_in({key: specs}, **kwargs)
+        return super(Client, self).lookup_in({key: specs}, **kwargs)
 
     def rget(self, key, replica_index=None, quiet=None):
         """Get an item from a replica node
@@ -938,7 +934,7 @@ class Bucket(_Base):
         body = _FTS.make_search_body(index, query, params)
         return itercls(body, self, **iterargs)
 
-    def upsert_multi(self,  # type: Bucket
+    def upsert_multi(self,  # type: Client
                      keys,  # type: Mapping[str,Any]
                      ttl=0,  # type: int
                      format=None,  # type: int
@@ -988,7 +984,7 @@ class Bucket(_Base):
                                   replicate_to=replicate_to,
                                   durability_level=durability_level)
 
-    def insert_multi(self,  # type: Bucket
+    def insert_multi(self,  # type: Client
                      keys,  # type: Mapping[str,Any]
                      ttl=0,  # type: int
                      format=None,  # type: int
@@ -1006,7 +1002,7 @@ class Bucket(_Base):
                                   replicate_to=replicate_to,
                                   durability_level=durability_level)
 
-    def replace_multi(self,  # type: Bucket
+    def replace_multi(self,  # type: Client
                       keys,  # type: Mapping[str,Any]
                       ttl=0,  # type: int
                       format=None,  # type: int
@@ -1041,7 +1037,7 @@ class Bucket(_Base):
                                    replicate_to=replicate_to,
                                    durability_level=durability_level)
 
-    def append_multi(self,  # type: Bucket
+    def append_multi(self,  # type: Client
                      keys,  # type: Mapping[str,Any]
                      ttl=0,  # type: int
                      format=None,  # type: int
@@ -1064,7 +1060,7 @@ class Bucket(_Base):
                                   persist_to=persist_to,
                                   replicate_to=replicate_to)
 
-    def prepend_multi(self,  # type: Bucket
+    def prepend_multi(self,  # type: Client
                       keys,  # type: Mapping[str,Any]
                       ttl=0,  # type: int
                       format=None,  # type: int
@@ -1080,7 +1076,7 @@ class Bucket(_Base):
                                    persist_to=persist_to,
                                    replicate_to=replicate_to)
 
-    def get_multi(self, # type: Bucket
+    def get_multi(self, # type: Client
                   keys,  # type: Iterable[str]
                   ttl=0,  # type: int
                   quiet=None,  # type: bool
@@ -1104,7 +1100,7 @@ class Bucket(_Base):
         return _Base.get_multi(self, keys, ttl=ttl, quiet=quiet,
                                replica=replica, no_format=no_format)
 
-    def touch_multi(self,  # type: Bucket
+    def touch_multi(self,  # type: Client
                     keys,  # type: Iterable[str]
                     ttl=0  # type: int
                     ):
@@ -1132,7 +1128,7 @@ class Bucket(_Base):
         """
         return _Base.touch_multi(self, keys, ttl=ttl)
 
-    def lock_multi(self,  # type: Bucket
+    def lock_multi(self,  # type: Client
                    keys,  # type: Iterable[str]
                    ttl=0  # type: int
                    ):
@@ -1149,7 +1145,7 @@ class Bucket(_Base):
         """
         return _Base.lock_multi(self, keys, ttl=ttl)
 
-    def unlock_multi(self,  # type: Bucket
+    def unlock_multi(self,  # type: Client
                      keys  # type: Iterable[str]
                      ):
         # type: (...)->Result
