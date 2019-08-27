@@ -664,10 +664,10 @@ static void
 subdoc_callback(lcb_t instance, int cbtype, const lcb_RESPBASE *rb)
 {
     int rv;
-    pycbc_Bucket *conn;
-    pycbc__SDResult *res;
+    pycbc_Bucket *conn=NULL;
+    pycbc__SDResult *res=NULL;
     pycbc_MultiResult *mres;
-    pycbc_SDENTRY cur;
+    pycbc_SDENTRY cur={0};
     response_handler handler = {.cbtype = cbtype};
     size_t vii = 0, oix = 0;
     const lcb_RESPSUBDOC *resp = (const lcb_RESPSUBDOC *)rb;

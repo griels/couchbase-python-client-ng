@@ -180,14 +180,10 @@ class Scenarios(CollectionTestCase):
 
         count = 0
 
-        for durability in Durability:
+        for durability in [Durability.NONE]:
             somecontents = {'some': {'path': 'keith'}}
             key="somekey_{}".format(count)
-            try:
-                self.coll.remove(key)
-            except:
-                pass
-            self.coll.insert(key, somecontents)
+            self.coll.upsert(key, somecontents)
             inserted_value = "inserted_{}".format(count)
             replacement_value = "replacement_{}".format(count)
             count += 1
@@ -547,7 +543,7 @@ class Scenarios(CollectionTestCase):
         self.assertIsInstance(metadata.success_count(), int)
         took=metadata.took()
         self.assertIsInstance(took, Seconds)
-        self.assertAlmostEqual(took.value, duration, delta=0.1)
+        self.assertAlmostEqual(took.value, duration, delta=0.2)
         self.assertGreater(took.value, 0)
         self.assertIsInstance(metadata.total_hits(), int)
         self.assertGreaterEqual(metadata.success_count(), min_hits)

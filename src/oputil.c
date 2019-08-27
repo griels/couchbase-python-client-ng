@@ -899,10 +899,13 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
     (void)self;
     if (rv == 0) {
         PYCBC_TRACECMD_PURE(subdoc, cmd, context);
+        PYCBC_REF_CONTEXT(context);
         newitm->tracing_context = context;
         newitm->is_tracing_stub = 0;
         PYCBC_DEBUG_LOG_CONTEXT(context, "Calling subdoc on %llx", cmd)
         lcb_cmdsubdoc_durability(cmd, mres->dur.durability_level);
+        PyDict_SetItem(mres, key, (PyObject*)newitm);
+        pycbc_MultiResult_init_context(mres, key, context, self);
         (*err) = pycbc_subdoc(collection, mres, cmd);
         PYCBC_DEBUG_LOG_CONTEXT(context,
                                 "Called subdoc on %llx, got err %s",
@@ -910,7 +913,6 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
                                 lcb_strerror(self->instance, *err))
         if ((*err) == LCB_SUCCESS) {
 #ifdef PYCBC_GLOBAL_SCHED_SD
-            PYCBC_REF_CONTEXT(context);
 #endif
             PyDict_SetItem((PyObject *)mres, key, (PyObject *)newitm);
             pycbc_assert(Py_REFCNT(newitm) == 2);
@@ -918,7 +920,8 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
             PYCBC_DEBUG_LOG_CONTEXT(context,
                                     "Got err %d %s",
                                     *err,
-                                    lcb_strerror(self->instance, *err))
+                                    lcb_strerror(self->instance, *err));
+            //PYCBC_CONTEXT_DEREF(context, 1);
         }
     }
     return (*err);
