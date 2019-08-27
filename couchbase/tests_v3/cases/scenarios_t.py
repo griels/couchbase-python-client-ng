@@ -38,6 +38,7 @@ import couchbase.exceptions
 
 from couchbase import JSONDocument, DeltaValue, SignedInt64, MutateInResult
 from couchbase_core.durability import Durability
+from couchbase.cluster import Cluster, ClusterOptions, QueryParameters
 from couchbase import ReplicateTo, PersistTo, FiniteDuration, copy, \
     Seconds, ReplicaNotConfiguredException, DocumentConcurrentlyModifiedException, \
     DocumentMutationLostException, ReplicaNotAvailableException, MutateSpec, CASMismatchException, \
@@ -473,6 +474,8 @@ class Scenarios(CollectionTestCase):
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], list(result))
         self.assertEquals([{"row": "value"}], result.rows())
+        result = self.cluster.query("SELECT name FROM `beer-sample` WHERE  brewery_id =$brewery_name",parameters=QueryParameters(brewery_name="mishawaka_brewing"))
+        result = self.cluster.query("SELECT name FROM `beer-sample` WHERE  brewery_id =$1",parameters=QueryParameters("mishawaka_brewing"))
 
     def test_cluster_search(self  # type: ClusterTestCase
                             ):

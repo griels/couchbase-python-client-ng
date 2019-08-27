@@ -69,7 +69,15 @@ class Durations:
 class OptionBlock(dict):
     def __init__(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
+        self._args=args
         super(OptionBlock, self).__init__(**kwargs)
+
+    def __iter__(self):
+        return iter(self._args)
+
+    @classmethod
+    def forward(cls, self, **kwargs):
+        return forward_args(kwargs, self)
 
 
 T = TypeVar('T', bound=OptionBlock)

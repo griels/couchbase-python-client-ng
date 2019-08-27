@@ -70,6 +70,10 @@ class QueryOptions(OptionBlock, IQueryResult):
         """
         super(QueryOptions, self).__init__(statement=statement, parameters=parameters, timeout=timeout)
 
+    @classmethod
+    def forward(cls, self, **kwargs):
+        result=forward_args(kwargs, self)
+        return result
 
 class IQueryIndexManager(object):
     pass
@@ -190,7 +194,7 @@ class Cluster(object):
             if the query failed on the server.
 
         """
-        return QueryResult(self._operate_on_cluster(CoreClient.query, QueryException, statement, **(forward_args(kwargs, *options))))
+        return QueryResult(self._operate_on_cluster(CoreClient.query, QueryException, statement, **(QueryOptions.forward(options, **kwargs))))
 
     def _operate_on_cluster(self, verb, failtype, *args, **kwargs):
         try:
