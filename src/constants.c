@@ -210,6 +210,7 @@ do_all_constants(PyObject *module, pycbc_constant_handler handler)
     /* View options */
     ADD_MACRO(LCB_CMDVIEWQUERY_F_INCLUDE_DOCS);
     ADD_MACRO(LCB_CMDVIEWQUERY_F_SPATIAL);
+    ADD_MACRO(LCB_SDCMD_FULLDOC_ADD);
     ADD_MACRO(LCB_SDCMD_REPLACE);
     ADD_MACRO(LCB_SDCMD_DICT_ADD);
     ADD_MACRO(LCB_SDCMD_DICT_UPSERT);

@@ -2,7 +2,8 @@ from couchbase_core._libcouchbase import (
     LCB_SDCMD_REPLACE, LCB_SDCMD_DICT_ADD, LCB_SDCMD_DICT_UPSERT,
     LCB_SDCMD_ARRAY_ADD_FIRST, LCB_SDCMD_ARRAY_ADD_LAST,
     LCB_SDCMD_ARRAY_ADD_UNIQUE, LCB_SDCMD_EXISTS, LCB_SDCMD_GET,
-    LCB_SDCMD_COUNTER, LCB_SDCMD_REMOVE, LCB_SDCMD_ARRAY_INSERT
+    LCB_SDCMD_COUNTER, LCB_SDCMD_REMOVE, LCB_SDCMD_ARRAY_INSERT,
+    LCB_SDCMD_FULLDOC_ADD
 )
 
 import couchbase_core.priv_constants as _P
@@ -153,6 +154,36 @@ def insert(path, value, create_parents=False, **kwargs):
     return _gen_4spec(LCB_SDCMD_DICT_ADD, path, value,
                       create_path=create_parents, **kwargs)
 
+def fulldoc_insert(path, value, create_parents=False, **kwargs):
+    """
+    Create or replace a dictionary path.
+
+    :param path: The path to modify
+    :param value: The new value for the path. This should be a native Python
+        object which can be encoded into JSON (the SDK will do the encoding
+        for you).
+    :param create_parents: Whether intermediate parents should be created.
+        This means creating any additional levels of hierarchy not already
+        in the document, for example:
+
+        .. code-block:: python
+
+            {'foo': {}}
+
+        Without `create_parents`, an operation such as
+
+        .. code-block:: python
+
+            cb.mutate_in("docid", SD.upsert("foo.bar.baz", "newValue"))
+
+        would fail with :cb_exc:`SubdocPathNotFoundError` because `foo.bar`
+        does not exist. However when using the `create_parents` option, the
+        server creates the new `foo.bar` dictionary and then inserts the
+        `baz` value.
+
+    """
+    return _gen_4spec(LCB_SDCMD_FULLDOC_ADD, path, value,
+                      create_path=create_parents, **kwargs)
 
 def array_append(path, *values, **kwargs):
     """
