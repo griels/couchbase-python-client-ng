@@ -198,6 +198,22 @@ def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
     return wrapped
 
 
+CoreBucketOpRead = TypeVar("CoreBucketOpRead", Callable[[Any], SDK2Result], Callable[[Any], GetResult])
+
+
+def _wrap_get_result(func  # type: CoreBucketOpRead
+                     ):
+    # type: (...) -> CoreBucketOpRead
+    @wraps(func)
+    def wrapped(self,  # type: CBCollection
+                *args,  # type: Any
+                **kwargs  # type:  Any
+                ):
+        # type: (...)->Any
+        return _inject_scope_and_collection(get_result_wrapper(func))(self,*args,**kwargs)
+
+    return wrapped
+
 class BinaryCollection(object):
     pass
 
@@ -254,6 +270,9 @@ class CBCollection(CoreClient):
         final_args = [connstr] + args
         super(CBCollection, self).__init__(*final_args, **kwargs)
         self._init(name, parent)
+
+    def _wrap_dsop(self, sdres, has_value=False, **kwargs):
+        return super(Collection,self)._wrap_dsop(sdres, has_value), kwargs
 
     def _init(self,
               name,  # type: Optional[str]
@@ -562,7 +581,25 @@ class CBCollection(CoreClient):
     append_multi = _wrap_multi_mutation_result(CoreClient.unlock_multi)
     prepend_multi = _wrap_multi_mutation_result(CoreClient.prepend_multi)
     counter_multi = _wrap_multi_mutation_result(CoreClient.counter_multi)
+    map_get = _wrap_get_result(CoreClient.map_get)
+    map_add = _inject_scope_and_collection(CoreClient.map_add)
+    map_remove = _wrap_multi_mutation_result(CoreClient.map_remove)
+    queue_push = _wrap_multi_mutation_result(CoreClient.queue_push)
+    list_size = _inject_scope_and_collection(CoreClient.list_size)
+    map_size = _inject_scope_and_collection(CoreClient.map_size)
+    queue_pop = _wrap_multi_mutation_result(CoreClient.queue_pop)
 
+    list_set = _wrap_multi_mutation_result(CoreClient.list_set)
+    list_remove = _wrap_multi_mutation_result(CoreClient.list_remove)
+    list_prepend = _wrap_multi_mutation_result(CoreClient.list_prepend)
+    list_get = _wrap_get_result(CoreClient.list_get)
+    queue_size = _inject_scope_and_collection(CoreClient.queue_size)
+
+    list_append = _wrap_multi_mutation_result(CoreClient.list_append)
+    set_add = _wrap_multi_mutation_result(CoreClient.set_add)
+    set_contains = _inject_scope_and_collection(CoreClient.set_contains)
+    set_remove = _wrap_multi_mutation_result(CoreClient.set_remove)
+    set_size = _inject_scope_and_collection(CoreClient.set_size)
     def touch(self,
               id,  # type: str
               *options,  # type: TouchOptions
