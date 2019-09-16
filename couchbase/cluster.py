@@ -71,6 +71,22 @@ class QueryOptions(OptionBlock, IQueryResult):
         super(QueryOptions, self).__init__(statement=statement, parameters=parameters, timeout=timeout)
 
 
+class IQueryIndexManager(object):
+    pass
+
+
+class IAnalyticsIndexManager(object):
+    pass
+
+
+class ISearchIndexManager(object):
+    pass
+
+
+class INodeManager(object):
+    pass
+
+
 class Cluster(object):
     clusterbucket = None  # type: CoreClient
 
@@ -272,6 +288,18 @@ class Cluster(object):
     def indexes(self):
         # type: (...)->IIndexManager
         raise NotImplementedError("To be implemented in SDK3 full release")
+
+    def query_indexes(self):
+        # type: (...)->IQueryIndexManager
+        pass
+
+    def analytics_indexes(self):
+        # type: (...)->IAnalyticsIndexManager
+        pass
+
+    def search_indexes(self):
+        # type: (...)->ISearchIndexManager
+        pass
 
     def nodes(self):
         # type: (...)->INodeManager
