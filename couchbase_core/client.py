@@ -15,13 +15,13 @@ import couchbase_core.analytics
 from typing import *
 from .durability import Durability
 from .result import Result
-
+from boltons.funcutils import wraps
 
 def _dsop(create_type=None, wrap_missing_path=True):
     import functools
 
     def real_decorator(fn):
-        @functools.wraps(fn)
+        @wraps(fn)
         def newfn(self, key, *args, **kwargs):
             try:
                 return fn(self, key, *args, **kwargs)
@@ -1402,7 +1402,7 @@ class Client(_Base):
         .. seealso:: :meth:`map_add`
         """
         op = SD.remove(mapkey)
-        sdres = self.mutate_in(key, op, **kwargs)
+        sdres = Client.mutate_in(self, key, (op,), **kwargs)
         return self._wrap_dsop(sdres, **kwargs)
 
     @_dsop()
@@ -1420,7 +1420,7 @@ class Client(_Base):
         # with server version (i.e. >= 4.6) first; otherwise it just
         # disconnects.
 
-        rv = self.get(key)
+        rv = Client.get(self, key)
         return len(rv.value)
 
     @_dsop(create_type=list)
@@ -1445,7 +1445,7 @@ class Client(_Base):
         .. seealso:: :meth:`map_add`
         """
         op = SD.array_append('', value)
-        sdres = self.mutate_in(key, op, **kwargs)
+        sdres = Client.mutate_in(self, key, (op,), **kwargs)
         return self._wrap_dsop(sdres, **kwargs)
 
     @_dsop(create_type=list)
@@ -1468,7 +1468,7 @@ class Client(_Base):
         .. seealso:: :meth:`list_append`, :meth:`map_add`
         """
         op = SD.array_prepend('', value)
-        sdres = self.mutate_in(key, op, **kwargs)
+        sdres = Client.mutate_in(self, key, (op,), **kwargs)
         return self._wrap_dsop(sdres, **kwargs)
 
     @_dsop()
@@ -1493,7 +1493,7 @@ class Client(_Base):
         .. seealso:: :meth:`map_add`, :meth:`list_append`
         """
         op = SD.replace('[{0}]'.format(index), value)
-        sdres = self.mutate_in(key, op, **kwargs)
+        sdres = Client.mutate_in(self, key, (op,), **kwargs)
         return self._wrap_dsop(sdres, **kwargs)
 
     @_dsop(create_type=list)
@@ -1513,7 +1513,7 @@ class Client(_Base):
         """
         op = SD.array_addunique('', value)
         try:
-            sdres = self.mutate_in(key, op, **kwargs)
+            sdres = Client.mutate_in(self, key, (op,), **kwargs)
             return self._wrap_dsop(sdres, **kwargs)
         except E.SubdocPathExistsError:
             pass
@@ -1533,11 +1533,11 @@ class Client(_Base):
         .. seealso:: :meth:`set_add`, :meth:`map_add`
         """
         while True:
-            rv = self.get(key)
+            rv = Client.get(self, key)
             try:
                 ix = rv.value.index(value)
                 kwargs['cas'] = rv.cas
-                return self.list_remove(key, ix, **kwargs)
+                return Client.list_remove(self, key, ix, **kwargs)
             except E.KeyExistsError:
                 pass
             except ValueError:
@@ -1552,7 +1552,7 @@ class Client(_Base):
         :raise: :cb_exc:`NotFoundError` if the set does not exist.
 
         """
-        return self.list_size(key)
+        return Client.list_size(self, key)
 
     def set_contains(self, key, value):
         """
@@ -1562,7 +1562,7 @@ class Client(_Base):
         :return: True if `value` exists in the set
         :raise: :cb_exc:`NotFoundError` if the document does not exist
         """
-        rv = self.get(key)
+        rv = Client.get(self, key)
         return value in rv.value
 
     @_dsop()
@@ -1576,7 +1576,7 @@ class Client(_Base):
         :raise: :exc:`IndexError` if the index does not exist
         :raise: :cb_exc:`NotFoundError` if the list does not exist
         """
-        return self.map_get(key, '[{0}]'.format(index))
+        return Client.map_get(self, key, '[{0}]'.format(index))
 
     @_dsop()
     def list_remove(self, key, index, **kwargs):
@@ -1590,7 +1590,7 @@ class Client(_Base):
         :raise: :exc:`IndexError` if the index does not exist
         :raise: :cb_exc:`NotFoundError` if the list does not exist
         """
-        return self.map_remove(key, '[{0}]'.format(index), **kwargs)
+        return Client.map_remove(self, key, '[{0}]'.format(index), **kwargs)
 
     @_dsop()
     def list_size(self, key):
@@ -1601,7 +1601,7 @@ class Client(_Base):
         :return: The number of elements within the list
         :raise: :cb_exc:`NotFoundError` if the list does not exist
         """
-        return self.map_size(key)
+        return Client.map_size(self, key)
 
     @_dsop(create_type=list)
     def queue_push(self, key, value, create=False, **kwargs):
@@ -1624,7 +1624,7 @@ class Client(_Base):
             cb.queue_push('a_queue', 'job9999', create=True)
             cb.queue_pop('a_queue').value  # => job9999
         """
-        return self.list_prepend(key, value, **kwargs)
+        return Client.list_prepend(self, key, value, **kwargs)
 
     @_dsop()
     def queue_pop(self, key, **kwargs):
@@ -1639,13 +1639,13 @@ class Client(_Base):
         """
         while True:
             try:
-                itm = self.list_get(key, -1)
+                itm = Client.list_get(self, key, -1)
             except IndexError:
                 raise E.QueueEmpty
 
-            kwargs['cas'] = itm.cas
+            kwargs.update({k:v for k,v in getattr(itm,'__dict__',{}).items() if k in {'cas'}})
             try:
-                self.list_remove(key, -1, **kwargs)
+                Client.list_remove(self, key, -1, **kwargs)
                 return itm
             except E.KeyExistsError:
                 pass
@@ -1661,5 +1661,24 @@ class Client(_Base):
         :return: The length of the queue
         :raise: :cb_exc:`NotFoundError` if the queue does not exist.
         """
-        return self.list_size(key)
+        return Client.list_size(self, key)
 
+    dsops = (map_get,
+             map_add,
+             map_remove,
+             queue_push,
+             list_size,
+             map_size,
+             queue_pop,
+
+             list_set,
+             list_remove,
+             list_prepend,
+             list_get,
+             queue_size,
+
+             list_append,
+             set_add,
+             set_contains,
+             set_remove,
+             set_size)
