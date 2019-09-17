@@ -1321,13 +1321,16 @@ class CBCollection(CoreClient):
         x = super(CBCollection,self).counter(id, delta=-int(DeltaValue.verified(delta)), **final_opts)
         return ResultPrecursor(x, final_opts)
 
-    def _check_delta_initial(self, kwargs, *options):
+    @staticmethod
+    def _check_delta_initial(kwargs, *options):
         final_opts = forward_args(kwargs, *options)
         init_arg = final_opts.get('initial')
-        initial = None if init_arg == None else int(SignedInt64.verified(init_arg))
-        if initial != None:
+        initial = None if init_arg is None else int(SignedInt64.verified(init_arg))
+        if initial is not None:
             final_opts['initial'] = initial
         return final_opts
+
+    locals().update({x.__name__: _inject_scope_and_collection(x) for x in CoreClient.dsops})
 
 
 class Scope(object):
