@@ -1,7 +1,8 @@
 import json
 
-from couchbase_core._libcouchbase import Bucket as _Base
+from couchbase_core._libcouchbase import Collection as _Base
 
+#from couchbase.exceptions import KeyNotFoundException
 import couchbase_core.exceptions as E
 from couchbase_core.analytics import AnalyticsQuery
 from couchbase_core.exceptions import NotImplementedInV3
@@ -25,7 +26,7 @@ def _dsop(create_type=None, wrap_missing_path=True):
         def newfn(self, key, *args, **kwargs):
             try:
                 return fn(self, key, *args, **kwargs)
-            except E.NotFoundError:
+            except (E.NotFoundError):
                 if kwargs.get('create'):
                     try:
                         self.insert(key, create_type())
@@ -37,7 +38,8 @@ def _dsop(create_type=None, wrap_missing_path=True):
             except E.SubdocPathNotFoundError:
                 if wrap_missing_path:
                     raise IndexError(args[0])
-
+            except Exception as e:
+                raise
         return newfn
 
     return real_decorator
