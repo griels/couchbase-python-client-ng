@@ -325,7 +325,7 @@ init_libcouchbase(void)
 #define PYCBC_CRYPTO_TYPES_ADAPTER(NAME, DOC, ...) \
     X(NAME, pycbc_##NAME##Type_init)
 #define X_PYTYPES_NOTRACING(X)                         \
-    X(Bucket, pycbc_BucketType_init)                   \
+    X(Client, pycbc_ClientType_init)                   \
     /** Remember to keep base classes in order */      \
     X(Result, pycbc_ResultType_init)                   \
     X(OperationResult, pycbc_OperationResultType_init) \
@@ -347,7 +347,7 @@ init_libcouchbase(void)
 #define X_PYTYPES_NOCOLLECTIONS(X)     \
         X_PYTYPES_NOTRACING(X)         \
         X(Tracer, pycbc_TracerType_init)
-
+#define PYCBC_COLLECTIONS_PROPER
 #    ifdef PYCBC_COLLECTIONS_PROPER
 #        define X_PYTYPES(X)           \
             X_PYTYPES_NOCOLLECTIONS(X) \
@@ -2822,9 +2822,20 @@ void pycbc_Tracer_span_finish(const pycbc_tracer_payload_t *payload,
 pycbc_Collection_t pycbc_Collection_as_value(pycbc_Bucket *self,
                                              PyObject *kwargs)
 {
-    pycbc_Collection_t unit = {{0}, 0, {{{0}}, {{0}}}};
-    pycbc_collection_init_from_fn_args(&unit, self, kwargs);
+    pycbc_Collection_t unit = {0};
+    pycbc_collection_init_from_fn_args(&unit, kwargs);
+    unit.stack_allocated=1;
     return unit;
+}
+
+pycbc_Collection_t* pycbc_Collection_ptr(pycbc_Bucket* self, pycbc_Collection_t* in_place, PyObject* kwargs)
+{
+    if(PyObject_IsInstance((PyObject*)self, (PyObject*)&pycbc_CollectionType))
+    {
+        return (pycbc_Collection_t*)self;
+    }
+    *in_place=pycbc_Collection_as_value(self, kwargs);
+    return in_place;
 }
 pycbc_tracer_payload_t *pycbc_Tracer_propagate_span(
         pycbc_Tracer_t *tracer, pycbc_tracer_payload_t *payload)
