@@ -125,6 +125,7 @@ class Cluster(object):
         self._cluster.authenticate(authenticator, username, password)
         credentials=authenticator.get_credentials()
         clusteropts=credentials.get('options',{})
+        clusteropts['bucket']="default"
         self.clusterbucket=CoreClient(str(self.connstr),_conntype=_LCB.LCB_TYPE_CLUSTER, **clusteropts)
 
 
