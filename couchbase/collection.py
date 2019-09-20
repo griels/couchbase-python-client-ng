@@ -256,6 +256,7 @@ class CBCollection(CoreClient):
         if parent:
             kwargs['scope']=parent.name
             kwargs['collection']=name
+            kwargs['bucket']=parent.bucket.name
         super(CBCollection, self).__init__(*final_args, **kwargs)
 
     def _wrap_dsop(self, sdres, has_value=False, **kwargs):
