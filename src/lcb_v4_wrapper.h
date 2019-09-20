@@ -284,7 +284,7 @@ typedef enum {
 #define lcb_respobserve_flags(RESP, DEST) LCB_NOT_SUPPORTED
 
 #define PYCBC_OBSERVE_FROM_LCB(X) PYCBC_OBSERVE_##X
-#define lcb_cmdgetreplica_expiration(CMD, TTL)
+#define lcb_cmdgetreplica_expiry(CMD, TTL)
 
 #define lcb_cmdstats_create(DEST) \
     lcb_CMDSTATS cmd_real = {0};  \
