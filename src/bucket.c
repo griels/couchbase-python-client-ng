@@ -1120,6 +1120,7 @@ Bucket__init__(pycbc_Bucket *self,
     }
 
     pycbc_callbacks_init(self->instance);
+    PYCBC_INCREF(self);
     lcb_set_cookie(self->instance, self);
     {
         char *bucketstr;
