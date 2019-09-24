@@ -410,7 +410,8 @@ modify_event_python(pycbc_IOPSWrapper *pio, pycbc_Event *ev,
         meth = pio->modtimer;
     }
     PyTuple_SET_ITEM(argtuple, 2, o_arg);
-
+    const char* methname=PYCBC_CSTR(PyObject_Str(meth));
+    PYCBC_DEBUG_LOG("CAlling method %s",methname);
     result = do_safecall(meth, argtuple);
     Py_DECREF(argtuple);
     Py_XDECREF(result);
