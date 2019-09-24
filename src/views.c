@@ -316,7 +316,6 @@ TRACED_FUNCTION_WRAPPER(_view_request, LCBTRACE_OP_REQUEST_ENCODING, Bucket)
         lcb_cmdview_post_data(vcmd, vp.body, (size_t)vp.nbody);
         lcb_cmdview_handle(vcmd, &vres->base.u.vh);
         lcb_cmdview_callback(vcmd, row_callback);
-
         lcb_cmdview_include_docs(vcmd, flags & LCB_CMDVIEWQUERY_F_INCLUDE_DOCS);
         lcb_cmdview_no_row_parse(vcmd, flags & LCB_CMDVIEWQUERY_F_NOROWPARSE);
         if (rc) {
@@ -325,6 +324,10 @@ TRACED_FUNCTION_WRAPPER(_view_request, LCBTRACE_OP_REQUEST_ENCODING, Bucket)
 
         vres->rows = PyList_New(0);
         vres->base.format = PYCBC_FMT_JSON;
+        PYCBC_REF_CONTEXT(context);
+        PYCBC_REF_CONTEXT(context);
+        PYCBC_INCREF(self);
+        PYCBC_INCREF(mres);
 
         PYCBC_TRACECMD_SCOPED_GENERIC(rc,
                                       view,

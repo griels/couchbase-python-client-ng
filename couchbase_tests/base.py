@@ -44,6 +44,15 @@ import time
 from basictracer import BasicTracer, SpanRecorder
 import couchbase_core._libcouchbase
 import traceback
+from hanging_threads import start_monitoring
+monitoring_thread = start_monitoring()
+from twisted.internet.base import DelayedCall
+from pycallgraph import PyCallGraph
+from pycallgraph.output import GraphvizOutput
+import pycallgraph
+
+#pycallgraph.PyCallGraph()
+DelayedCall.debug=True
 
 from typing import *
 from couchbase_v2.bucket import Bucket
