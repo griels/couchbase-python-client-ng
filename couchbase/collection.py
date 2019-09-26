@@ -255,6 +255,9 @@ class CBCollection(CoreClient):
         super(CBCollection, self).__init__(*final_args, **kwargs)
         self._init(name, parent)
 
+    def _wrap_dsop(self, sdres, has_value=False, **kwargs):
+        return getattr(super(Collection,self)._wrap_dsop(sdres, has_value),'value')
+
     def _init(self,
               name,  # type: Optional[str]
               scope  # type: Scope
