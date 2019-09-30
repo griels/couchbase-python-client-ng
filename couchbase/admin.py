@@ -1,5 +1,6 @@
-from couchbase.options import OptionBlock
+from couchbase.options import OptionBlock, Duration
 from couchbase_core.admin import Admin
+from typing import *
 
 
 class InsertCollectionOptions(OptionBlock):
@@ -68,23 +69,6 @@ class CollectionManager(object):
                                  content_type='application/x-www-form-urlencoded',
                                  content=form)
 
-"""
-Interface IViewIndexManager {
-
-    DesignDocument GetDesignDocument(string designDocName, DesignDocumentNamespace namespace, GetDesignDocumentOptions options);
-
-Iterable<DesignDocument> GetAllDesignDocuments(DesignDocumentNamespace namespace, GetAllDesignDocumentsOptions options);
-
-void UpsertDesignDocument(DesignDocument indexData, DesignDocumentNamespace namespace, UpsertDesignDocumentOptions options);
-
-void DropDesignDocument(string designDocName, DesignDocumentNamespace namespace, DropDesignDocumentOptions options);
-
-
-void PublishDesignDocument(string designDocName, PublishDesignDocumentOptions options);
-
-}
-"""
-
 
 class ViewIndexManager(object):
     def get_design_document(self,  # type: ViewIndexManager
@@ -116,19 +100,19 @@ class ViewIndexManager(object):
             }
         }
         """
-        """
-    GetAllDesignDocuments
-    Fetches all design documents from the server.
-    ]
-    When processing the server response, the client must strip the “_design/” prefix from the document ID (as well as the “_dev” prefix if present). For example, a doc.meta.id value of “_design/foo” must be parsed as “foo”, and “_design/dev_bar” must be parsed as “bar”.
-    Signature
-    """
+
     def get_all_design_documents(self,  # type: ViewIndexManager
                                  namespace,  # type: DesignDocumentNamespace
                                  *options,
                                  **kwargs):
         # type: (...)->Iterable[DesignDocument]
-        """Parameters
+        """
+        GetAllDesignDocuments
+        Fetches all design documents from the server.
+        ]
+        When processing the server response, the client must strip the “_design/” prefix from the document ID (as well as the “_dev” prefix if present). For example, a doc.meta.id value of “_design/foo” must be parsed as “foo”, and “_design/dev_bar” must be parsed as “bar”.
+        Signature
+        Parameters
         Required:
         namespace (enum) - indicates whether the user wants to get production documents (PRODUCTION) or development documents (DEVELOPMENT).
         Optional:
@@ -166,18 +150,18 @@ class ViewIndexManager(object):
         ]
         }
         """
-    """
-        UpsertDesignDocument
-    Updates, or inserts, a design document.
-        Signature
-    """
+
     def upsert_design_document(self,  # type: ViewIndexManager
-                             designDocData,  # type: DesignDocument
-                             namespace,  # type: DesignDocumentNamespace
-                             *options,
-                             **kwargs):
+                               designDocData,  # type: DesignDocument
+                               namespace,  # type: DesignDocumentNamespace
+                               *options,
+                               **kwargs):
         # type: (...)->None
-        """Parameters
+        """
+        UpsertDesignDocument
+        Updates, or inserts, a design document.
+        Signature
+        Parameters
         Required:
         designDocData: DesignDocument - the data to use to create the design document
         namespace (enum) - indicates whether the user wants to upsert the document to the production namespace (PRODUCTION) or development namespace (DEVELOPMENT).
@@ -192,11 +176,12 @@ class ViewIndexManager(object):
         PUT http://localhost:8092/<bucketname>/_design/<ddocname>
                                                DropDesignDocument
         """
+
     def drop_design_document(self,  # type: ViewIndexManager
-                           designDocName,  # type: str
-                           namespace,  # type: DesignDocumentNamespace
-                           *options,
-                           **kwargs):
+                             designDocName,  # type: str
+                             namespace,  # type: DesignDocumentNamespace
+                             *options,
+                             **kwargs):
         # type: (...)->None
         """
         Removes a design document.
@@ -228,150 +213,195 @@ class ViewIndexManager(object):
         InvalidArgumentsException
         Any exceptions raised by the underlying platform
         """
-"""
-Query Index Manager
-The Query Index Manager interface contains the means for managing indexes used for queries.
 
 
-public interface IQueryIndexManger{
+class IQueryIndex(OptionBlock):
+    pass
 
-    Iterable<IQueryIndex> GetAllIndexes(string bucketName, GetAllQueryIndexOptions options);
 
-void CreateIndex(string bucketName, string indexName, []string fields, CreateQueryIndexOptions options);
+class GetAllQueryIndexOptions(OptionBlock):
+    pass
 
-void CreatePrimaryIndex(string bucketName, CreatePrimaryQueryIndexOptions options);
 
-void DropIndex(string bucketName, string indexName, DropQueryIndexOptions options);
+class CreateQueryIndexOptions(OptionBlock):
+    pass
 
-void DropPrimaryIndex(string bucketName, DropPrimaryQueryIndexOptions options);
 
-void WatchIndexes(string bucketName, []string indexNames, timeout duration, WatchQueryIndexOptions options);
+class CreatePrimaryQueryIndexOptions(OptionBlock):
+    pass
 
-void BuildDeferredIndexes(string bucketName, BuildQueryIndexOptions options);
-}
 
-Methods
-The following methods must be implemented:
+class DropQueryIndexOptions(OptionBlock):
+    pass
 
-GetAllIndexes
-Fetches all indexes from the server.
-Signature
-Iterable<IQueryIndex> GetAllIndexes(string bucketName, [options])
-Parameters
-Required:
-BucketName: string - the name of the bucket.
-Optional:
-Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
-N1QL
-SELECT idx.* FROM system:indexes AS idx
-WHERE keyspace_id = "bucketName"
-ORDER BY is_primary DESC, name ASC
-Returns
-An array of IQueryIndex.
-Throws
-InvalidArgumentsException
-Any exceptions raised by the underlying platform
-CreateIndex
-Creates a new index.
-Signature
-void CreateIndex(string bucketName, string indexName, []string fields,  [options])
-Parameters
-Required:
-BucketName: string - the name of the bucket.
-IndexName: string - the name of the index.
-fields: []string - the fields to create the index over.
-Optional:
-IgnoreIfExists (bool) - Don’t error/throw if the index already exists.
-NumReplicas (int) - The number of replicas that this index should have. Uses the WITH keyword and num_replica.
-CREATE INDEX indexName ON bucketName WITH { "num_replica": 2 }
-https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createindex.html
-Deferred (bool) - Whether the index should be created as a deferred index.
-Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
-Returns
-Throws
-IndexAlreadyExistsException
-InvalidArgumentsException
-Any exceptions raised by the underlying platform
-CreatePrimaryIndex
-Creates a new primary index.
-Signature
-void CreatePrimaryIndex(string bucketName, [options])
-Parameters
-Required:
-BucketName: string - name of the bucket.
-Optional:
-IndexName: string - name of the index.
-IgnoreIfExists (bool) - Don’t error/throw if the index already exists.
-NumReplicas (int) - The number of replicas that this index should have. Uses the WITH keyword and num_replica.
-CREATE INDEX indexName ON bucketName WITH { "num_replica": 2 }
-https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createindex.html
-Deferred (bool) - Whether the index should be created as a deferred index.
-Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
-Returns
-Throws
-QueryIndexAlreadyExistsException
-InvalidArgumentsException
-Any exceptions raised by the underlying platform
-DropIndex
-Drops an index.
-Signature
-void DropIndex(string bucketName, string indexName, [options])
-Parameters
-Required:
-BucketName: string - name of the bucket.
-IndexName: string - name of the index.
-Optional:
-IgnoreIfNotExists (bool) - Don’t error/throw if the index does not exist.
-Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
-Returns
-Throws
-QueryIndexNotFoundException
-InvalidArgumentsException
-Any exceptions raised by the underlying platform
-DropPrimaryIndex
-Drops a primary index.
-Signature
-void DropPrimaryIndex(string bucketName, [options])
-Parameters
-Required:
-BucketName: string - name of the bucket.
-Optional:
-IndexName: string - name of the index.
-IgnoreIfNotExists (bool) - Don’t error/throw if the index does not exist.
-Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
-Returns
-Throws
-QueryIndexNotFoundException
-InvalidArgumentsException
-Any exceptions raised by the underlying platform
-WatchIndexes
-Watch polls indexes until they are online.
-Signature
-void WatchIndexes(string bucketName, []string indexNames, timeout duration, [options])
-Parameters
-Required:
-BucketName: string - name of the bucket.
-IndexName: []string - name(s) of the index(es).
-Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
-Optional:
-WatchPrimary (bool) - whether or not to watch the primary index.
-Returns
-Throws
-QueryIndexNotFoundException
-InvalidArgumentsException
-Any exceptions raised by the underlying platform
-BuildDeferredIndexes
-Build Deferred builds all indexes which are currently in deferred state.
-Signature
-void BuildDeferredIndexes(string bucketName, [options])
-Parameters
-Required:
-BucketName: string - name of the bucket.
-Optional:
-Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
-Returns
-Throws
-Any exceptions raised by the underlying platform
-InvalidArgumentsException
 
-"""
+class DropPrimaryQueryIndexOptions(OptionBlock):
+    pass
+
+
+class WatchQueryIndexOptions(OptionBlock):
+    pass
+
+
+class BuildQueryIndexOptions(OptionBlock):
+    pass
+
+
+class QueryIndexManager(object):
+    def __init__(self):
+        """
+        Query Index Manager
+        The Query Index Manager interface contains the means for managing indexes used for queries.
+        """
+
+    def get_all_indexes(self,  # type: QueryIndexManager
+                        bucketName: str, options: GetAllQueryIndexOptions) -> Iterable[IQueryIndex]:
+        """
+        GetAllIndexes
+        Fetches all indexes from the server.
+        Signature
+        Iterable<IQueryIndex> GetAllIndexes(string bucketName, [options])
+        Parameters
+        Required:
+        BucketName: string - the name of the bucket.
+        Optional:
+        Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
+        N1QL
+        SELECT idx.* FROM system:indexes AS idx
+        WHERE keyspace_id = "bucketName"
+        ORDER BY is_primary DESC, name ASC
+        Returns
+        An array of IQueryIndex.
+        Throws
+        InvalidArgumentsException
+        Any exceptions raised by the underlying platform
+        """
+
+    def create_index(self,  # type: QueryIndexManager
+                     bucketName: str, indexName: str, fields: str, options: CreateQueryIndexOptions):
+        """
+        CreateIndex
+        Creates a new index.
+        Signature
+        void CreateIndex(string bucketName, string indexName, []string fields,  [options])
+        Parameters
+        Required:
+        BucketName: string - the name of the bucket.
+        IndexName: string - the name of the index.
+        fields: []string - the fields to create the index over.
+        Optional:
+        IgnoreIfExists (bool) - Don’t error/throw if the index already exists.
+        NumReplicas (int) - The number of replicas that this index should have. Uses the WITH keyword and num_replica.
+        CREATE INDEX indexName ON bucketName WITH { "num_replica": 2 }
+        https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createindex.html
+        Deferred (bool) - Whether the index should be created as a deferred index.
+        Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
+        Returns
+        Throws
+        IndexAlreadyExistsException
+        InvalidArgumentsException
+        Any exceptions raised by the underlying platform"""
+
+    def create_primary_index(self,  # type: QueryIndexManager
+                             bucketName: str, options: CreatePrimaryQueryIndexOptions):
+        """
+        CreatePrimaryIndex
+        Creates a new primary index.
+        Signature
+        void CreatePrimaryIndex(string bucketName, [options])
+        Parameters
+        Required:
+        BucketName: string - name of the bucket.
+        Optional:
+        IndexName: string - name of the index.
+        IgnoreIfExists (bool) - Don’t error/throw if the index already exists.
+        NumReplicas (int) - The number of replicas that this index should have. Uses the WITH keyword and num_replica.
+        CREATE INDEX indexName ON bucketName WITH { "num_replica": 2 }
+        https://docs.couchbase.com/server/current/n1ql/n1ql-language-reference/createindex.html
+        Deferred (bool) - Whether the index should be created as a deferred index.
+        Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
+        Returns
+        Throws
+        QueryIndexAlreadyExistsException
+        InvalidArgumentsException
+        Any exceptions raised by the underlying platform
+        """
+
+    def drop_index(self,  # type: QueryIndexManager
+                   bucketName: str, indexName: str, options: DropQueryIndexOptions):
+        """
+        DropIndex
+        Drops an index.
+        Signature
+        void DropIndex(string bucketName, string indexName, [options])
+        Parameters
+        Required:
+        BucketName: string - name of the bucket.
+        IndexName: string - name of the index.
+        Optional:
+        IgnoreIfNotExists (bool) - Don’t error/throw if the index does not exist.
+        Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
+        Returns
+        Throws
+        QueryIndexNotFoundException
+        InvalidArgumentsException
+        Any exceptions raised by the underlying platform"""
+
+    def drop_primary_index(self,  # type: QueryIndexManager
+                           bucketName: str, options: DropPrimaryQueryIndexOptions):
+        """
+        DropPrimaryIndex
+        Drops a primary index.
+        Signature
+        void DropPrimaryIndex(string bucketName, [options])
+        Parameters
+        Required:
+        BucketName: string - name of the bucket.
+        Optional:
+        IndexName: string - name of the index.
+        IgnoreIfNotExists (bool) - Don’t error/throw if the index does not exist.
+        Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
+        Returns
+        Throws
+        QueryIndexNotFoundException
+        InvalidArgumentsException
+        Any exceptions raised by the underlying platform
+        """
+
+    def watch_indexes(self,  # type: QueryIndexManager
+                      bucketName: str, indexNames: str, duration: Duration, options: WatchQueryIndexOptions):
+        """WatchIndexes
+        Watch polls indexes until they are online.
+        Signature
+        void WatchIndexes(string bucketName, []string indexNames, timeout duration, [options])
+        Parameters
+        Required:
+        BucketName: string - name of the bucket.
+        IndexName: []string - name(s) of the index(es).
+        Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
+        Optional:
+        WatchPrimary (bool) - whether or not to watch the primary index.
+        Returns
+        Throws
+        QueryIndexNotFoundException
+        InvalidArgumentsException
+        Any exceptions raised by the underlying platform
+        """
+
+    def build_deferred_indexes(self,  # type: QueryIndexManager
+                               bucketName: str, options: BuildQueryIndexOptions):
+        """BuildDeferredIndexes
+        Build Deferred builds all indexes which are currently in deferred state.
+        Signature
+        void BuildDeferredIndexes(string bucketName, [options])
+        Parameters
+        Required:
+        BucketName: string - name of the bucket.
+        Optional:
+        Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
+        Returns
+        Throws
+        Any exceptions raised by the underlying platform
+        InvalidArgumentsException
+
+        """
