@@ -157,8 +157,8 @@ class BucketManager(GenericManager):
         :rtype: Iterable[IBucketSettings]
         """
         return list(
-            map(BucketSettings,
-                self._admin_bucket.http_request(path='/pools/default/buckets', method='GET')))
+            map(lambda x: BucketSettings(**x),
+                self._admin_bucket.http_request(path='/pools/default/buckets', method='GET').value))
 
     def flush_bucket(self,  # type: BucketManager
                      bucket_name,  # type: str

@@ -18,7 +18,10 @@ class BucketManagementTests(CollectionTestCase):
         #    raise SkipTest('PYCBC_TEST_ADMIN must be set in the environment')
 
     def test_bucket_create(self):
-        self.bm.create_bucket(CreateBucketSettings(name="fred", bucket_type="couchbase", ram_quota_mb=100))
+        try:
+            self.bm.create_bucket(CreateBucketSettings(name="fred", bucket_type="couchbase", ram_quota_mb=100))
+        finally:
+            self.bm.drop_bucket('fred')
 
     def test_bucket_list(self):
         buckets_to_add = {'fred': {}, 'jane': {}, 'sally': {}}
