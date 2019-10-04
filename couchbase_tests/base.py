@@ -757,7 +757,7 @@ class ClusterTestCase(ConnectionTestCase):
         connstr_abstract.bucket = None
         connstr_abstract.set_option('enable_collections', 'true')
         self.cluster = self.cluster_factory(connstr_abstract, ClusterOptions(
-            ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password)))
+            ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password)))  # type: Cluster
         self.admin = self.make_admin_connection()
         self.bucket = self.cluster.bucket(bucket_name, **connargs)
         self.bucket_name = bucket_name
