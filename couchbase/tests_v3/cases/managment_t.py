@@ -1,6 +1,7 @@
 import os
 from unittest import SkipTest
 
+from couchbase import CBCollection
 from couchbase.exceptions import CouchbaseError
 from couchbase_core.connstr import ConnectionString
 from couchbase.management.buckets import CreateBucketSettings, BucketSettings
@@ -49,26 +50,30 @@ class BucketManagementTests(CollectionTestCase):
         # Need to explicitly enable admin tests..
         # Create the bucket
         self.bm.create_bucket(CreateBucketSettings(name='dummy',
-                                                   ram_quota_mb=100))  # , bucket_password='letmein')
+                                                   ram_quota_mb=100, bucket_password='letmein'))
         self.bm._admin_bucket.wait_ready('dummy', timeout=15.0)
 
         # All should be OK, ensure we can connect:
         connstr = ConnectionString.parse(
             self.make_connargs()['connection_string'])
 
-        connstr.bucket = 'dummy'
+        dummy_bucket = 'dummy'
+        #connstr.bucket = 'dummy'
         connstr = connstr.encode()
-        self.factory(connstr, password='letmein')
+        #self.factory=CBCollection
+        args=self.make_connargs()
+        args.pop('connection_string',None)
+        args['bucket']=dummy_bucket
+        self.factory(connstr, **args)#, password='letmein')
         # OK, it exists
         self.assertRaises(CouchbaseError, self.factory, connstr)
 
         # Change the password
 
-        self.bm.update_bucket('dummy',
-                              BucketSettings(),
-                              bucket_password='')
-        self.factory(connstr)  # No password
-
+        self.bm.update_bucket(
+                              BucketSettings(name=dummy_bucket, max_ttl=5))
+        #self.factory(connstr)  # No password
+        self.bm.get_bucket('dummy')
         # Remove the bucket
         self.bm.drop_bucket('dummy')
         self.assertRaises(CouchbaseError, self.factory, connstr)

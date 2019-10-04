@@ -85,12 +85,14 @@ class BucketManager(GenericManager):
         if ram_quota:
             params['ramQuotaMB'] = ram_quota
         else:
-            params['ramQuotaMB'] = current['quota']['ram'] / 1024 / 1024
+            params['ramQuotaMB'] = int(current['quota']['rawRAM'] / 1024 / 1024)
 
         if flush_enabled is not None:
             params['flushEnabled'] = int(flush_enabled)
 
-        params['proxyPort'] = current['proxyPort']
+        proxy_port=current.get('proxyPort')
+        if proxy_port:
+            params['proxyPort'] = proxy_port
         return self._admin_bucket.http_request(path='/pools/default/buckets/' + name,
                                  method='POST',
                                  content_type='application/x-www-form-urlencoded',
@@ -109,7 +111,7 @@ class BucketManager(GenericManager):
         :raises: BucketDoesNotExistException
         """
         current = self._admin_bucket.bucket_info(settings.name)
-        self._admin_bucket.bucket_update(settings.name, current, replicas=settings.replica_indexes,
+        self.bucket_update(settings.name, current, replicas=settings.replica_indexes,
                                          ram_quota=settings.ram_quota_mb, flush_enabled=settings.flush_enabled)
 
     def drop_bucket(self,  # type: BucketManager
@@ -142,7 +144,7 @@ class BucketManager(GenericManager):
         :raises: BucketNotFoundException
         :raises: InvalidArgumentsException
         """
-        return BucketSettings(**self._admin_bucket.bucket_info(bucket_name))
+        return BucketSettings(**self._admin_bucket.bucket_info(bucket_name).value)
 
     def get_all_buckets(self,  # type: BucketManager
                         *options  # type: GetAllBucketOptions
@@ -332,7 +334,7 @@ class ICreateBucketSettings(IBucketSettings):
 
 class CreateBucketSettings(ICreateBucketSettings, BucketSettings):
     @overload
-    def __init__(self, name=None, flush_enabled=None, ram_quota_mb=None, num_replicas=None, replica_indexes=None, bucket_type=None, ejection_method=None, max_ttl=None, compression_mode=None, conflict_resolution_type=None):
+    def __init__(self, name=None, flush_enabled=None, ram_quota_mb=None, num_replicas=None, replica_indexes=None, bucket_type=None, ejection_method=None, max_ttl=None, compression_mode=None, conflict_resolution_type=None, bucket_password=None):
         pass
 
     def __init__(self, **kwargs):
