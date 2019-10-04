@@ -1,5 +1,6 @@
 from typing import *
 
+from .management.users import UserManager
 from .management.buckets import BucketManager
 from couchbase.management.admin import Admin
 from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics, IDiagnosticsResult
@@ -272,8 +273,8 @@ class Cluster(object):
         return DiagnosticsResult(final_results)
 
     def users(self):
-        # type: (...)->IUserManager
-        raise NotImplementedError("To be implemented in SDK3 full release")
+        # type: (...)->UserManager
+        return UserManager(self.clusterbucket)
 
     def indexes(self):
         # type: (...)->IIndexManager
