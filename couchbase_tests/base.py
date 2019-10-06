@@ -50,6 +50,8 @@ if os.environ.get("PYCBC_TRACE_GC") in ['FULL', 'STATS_LEAK_ONLY']:
 
 from utilspie.collectionsutils import frozendict
 from couchbase.management.collections import ICollectionSpec
+from couchbase.bucket import Bucket as V3Bucket
+
 
 loglevel=os.environ.get("PYCBC_DEBUG_LOG_LEVEL")
 if loglevel:
@@ -695,9 +697,11 @@ class TracedCase(ConnectionTestCaseBase):
             except:
                 pass
 
+
 ConnectionTestCase = ConnectionTestCaseBase
 if os.environ.get("PYCBC_TRACE_ALL") and couchbase_core._libcouchbase.PYCBC_TRACING:
     ConnectionTestCase = TracedCase
+
 
 class RealServerTestCase(ConnectionTestCase):
     def setUp(self, **kwargs):
@@ -726,31 +730,22 @@ class MockTestCase(ConnectionTestCase):
         return self.mock_info
 
 
-class DDocTestCase(ConnectionTestCase):
-    pass
-
-
-class ViewTestCase(ConnectionTestCase):
-    pass
-
-
 class SkipUnsupported(SkipTest):
     def __init__(self,
                  cause
                  ):
-        super(SkipUnsupported,self).__init__(traceback.format_exc())
+        super(SkipUnsupported, self).__init__(traceback.format_exc())
 
-from couchbase.bucket import Bucket as V3Bucket
 
 class ClusterTestCase(ConnectionTestCase):
     def __init__(self, *args, **kwargs):
         super(ClusterTestCase, self).__init__(*args, **kwargs)
         self.cluster_factory = getattr(self, 'cluster_factory', Cluster.connect)
-        self.validator=ClusterTestCase.ItemValidator(self)
+        self.validator = ClusterTestCase.ItemValidator(self)
 
     class ItemValidator(object):
         def __init__(self, parent):
-            self._parent=parent
+            self._parent = parent
 
         def assertDsValue(self, expected, item):
             self._parent.assertEquals(expected, item)
@@ -760,10 +755,13 @@ class ClusterTestCase(ConnectionTestCase):
 
         def assertCas(self, item):
             pass
+
     def assertValue(self, expected, result):
-        self.assertEqual(expected,result.content)
+        self.assertEqual(expected, result.content)
+
     def assertDsValue(self, expected, item):
         self.validator.assertDsValue(expected, item)
+
     def assertSuccess(self, item):
         self.validator.assertSuccess(item)
 
@@ -780,10 +778,9 @@ class ClusterTestCase(ConnectionTestCase):
         connstr_abstract.set_option('enable_collections', 'true')
         self.cluster = self.cluster_factory(connstr_abstract, ClusterOptions(
             ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password)))  # type: Cluster
-        self.admin = self.make_admin_connection()
+        # self.admin = self.cluster.admin#self.make_admin_connection()
         self.bucket = self.cluster.bucket(bucket_name, **connargs)
         self.bucket_name = bucket_name
-
 
 
 ParamClusterTestCase = parameterized_class(('cluster_factory',), [(Cluster,), (Cluster.connect,)])(ClusterTestCase)
@@ -792,14 +789,16 @@ ParamClusterTestCase = parameterized_class(('cluster_factory',), [(Cluster,), (C
 class CollectionTestCase(ClusterTestCase):
     coll = None  # type: CBCollection
     initialised = defaultdict(lambda: {})
+
     def __init__(self, *args, **kwargs):
-        super(CollectionTestCase,self).__init__(*args,**kwargs)
+        super(CollectionTestCase, self).__init__(*args, **kwargs)
+
     def setUp(self, mock_collections=None, real_collections=None):
         mock_collections = mock_collections or {None: {None: "coll"}}
         real_collections = real_collections or {"bedrock": {"flintstones": 'coll'}}
         # prepare:
         # 1) Connect to a Cluster
-        super(CollectionTestCase,self).setUp()
+        super(CollectionTestCase, self).setUp()
         cm = self.bucket.collections()
         my_collections = mock_collections if self.is_mock else real_collections
         for scope_name, collections in my_collections.items():
@@ -811,14 +810,14 @@ class CollectionTestCase(ClusterTestCase):
                 coll = scope.collection(collection_name) if collection_name else scope.default_collection()
                 setattr(self, dest, coll)
 
-        self.cb=self.coll
+        self.cb = self.coll
 
     @staticmethod
     def _upsert_collection(cm, collection_name, scope_name):
         if not collection_name in CollectionTestCase.initialised[scope_name].keys():
             try:
-                cm.create_collection(ICollectionSpec(collection_name,scope_name))
-                CollectionTestCase.initialised[scope_name][collection_name]=None
+                cm.create_collection(ICollectionSpec(collection_name, scope_name))
+                CollectionTestCase.initialised[scope_name][collection_name] = None
             except:
                 pass
 
@@ -829,3 +828,11 @@ class CollectionTestCase(ClusterTestCase):
                 cm.create_scope(scope_name)
         except:
             pass
+
+
+class DDocTestCase(ConnectionTestCase):
+    pass
+
+
+class ViewTestCase(ClusterTestCase):
+    pass

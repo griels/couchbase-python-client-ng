@@ -28,9 +28,72 @@ class BucketManager(GenericManager):
         :raises: BucketAlreadyExistsException (http 400 and content contains "Bucket with given name already exists")
         :raises: InvalidArgumentsException
         """
-        self._admin_bucket.bucket_create(settings.name, settings.bucket_type, replicas=settings.replica_indexes,
+        self._admin_bucket.bucket_create(settings.name, bucket_type=settings.bucket_type, replicas=settings.replica_indexes,
                                          ram_quota=settings.ram_quota_mb, flush_enabled=settings.flush_enabled)
+    def bucket_update(self, name, current, bucket_password=None, replicas=None,
+                      ram_quota=None, flush_enabled=None):
+        """
+        Update an existing bucket's settings.
 
+        :param string name: The name of the bucket to update
+        :param dict current: Current state of the bucket.
+            This can be retrieve from :meth:`bucket_info`
+        :param str bucket_password: Change the bucket's password
+        :param int replicas: The number of replicas for the bucket
+        :param int ram_quota: The memory available to the bucket
+            on each node.
+        :param bool flush_enabled: Whether the flush API should be allowed
+            from normal clients
+        :return: A :class:`~.HttpResult` object
+        :raise: :exc:`~.HTTPError` if the request could not be
+            completed
+
+
+        .. note::
+
+            The default value for all options in this method is
+            ``None``. If a value is set to something else, it will
+            modify the setting.
+
+
+        Change the bucket password::
+
+            adm.bucket_update('a_bucket', adm.bucket_info('a_bucket'),
+                              bucket_password='n3wpassw0rd')
+
+        Enable the flush API::
+
+            adm.bucket_update('a_bucket', adm.bucket_info('a_bucket'),
+                              flush_enabled=True)
+        """
+        params = {}
+        current = current.value
+
+        # Merge params
+        params['authType'] = current['authType']
+        if 'saslPassword' in current:
+            params['saslPassword'] = current['saslPassword']
+
+        if bucket_password is not None:
+            params['authType'] = 'sasl'
+            params['saslPassword'] = bucket_password
+
+        params['replicaNumber'] = (
+            replicas if replicas is not None else current['replicaNumber'])
+
+        if ram_quota:
+            params['ramQuotaMB'] = ram_quota
+        else:
+            params['ramQuotaMB'] = current['quota']['ram'] / 1024 / 1024
+
+        if flush_enabled is not None:
+            params['flushEnabled'] = int(flush_enabled)
+
+        params['proxyPort'] = current['proxyPort']
+        return self._admin_bucket.http_request(path='/pools/default/buckets/' + name,
+                                 method='POST',
+                                 content_type='application/x-www-form-urlencoded',
+                                 content=mk_formstr(params))
     def update_bucket(self,  # type: BucketManager
                       settings,  # type: IBucketSettings
                       *options  # type: UpdateBucketOptions
@@ -49,7 +112,7 @@ class BucketManager(GenericManager):
 
     def drop_bucket(self,  # type: BucketManager
                     bucket_name,  # type: str
-                    options  # type: DropBucketOptions
+                    *options  # type: DropBucketOptions
                     ):
         # type: (...)->None
         """
@@ -181,7 +244,7 @@ class IBucketSettings(object):
 
 class BucketSettings(IBucketSettings, dict):
     @overload
-    def __init__(self, name=None, flush_enabled=None, ram_quota_ok=None, num_replicas=None, replica_indexes=None, bucket_type=None, ejection_method=None, max_ttl=None, compression_mode=None):
+    def __init__(self, name=None, flush_enabled=None, ram_quota_mb=None, num_replicas=None, replica_indexes=None, bucket_type=None, ejection_method=None, max_ttl=None, compression_mode=None):
         pass
 
     def __init__(self, **raw_info):
@@ -189,8 +252,9 @@ class BucketSettings(IBucketSettings, dict):
         :param info:
         :param raw_info:
         """
-
-        dict.__init__(self, **raw_info)
+        dict.__init__(self, Admin.bc_defaults)
+        self['rawRAM']=raw_info.pop('ram_quota_mb',None)
+        self.update(**{k: v for k, v in raw_info.items() if (v is not None)})
 
     @property
     def name(self):
@@ -202,7 +266,7 @@ class BucketSettings(IBucketSettings, dict):
     def flush_enabled(self):
         # type: (...)->bool
         """Whether or not flush should be enabled on the bucket. Default to false."""
-        return self.get('flush_enabled')
+        return self.get('flush_enabled', False)
 
     @property
     def ram_quota_mb(self):
@@ -266,11 +330,11 @@ class ICreateBucketSettings(IBucketSettings):
 
 class CreateBucketSettings(ICreateBucketSettings, BucketSettings):
     @overload
-    def __init__(self, name=None, flush_enabled=None, ram_quota_ok=None, num_replicas=None, replica_indexes=None, bucket_type=None, ejection_method=None, max_ttl=None, compression_mode=None, conflict_resolution_type=None):
+    def __init__(self, name=None, flush_enabled=None, ram_quota_mb=None, num_replicas=None, replica_indexes=None, bucket_type=None, ejection_method=None, max_ttl=None, compression_mode=None, conflict_resolution_type=None):
         pass
 
     def __init__(self, **kwargs):
-        super(BucketSettings, self).__init__(**kwargs)
+        BucketSettings.__init__(self, **kwargs)
 
     @property
     def conflict_resolution_type(self):

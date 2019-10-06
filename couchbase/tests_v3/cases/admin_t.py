@@ -19,20 +19,21 @@ import sys
 import os
 
 from couchbase.management.admin import Admin
+from couchbase.management.buckets import CreateBucketSettings, BucketManager, BucketSettings
 from couchbase_core.result import HttpResult
 from couchbase_core.connstr import ConnectionString
 from couchbase.exceptions import (
     ArgumentError, AuthError, CouchbaseError,
     NetworkError, HTTPError)
-from couchbase_tests.base import CouchbaseTestCase, SkipTest, ClusterTestCase
+from couchbase_tests.base import CouchbaseTestCase, SkipTest, ClusterTestCase, ConnectionTestCase
 from couchbase_core.auth_domain import AuthDomain
 
 import time
 
-
-class AdminSimpleTest(ClusterTestCase):
+class AdminSimpleTest(ConnectionTestCase):
     def setUp(self):
         super(AdminSimpleTest, self).setUp()
+        self.admin=self.make_admin_connection()
 
     def tearDown(self):
         super(AdminSimpleTest, self).tearDown()
@@ -67,18 +68,6 @@ class AdminSimpleTest(ClusterTestCase):
                       port=self.cluster_info.port,
                       bucket='default')
         self.assertIsNotNone(admin)
-
-    def test_bucket_list(self):
-        buckets_to_add = {'fred': {}, 'jane': {}, 'sally': {}}
-        try:
-            for bucket, kwargs in buckets_to_add.items():
-                self.admin.bucket_create(bucket, bucket_password='password', **kwargs)
-
-            self.assertEqual(set(), {"fred", "jane", "sally"}.difference(
-                set(map(Admin.BucketInfo.name, self.admin.buckets_list()))))
-        finally:
-            for bucket, kwargs in buckets_to_add.items():
-                self.admin.bucket_remove(bucket)
 
     def test_bad_request(self):
         self.assertRaises(HTTPError, self.admin.http_request, '/badpath')
@@ -124,45 +113,6 @@ class AdminSimpleTest(ClusterTestCase):
         self.assertRaises(CouchbaseError, self.admin.unlock, "foo", 1)
         str(None)
 
-    def test_actions(self):
-        if not self.is_realserver:
-            raise SkipTest('Real server must be used for admin tests')
-
-        if not os.environ.get('PYCBC_TEST_ADMIN'):
-            raise SkipTest('PYCBC_TEST_ADMIN must be set in the environment')
-
-        try:
-            # Remove the bucket, if it exists
-            self.admin.bucket_remove('dummy')
-        except CouchbaseError:
-            pass
-
-        # Need to explicitly enable admin tests..
-        # Create the bucket
-        self.admin.bucket_create(name='dummy',
-                                 ram_quota=100, bucket_password='letmein')
-        self.admin.wait_ready('dummy', timeout=15.0)
-
-        # All should be OK, ensure we can connect:
-        connstr = ConnectionString.parse(
-            self.make_connargs()['connection_string'])
-
-        connstr.bucket = 'dummy'
-        connstr = connstr.encode()
-        self.factory(connstr, password='letmein')
-        # OK, it exists
-        self.assertRaises(CouchbaseError, self.factory, connstr)
-
-        # Change the password
-        self.admin.bucket_update('dummy',
-                                 self.admin.bucket_info('dummy'),
-                                 bucket_password='')
-        self.factory(connstr)  # No password
-
-        # Remove the bucket
-        self.admin.bucket_remove('dummy')
-        self.assertRaises(CouchbaseError, self.factory, connstr)
-
     def test_create_ephemeral_bucket_and_use(self):
         if self.is_realserver:
             raise SkipTest('Mock server must be used for admin tests')
@@ -177,7 +127,7 @@ class AdminSimpleTest(ClusterTestCase):
             bucket.upsert(key, doc)
             result = bucket.get(key)
             # original and result should be the same
-            self.assertValue(doc, result)
+            self.assertEqual(doc, result.value)
 
         # create ephemeral test bucket
         self.act_on_special_bucket(bucket_name, password,
