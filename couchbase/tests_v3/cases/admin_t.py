@@ -18,22 +18,21 @@
 import sys
 import os
 
-from couchbase_core.admin import Admin
-from couchbase_v2.bucket import Bucket
+from couchbase.management.admin import Admin
 from couchbase_core.result import HttpResult
 from couchbase_core.connstr import ConnectionString
 from couchbase.exceptions import (
     ArgumentError, AuthError, CouchbaseError,
     NetworkError, HTTPError)
-from couchbase_tests.base import CouchbaseTestCase, SkipTest
+from couchbase_tests.base import CouchbaseTestCase, SkipTest, ClusterTestCase
 from couchbase_core.auth_domain import AuthDomain
 
 import time
-import json
-class AdminSimpleTest(CouchbaseTestCase):
+
+
+class AdminSimpleTest(ClusterTestCase):
     def setUp(self):
         super(AdminSimpleTest, self).setUp()
-        self.admin = self.make_admin_connection()
 
     def tearDown(self):
         super(AdminSimpleTest, self).tearDown()
@@ -178,7 +177,7 @@ class AdminSimpleTest(CouchbaseTestCase):
             bucket.upsert(key, doc)
             result = bucket.get(key)
             # original and result should be the same
-            self.assertEqual(doc, result.value)
+            self.assertValue(doc, result)
 
         # create ephemeral test bucket
         self.act_on_special_bucket(bucket_name, password,
@@ -205,7 +204,7 @@ class AdminSimpleTest(CouchbaseTestCase):
             # connect to bucket to ensure we can use it
             conn_str = "http://{0}:{1}/{2}".format(self.cluster_info.host, self.cluster_info.port,
                                                    bucket_name) + "?ipv6="+self.cluster_info.ipv6
-            bucket = Bucket(connection_string=conn_str, password=password)
+            bucket = self.factory(connection_string=conn_str, password=password)
             self.assertIsNotNone(bucket)
 
             action(bucket)

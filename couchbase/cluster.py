@@ -1,8 +1,7 @@
 from typing import *
 
 from .management.buckets import BucketManager
-from couchbase_core.connstr import ConnectionString
-from couchbase_core.admin import Admin
+from couchbase.management.admin import Admin
 from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics, IDiagnosticsResult
 from couchbase.fulltext import ISearchResult, SearchResult, SearchOptions
 from couchbase_core.fulltext import Query, Facet

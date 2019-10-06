@@ -1,5 +1,4 @@
-from couchbase.options import Duration
-from couchbase_core.admin import Admin
+from couchbase.management.admin import Admin
 from ..options import OptionBlock
 from couchbase.management.generic import GenericManager
 from typing import *
@@ -178,6 +177,7 @@ class IBucketSettings(object):
     @abstractmethod
     def as_dict(self):
         pass
+
 
 class BucketSettings(IBucketSettings, dict):
     @overload

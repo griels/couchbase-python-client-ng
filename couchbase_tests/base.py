@@ -26,7 +26,6 @@ from testfixtures import LogCapture
 
 from testresources import ResourcedTestCase as ResourcedTestCaseReal, TestResourceManager
 
-import couchbase.management
 import couchbase_core
 from couchbase import Cluster, ClusterOptions
 from couchbase_core.cluster import ClassicAuthenticator
@@ -146,7 +145,7 @@ except ImportError:
     from fallback import configparser
 
 from couchbase_v2.exceptions import CouchbaseError
-from couchbase_core.admin import Admin
+from couchbase.management.admin import Admin
 from couchbase_core.mockserver import CouchbaseMock, BucketSpec, MockControlClient
 from couchbase_core.result import (
     ValueResult, OperationResult, ObserveInfo, Result)
@@ -747,28 +746,8 @@ class ClusterTestCase(ConnectionTestCase):
     def __init__(self, *args, **kwargs):
         super(ClusterTestCase, self).__init__(*args, **kwargs)
         self.cluster_factory = getattr(self, 'cluster_factory', Cluster.connect)
+        self.validator=ClusterTestCase.ItemValidator(self)
 
-    def setUp(self, **kwargs):
-        self.factory = V3Bucket
-        super(ClusterTestCase, self).setUp()
-        connargs = self.cluster_info.make_connargs()
-        connstr_abstract = ConnectionString.parse(connargs.pop('connection_string'))
-        bucket_name = connstr_abstract.bucket
-        connstr_abstract.bucket = None
-        connstr_abstract.set_option('enable_collections', 'true')
-        self.cluster = self.cluster_factory(connstr_abstract, ClusterOptions(
-            ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password)))  # type: Cluster
-        self.admin = self.make_admin_connection()
-        self.bucket = self.cluster.bucket(bucket_name, **connargs)
-        self.bucket_name = bucket_name
-
-
-ParamClusterTestCase = parameterized_class(('cluster_factory',), [(Cluster,), (Cluster.connect,)])(ClusterTestCase)
-
-
-class CollectionTestCase(ClusterTestCase):
-    coll = None  # type: CBCollection
-    initialised = defaultdict(lambda: {})
     class ItemValidator(object):
         def __init__(self, parent):
             self._parent=parent
@@ -790,8 +769,30 @@ class CollectionTestCase(ClusterTestCase):
 
     def assertCas(self, item):
         self.validator.assertCas(item)
+
+    def setUp(self, **kwargs):
+        self.factory = lambda *args, **kwargs: V3Bucket(**kwargs).default_collection()
+        super(ClusterTestCase, self).setUp()
+        connargs = self.cluster_info.make_connargs()
+        connstr_abstract = ConnectionString.parse(connargs.pop('connection_string'))
+        bucket_name = connstr_abstract.bucket
+        connstr_abstract.bucket = None
+        connstr_abstract.set_option('enable_collections', 'true')
+        self.cluster = self.cluster_factory(connstr_abstract, ClusterOptions(
+            ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password)))  # type: Cluster
+        self.admin = self.make_admin_connection()
+        self.bucket = self.cluster.bucket(bucket_name, **connargs)
+        self.bucket_name = bucket_name
+
+
+
+ParamClusterTestCase = parameterized_class(('cluster_factory',), [(Cluster,), (Cluster.connect,)])(ClusterTestCase)
+
+
+class CollectionTestCase(ClusterTestCase):
+    coll = None  # type: CBCollection
+    initialised = defaultdict(lambda: {})
     def __init__(self, *args, **kwargs):
-        self.validator=CollectionTestCase.ItemValidator(self)
         super(CollectionTestCase,self).__init__(*args,**kwargs)
     def setUp(self, mock_collections=None, real_collections=None):
         mock_collections = mock_collections or {None: {None: "coll"}}
