@@ -32,3 +32,14 @@ to perform common API requests.
 .. autoclass:: QueryIndexManager
     :members:
 
+.. module:: couchbase.management.search
+
+.. autoclass:: SearchIndexManager
+    :members:
+
+.. module:: couchbase.management.analytics
+
+.. autoclass:: AnalyticsIndexManager
+    :members:
+
+
