@@ -17,6 +17,8 @@ import multiprocessing
 from multiprocessing.pool import ThreadPool
 import couchbase.exceptions
 import couchbase_core._libcouchbase as _LCB
+from copy import copy, deepcopy
+
 
 T = TypeVar('T')
 
@@ -52,7 +54,17 @@ def options_to_func(orig,  # type: U
 
 
 class AnalyticsOptions(OptionBlock):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(AnalyticsOptions, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def of(cls, *args, **kwargs):
+        if len(args) and isinstance(args[0], cls):
+            result=deepcopy(args[0])  # type: AnalyticsOptions
+            result.update(**kwargs)
+        else:
+            result=AnalyticsOptions(*args, **kwargs)
+        return result
 
 
 class QueryOptions(OptionBlock, IQueryResult):
@@ -190,9 +202,25 @@ class Cluster(object):
         except Exception as e:
             raise failtype(str(e))
 
+    @overload
     def analytics_query(self,  # type: Cluster
                         statement,  # type: str,
-                        *options,  # type: AnalyticsOptions
+                        *args,  # type: Any
+                        **kwargs
+                        ):
+        pass
+
+
+    @overload
+    def analytics_query(self,  # type: Cluster
+                        statement,  # type: str,
+                        options  # type: AnalyticsOptions
+                        ):
+        pass
+
+    def analytics_query(self,  # type: Cluster
+                        statement,  # type: str,
+                        *args,  # type: Any
                         **kwargs
                         ):
         # type: (...)->IAnalyticsResult
@@ -204,8 +232,9 @@ class Cluster(object):
         Throws Any exceptions raised by the underlying platform - HTTP_TIMEOUT for example.
         :except ServiceNotFoundException - service does not exist or cannot be located.
         """
-
-        return AnalyticsResult(self._operate_on_cluster(CoreClient.analytics_query, AnalyticsException, statement, **forward_args(kwargs,*options)))
+        final_opts = AnalyticsOptions.of(*args, **kwargs)
+        return AnalyticsResult(
+            self._operate_on_cluster(CoreClient.analytics_query, AnalyticsException, statement, final_opts, **final_opts.kwargs))
 
     @overload
     def search_query(self,
