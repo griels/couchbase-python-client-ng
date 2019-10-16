@@ -33,7 +33,7 @@ class DesignDocumentNotFoundException(HTTPError):
 class ViewErrorHandler(ErrorMapper):
     @staticmethod
     def mapping():
-        # type (...)->Mapping[CBErrorType, Mapping[Any,CBErrorType]]
+        # type (...) -> Mapping[CBErrorType, Mapping[Any,CBErrorType]]
         return {HTTPError:
                     {'Unknown design': DesignDocumentNotFoundException}
                 }
