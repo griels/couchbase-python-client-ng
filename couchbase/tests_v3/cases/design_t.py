@@ -1,4 +1,3 @@
-from couchbase.management.queries import QueryIndex, IndexType
 from couchbase.management.views import DesignDocumentNamespace, DesignDocument
 from typing import *
 
