@@ -1,4 +1,4 @@
-from couchbase.management import CollectionManager
+from couchbase.management import CollectionManager, ViewIndexManager
 from couchbase.management.admin import Admin
 from couchbase_core.supportability import uncommitted
 from couchbase_core.client import Client as CoreClient
@@ -191,7 +191,7 @@ class Bucket(object):
 
     def views(self):
         # type: (...)->IViewManager
-        pass
+        return ViewIndexManager(self._admin, self._name)
 
     def ping(self,
              options=None  # type: PingOptions

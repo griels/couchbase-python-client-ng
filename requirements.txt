@@ -13,4 +13,4 @@ pip>=20.0; sys_platform == 'win32' and python_version <= '2.7'
 pyrsistent
 boltons
 wrapt
-
+attrs

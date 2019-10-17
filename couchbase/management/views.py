@@ -1,10 +1,33 @@
 from couchbase.management.generic import GenericManager
 from typing import *
 
+from couchbase_core import JSONMapping
+from couchbase_core.bucketmanager import BucketManager
+from couchbase_core.client import Client
+from mypy_extensions import TypedDict
 
+
+from attr import ib as attrib, s as attrs
+from attr.validators import instance_of as io, deep_mapping as dm
+
+from couchbase_core.exceptions import HTTPError, HttpErrorHandler
+
+
+class DesignDocumentNotFoundException(HTTPError):
+    pass
+
+class ViewErrorHandler(HttpErrorHandler):
+    @staticmethod
+    def mapping():
+        # type (...)->Mapping[str, CBErrorType]
+        return {'Unknown design': DesignDocumentNotFoundException}
+
+
+@ViewErrorHandler.wrap
 class ViewIndexManager(GenericManager):
-    def __init__(self, parent_cluster):
+    def __init__(self, parent_cluster, bucketname):
         super(ViewIndexManager, self).__init__(parent_cluster)
+        self._bucketname = bucketname
 
     def get_design_document(self,  # type: ViewIndexManager
                             design_doc_name,  # type: str
@@ -36,6 +59,10 @@ class ViewIndexManager(GenericManager):
             }
         }
         """
+        path = "{bucketname}/_design/{ddocname}".format(bucketname=self._bucketname,
+                                                        ddocname=design_doc_name)
+        response = self._admin_bucket.http_request(path).get('views', {})
+        return DesignDocument(response[0], {k: View(**v) for k, v in response.items()})
 
     def get_all_design_documents(self,  # type: ViewIndexManager
                                  namespace,  # type: DesignDocumentNamespace
@@ -151,29 +178,15 @@ class ViewIndexManager(GenericManager):
         """
 
 
-class DesignDocument(object):
-    def __init__(self):
-        """DesignDocument provides a means of mapping a design document into an object. It contains within it a map of View."""
-
-    @property
-    def name(self):
-        # type: (...)->str
-        pass
-
-    @property
-    def views(self):
-        # type: (...)->Mapping[str,View]
-        pass
-
-
+@attrs
 class View(object):
+    name = attrib(validator=io(str))  # type: str
+    reduce = attrib(validator=io(str))  # type: str
 
-    @property
-    def map(self):
-        # type: (...)->str
-        pass
 
-    @property
-    def reduce(self):
-        # type: (...)->str
-        pass
+@attrs
+class DesignDocument(object):
+    name = attrib(validator=io(str))  # type: str
+    views = attrib(validator=dm(io(str), io(View),None))  # type: Mapping[str,View]
+
+
