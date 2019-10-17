@@ -223,6 +223,21 @@ class JSONMapping(object):
 
         return property(fget, fset, fdel)
 
+    def defaults(self):
+        return {}
+
+    @classmethod
+    def of(cls, **kwargs):
+        return JSONMapping._of(cls, **kwargs)
+
+    @staticmethod
+    def _of(cls, **kwargs):
+        return cls.factory(kwargs)
+
+    @classmethod
+    def factory(cls):
+        pass
+
 
 class Mapped(with_metaclass(ABCMeta)):
     @classmethod
@@ -247,6 +262,7 @@ class Mapped(with_metaclass(ABCMeta)):
     @staticmethod
     def defaults():
         return None
+
 
 def recursive_reload(module, paths=None, mdict=None):
     """Recursively reload modules."""
