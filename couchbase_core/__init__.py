@@ -192,32 +192,48 @@ T = TypeVar('T', bound=str)
 
 class JSONMapping(object):
     def __init__(self,  # type: JSONMapping
-                 raw_json  # type: JSON
+                 raw_json  # type: Mapping[str, JSON]
                  ):
 
-        self._raw_json = dict(**self.defaults)
-        for k,v in raw_json.items():
+        self._raw_json = dict(**self.defaults())
+        for k, v in raw_json.items():
             try:
-                setattr(self,k, v)
+                setattr(self, k, v)
             except:
-                self._raw_json[k]=v
+                self._raw_json[k] = v
+
     @staticmethod
-    def _genprop(dictkey
+    def _genprop(dict_key
                  ):
         # type->
         def fget(self):
-            return self._raw_json.get(dictkey, None)
+            return self._raw_json.get(dict_key, None)
 
         def fset(self, val):
-            self._raw_json[dictkey] = val
+            self._raw_json[dict_key] = val
 
         def fdel(self):
             try:
-                del self._raw_json[dictkey]
+                del self._raw_json[dict_key]
             except KeyError:
                 pass
 
         return property(fget, fset, fdel)
+
+    def defaults(self):
+        return {}
+
+    @classmethod
+    def of(cls, **kwargs):
+        return JSONMapping._of(cls, **kwargs)
+
+    @staticmethod
+    def _of(cls, **kwargs):
+        return cls.factory(kwargs)
+
+    @classmethod
+    def factory(cls):
+        pass
 
 
 class Mapped(with_metaclass(ABCMeta)):
@@ -243,6 +259,7 @@ class Mapped(with_metaclass(ABCMeta)):
     @staticmethod
     def defaults():
         return None
+
 
 def recursive_reload(module, paths=None, mdict=None):
     """Recursively reload modules."""
