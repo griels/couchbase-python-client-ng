@@ -831,7 +831,7 @@ class CollectionTestCase(ClusterTestCase):
             pass
 
 
-class DDocTestCase(ConnectionTestCase):
+class DDocTestCase(ClusterTestCase):
     pass
 
 
