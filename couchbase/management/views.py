@@ -1,20 +1,33 @@
+from enum import Enum
+
+from couchbase.options import Duration
 from couchbase.management.generic import GenericManager
 from typing import *
 
-from couchbase_core import JSONMapping
+from couchbase_core import JSONMapping, JSON
 from couchbase_core.bucketmanager import BucketManager
 from couchbase_core.client import Client
 from mypy_extensions import TypedDict
 
 
-from attr import ib as attrib, s as attrs
+from attr import ib as attrib, s as attrs, asdict
 from attr.validators import instance_of as io, deep_mapping as dm
 
 from couchbase_core.exceptions import HTTPError, HttpErrorHandler
+import couchbase_core._libcouchbase as _LCB
+
+
+class DesignDocumentNamespace(Enum):
+    PRODUCTION = False
+    DEVELOPMENT = True
+
+    def prefix(self, ddocname):
+        return Client._mk_devmode(ddocname, self.value)
 
 
 class DesignDocumentNotFoundException(HTTPError):
     pass
+
 
 class ViewErrorHandler(HttpErrorHandler):
     @staticmethod
@@ -28,41 +41,53 @@ class ViewIndexManager(GenericManager):
     def __init__(self, parent_cluster, bucketname):
         super(ViewIndexManager, self).__init__(parent_cluster)
         self._bucketname = bucketname
+        self.bm=BucketManager(parent_cluster)
 
     def get_design_document(self,  # type: ViewIndexManager
                             design_doc_name,  # type: str
                             namespace,  # type: DesignDocumentNamespace
+                            timeout = None,  # type: Duration
                             **options):
         # type: (...)->DesignDocument
-        """Fetches a design document from the server if it exists.
-        Parameters
-        Required:
-        design_doc_name: string - the name of the design document.
-        namespace,  # type: enum - PRODUCTION if the user is requesting a document from the production namespace
-        or DEVELOPMENT if from the development namespace.
-        Optional:
-        Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
-        Returns
-        An instance of DesignDocument.
-        Throws
-        DesignDocumentNotFoundException (http 404)
-        Any exceptions raised by the underlying platform
-        Uri
-        GET http://localhost:8092/<bucketname>/_design/<ddocname>
-        Example response from server
-        {
-            "views":{
-                "test":{
-                    "map":"function (doc, meta) {\n\t\t\t\t\t\t  emit(meta.id, null);\n\t\t\t\t\t\t}",
-                    "reduce":"_count"
-                }
-            }
-        }
         """
-        path = "{bucketname}/_design/{ddocname}".format(bucketname=self._bucketname,
-                                                        ddocname=design_doc_name)
-        response = self._admin_bucket.http_request(path).get('views', {})
-        return DesignDocument(response[0], {k: View(**v) for k, v in response.items()})
+        Fetches a design document from the server if it exists.
+
+        :param str design_doc_name: the name of the design document.
+        :param DesignDocumentNamespace namespace: PRODUCTION if the user is requesting a document from the production namespace
+        or DEVELOPMENT if from the development namespace.
+        :param options:
+        :param Duration timeout: the time allowed for the operation to be terminated. This is controlled by the client.
+        :return: An instance of DesignDocument.
+
+        :raises: DesignDocumentNotFoundException
+        """
+        # Uri
+        # GET http://localhost:8092/<bucketname>/_design/<ddocname>
+        # Example response from server
+        # {
+        #     "views":{
+        #         "test":{
+        #             "map":"function (doc, meta) {\n\t\t\t\t\t\t  emit(meta.id, null);\n\t\t\t\t\t\t}",
+        #             "reduce":"_count"
+        #         }
+        #     }
+        # }
+        path = "{bucketname}/_design/{design_doc_name}".format(bucketname=self._bucketname,
+                                                               design_doc_name=namespace.prefix(design_doc_name))
+
+        response = self._admin_bucket._http_request(type=_LCB.LCB_HTTP_TYPE_VIEW,
+                                                    path=path,
+                                                    method=_LCB.LCB_HTTP_METHOD_GET,
+                                                    content_type="application/json")
+
+        return self._json_to_ddoc(response)
+
+    @staticmethod
+    def _json_to_ddoc(
+            response  # type: JSON
+    ):
+        # type: (...)->DesignDocument
+        return DesignDocument(response[0], {k: View(**v) for k, v in response['views'].items()})
 
     def get_all_design_documents(self,  # type: ViewIndexManager
                                  namespace,  # type: DesignDocumentNamespace
@@ -70,49 +95,53 @@ class ViewIndexManager(GenericManager):
                                  **kwargs):
         # type: (...)->Iterable[DesignDocument]
         """
-        GetAllDesignDocuments
         Fetches all design documents from the server.
-        ]
-        When processing the server response, the client must strip the "_design/" prefix from the document ID (as well as the "_dev" prefix if present). For example, a doc.meta.id value of "_design/foo" must be parsed as "foo", and "_design/dev_bar" must be parsed as "bar".
-        Signature
-        Parameters
-        Required:
-        namespace (enum) - indicates whether the user wants to get production documents (PRODUCTION) or development documents (DEVELOPMENT).
-        Optional:
-        Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
-        Returns
-        An iterable of DesignDocument.
-        Throws
-        Any exceptions raised by the underlying platform
-        Uri
-        GET http://localhost:8091/pools/default/buckets/<bucket-name>/ddocs
 
-        Example response from server
-        {
-        "rows":[
-            {
-                "doc":{
-                    "meta":{
-                        "id":"_design/dev_test",
-                        "rev":"1-ae5e21ec"
-                    },
-                    "json":{
-                        "views":{
-                            "test":{
-                                "map":"function (doc, meta) {\n\t\t\t\t\t\t  emit(meta.id, null);\n\t\t\t\t\t\t}",
-                                "reduce":"_count"
-                            }
-                        }
-                    }
-                },
-                "controllers":{
-                    "compact":"/pools/default/buckets/default/ddocs/_design%2Fdev_test/controller/compactView",
-                    "setUpdateMinChanges":"/pools/default/buckets/default/ddocs/_design%2Fdev_test/controller/setUpdateMinChanges"
-                }
-            }
-        ]
-        }
+        :param DesignDocumentNamespace namespace: indicates whether the user wants to get production documents (PRODUCTION) or development documents (DEVELOPMENT).
+        :param Duration timeout: the time allowed for the operation to be terminated. This is controlled by the client.
+        :return: An iterable of DesignDocument.
         """
+        # When processing the server response, the client must strip the "_design/" prefix from the document ID (as well as the "_dev" prefix if present). For example, a doc.meta.id value of "_design/foo" must be parsed as "foo", and "_design/dev_bar" must be parsed as "bar".
+        # Returns
+        #
+        # Throws
+        # Any exceptions raised by the underlying platform
+        # Uri
+        # GET http://localhost:8091/pools/default/buckets/<bucket-name>/ddocs
+        #
+        # Example response from server
+        # {
+        # "rows":[
+        #     {
+        #         "doc":{
+        #             "meta":{
+        #                 "id":"_design/dev_test",
+        #                 "rev":"1-ae5e21ec"
+        #             },
+        #             "json":{
+        #                 "views":{
+        #                     "test":{
+        #                         "map":"function (doc, meta) {\n\t\t\t\t\t\t  emit(meta.id, null);\n\t\t\t\t\t\t}",
+        #                         "reduce":"_count"
+        #                     }
+        #                 }
+        #             }
+        #         },
+        #         "controllers":{
+        #             "compact":"/pools/default/buckets/default/ddocs/_design%2Fdev_test/controller/compactView",
+        #             "setUpdateMinChanges":"/pools/default/buckets/default/ddocs/_design%2Fdev_test/controller/setUpdateMinChanges"
+        #         }
+        #     }
+        # ]
+        # }
+        path = "{bucketname}/ddocs".format(bucketname=self._bucketname)
+
+        response = self._admin_bucket._http_request(type=_LCB.LCB_HTTP_TYPE_VIEW,
+                                                    path=path,
+                                                    method=_LCB.LCB_HTTP_METHOD_GET,
+                                                    content_type="application/json")
+
+        return list(map(lambda x: self._json_to_ddoc(x['doc']['json']), response))
 
     def upsert_design_document(self,  # type: ViewIndexManager
                                design_doc_data,  # type: DesignDocument
@@ -121,24 +150,17 @@ class ViewIndexManager(GenericManager):
                                **kwargs):
         # type: (...)->None
         """
-        UpsertDesignDocument
         Updates, or inserts, a design document.
-        Signature
-        Parameters
-        Required:
-        designDocData: DesignDocument - the data to use to create the design document
-        namespace (enum) - indicates whether the user wants to upsert the document to the production namespace (PRODUCTION) or development namespace (DEVELOPMENT).
-        Optional:
 
-
-        Timeout or timeoutMillis (int/duration) - the time allowed for the operation to be terminated. This is controlled by the client.
-        Returns
-        Throws
-        Any exceptions raised by the underlying platform
-        Uri
-        PUT http://localhost:8092/<bucketname>/_design/<ddocname>
-                                               DropDesignDocument
+        :param DesignDocument design_doc_data: the data to use to create the design document
+        :param DesignDocumentNamespace namespace: indicates whether the user wants to upsert the document to the
+               production namespace (PRODUCTION) or development namespace (DEVELOPMENT).
+        :return:
         """
+        #Uri
+        #PUT http://localhost:8092/<bucketname>/_design/<ddocname>
+        #                                       DropDesignDocument
+        self.bm.design_create(namespace.prefix(design_doc_data.name), design_doc_data.asdict())
 
     def drop_design_document(self,  # type: ViewIndexManager
                              design_doc_name,  # type: str
@@ -177,16 +199,20 @@ class ViewIndexManager(GenericManager):
         Any exceptions raised by the underlying platform
         """
 
+@attrs
+class JSONAttrs(object):
+    def asdict(self):
+        return asdict(self)
+
 
 @attrs
-class View(object):
+class View(JSONAttrs):
     name = attrib(validator=io(str))  # type: str
     reduce = attrib(validator=io(str))  # type: str
 
 
 @attrs
-class DesignDocument(object):
+class DesignDocument(JSONAttrs):
     name = attrib(validator=io(str))  # type: str
-    views = attrib(validator=dm(io(str), io(View),None))  # type: Mapping[str,View]
-
+    views = attrib(validator=dm(io(str), io(View), None))  # type: Mapping[str,View]
 
