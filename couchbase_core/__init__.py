@@ -284,8 +284,9 @@ def recursive_reload(module, paths=None, mdict=None):
 
 from couchbase_core.fulltext import SearchRequest
 from couchbase_core.n1ql import N1QLRequest
+from couchbase_core.views.iterator import View
 
-IterableQuery = Union[SearchRequest, N1QLRequest]
+IterableQuery = Union[SearchRequest, N1QLRequest, View]
 
 
 class IterableWrapper(object):
@@ -294,7 +295,7 @@ class IterableWrapper(object):
                  ):
         self.done = False
         self.buffered_rows = []
-        self.parent = parent
+        self.parent = parent  # type: IterableQuery
 
     def metadata(self):
         # type: (...)->JSON

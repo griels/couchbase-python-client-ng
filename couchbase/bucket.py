@@ -172,10 +172,18 @@ class Bucket(object):
     def collections(self):
         return CollectionManager(self._admin, self._name)
 
+    @overload
     def view_query(self,
                    design_doc,  # type: str
                    view_name,  # type: str
-                   *view_options # type: ViewOptions
+                   ):
+        pass
+
+    def view_query(self,
+                   design_doc,  # type: str
+                   view_name,  # type: str
+                   *view_options, # type: ViewOptions
+                   **kwargs
                    ):
         # type: (...)->IViewResult
         """
@@ -186,8 +194,9 @@ class Bucket(object):
         :return: IViewResult containing the view results
         """
         cb = self._bucket  # type: CoreClient
-        res = cb.query(design_doc, view_name, **forward_args(None, *view_options))
-        return IViewResult(res)
+        #res = cb.view_query(design_doc, view_name, **forward_args(None, *view_options))
+        res = cb.view_query(design_doc, view_name, **kwargs)
+        return ViewResult(res)
 
     def views(self):
         # type: (...)->IViewManager
