@@ -24,6 +24,9 @@ try:
 except:
     import abstractmethod
 
+from copy import deepcopy
+
+
 # Pythons > (2.7||3.2) silence deprecation warnings by default.
 # Many folks are not happy about this, as it avoids letting them
 # know about potential upcoming breaking changes in their code.
@@ -195,7 +198,7 @@ class JSONMapping(object):
                  raw_json  # type: Mapping[str, JSON]
                  ):
 
-        self._raw_json = dict(**self.defaults())
+        self._raw_json = deepcopy(self.defaults())
         for k, v in raw_json.items():
             try:
                 setattr(self, k, v)
