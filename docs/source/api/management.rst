@@ -11,9 +11,9 @@ to perform common API requests.
     and its interface may change.
 
 
-.. module:: couchbase.management.users
+.. module:: couchbase.management.collections
 
-.. autoclass:: UserManager
+.. autoclass:: CollectionManager
     :members:
 
 .. module:: couchbase.management.buckets
@@ -21,29 +21,9 @@ to perform common API requests.
 .. autoclass:: BucketManager
     :members:
 
-.. module:: couchbase.management.queries
 
-.. autoclass:: QueryIndexManager
+.. module:: couchbase.management.users
+
+.. autoclass:: UserManager
     :members:
-
-.. module:: couchbase.management.search
-
-.. autoclass:: SearchIndexManager
-    :members:
-
-.. module:: couchbase.management.views
-
-.. autoclass:: ViewIndexManager
-    :members:
-
-.. module:: couchbase.management.collections
-
-.. autoclass:: CollectionManager
-    :members:
-
-.. module:: couchbase.management.analytics
-
-.. autoclass:: AnalyticsIndexManager
-    :members:
-
 
