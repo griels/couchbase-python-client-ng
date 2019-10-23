@@ -12,7 +12,6 @@ from typing import *
 from couchbase.options import OptionBlockTimeOutVerbatim
 from couchbase_core.exceptions import ErrorMapper, NotSupportedWrapper
 
-
 class GroupNotFoundException(HTTPError):
     """ The RBAC Group was not found"""
 
@@ -108,14 +107,14 @@ class UserManager(GenericManager):
 
     @overload
     def upsert_user(self,  # type: UserManager
-                    user,  # type: IUser
+                    user,  # type: User
                     domain=AuthDomain.Local,  # type: AuthDomain
                     timeout=None  # type: Duration
                     ):
         pass
 
     def upsert_user(self,  # type: UserManager
-                    user,  # type: IUser
+                    user,  # type: User
                     domain=AuthDomain.Local,  # type: AuthDomain
                     *options,  # type: UpsertUserOptions
                     **kwargs
@@ -123,7 +122,7 @@ class UserManager(GenericManager):
         """
         Creates or updates a user.
 
-        :param IUser user: the new version of the user.
+        :param User user: the new version of the user.
         :param AuthDomain domain: name of the user domain (local | external). Defaults to local.
         :param Duration timeout: the time allowed for the operation to be terminated. This is controlled by the client.
 
@@ -213,8 +212,8 @@ class UserManager(GenericManager):
         :raises: GroupNotFoundException
         :raises: InvalidArgumentsException
         """
-        return Group.from_json(self._admin_bucket.http_request("/settings/rbac/groups/{}".format(group_name),
-                                                               **forward_args(kwargs, *options)).value)
+        return JSONGroup.from_json(self._admin_bucket.http_request("/settings/rbac/groups/{}".format(group_name),
+                                                                   **forward_args(kwargs, *options)).value)
 
 
     @overload
@@ -239,7 +238,7 @@ class UserManager(GenericManager):
         groups = self._admin_bucket.http_request("/settings/rbac/groups/",
                                                  **forward_args(kwargs, *options))
         return list(
-            map(Group.from_json, groups.value))
+            map(JSONGroup.from_json, groups.value))
 
     @overload
     def upsert_group(self,  # type: UserManager
@@ -424,8 +423,12 @@ class RoleAndOrigins(object):
         # type: (...) -> List[Origin]
         pass
 
+try:
+    from typing_extensions import Protocol
+except:
+    pass
 
-class IUser(object):
+class User(Protocol):
     def __init__(self):
         """Mutable. Models the user properties that may be updated via this API.
         All properties of the User class MUST have associated setters except for "username" which is fixed when the object is created"""
@@ -475,7 +478,7 @@ class IUser(object):
         pass
 
 
-class User(IUser):
+class JSONUser(User):
     @overload
     def __init__(self, username=None, display_name=None, password=None, groups=None, roles=None):
         pass
@@ -533,7 +536,7 @@ class UserAndMetadata(object):
 
     @property
     def user(self):
-        # type: (...) -> IUser
+        # type: (...) -> User
         """- returns a new mutable User object each time this method is called.
         Modifying the fields of the returned User MUST have no effect on the UserAndMetadata object it came from."""
 
@@ -572,10 +575,10 @@ class RawUserAndMetadata(UserAndMetadata):
 
     @property
     def user(self):
-        # type: (...) -> IUser
+        # type: (...)->User
         """- returns a new mutable User object each time this method is called.
         Modifying the fields of the returned User MUST have no effect on the UserAndMetadata object it came from."""
-        return User(**self._raw_data.get('user'))
+        return JSONUser(**self._raw_data.get('user'))
 
     @property
     def effective_roles(self):
@@ -600,7 +603,7 @@ class RawUserAndMetadata(UserAndMetadata):
         return set(self._raw_data.get('external_groups'))
 
 
-class IGroup(object):
+class Group(Protocol):
     """Mutable. Defines a set of roles that may be inherited by users.
     All properties of the Group class MUST have associated setters except for "name" which is fixed when the object is created."""
 
@@ -635,8 +638,10 @@ class IGroup(object):
         pass
 
 
-class Group(JSONMapping, IGroup):
-    defaults = {'description': '', 'ldap_group_ref': ''}
+class JSONGroup(JSONMapping):
+
+    def defaults(self):
+        return {'description': '', 'ldap_group_ref': ''}
 
     @overload
     def __init__(self, name, description=None, roles=None, ldap_group_reference=None):
@@ -644,7 +649,7 @@ class Group(JSONMapping, IGroup):
 
     def __init__(self, name, **kwargs):
         self._name = name
-        super(Group,self).__init__(kwargs)
+        super(JSONGroup, self).__init__(kwargs)
 
     @property
     def name(self):
@@ -660,9 +665,11 @@ class Group(JSONMapping, IGroup):
         self._raw_json['roles']=list(map(Admin.role_to_str, value))
 
     @staticmethod
-    def from_json(kwargs):
+    def from_json(kwargs  # type: Dict[str,Any]
+                  ):
+        # type: (...)->JSONGroup
         name = kwargs.pop('id')
-        return Group(name, **kwargs)
+        return JSONGroup(name, **kwargs)
 
     def as_dict(self):
         result = {k: v for k, v in self._raw_json.items() if v}
