@@ -18,7 +18,7 @@ import copy
 
 from typing import *
 from couchbase_core.durability import Durability
-from couchbase_core._pyport import with_metaclass
+from couchbase_core._pyport import with_metaclass, xrange
 from couchbase_core.asynchronous.bucket import AsyncClientFactory
 
 
@@ -159,45 +159,9 @@ RawCollectionMethod = Union[RawCollectionMethodDefault, RawCollectionMethodInt]
 RawCollectionMethodSpecial = TypeVar('RawCollectionMethodSpecial', bound=RawCollectionMethod)
 
 
-def _get_result_and_inject(func  # type: RawCollectionMethod
-                           ):
-    # type: (...) ->RawCollectionMethod
-    result = _inject_scope_and_collection(get_result_wrapper(func))
-    result.__doc__ = func.__doc__
-    result.__name__ = func.__name__
-    return result
-
-
-def _mutate_result_and_inject(func  # type: RawCollectionMethod
-                              ):
-    # type: (...) ->RawCollectionMethod
-    result = _inject_scope_and_collection(_wrap_in_mutation_result(func))
-    result.__doc__ = func.__doc__
-    result.__name__ = func.__name__
-    return result
-
-
-def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
-                                 ):
-    # type: (...) -> RawCollectionMethod
-    return func
-
 
 CoreBucketOpRead = TypeVar("CoreBucketOpRead", Callable[[Any], SDK2Result], Callable[[Any], GetResult])
 
-
-def _wrap_get_result(func  # type: CoreBucketOpRead
-                     ):
-    # type: (...) -> CoreBucketOpRead
-    @wraps(func)
-    def wrapped(self,  # type: CBCollection
-                *args,  # type: Any
-                **kwargs  # type:  Any
-                ):
-        # type: (...)->Any
-        return _inject_scope_and_collection(get_result_wrapper(func))(self,*args,**kwargs)
-
-    return wrapped
 
 class BinaryCollection(object):
     pass
@@ -227,8 +191,53 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
     def wrapper(target, keys, *options, **kwargs
                 ):
         return get_multi_mutation_result(target, wrapped, keys, *options, **kwargs)
-    return _inject_scope_and_collection(wrapper)
+    return wrapper
 
+#! /usr/bin/python
+# -*- coding: utf8 -*-
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+# author: yanfeng.wyf
+# personal email: wuyanfeng@yeah.net
+
+
+import struct
+
+def get_uleb128p1(content):
+    n,value = get_uleb128(content)
+    value -= 1
+    return n,value
+
+def get_uleb128(content):
+    value = 0
+    for i in xrange(0,5):
+        tmp = ord(content[i]) & 0x7f
+        value = tmp << (i * 7) | value
+        if (ord(content[i]) & 0x80) != 0x80:
+            break
+    if i == 4 and (tmp & 0xf0) != 0:
+        print("parse a error uleb128 number")
+        return -1
+    return i+1, value
+
+def get_leb128(content):
+    value = 0
+
+    mask=[0xffffff80,0xffffc000,0xffe00000,0xf0000000,0]
+    bitmask=[0x40,0x40,0x40,0x40,0x8]
+    value = 0
+    for i in xrange(0,5):
+        tmp = ord(content[i]) & 0x7f
+        value = tmp << (i * 7) | value
+        if (ord(content[i]) & 0x80) != 0x80:
+            if bitmask[i] & tmp:
+                value |= mask[i]
+            break
+    if i == 4 and (tmp & 0xf0) != 0:
+        print("parse a error uleb128 number")
+        return -1
+    buffer = struct.pack("I",value)
+    value, =struct.unpack("i",buffer)
+    return i+1, value
 
 class CBCollection(CoreClient):
     def __init__(self,
@@ -270,7 +279,7 @@ class CBCollection(CoreClient):
         # type: (...)->CBCollection
         coll_args = copy.deepcopy(parent.bucket._bucket_args)
         coll_args.update(name=name, parent=parent)
-        result = parent.bucket._corebucket_class(parent.bucket._connstr, **parent.bucket._bucket_args)
+        result = parent.bucket._corebucket_class(parent.bucket._connstr, **coll_args)
         return result
 
     @property
@@ -318,7 +327,7 @@ class CBCollection(CoreClient):
 
         pass
 
-    @_get_result_and_inject
+    @get_result_wrapper
     def get(self,
             key,  # type: str
             *options,  # type: GetOptions
@@ -397,7 +406,7 @@ class CBCollection(CoreClient):
         # type: (...)->GetResult
         pass
 
-    @_get_result_and_inject
+    @get_result_wrapper
     def get_and_touch(self,
                       id,  # type: str
                       expiration,  # type: int
@@ -411,7 +420,7 @@ class CBCollection(CoreClient):
 
         return self._get_generic(id, kwargs, options)
 
-    @_get_result_and_inject
+    @get_result_wrapper
     def get_and_lock(self,
                      id,  # type: str
                      expiration,  # type: int
@@ -424,7 +433,7 @@ class CBCollection(CoreClient):
         _Base.lock(self, id, options)
         return ResultPrecursor(x, options)
 
-    @_get_result_and_inject
+    @get_result_wrapper
     def get_from_replica(self,
                          id,  # type: str
                          replica_index,  # type: int
@@ -435,7 +444,6 @@ class CBCollection(CoreClient):
         final_options = forward_args(kwargs, *options)
         return ResultPrecursor(super(CBCollection,self).rget(id, replica_index, **final_options), final_options)
 
-    @_inject_scope_and_collection
     def get_multi(self,  # type: CBCollection
                   keys,  # type: Iterable[str]
                   *options,  # type: GetOptions
@@ -464,7 +472,6 @@ class CBCollection(CoreClient):
                      ):
         pass
 
-    @_inject_scope_and_collection
     def upsert_multi(self,  # type: CBCollection
                      keys,  # type: Dict[str,JSON]
                      *options,  # type: GetOptions
@@ -513,7 +520,6 @@ class CBCollection(CoreClient):
         """
         return get_multi_mutation_result(self, CoreClient.upsert_multi, keys, *options, **kwargs)
 
-    @_inject_scope_and_collection
     def insert_multi(self,  # type: CBCollection
                      keys,  # type: Dict[str,JSON]
                      *options,  # type: GetOptions
@@ -531,7 +537,6 @@ class CBCollection(CoreClient):
         """
         return get_multi_mutation_result(self, CoreClient.insert_multi, keys, *options, **kwargs)
 
-    @_inject_scope_and_collection
     def remove_multi(self,  # type: CBCollection
                      keys,  # type: Iterable[str]
                      *options,  # type: GetOptions
@@ -724,7 +729,7 @@ class CBCollection(CoreClient):
         # type: (...) -> MutationResult
         pass
 
-    @_mutate_result_and_inject
+    @_wrap_in_mutation_result
     def upsert(self,
                id,  # type: str
                value,  # type: Any
@@ -835,7 +840,7 @@ class CBCollection(CoreClient):
                ):
         pass
 
-    @_mutate_result_and_inject
+    @_wrap_in_mutation_result
     def insert(self, key, value, *options, **kwargs):
         # type: (...)->ResultPrecursor
         """Store an object in Couchbase unless it already exists.
@@ -879,7 +884,7 @@ class CBCollection(CoreClient):
         # type: (...)->MutationResult
         pass
 
-    @_mutate_result_and_inject
+    @_wrap_in_mutation_result
     def replace(self,
                 id,  # type: str
                 value,  # type: Any
@@ -919,7 +924,7 @@ class CBCollection(CoreClient):
         # type: (...)->MutationResult
         pass
 
-    @_mutate_result_and_inject
+    @_wrap_in_mutation_result
     def remove(self,  # type: CBCollection
                id,  # type: str
                *options,  # type: RemoveOptions
@@ -968,7 +973,6 @@ class CBCollection(CoreClient):
         final_options = forward_args(kwargs, *options)
         return ResultPrecursor(self.bucket.remove(id, **final_options), final_options)
 
-    @_inject_scope_and_collection
     def lookup_in(self,
                   id,  # type: str
                   spec,  # type: SubdocSpec
@@ -1023,7 +1027,6 @@ class CBCollection(CoreClient):
         # type: (...)->MutationResult
         pass
 
-    @_inject_scope_and_collection
     def mutate_in(self,  # type: CBCollection
                   id,  # type: str
                   spec,  # type: MutateInSpec
@@ -1089,7 +1092,7 @@ class CBCollection(CoreClient):
                ):
         pass
 
-    @_mutate_result_and_inject
+    @_wrap_in_mutation_result
     def append(self,
                id,  # type: str
                value,  # type: str
@@ -1181,7 +1184,7 @@ class CBCollection(CoreClient):
         # type: (...)->ResultPrecursor
         pass
 
-    @_mutate_result_and_inject
+    @_wrap_in_mutation_result
     def increment(self,
                   id,  # type: str
                   delta,  # type: DeltaValue
@@ -1258,7 +1261,7 @@ class CBCollection(CoreClient):
         # type: (...)->ResultPrecursor
         pass
 
-    @_mutate_result_and_inject
+    @_wrap_in_mutation_result
     def decrement(self,
                   id,  # type: str
                   delta,  # type: DeltaValue
