@@ -259,7 +259,9 @@ class AsyncWrapper(type):
             def clear_callbacks(self, *args):
                 self._original.clear_callbacks(*args)
 
-        return Wrapped
+        freshbases=tuple(Wrapped,)+bases[1:]
+        return super(AsyncWrapper,cls).__new__(cls, name, freshbases, attrs)
+
 
 
 class SDK2GetResult(GetResult):
