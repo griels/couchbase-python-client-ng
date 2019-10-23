@@ -162,7 +162,8 @@ RawCollectionMethodSpecial = TypeVar('RawCollectionMethodSpecial', bound=RawColl
 def _get_result_and_inject(func  # type: RawCollectionMethod
                            ):
     # type: (...) ->RawCollectionMethod
-    result = _inject_scope_and_collection(get_result_wrapper(func))
+    func1 = get_result_wrapper(func)
+    result = func1
     result.__doc__ = func.__doc__
     result.__name__ = func.__name__
     return result
@@ -171,16 +172,11 @@ def _get_result_and_inject(func  # type: RawCollectionMethod
 def _mutate_result_and_inject(func  # type: RawCollectionMethod
                               ):
     # type: (...) ->RawCollectionMethod
-    result = _inject_scope_and_collection(_wrap_in_mutation_result(func))
+    func1 = _wrap_in_mutation_result(func)
+    result = func1
     result.__doc__ = func.__doc__
     result.__name__ = func.__name__
     return result
-
-
-def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
-                                 ):
-    # type: (...) -> RawCollectionMethod
-    return func
 
 
 CoreBucketOpRead = TypeVar("CoreBucketOpRead", Callable[[Any], SDK2Result], Callable[[Any], GetResult])
@@ -195,7 +191,8 @@ def _wrap_get_result(func  # type: CoreBucketOpRead
                 **kwargs  # type:  Any
                 ):
         # type: (...)->Any
-        return _inject_scope_and_collection(get_result_wrapper(func))(self,*args,**kwargs)
+        func1 = get_result_wrapper(func)
+        return func1(self, *args, **kwargs)
 
     return wrapped
 
@@ -227,7 +224,7 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
     def wrapper(target, keys, *options, **kwargs
                 ):
         return get_multi_mutation_result(target, wrapped, keys, *options, **kwargs)
-    return _inject_scope_and_collection(wrapper)
+    return wrapper
 
 
 class CBCollection(CoreClient):
@@ -435,7 +432,6 @@ class CBCollection(CoreClient):
         final_options = forward_args(kwargs, *options)
         return ResultPrecursor(super(CBCollection,self).rget(id, replica_index, **final_options), final_options)
 
-    @_inject_scope_and_collection
     def get_multi(self,  # type: CBCollection
                   keys,  # type: Iterable[str]
                   *options,  # type: GetOptions
@@ -464,7 +460,6 @@ class CBCollection(CoreClient):
                      ):
         pass
 
-    @_inject_scope_and_collection
     def upsert_multi(self,  # type: CBCollection
                      keys,  # type: Dict[str,JSON]
                      *options,  # type: GetOptions
@@ -513,7 +508,6 @@ class CBCollection(CoreClient):
         """
         return get_multi_mutation_result(self, CoreClient.upsert_multi, keys, *options, **kwargs)
 
-    @_inject_scope_and_collection
     def insert_multi(self,  # type: CBCollection
                      keys,  # type: Dict[str,JSON]
                      *options,  # type: GetOptions
@@ -531,7 +525,6 @@ class CBCollection(CoreClient):
         """
         return get_multi_mutation_result(self, CoreClient.insert_multi, keys, *options, **kwargs)
 
-    @_inject_scope_and_collection
     def remove_multi(self,  # type: CBCollection
                      keys,  # type: Iterable[str]
                      *options,  # type: GetOptions
@@ -968,7 +961,6 @@ class CBCollection(CoreClient):
         final_options = forward_args(kwargs, *options)
         return ResultPrecursor(self.bucket.remove(id, **final_options), final_options)
 
-    @_inject_scope_and_collection
     def lookup_in(self,
                   id,  # type: str
                   spec,  # type: SubdocSpec
@@ -1023,7 +1015,6 @@ class CBCollection(CoreClient):
         # type: (...)->MutationResult
         pass
 
-    @_inject_scope_and_collection
     def mutate_in(self,  # type: CBCollection
                   id,  # type: str
                   spec,  # type: MutateInSpec
