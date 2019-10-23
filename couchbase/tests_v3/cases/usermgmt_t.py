@@ -3,7 +3,7 @@ from unittest import SkipTest
 from functools import wraps
 
 from couchbase import ArgumentError
-from couchbase.management.users import User, Role, Group, RawRole, GroupNotFoundException, UserNotFoundException
+from couchbase.management.users import JSONUser, Role, JSONGroup, RawRole, GroupNotFoundException, UserNotFoundException
 from couchbase_core.auth_domain import AuthDomain
 from couchbase_tests.base import CollectionTestCase
 from couchbase_core.exceptions import  NotSupportedError
@@ -37,7 +37,7 @@ class UserManagementTests(CollectionTestCase):
         if not self.is_realserver:
             raise SkipTest('Real server must be used for admin tests')
         try:
-            self.um.upsert_group(Group('qweqwe'))
+            self.um.upsert_group(JSONGroup('qweqwe'))
         except:
             pass
 
@@ -56,7 +56,7 @@ class UserManagementTests(CollectionTestCase):
         roles = [Role.of(name='data_reader', bucket='default'), Role.of(name='data_writer', bucket='default')]
 
         # add user
-        self.um.upsert_user(User(username=userid, roles=roles, password=password), domain=AuthDomain.Local)
+        self.um.upsert_user(JSONUser(username=userid, roles=roles, password=password), domain=AuthDomain.Local)
 
         # get all users
         users = self.um.get_all_users(AuthDomain.Local)
@@ -78,7 +78,7 @@ class UserManagementTests(CollectionTestCase):
         # invalid domain generates argument error
         self.assertRaises(ArgumentError, self.um.get_all_users, None)
         self.assertRaises(ArgumentError, self.um.get_user, userid, None)
-        self.assertRaises(ArgumentError, self.um.upsert_user, User(username=userid, password=password, roles=roles),
+        self.assertRaises(ArgumentError, self.um.upsert_user, JSONUser(username=userid, password=password, roles=roles),
                           domain=None)
         self.assertRaises(ArgumentError, self.um.drop_user, userid, None)
 
@@ -89,14 +89,14 @@ class UserManagementTests(CollectionTestCase):
         roles = [Role.of(name='data_reader', bucket='default'), Role.of(name='data_writer', bucket='default')]
 
         # password with external generates argument error
-        self.assertRaises(ArgumentError, self.um.upsert_user, User(username=userid, password=password, roles=roles),
+        self.assertRaises(ArgumentError, self.um.upsert_user, JSONUser(username=userid, password=password, roles=roles),
                           domain=AuthDomain.External)
-        self.assertRaises(ArgumentError, self.um.upsert_user, User(username=userid, password=password, roles=None),
+        self.assertRaises(ArgumentError, self.um.upsert_user, JSONUser(username=userid, password=password, roles=None),
                           domain=AuthDomain.External)
-        self.assertRaises(ArgumentError, self.um.upsert_user, User(username=userid, password=password, roles=[]),
+        self.assertRaises(ArgumentError, self.um.upsert_user, JSONUser(username=userid, password=password, roles=[]),
                           domain=AuthDomain.External)
         try:
-            self.um.upsert_user(User(username=userid, password=None, roles=roles), domain=AuthDomain.External)
+            self.um.upsert_user(JSONUser(username=userid, password=None, roles=roles), domain=AuthDomain.External)
         except ArgumentError:
             raise
         except:
@@ -109,7 +109,7 @@ class UserManagementTests(CollectionTestCase):
         roles = [('data_reader', 'default'), ('data_writer', 'default')]
 
         # add user
-        self.um.upsert_user(User(username=userid, password=password, roles=roles), domain=AuthDomain.Local)
+        self.um.upsert_user(JSONUser(username=userid, password=password, roles=roles), domain=AuthDomain.Local)
 
         # get all users
         users = self.um.get_all_users(AuthDomain.Local)
@@ -124,7 +124,7 @@ class UserManagementTests(CollectionTestCase):
 
     @skip_if_no_groups
     def test_groups(self):
-        fresh_group = Group(name='qweqwe', roles={Role.of(name='admin')})
+        fresh_group = JSONGroup(name='qweqwe', roles={Role.of(name='admin')})
         if UG_WORKING:
             self.um.upsert_group(fresh_group)
         result = self.um.get_group('qweqwe')
@@ -136,7 +136,7 @@ class UserManagementTests(CollectionTestCase):
     @skip_if_no_groups
     def test_get_all_groups(self):
         all_groups = self.um.get_all_groups()
-        self.assertEqual([Group('qweqwe', roles={RawRole('admin', None)})], all_groups)
+        self.assertEqual([JSONGroup('qweqwe', roles={RawRole('admin', None)})], all_groups)
 
     @skip_if_no_groups
     def test_timeout(self):
