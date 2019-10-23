@@ -635,7 +635,8 @@ class IGroup(object):
 
 
 class Group(JSONMapping, IGroup):
-    defaults = {'description': '', 'ldap_group_ref': ''}
+    def defaults(self):
+        return {'description': '', 'ldap_group_ref': ''}
 
     @overload
     def __init__(self, name, description=None, roles=None, ldap_group_reference=None):

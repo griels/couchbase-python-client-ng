@@ -210,14 +210,14 @@ class JSONMapping(object):
                  ):
         # type->
         def fget(self):
-            return self._raw_json.get(dictkey, None)
+            return self._raw_json.get(dict_key, None)
 
         def fset(self, val):
-            self._raw_json[dictkey] = val
+            self._raw_json[dict_key] = val
 
         def fdel(self):
             try:
-                del self._raw_json[dictkey]
+                del self._raw_json[dict_key]
             except KeyError:
                 pass
 
