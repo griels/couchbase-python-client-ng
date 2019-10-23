@@ -18,7 +18,7 @@ import copy
 
 from typing import *
 from couchbase_core.durability import Durability
-from couchbase_core._pyport import with_metaclass
+from couchbase_core._pyport import with_metaclass, xrange
 from couchbase_core.asynchronous.bucket import AsyncClientFactory
 
 
@@ -283,7 +283,7 @@ class CBCollection(CoreClient):
     def true_collections(self):
         return self._self_true_collections
     def _wrap_dsop(self, sdres, has_value=False, **kwargs):
-        return getattr(super(Collection, self)._wrap_dsop(sdres, has_value), 'value')
+        return getattr(super(CBCollection, self)._wrap_dsop(sdres, has_value), 'value')
 
     @classmethod
     def cast(cls,
