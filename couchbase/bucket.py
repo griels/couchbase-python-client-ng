@@ -132,6 +132,7 @@ class Bucket(object):
     def scope(self,
               scope_name  # type: str
               ):
+        # type: (...)->Scope
         """
         Open the named scope.
 
@@ -139,7 +140,6 @@ class Bucket(object):
         :return: the named scope
         :rtype: Scope
         """
-        # type: (...)->Scope
         return Scope(self, scope_name)
 
     def default_collection(self,
