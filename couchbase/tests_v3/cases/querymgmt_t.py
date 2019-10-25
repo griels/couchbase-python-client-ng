@@ -30,7 +30,7 @@ class IndexManagementTestCase(CollectionTestCase):
 
     def setUp(self, *args, **kwargs):
         super(IndexManagementTestCase, self).setUp()
-        self.mgr = self.cluster.indexes()
+        self.mgr = self.cluster.query_indexes()
         self.skipIfMock()
         if self.bucket.__class__ is not Bucket:
             raise SkipTest('Only supported for synchronous bucket')
@@ -43,7 +43,7 @@ class IndexManagementTestCase(CollectionTestCase):
 
     def test_create_primary(self):
         cb = self.bucket.default_collection()
-        mgr = self.cluster.indexes()
+        mgr = self.cluster.query_indexes()
 
         bucket_name = self.cluster_info.bucket_name
         mgr.create_primary_index(bucket_name)
