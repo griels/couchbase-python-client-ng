@@ -971,7 +971,7 @@ class Client(_Base):
                      replicate_to=0,  # type: int
                      durability_level=Durability.NONE  # type: Durability
                      ):
-        # type: (...)->Result
+        # type: (...) -> Result
         """
         Write multiple items to the cluster. Multi version of :meth:`upsert`
 
@@ -1024,7 +1024,7 @@ class Client(_Base):
                      replicate_to=0,  # type: int
                      durability_level=Durability.NONE  # type: Durability
                      ):
-        # type: (...)->Result
+        # type: (...) -> Result
         """Add multiple keys. Multi variant of :meth:`insert`
 
         .. seealso:: :meth:`insert`, :meth:`upsert_multi`, :meth:`upsert`
@@ -1042,7 +1042,7 @@ class Client(_Base):
                       replicate_to=0,  # type: int
                       durability_level=Durability.NONE  # type: Durability
                       ):
-        # type: (...)->Result
+        # type: (...) -> Result
         """
         Replace multiple keys. Multi variant of :meth:`replace`
 
@@ -1079,7 +1079,7 @@ class Client(_Base):
                      persist_to=0,  # type: int
                      replicate_to=0  # type: int
                      ):
-        # type: (...)->Result
+        # type: (...) -> Result
         """Append to multiple keys. Multi variant of :meth:`append`.
 
         .. warning::
@@ -1102,7 +1102,7 @@ class Client(_Base):
                       persist_to=0,  # type: int
                       replicate_to=0  # type: int
                       ):
-        # type: (...)->Result
+        # type: (...) -> Result
         """Prepend to multiple keys. Multi variant of :meth:`prepend`
 
         .. seealso:: :meth:`prepend`, :meth:`upsert_multi`, :meth:`upsert`
@@ -1118,7 +1118,7 @@ class Client(_Base):
                   replica=False,  # type: bool
                   no_format=False  # type: bool
                   ):
-        # type: (...)->Result
+        # type: (...) -> Result
         """Get multiple keys. Multi variant of :meth:`get`
 
         :param keys: keys the keys to fetch
@@ -1142,7 +1142,7 @@ class Client(_Base):
                     ttl=0,  # type: int
                     durability_level=Durability.NONE  # type: Durability
                     ):
-        # type: (...)->Result
+        # type: (...) -> Result
         """Touch multiple keys. Multi variant of :meth:`touch`
 
         :param keys: the keys to touch
@@ -1172,7 +1172,7 @@ class Client(_Base):
                    keys,  # type: Iterable[str]
                    ttl=0  # type: int
                    ):
-        # type: (...)->Result
+        # type: (...) -> Result
         """Lock multiple keys. Multi variant of :meth:`lock`
 
         :param keys: the keys to lock
@@ -1188,7 +1188,7 @@ class Client(_Base):
     def unlock_multi(self,  # type: Client
                      keys  # type: Iterable[str]
                      ):
-        # type: (...)->Result
+        # type: (...) -> Result
 
         """Unlock multiple keys. Multi variant of :meth:`unlock`
 
