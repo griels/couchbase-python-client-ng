@@ -22,7 +22,7 @@ class IndexAlreadyExistsException(KeyExistsException):
 class QueryErrorMapper(ErrorMapper):
     @staticmethod
     def mapping():
-        # type: (...)->Dict[CBErrorType,Dict[Any, CBErrorType]]
+        # type: (...) -> Dict[CBErrorType,Dict[Any, CBErrorType]]
         return {KeyNotFoundException: {AnyPattern(): QueryIndexNotFoundException},
                 KeyExistsException: {AnyPattern(): IndexAlreadyExistsException}}
 
@@ -56,7 +56,7 @@ class QueryIndexManager(GenericManager):
                         *options,  # type: GetAllQueryIndexOptions
                         **kwargs
                         ):
-        # type: (...)->List[QueryIndex]
+        # type: (...) -> List[QueryIndex]
         """
         Fetches all indexes from the server.
 
