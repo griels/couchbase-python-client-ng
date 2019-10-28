@@ -20,6 +20,7 @@ import time
 
 import couchbase_core._libcouchbase as _LCB
 import couchbase_core.exceptions as exceptions
+from couchbase_core.client import Client
 from couchbase_core.exceptions import CouchbaseError, ArgumentError
 from couchbase_core.views.params import Query, SpatialQuery, STALE_OK
 from couchbase_core._pyport import single_dict_key
@@ -206,7 +207,7 @@ class BucketManager(object):
         .. seealso:: :meth:`design_create`, :meth:`design_list`
 
         """
-        name = self._mk_devmode(name, use_devmode)
+        name = Client._mk_devmode(name, use_devmode)
 
         existing = self._http_request(type=_LCB.LCB_HTTP_TYPE_VIEW,
                                       path="_design/" + name,
