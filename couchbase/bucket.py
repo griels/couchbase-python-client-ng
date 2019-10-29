@@ -200,7 +200,7 @@ class Bucket(object):
 
     def views(self):
         # type: (...)->IViewManager
-        return ViewIndexManager(self._admin, self._name)
+        return ViewIndexManager(self._bucket, self._name)
 
     def ping(self,
              options=None  # type: PingOptions

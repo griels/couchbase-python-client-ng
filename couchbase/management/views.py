@@ -74,22 +74,23 @@ class ViewIndexManager(GenericManager):
         #         }
         #     }
         # }
-        path = "{bucketname}/_design/{design_doc_name}".format(bucketname=self._bucketname,
-                                                               design_doc_name=namespace.prefix(design_doc_name))
+        #path = "{bucketname}/_design/{design_doc_name}".format(bucketname=self._bucketname,
+        #                                                       design_doc_name=namespace.prefix(design_doc_name))
 
-        response = self._admin_bucket._http_request(type=_LCB.LCB_HTTP_TYPE_VIEW,
-                                                    path=path,
-                                                    method=_LCB.LCB_HTTP_METHOD_GET,
-                                                    content_type="application/json")
+        #response = self._admin_bucket._http_request(type=_LCB.LCB_HTTP_TYPE_VIEW,
+        #                                            path=path,
+        #                                            method=_LCB.LCB_HTTP_METHOD_GET,
+        #                                            content_type="application/json")
 
-        return self._json_to_ddoc(response)
+        response = BucketManager(self._admin_bucket,self._bucketname).design_get(design_doc_name, namespace.value)
+        return self._json_to_ddoc(response.value)
 
     @staticmethod
     def _json_to_ddoc(
             response  # type: JSON
     ):
         # type: (...)->DesignDocument
-        return DesignDocument(response[0], {k: View(**v) for k, v in response['views'].items()})
+        return DesignDocument.from_json(**response)
 
     def get_all_design_documents(self,  # type: ViewIndexManager
                                  namespace,  # type: DesignDocumentNamespace
@@ -162,29 +163,30 @@ class ViewIndexManager(GenericManager):
         #Uri
         #PUT http://localhost:8092/<bucketname>/_design/<ddocname>
         #                                       DropDesignDocument
-        manager = self.bm
-        name = Client._mk_devmode(design_doc_data.name, True)
-        ddoc = design_doc_data.asdict()
-        fqname = "{bucketname}/_design/{ddocname}".format(bucketname=self._bucketname, ddocname=name)
-        if not isinstance(ddoc, dict):
-            ddoc = json.loads(ddoc)
-        ddoc = ddoc.copy()
-        ddoc['_id'] = fqname
-        ddoc = json.dumps(ddoc)
-        existing = None
-
-        if True:
-            try:
-                existing = manager.design_get(name, use_devmode=False)
-            except CouchbaseError:
-                pass
-        ret = manager._cb._http_request(
-            type=_LCB.LCB_HTTP_TYPE_VIEW, path=fqname,
-            method=_LCB.LCB_HTTP_METHOD_PUT, post_data=ddoc,
-            content_type="application/json")
-        manager._design_poll(name, 'add', existing, 0,
-                             use_devmode=True)
-        return ret
+        BucketManager(self._admin_bucket, bucket_name=self._bucketname).design_create(design_doc_data.name, design_doc_data.asdict(), namespace.value, True)
+        # manager = self.bm
+        # name = Client._mk_devmode(design_doc_data.name, True)
+        # ddoc = design_doc_data.asdict()
+        # fqname = "{bucketname}/_design/{ddocname}".format(bucketname=self._bucketname, ddocname=name)
+        # if not isinstance(ddoc, dict):
+        #     ddoc = json.loads(ddoc)
+        # ddoc = ddoc.copy()
+        # ddoc['_id'] = fqname
+        # ddoc = json.dumps(ddoc)
+        # existing = None
+        #
+        # if True:
+        #     try:
+        #         existing = manager.design_get(name, use_devmode=False)
+        #     except CouchbaseError:
+        #         pass
+        # ret = manager._cb._http_request(
+        #     type=_LCB.LCB_HTTP_TYPE_VIEW, path=fqname,
+        #     method=_LCB.LCB_HTTP_METHOD_PUT, post_data=ddoc,
+        #     content_type="application/json")
+        # manager._design_poll(name, 'add', existing, 0,
+        #                      use_devmode=True)
+        # return ret
 
     def drop_design_document(self,  # type: ViewIndexManager
                              design_doc_name,  # type: str
@@ -224,7 +226,7 @@ class ViewIndexManager(GenericManager):
         """
 
 @attrs
-class JSONAttrs(object):
+class JSONAttrs(Protocol):
     def asdict(self):
         return asdict(self)
 
@@ -236,7 +238,7 @@ class View(JSONAttrs):
 
 
 @attrs
-class DesignDocument(JSONAttrs, Protocol):
+class DesignDocument(JSONAttrs):
     name = attrib(validator=io(str))  # type: str
     views = attrib(validator=dm(io(str), io(View), None))  # type: Mapping[str,View]
     language = attrib(default="javascript", validator=io(str))  # type: str

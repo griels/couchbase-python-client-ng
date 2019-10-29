@@ -63,9 +63,8 @@ class DesignDocManagementTest(ClusterTestCase):
 
     def test_design_management(self):
         rv = self.mgr.upsert_design_document(DOCUMENT_FROM_JSON, DesignDocumentNamespace.DEVELOPMENT, syncwait=5)
-        self.assertTrue(rv.success)
 
-        rv = self.cb._view(DNAME, VNAME, use_devmode=True,
+        rv = self.bucket.view_query(DNAME, VNAME, use_devmode=True,
                            params = { 'limit':10 })
         print(rv)
         self.assertTrue(rv.success)
@@ -94,6 +93,6 @@ class DesignDocManagementTest(ClusterTestCase):
                                    syncwait=5)
 
         rv = self.mgr.get_design_document(DNAME, DesignDocumentNamespace.DEVELOPMENT)
-        self.assertTrue(rv.headers)
-        print(rv.headers)
-        self.assertTrue('X-Couchbase-Meta' in rv.headers)
+        self.assertTrue(rv.language)
+        print(rv.language)
+        #self.assertTrue('X-Couchbase-Meta' in rv.headers)
