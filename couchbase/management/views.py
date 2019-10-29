@@ -3,8 +3,7 @@ from enum import Enum
 
 from couchbase.options import Duration
 from couchbase.management.generic import GenericManager
-from typing import *
-
+from couchbase_core._pyport import *
 from couchbase_core import JSONMapping, JSON, _libcouchbase as _LCB
 from couchbase_core.bucketmanager import BucketManager
 from couchbase_core.client import Client
@@ -237,7 +236,7 @@ class View(JSONAttrs):
 
 
 @attrs
-class DesignDocument(JSONAttrs):
+class DesignDocument(JSONAttrs, Protocol):
     name = attrib(validator=io(str))  # type: str
     views = attrib(validator=dm(io(str), io(View), None))  # type: Mapping[str,View]
     language = attrib(default="javascript", validator=io(str))  # type: str
