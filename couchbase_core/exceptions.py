@@ -844,13 +844,13 @@ class AnyPattern(object):
 
 class DictMatcher(object):
     def __init__(self, **kwargs):
-        self._pattern=tuple(kwargs.items())
+        self._pattern = tuple(kwargs.items())
 
     def match(self, dict):
         for k, v in self._pattern:
             if not k in dict or not v.match(dict[k]):
-                return False
-        return True
+                    return False
+            return True
 
     def __hash__(self):
         return hash(self._pattern)

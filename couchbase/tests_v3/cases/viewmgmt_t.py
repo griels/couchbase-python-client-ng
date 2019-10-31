@@ -1,8 +1,8 @@
 from couchbase.management.queries import QueryIndex
-from couchbase.management.views import DesignDocumentNamespace, DesignDocument, DesignDocumentNotFoundException
+from couchbase.management.views import DesignDocumentNamespace, DesignDocument, DesignDocumentNotFoundException, View
 from typing import *
 
-0#
+#
 # Copyright 2013, Couchbase, Inc.
 # All Rights Reserved
 #
@@ -26,17 +26,23 @@ from couchbase.exceptions import HTTPError
 
 DNAME = "tmp"
 VNAME = "a_view"
+DOC_EMIT_NULL_NULL_ = "function(doc) { emit(null,null); }"
 
 DESIGN_JSON = {
     'language' : 'javascript',
     'views' : {
         VNAME : {
-            'map' : "function(doc) { emit(null,null); }"
+            'map' : DOC_EMIT_NULL_NULL_
         }
     }
 }
 
-DOCUMENT_FROM_JSON = DesignDocument.from_json(name=DNAME, **DESIGN_JSON)
+
+def gen_ddoc(dname=DNAME):
+    return DesignDocument(dname, {VNAME: View(VNAME, DOC_EMIT_NULL_NULL_)}, 'javascript')
+
+
+DOCUMENT_FROM_JSON = gen_ddoc()
 
 
 @attr('slow')
@@ -96,3 +102,16 @@ class DesignDocManagementTest(ClusterTestCase):
     def test_exceptions(self):
         self.assertRaises(DesignDocumentNotFoundException,self.mgr.drop_design_document, DNAME, DesignDocumentNamespace.DEVELOPMENT)
         self.mgr.upsert_design_document(DOCUMENT_FROM_JSON, DesignDocumentNamespace.DEVELOPMENT, syncwait=5)
+
+    def test_get_ddocs(self):
+        try:
+            for x in range(0,5):
+                self.mgr.upsert_design_document(gen_ddoc('DNAME_{}'.format(x)), DesignDocumentNamespace.DEVELOPMENT,
+                                                 syncwait=5)
+
+
+            rv = self.mgr.get_all_design_documents(DesignDocumentNamespace.DEVELOPMENT)
+        except:
+            for x in range(0,5):
+                self.mgr.drop_design_document('DNAME_{}'.format(x), DesignDocumentNamespace.DEVELOPMENT)
+            raise

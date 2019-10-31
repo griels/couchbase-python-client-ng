@@ -28,6 +28,7 @@ from couchbase_core._pyport import *
 from couchbase_core.bucketmanager import BucketManager
 from couchbase_core.client import Client
 from couchbase_core.exceptions import HTTPError, ErrorMapper, DictMatcher
+from couchbase_core._pyport import *
 
 
 class DesignDocumentNamespace(Enum):
@@ -46,9 +47,11 @@ class ViewErrorHandler(ErrorMapper):
     @staticmethod
     def mapping():
         # type (...) -> Mapping[CBErrorType, Mapping[Any,CBErrorType]]
-        return {HTTPError:
-                    {DictMatcher(error=re.compile('not_found')): DesignDocumentNotFoundException}
-                }
+        return \
+            {
+                HTTPError:
+                    {DictMatcher(error=re.compile('not_found')):DesignDocumentNotFoundException}
+            }
 
 
 @ViewErrorHandler.wrap
@@ -177,13 +180,28 @@ class ViewIndexManager(GenericManager):
 @attrs
 class JSONAttrs(Protocol):
     def asdict(self):
-        return asdict(self)
+        result={}
+        for k,v in asdict(self).items():
+            result[k]=self.process_dict_item(v)
+        return result
+
+    def process_dict_item(self, v):
+
+        if v:
+            if isinstance(v, dict):
+                return {subk: self.process_dict_item(subv) for subk, subv in v.items() if subv}
+            else:
+                return getattr(v, 'asdict', lambda: v)()
+
+    def toJSON(self):
+        return self.asdict()
 
 
 @attrs
 class View(JSONAttrs):
     name = attrib(validator=io(str))  # type: str
-    reduce = attrib(validator=io(str))  # type: str
+    map = attrib(validator=io(str))  # type: str
+    reduce = attrib(default=None)  # type: Optional[str]
 
 
 @attrs
