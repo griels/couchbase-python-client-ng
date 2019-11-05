@@ -27,7 +27,7 @@ from testfixtures import LogCapture
 from testresources import ResourcedTestCase as ResourcedTestCaseReal, TestResourceManager
 
 import couchbase_core
-from couchbase import Cluster, ClusterOptions
+from couchbase import Cluster, ClusterOptions, CBCollection
 from couchbase_core.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
 
