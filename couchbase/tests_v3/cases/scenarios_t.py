@@ -222,14 +222,20 @@ class Scenarios(CollectionTestCase):
                 print("Temporary replica failure, retrying with lower durability {}".format(newReplicateTo))
                 replicate_to = newReplicateTo
 
-    def test_scenario_c_server_side_durability(self):
+    def test_scenario_c_server_side_durability(self  # type: Scenarios
+                                               ):
         # Use a helper wrapper to retry our operation in the face of durability failures
         # remove is idempotent iff the app guarantees that the doc's id won't be reused (e.g. if it's a UUID).  This seems
         # a reasonable restriction.
-        for durability_type in Durability:
-            self.coll.upsert("id","fred",durability_level=Durability.NONE)
-            self.retry_idempotent_remove_server_side(
-                lambda: self.coll.remove("id", RemoveOptions().dur_server(durability_type)))
+        for durability_type in [Durability.MAJORITY_AND_PERSIST_ON_MASTER]:
+            for n in range(1,10):
+                self.coll.timeout=n
+                try:
+                    self.coll.upsert("id","fred",durability_level=Durability.MAJORITY_AND_PERSIST_ON_MASTER)
+                except:
+                    pass
+                self.retry_idempotent_remove_server_side(
+                    lambda: self.coll.remove("id", RemoveOptions().dur_server(durability_type)))
 
     def retry_idempotent_remove_server_side(self,  # type: Scenarios
                                             callback,  # type: Callable[[],Any]
@@ -248,7 +254,7 @@ class Scenarios(CollectionTestCase):
                 callback()
                 return
             except couchbase.exceptions.DurabilitySyncWriteAmbiguousException:
-                if self.coll.get("id").success():
+                if self.coll.get("id").success:
                     continue
                 logging.info("Our work here is done")
                 return
