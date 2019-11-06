@@ -1,5 +1,5 @@
 from couchbase.management.queries import QueryIndex
-from couchbase.management.views import DesignDocumentNamespace, DesignDocument
+from couchbase.management.views import DesignDocumentNamespace, DesignDocument, DesignDocumentNotFoundException
 from typing import *
 
 0#
@@ -68,37 +68,31 @@ class DesignDocManagementTest(ClusterTestCase):
                            limit=10)
         print(list(rv))
         self.assertTrue(rv.success)
-        self.mgr.drop_design_document(DNAME, DesignDocumentNamespace.DEVELOPMENT)
-        import time
-        time.sleep(1)
-        self.mgr.upsert_design_document(DOCUMENT_FROM_JSON, DesignDocumentNamespace.PRODUCTION, syncwait=5)
+        self.mgr.publish_design_document(DNAME, syncwait=5)
 
         rv = self.bucket.view_query(DNAME, VNAME,
                            limit=10)
         print(list(rv))
         self.assertTrue(rv.success)
 
-        def do_stuff():
-            next(iter(self.cb.view_query(
+        self.assertRaises(HTTPError, lambda: next(iter(self.cb.view_query(
             DNAME, VNAME,
-            use_devmode=True)))
-        self.assertRaises(HTTPError, do_stuff)
+            use_devmode=True))))
 
         self.mgr.drop_design_document(DNAME, DesignDocumentNamespace.PRODUCTION, syncwait=5)
 
-        def do_stuff_2():
-            next(iter(self.cb.view_query(
+        self.assertRaises(HTTPError, lambda: next(iter(self.cb.view_query(
             DNAME, VNAME,
-            use_devmode=False)))
-
-        self.assertRaises(HTTPError, do_stuff_2)
-
+            use_devmode=False))))
 
     def test_design_headers(self):
         rv = self.mgr.upsert_design_document(DOCUMENT_FROM_JSON, DesignDocumentNamespace.DEVELOPMENT,
-                                   syncwait=5)
+                                             syncwait=5)
 
         rv = self.mgr.get_design_document(DNAME, DesignDocumentNamespace.DEVELOPMENT)
         self.assertTrue(rv.language)
         print(rv.language)
-        #self.assertTrue('X-Couchbase-Meta' in rv.headers)
+
+    def test_exceptions(self):
+        self.assertRaises(DesignDocumentNotFoundException,self.mgr.drop_design_document, DNAME, DesignDocumentNamespace.DEVELOPMENT)
+        self.mgr.upsert_design_document(DOCUMENT_FROM_JSON, DesignDocumentNamespace.DEVELOPMENT, syncwait=5)

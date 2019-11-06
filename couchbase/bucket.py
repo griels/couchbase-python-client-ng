@@ -194,8 +194,7 @@ class Bucket(object):
         :return: IViewResult containing the view results
         """
         cb = self._bucket  # type: CoreClient
-        #res = cb.view_query(design_doc, view_name, **forward_args(None, *view_options))
-        res = cb.view_query(design_doc, view_name, **kwargs)
+        res = cb.view_query(design_doc, view_name, **forward_args(kwargs, *view_options))
         return ViewResult(res)
 
     def views(self):
