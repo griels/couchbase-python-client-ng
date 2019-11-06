@@ -234,7 +234,7 @@ class AsyncWrapper(type):
     def __new__(cls,  # type: Type
                 name,  # type: str
                 bases,  # type: T
-                attrs  # type: Mapping[str,Any]
+                attrs  # type: Dict[str,Any]
                 ):
         # type: (...) -> T[0]
 
@@ -259,7 +259,7 @@ class AsyncWrapper(type):
             def clear_callbacks(self, *args):
                 self._original.clear_callbacks(*args)
 
-        return Wrapped
+        return type(Wrapped).__new__(type(Wrapped), name, bases, attrs)
 
 
 class SDK2GetResult(GetResult):

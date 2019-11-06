@@ -180,7 +180,7 @@ class AsyncClientFactory(type):
                 res._set_single()
                 return res
 
-        return AsyncClient
+        return super(AsyncClientFactory,cls).__new__(cls, name, tuple([AsyncClient]+list(bases[1:])),attrs)
 
 
 class AsyncClient(with_metaclass(AsyncClientFactory, CoreClient)):
