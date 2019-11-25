@@ -9,6 +9,7 @@ from couchbase_core.n1ql import N1QLQuery, N1QLRequest
 from couchbase_core.views.iterator import View
 from .views.params import make_options_string, make_dvpath
 import couchbase_core._libcouchbase as _LCB
+from couchbase_core.user_constants import FMT_JSON, FMT_BYTES
 
 from couchbase_core import priv_constants as _P, fulltext as _FTS, _depr, subdocument as SD, exceptions
 import couchbase_core.analytics
