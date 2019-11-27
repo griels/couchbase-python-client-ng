@@ -18,7 +18,7 @@ import copy
 
 from typing import *
 from couchbase_core.durability import Durability
-from couchbase_core._pyport import with_metaclass
+from couchbase_core._pyport import with_metaclass, xrange
 from couchbase_core.asynchronous.bucket import AsyncClientFactory
 
 
@@ -193,6 +193,51 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
         return get_multi_mutation_result(target, wrapped, keys, *options, **kwargs)
     return wrapper
 
+#! /usr/bin/python
+# -*- coding: utf8 -*-
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+# author: yanfeng.wyf
+# personal email: wuyanfeng@yeah.net
+
+
+import struct
+
+def get_uleb128p1(content):
+    n,value = get_uleb128(content)
+    value -= 1
+    return n,value
+
+def get_uleb128(content):
+    value = 0
+    for i in xrange(0,5):
+        tmp = ord(content[i]) & 0x7f
+        value = tmp << (i * 7) | value
+        if (ord(content[i]) & 0x80) != 0x80:
+            break
+    if i == 4 and (tmp & 0xf0) != 0:
+        print("parse a error uleb128 number")
+        return -1
+    return i+1, value
+
+def get_leb128(content):
+    value = 0
+
+    mask=[0xffffff80,0xffffc000,0xffe00000,0xf0000000,0]
+    bitmask=[0x40,0x40,0x40,0x40,0x8]
+    value = 0
+    for i in xrange(0,5):
+        tmp = ord(content[i]) & 0x7f
+        value = tmp << (i * 7) | value
+        if (ord(content[i]) & 0x80) != 0x80:
+            if bitmask[i] & tmp:
+                value |= mask[i]
+            break
+    if i == 4 and (tmp & 0xf0) != 0:
+        print("parse a error uleb128 number")
+        return -1
+    buffer = struct.pack("I",value)
+    value, =struct.unpack("i",buffer)
+    return i+1, value
 
 class CBCollection(CoreClient):
     def __init__(self,
@@ -234,7 +279,7 @@ class CBCollection(CoreClient):
         # type: (...)->CBCollection
         coll_args = copy.deepcopy(parent.bucket._bucket_args)
         coll_args.update(name=name, parent=parent)
-        result = parent.bucket._corebucket_class(parent.bucket._connstr, **parent.bucket._bucket_args)
+        result = parent.bucket._corebucket_class(parent.bucket._connstr, **coll_args)
         return result
 
     @property
