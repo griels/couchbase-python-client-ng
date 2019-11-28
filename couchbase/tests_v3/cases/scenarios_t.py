@@ -122,7 +122,8 @@ class Scenarios(CollectionTestCase):
     @parameterized.expand(
         x for x in tuple(list(Durability._member_names_))
     )
-    def test_mutatein(self, dur_name):
+    def test_mutatein(self,  # type: Scenarios
+                      dur_name):
         durability=Durability[dur_name]
         count = 0
 
@@ -151,6 +152,9 @@ class Scenarios(CollectionTestCase):
                 raise
             else:
                 logging.error("Assuming failure is due to mock not supporting durability")
+        except couchbase.TimeoutError as e:
+            self.assertIn("Operational",e.message)
+            raise SkipTest("Raised {}, skipped pending further verification".format(e.message))
 
     def test_scenario_C_clientSideDurability(self):
         """
