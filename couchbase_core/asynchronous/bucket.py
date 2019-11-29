@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import functools
+
 
 import couchbase_core._bootstrap
 from couchbase_core._libcouchbase import (
@@ -27,8 +29,11 @@ from couchbase_core.exceptions import ArgumentError
 from couchbase_core._pyport import with_metaclass
 from couchbase_core.client import Client as CoreClient
 
+from collections import defaultdict
 
 class AsyncClientFactory(type):
+
+    metad={}
     def __new__(cls, name, bases, attrs):
         syncbase=bases[0]
         class AsyncClient(syncbase):
@@ -180,8 +185,13 @@ class AsyncClientFactory(type):
                 res._set_single()
                 return res
 
-        return AsyncClient
+        result=AsyncClientFactory.metad.get(bases,None)
 
+        if not result:
+            result=super(AsyncClientFactory,cls).__new__(cls, name, tuple(list(bases[1:])),attrs)
+            AsyncClientFactory.metad[bases]=result
+
+        return result
 
 class AsyncClient(with_metaclass(AsyncClientFactory, CoreClient)):
     def __init__(self, *args, **kwargs):
