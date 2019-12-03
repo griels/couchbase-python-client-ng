@@ -957,7 +957,7 @@ void pycbc_Tracer_set_child(pycbc_Tracer_t *pTracer, lcbtrace_TRACER *pTRACER);
     {                                                              \
         if (PYCBC_CHECK_CONTEXT(CONTEXT)) {                        \
             PYCBC_LOG_KEY(CMD, key)                                \
-            PYCBC_CMD_SET_TRACESPAN(TYPE, (CMD), (CONTEXT)->span); \
+            (void)PYCBC_CMD_SET_TRACESPAN(TYPE, (CMD), (CONTEXT)->span); \
         } else {                                                   \
             PYCBC_EXCEPTION_LOG_NOCLEAR;                           \
         }                                                          \
@@ -1227,6 +1227,7 @@ enum {
     PYCBC_HTTP_HVIEW = 1,
     PYCBC_HTTP_HRAW,
     PYCBC_HTTP_HN1QL,
+    PYCBC_HTTP_HANALYTICS,
     PYCBC_HTTP_HFTS,
     PYCBC_HTTP_HNONE
 };

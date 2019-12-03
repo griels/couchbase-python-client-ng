@@ -60,14 +60,26 @@ HttpResult_dealloc(pycbc_HttpResult *self)
 {
     if (self->u.htreq) {
         if (self->parent) {
-            if (self->htype == PYCBC_HTTP_HVIEW) {
-                lcb_view_cancel(self->parent->instance, self->u.vh);
-            } else if (self->htype == PYCBC_HTTP_HN1QL) {
+            switch (self->htype)
+            {
+                case PYCBC_HTTP_HVIEW:
+                    lcb_view_cancel(self->parent->instance, self->u.vh);
+                    break;
+                case PYCBC_HTTP_HN1QL:
+                PYCBC_DEBUG_LOG("Cancelling N1QL operation %S at %p", self, self->u.n1ql)
                 lcb_n1ql_cancel(self->parent->instance, self->u.n1ql);
-            } else if (self->htype == PYCBC_HTTP_HFTS) {
-                lcb_fts_cancel(self->parent->instance, self->u.fts);
-            } else {
-                lcb_http_cancel(self->parent->instance, self->u.htreq);
+                    break;
+                case PYCBC_HTTP_HFTS:
+                    lcb_fts_cancel(self->parent->instance, self->u.fts);
+                    break;
+                case PYCBC_HTTP_HRAW:
+                    lcb_http_cancel(self->parent->instance, self->u.htreq);
+                    break;
+                case PYCBC_HTTP_HANALYTICS:
+                    PYCBC_DEBUG_LOG("Would cancel analytics operation %S at %p", self, self->u.analytics)
+                    //lcb_analytics_cancel(self->parent->instance, self->u.analytics);
+                    break;
+
             }
         }
         self->u.htreq = NULL;
