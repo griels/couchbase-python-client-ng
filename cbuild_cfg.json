@@ -56,6 +56,14 @@
         "repo": "http://review.couchbase.org/libcouchbase.git",
         "tag": [">3.0.0-beta.1","master"]
       },
+      "patches" : {
+        "git": {
+          "repo": "http://review.couchbase.org/libcouchbase.git",
+          "tag": "master",
+          "type": "checkout",
+          "ref": "refs/changes/24/118824/1"
+        }
+      },
       "sources": [
         "src/lcb_v4_wrapper.h",
         "src/lcb_v4_wrapper.c"
