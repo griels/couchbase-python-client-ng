@@ -238,7 +238,7 @@ class Cluster(object):
         """
         final_opts = AnalyticsOptions.of(*args, **kwargs)
         return AnalyticsResult(
-            self._operate_on_cluster(CoreClient.analytics_query, AnalyticsException, statement, final_opts, **final_opts.kwargs))
+            self._operate_on_cluster(CoreClient.analytics_query, AnalyticsException, statement, final_opts, **final_opts))
 
     @overload
     def search_query(self,
