@@ -220,6 +220,9 @@ class CBASTestQueries(CBASTestQueriesBase):
 class DeferredAnalyticsTest(CBASTestQueriesBase):
     _responses = None
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     @property
     def _handles(self):
         if not DeferredAnalyticsTest._responses:
@@ -279,7 +282,7 @@ class DeferredAnalyticsTest(CBASTestQueriesBase):
             query.timeout = timeout
             return self.do_analytics_query(query)
 
-        self._check_finish_time_in_bounds(x, self.creator, 100)
+        self._check_finish_time_in_bounds(x, creator, 100)
 
     def test_correct_timeout_in_constructor(self):
         self.init_if_not_setup()
