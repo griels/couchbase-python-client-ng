@@ -20,7 +20,7 @@ import couchbase_core._libcouchbase as C
 from couchbase_core.exceptions import *
 
 
-class KeyValueException(CouchbaseError):
+class KeyValueException(CouchbaseKeyValueError):
     """
     A server error occurred while executing a K/V operation. Assumes that the service has returned a response.
     Message
@@ -271,62 +271,63 @@ _PYCBC_CRYPTO_ERR_MAP ={
     C.PYCBC_CRYPTO_PROVIDER_KEY_SIZE_EXCEPTION: couchbase_core.exceptions.CryptoProviderKeySizeException
 }
 
-
+# TODO: make types to match.  This is just to get it to compile and run...
 _LCB_ERRCAT_MAP = {
-    C.LCB_ERRTYPE_NETWORK:      couchbase_core.exceptions.CouchbaseNetworkError,
-    C.LCB_ERRTYPE_INPUT: couchbase_core.exceptions.CouchbaseInputError,
-    C.LCB_ERRTYPE_TRANSIENT: couchbase_core.exceptions.CouchbaseTransientError,
-    C.LCB_ERRTYPE_FATAL: couchbase_core.exceptions.CouchbaseFatalError,
-    C.LCB_ERRTYPE_DATAOP: couchbase_core.exceptions.CouchbaseDataError,
-    C.LCB_ERRTYPE_INTERNAL:     couchbase_core.exceptions.CouchbaseInternalError
+    C.LCB_ERROR_TYPE_BASE: couchbase_core.exceptions.CouchbaseBaseError,
+    C.LCB_ERROR_TYPE_SHARED: couchbase_core.exceptions.CouchbaseSharedError,
+    C.LCB_ERROR_TYPE_KEYVALUE: couchbase_core.exceptions.CouchbaseKeyValueError,
+    C.LCB_ERROR_TYPE_QUERY: couchbase_core.exceptions.CouchbaseQueryError,
+    C.LCB_ERROR_TYPE_ANALYTICS: couchbase_core.exceptions.CouchbaseAnalyticsError,
+    C.LCB_ERROR_TYPE_SEARCH: couchbase_core.exceptions.CouchbaseSearchError,
+    C.LCB_ERROR_TYPE_VIEW: couchbase_core.exceptions.CouchbaseViewError,
+    C.LCB_ERROR_TYPE_SDK: couchbase_core.exceptions.CouchbaseSDKError
 }
 
 _LCB_SYNCREP_MAP = {
-    C.LCB_DURABILITY_INVALID_LEVEL: DurabilityInvalidLevelException,
-    C.LCB_DURABILITY_IMPOSSIBLE: DurabilityImpossibleException,
-    C.LCB_DURABILITY_SYNC_WRITE_IN_PROGRESS: DurabilitySyncWriteInProgressException,
-    C.LCB_DURABILITY_SYNC_WRITE_AMBIGUOUS: DurabilitySyncWriteAmbiguousException
+    C.LCB_ERR_DURABILITY_LEVEL_NOT_AVAILABLE: DurabilityInvalidLevelException,
+    C.LCB_ERR_DURABILITY_IMPOSSIBLE: DurabilityImpossibleException,
+    C.LCB_ERR_DURABLE_WRITE_IN_PROGRESS: DurabilitySyncWriteInProgressException,
+    C.LCB_ERR_DURABILITY_AMBIGUOUS: DurabilitySyncWriteAmbiguousException
 }
 
 V3Mapping=dict(list({
-           C.LCB_AUTH_ERROR:       AuthenticationException,
-           C.LCB_DELTA_BADVAL: couchbase_core.exceptions.DeltaBadvalError,
-           C.LCB_E2BIG:            ValueTooBigException,
-           C.LCB_EBUSY: couchbase_core.exceptions.BusyError,
-           C.LCB_ENOMEM: couchbase_core.exceptions.NoMemoryError,
-           C.LCB_ETMPFAIL:         TempFailException,
-           C.LCB_KEY_EEXISTS:      KeyExistsException,
-           C.LCB_KEY_ENOENT:       KeyNotFoundException,
-           C.LCB_DLOPEN_FAILED: couchbase_core.exceptions.DlopenFailedError,
-           C.LCB_DLSYM_FAILED: couchbase_core.exceptions.DlsymFailedError,
-           C.LCB_NETWORK_ERROR:    couchbase_core.exceptions.NetworkError,
-           C.LCB_NOT_MY_VBUCKET:   couchbase_core.exceptions.NotMyVbucketError,
-           C.LCB_NOT_STORED:       couchbase_core.exceptions.NotStoredError,
-           C.LCB_NOT_SUPPORTED:    couchbase_core.exceptions.NotSupportedError,
-           C.LCB_UNKNOWN_HOST:     couchbase_core.exceptions.UnknownHostError,
-           C.LCB_PROTOCOL_ERROR:   couchbase_core.exceptions.ProtocolError,
-           C.LCB_ETIMEDOUT:        couchbase_core.exceptions.TimeoutError,
-           C.LCB_CONNECT_ERROR:    couchbase_core.exceptions.ConnectError,
-           C.LCB_BUCKET_ENOENT:    BucketMissingException,
-           C.LCB_EBADHANDLE:       couchbase_core.exceptions.BadHandleError,
-           C.LCB_INVALID_HOST_FORMAT: couchbase_core.exceptions.InvalidError,
-           C.LCB_INVALID_CHAR:     couchbase_core.exceptions.InvalidError,
-           C.LCB_EINVAL:           couchbase_core.exceptions.InvalidError,
-           C.LCB_DURABILITY_ETOOMANY: couchbase_core.exceptions.ArgumentError,
-           C.LCB_DUPLICATE_COMMANDS: couchbase_core.exceptions.ArgumentError,
-           C.LCB_CLIENT_ETMPFAIL:  couchbase_core.exceptions.ClientTemporaryFailError,
-           C.LCB_HTTP_ERROR:       couchbase_core.exceptions.HTTPError,
-           C.LCB_SUBDOC_PATH_ENOENT: PathNotFoundException,
-           C.LCB_SUBDOC_PATH_EEXISTS: PathExistsException,
-           C.LCB_SUBDOC_PATH_EINVAL: couchbase_core.exceptions.SubdocPathInvalidError,
-           C.LCB_SUBDOC_DOC_E2DEEP: couchbase_core.exceptions.DocumentTooDeepError,
-           C.LCB_SUBDOC_DOC_NOTJSON: couchbase_core.exceptions.DocumentNotJsonError,
-           C.LCB_SUBDOC_VALUE_E2DEEP: couchbase_core.exceptions.SubdocValueTooDeepError,
-           C.LCB_SUBDOC_PATH_MISMATCH: couchbase_core.exceptions.SubdocPathMismatchError,
-           C.LCB_SUBDOC_VALUE_CANTINSERT: couchbase_core.exceptions.SubdocCantInsertValueError,
-           C.LCB_SUBDOC_BAD_DELTA: couchbase_core.exceptions.SubdocBadDeltaError,
-           C.LCB_SUBDOC_NUM_ERANGE: couchbase_core.exceptions.SubdocNumberTooBigError,
-           C.LCB_EMPTY_PATH: couchbase_core.exceptions.SubdocEmptyPathError
+           C.LCB_ERR_AUTHENTICATION:       AuthenticationException,
+           C.LCB_ERR_INVALID_DELTA: couchbase_core.exceptions.DeltaBadvalError,
+           C.LCB_ERR_VALUE_TOO_LARGE:            ValueTooBigException,
+           C.LCB_ERR_TEMPORARY_FAILURE: couchbase_core.exceptions.BusyError,
+           C.LCB_ERR_SERVER_OUT_OF_MEMORY: couchbase_core.exceptions.NoMemoryError,
+           C.LCB_ERR_TEMPORARY_FAILURE:         TempFailException,
+           C.LCB_ERR_DOCUMENT_EXISTS:      KeyExistsException,
+           C.LCB_ERR_DOCUMENT_NOT_FOUND:       KeyNotFoundException,
+           C.LCB_ERR_DLOPEN_FAILED: couchbase_core.exceptions.DlopenFailedError,
+           C.LCB_ERR_DLSYM_FAILED: couchbase_core.exceptions.DlsymFailedError,
+           C.LCB_ERR_NETWORK:    couchbase_core.exceptions.NetworkError,
+           C.LCB_ERR_NOT_MY_VBUCKET:   couchbase_core.exceptions.NotMyVbucketError,
+           C.LCB_ERR_NOT_STORED:       couchbase_core.exceptions.NotStoredError,
+           C.LCB_ERR_UNSUPPORTED_OPERATION:    couchbase_core.exceptions.NotSupportedError,
+           C.LCB_ERR_UNKNOWN_HOST:     couchbase_core.exceptions.UnknownHostError,
+           C.LCB_ERR_PROTOCOL_ERROR:   couchbase_core.exceptions.ProtocolError,
+           C.LCB_ERR_TIMEOUT:        couchbase_core.exceptions.TimeoutError,
+           C.LCB_ERR_CONNECT_ERROR:    couchbase_core.exceptions.ConnectError,
+           C.LCB_ERR_BUCKET_NOT_FOUND:    BucketMissingException,
+           #C.LCB_EBADHANDLE:       couchbase_core.exceptions.BadHandleError,
+           C.LCB_ERR_INVALID_HOST_FORMAT: couchbase_core.exceptions.InvalidError,
+           C.LCB_ERR_INVALID_CHAR:     couchbase_core.exceptions.InvalidError,
+           C.LCB_ERR_INVALID_ARGUMENT:           couchbase_core.exceptions.InvalidError,
+           C.LCB_ERR_DURABILITY_TOO_MANY: couchbase_core.exceptions.ArgumentError,
+           C.LCB_ERR_DUPLICATE_COMMANDS: couchbase_core.exceptions.ArgumentError,
+           C.LCB_ERR_NO_CONFIGURATION:  couchbase_core.exceptions.ClientTemporaryFailError,
+           C.LCB_ERR_HTTP:       couchbase_core.exceptions.HTTPError,
+           C.LCB_ERR_SUBDOC_PATH_NOT_FOUND: PathNotFoundException,
+           C.LCB_ERR_SUBDOC_PATH_EXISTS: PathExistsException,
+           C.LCB_ERR_SUBDOC_PATH_INVALID: couchbase_core.exceptions.SubdocPathInvalidError,
+           C.LCB_ERR_SUBDOC_DOCUMENT_TOO_DEEP: couchbase_core.exceptions.DocumentTooDeepError,
+           C.LCB_ERR_SUBDOC_DOCUMENT_NOT_JSON: couchbase_core.exceptions.DocumentNotJsonError,
+           C.LCB_ERR_SUBDOC_VALUE_TOO_DEEP: couchbase_core.exceptions.SubdocValueTooDeepError,
+           C.LCB_ERR_SUBDOC_PATH_MISMATCH: couchbase_core.exceptions.SubdocPathMismatchError,
+           C.LCB_ERR_SUBDOC_CANNOT_INSERT_VALUE: couchbase_core.exceptions.SubdocCantInsertValueError,
+           C.LCB_ERR_SUBDOC_DELTA_RANGE: couchbase_core.exceptions.SubdocBadDeltaError,
+           C.LCB_ERR_SUBDOC_NUMBER_TOO_BIG: couchbase_core.exceptions.SubdocNumberTooBigError
 }.items()) + list(_PYCBC_CRYPTO_ERR_MAP.items()) + list(_LCB_SYNCREP_MAP.items()))
 
 

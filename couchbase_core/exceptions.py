@@ -151,7 +151,7 @@ class CouchbaseError(Exception):
 
     @property
     def is_transient(self):
-        return self.categories & C.LCB_ERRTYPE_TRANSIENT
+        return False
 
     @property
     def is_retryable(self):
@@ -159,15 +159,15 @@ class CouchbaseError(Exception):
 
     @property
     def is_fatal(self):
-        return self.categories & C.LCB_ERRTYPE_FATAL
+      return False
 
     @property
     def is_network(self):
-        return self.categories & C.LCB_ERRTYPE_NETWORK
+        return False
 
     @property
     def is_data(self):
-        return self.categories & C.LCB_ERRTYPE_DATAOP
+        return False
 
     def split_results(self):
         """
@@ -254,6 +254,45 @@ class CouchbaseError(Exception):
 
         s = "<{0}>".format(", ".join(details))
         return s
+
+# SDK3 new Error classes
+class CouchbaseBaseError(CouchbaseError):
+  """
+  Base class for errors which don't fall into another category
+  """
+
+class CouchbaseSharedError(CouchbaseError):
+  """
+  Base class for errors that can occur across several services
+  """
+class CouchbaseKeyValueError(CouchbaseError):
+  """
+  Base class for errors that occur within the KV service
+  """
+
+class CouchbaseQueryError(CouchbaseError):
+  """
+  Base class for errors that occur within the Query service
+  """
+
+class CouchbaseAnalyticsError(CouchbaseError):
+  """
+  Base class for errors that occur within the Analytics service
+  """
+
+class CouchbaseSearchError(CouchbaseError):
+  """
+  Base class for errors that occur within the FTS service
+  """
+
+class CouchbaseViewError(CouchbaseError):
+  """
+  Base class for errors that occur when using Views
+  """
+class CouchbaseSDKError(CouchbaseError):
+  """
+  Base class for errros that occur within the SDK itself
+  """
 
 
 class InternalSDKError(CouchbaseError):
@@ -541,7 +580,7 @@ class SubdocBadDeltaError(CouchbaseError):
 
 class SubdocMultipleErrors(CouchbaseError):
     """One or more subcommands failed. Inspect the individual operation"""
-    CODE = C.LCB_SUBDOC_MULTI_FAILURE
+    CODE = C.LCB_ERR_SUBDOC_GENERIC
 
 
 class SubdocEmptyPathError(CouchbaseError):
@@ -652,17 +691,16 @@ _PYCBC_CRYPTO_ERR_MAP ={
     C.PYCBC_CRYPTO_PROVIDER_KEY_SIZE_EXCEPTION: CryptoProviderKeySizeException
 }
 
-
 _LCB_ERRCAT_MAP = {
-    C.LCB_ERRTYPE_NETWORK:      CouchbaseNetworkError,
-    C.LCB_ERRTYPE_INPUT:        CouchbaseInputError,
-    C.LCB_ERRTYPE_TRANSIENT:    CouchbaseTransientError,
-    C.LCB_ERRTYPE_FATAL:        CouchbaseFatalError,
-    C.LCB_ERRTYPE_DATAOP:       CouchbaseDataError,
-    C.LCB_ERRTYPE_INTERNAL:     CouchbaseInternalError,
-    C.LCB_ERRTYPE_DURABILITY:   CouchbaseDurabilityError
+    C.LCB_ERROR_TYPE_BASE: CouchbaseBaseError,
+    C.LCB_ERROR_TYPE_SHARED: CouchbaseSharedError,
+    C.LCB_ERROR_TYPE_KEYVALUE: CouchbaseKeyValueError,
+    C.LCB_ERROR_TYPE_QUERY: CouchbaseQueryError,
+    C.LCB_ERROR_TYPE_ANALYTICS: CouchbaseAnalyticsError,
+    C.LCB_ERROR_TYPE_SEARCH: CouchbaseSearchError,
+    C.LCB_ERROR_TYPE_VIEW: CouchbaseViewError,
+    C.LCB_ERROR_TYPE_SDK: CouchbaseSDKError
 }
-
 
 class DurabilityInvalidLevelException(CouchbaseDurabilityError):
     """Given durability level is invalid"""
@@ -697,44 +735,43 @@ class DurabilityErrorCode(CompatibilityEnum):
 _LCB_SYNCREP_MAP = {item.value:item.orig_value for item in DurabilityErrorCode}
 
 _LCB_ERRNO_MAP = dict(list({
-    C.LCB_AUTH_ERROR:       AuthError,
-    C.LCB_DELTA_BADVAL:     DeltaBadvalError,
-    C.LCB_E2BIG:            TooBigError,
-    C.LCB_EBUSY:            BusyError,
-    C.LCB_ENOMEM:           NoMemoryError,
-    C.LCB_ETMPFAIL:         TemporaryFailError,
-    C.LCB_KEY_EEXISTS:      KeyExistsError,
-    C.LCB_KEY_ENOENT:       NotFoundError,
-    C.LCB_DLOPEN_FAILED:    DlopenFailedError,
-    C.LCB_DLSYM_FAILED:     DlsymFailedError,
-    C.LCB_NETWORK_ERROR:    NetworkError,
-    C.LCB_NOT_MY_VBUCKET:   NotMyVbucketError,
-    C.LCB_NOT_STORED:       NotStoredError,
-    C.LCB_NOT_SUPPORTED:    NotSupportedError,
-    C.LCB_UNKNOWN_HOST:     UnknownHostError,
-    C.LCB_PROTOCOL_ERROR:   ProtocolError,
-    C.LCB_ETIMEDOUT:        TimeoutError,
-    C.LCB_CONNECT_ERROR:    ConnectError,
-    C.LCB_BUCKET_ENOENT:    BucketNotFoundError,
-    C.LCB_EBADHANDLE:       BadHandleError,
-    C.LCB_INVALID_HOST_FORMAT: InvalidError,
-    C.LCB_INVALID_CHAR:     InvalidError,
-    C.LCB_EINVAL:           InvalidError,
-    C.LCB_DURABILITY_ETOOMANY: ArgumentError,
-    C.LCB_DUPLICATE_COMMANDS: ArgumentError,
-    C.LCB_CLIENT_ETMPFAIL:  ClientTemporaryFailError,
-    C.LCB_HTTP_ERROR:       HTTPError,
-    C.LCB_SUBDOC_PATH_ENOENT: SubdocPathNotFoundError,
-    C.LCB_SUBDOC_PATH_EEXISTS: SubdocPathExistsError,
-    C.LCB_SUBDOC_PATH_EINVAL: SubdocPathInvalidError,
-    C.LCB_SUBDOC_DOC_E2DEEP: DocumentTooDeepError,
-    C.LCB_SUBDOC_DOC_NOTJSON: DocumentNotJsonError,
-    C.LCB_SUBDOC_VALUE_E2DEEP: SubdocValueTooDeepError,
-    C.LCB_SUBDOC_PATH_MISMATCH: SubdocPathMismatchError,
-    C.LCB_SUBDOC_VALUE_CANTINSERT: SubdocCantInsertValueError,
-    C.LCB_SUBDOC_BAD_DELTA: SubdocBadDeltaError,
-    C.LCB_SUBDOC_NUM_ERANGE: SubdocNumberTooBigError,
-    C.LCB_EMPTY_PATH: SubdocEmptyPathError,
+    C.LCB_ERR_AUTHENTICATION:       AuthError,
+    C.LCB_ERR_INVALID_DELTA:     DeltaBadvalError,
+    C.LCB_ERR_VALUE_TOO_LARGE:            TooBigError,
+    C.LCB_ERR_TEMPORARY_FAILURE:            BusyError,
+    C.LCB_ERR_SERVER_OUT_OF_MEMORY:           NoMemoryError,
+    C.LCB_ERR_TEMPORARY_FAILURE:         TemporaryFailError,
+    C.LCB_ERR_DOCUMENT_EXISTS:      KeyExistsError,
+    C.LCB_ERR_DOCUMENT_NOT_FOUND:       NotFoundError,
+    C.LCB_ERR_DLOPEN_FAILED:    DlopenFailedError,
+    C.LCB_ERR_DLSYM_FAILED:     DlsymFailedError,
+    C.LCB_ERR_NETWORK:    NetworkError,
+    C.LCB_ERR_NOT_MY_VBUCKET:   NotMyVbucketError,
+    C.LCB_ERR_NOT_STORED:       NotStoredError,
+    C.LCB_ERR_UNSUPPORTED_OPERATION:    NotSupportedError,
+    C.LCB_ERR_UNKNOWN_HOST:     UnknownHostError,
+    C.LCB_ERR_PROTOCOL_ERROR:   ProtocolError,
+    C.LCB_ERR_TIMEOUT:        TimeoutError,
+    C.LCB_ERR_CONNECT_ERROR:    ConnectError,
+    C.LCB_ERR_BUCKET_NOT_FOUND:    BucketNotFoundError,
+    #C.LCB_EBADHANDLE:       BadHandleError,
+    C.LCB_ERR_INVALID_HOST_FORMAT: InvalidError,
+    C.LCB_ERR_INVALID_CHAR:     InvalidError,
+    C.LCB_ERR_INVALID_ARGUMENT:           InvalidError,
+    C.LCB_ERR_DURABILITY_TOO_MANY: ArgumentError,
+    C.LCB_ERR_DUPLICATE_COMMANDS: ArgumentError,
+    C.LCB_ERR_NO_CONFIGURATION:  ClientTemporaryFailError,
+    C.LCB_ERR_HTTP:       HTTPError,
+    C.LCB_ERR_SUBDOC_PATH_NOT_FOUND: SubdocPathNotFoundError,
+    C.LCB_ERR_SUBDOC_PATH_EXISTS: SubdocPathExistsError,
+    C.LCB_ERR_SUBDOC_PATH_INVALID: SubdocPathInvalidError,
+    C.LCB_ERR_SUBDOC_DOCUMENT_TOO_DEEP: DocumentTooDeepError,
+    C.LCB_ERR_SUBDOC_DOCUMENT_NOT_JSON: DocumentNotJsonError,
+    C.LCB_ERR_SUBDOC_VALUE_TOO_DEEP: SubdocValueTooDeepError,
+    C.LCB_ERR_SUBDOC_PATH_MISMATCH: SubdocPathMismatchError,
+    C.LCB_ERR_SUBDOC_CANNOT_INSERT_VALUE: SubdocCantInsertValueError,
+    C.LCB_ERR_SUBDOC_DELTA_RANGE: SubdocBadDeltaError,
+    C.LCB_ERR_SUBDOC_NUMBER_TOO_BIG: SubdocNumberTooBigError
 }.items()) + list(_PYCBC_CRYPTO_ERR_MAP.items()) + list(_LCB_SYNCREP_MAP.items()))
 
 

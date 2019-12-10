@@ -351,7 +351,7 @@ TRACED_FUNCTION_WRAPPER(endure_multi, LCBTRACE_OP_REQUEST_ENCODING, Bucket)
 TRACED_FUNCTION_WRAPPER(endure_multi, LCBTRACE_OP_REQUEST_ENCODING, Bucket)
 {
     PYCBC_EXC_WRAP(
-            LCB_ERRTYPE_INTERNAL, LCB_NOT_SUPPORTED, "Endure unavailable n V4");
+            LCB_ERR_SDK_INTERNAL, LCB_ERR_UNSUPPORTED_OPERATION, "Endure unavailable n V4");
     return NULL;
 }
 #endif
@@ -381,10 +381,13 @@ DECLFUNC(unlock_multi, PYCBC_CMD_UNLOCK, PYCBC_ARGOPT_MULTI)
 
 TRACED_FUNCTION_WRAPPER(_stats,LCBTRACE_OP_REQUEST_ENCODING,Bucket)
 {
+    // TEMPORARY!
+    return NULL;
+    /*
     int rv;
     int ii;
     Py_ssize_t ncmds;
-    lcb_STATUS err = LCB_ERROR;
+    lcb_STATUS err = LCB_ERR_GENERIC;
     PyObject *keys = NULL, *is_keystats = NULL;
     struct pycbc_common_vars cv = PYCBC_COMMON_VARS_STATIC_INIT;
     static char *kwlist[] = {  "keys", "keystats", NULL };
@@ -458,13 +461,14 @@ TRACED_FUNCTION_WRAPPER(_stats,LCBTRACE_OP_REQUEST_ENCODING,Bucket)
     GT_DONE:
     pycbc_common_vars_finalize(&cv, self);
     return cv.ret;
+    */
 }
 
 TRACED_FUNCTION_WRAPPER(_ping,LCBTRACE_OP_REQUEST_ENCODING,Bucket)
 {
     int rv;
     Py_ssize_t ncmds = 0;
-    lcb_STATUS err = LCB_ERROR;
+    lcb_STATUS err = LCB_ERR_GENERIC;
     struct pycbc_common_vars cv = PYCBC_COMMON_VARS_STATIC_INIT;
     CMDSCOPE_NG(PING, ping)
     {
@@ -497,7 +501,7 @@ TRACED_FUNCTION_WRAPPER(_diagnostics,LCBTRACE_OP_REQUEST_ENCODING,Bucket)
 {
     int rv;
     Py_ssize_t ncmds = 0;
-    lcb_STATUS err = LCB_ERROR;
+    lcb_STATUS err = LCB_ERR_GENERIC;
     struct pycbc_common_vars cv = PYCBC_COMMON_VARS_STATIC_INIT;
     CMDSCOPE_NG(DIAG, diag)
     {
