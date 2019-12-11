@@ -220,6 +220,9 @@ class CBASTestQueries(CBASTestQueriesBase):
 class DeferredAnalyticsTest(CBASTestQueriesBase):
     _responses = None
 
+    def __init__(self, *args, **kwargs):
+        super(DeferredAnalyticsTest,self).__init__(*args, **kwargs)
+
     @property
     def _handles(self):
         if not DeferredAnalyticsTest._responses:
@@ -270,16 +273,17 @@ class DeferredAnalyticsTest(CBASTestQueriesBase):
 
         self.assertSanitizedEqual(expected, list_resp)
 
+    def _creator_with_timeout(self, query, timeout):
+        query.timeout = timeout
+        return self.do_analytics_query(query)
+
     def test_correct_timeout_via_query_property(self):
         self.init_if_not_setup()
         x = couchbase_core.analytics.DeferredAnalyticsQuery(
             "SELECT VALUE bw FROM breweries bw WHERE bw.name = 'Kona Brewing'")
 
-        def creator(self, query, timeout):
-            query.timeout = timeout
-            return self.do_analytics_query(query)
 
-        self._check_finish_time_in_bounds(x, self.creator, 100)
+        self._check_finish_time_in_bounds(x, self._creator_with_timeout, 100)
 
     def test_correct_timeout_in_constructor(self):
         self.init_if_not_setup()
