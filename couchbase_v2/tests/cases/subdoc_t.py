@@ -132,7 +132,7 @@ class SubdocTest(ConnectionTestCase):
 
         # Test with empty path. Should throw some kind of error?
         self.assertRaises(
-            (E.SubdocCantInsertValueError, E.SubdocEmptyPathError),
+            (E.SubdocPathInvalidError),
             cb.mutate_in, key, SD.upsert('', {}))
 
         cb.mutate_in(key, SD.upsert('array', [1, 2, 3]))

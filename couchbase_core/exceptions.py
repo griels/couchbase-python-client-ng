@@ -772,6 +772,8 @@ _LCB_ERRNO_MAP = dict(list({
     C.LCB_ERR_TIMEOUT:        TimeoutError,
     C.LCB_ERR_CONNECT_ERROR:    ConnectError,
     C.LCB_ERR_BUCKET_NOT_FOUND:    BucketNotFoundError,
+    C.LCB_ERR_QUERY: CouchbaseQueryError,
+    C.LCB_ERR_QUERY_INDEX: CouchbaseQueryError,
     #C.LCB_EBADHANDLE:       BadHandleError,
     C.LCB_ERR_INVALID_HOST_FORMAT: InvalidError,
     C.LCB_ERR_INVALID_CHAR:     InvalidError,

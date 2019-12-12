@@ -17,7 +17,8 @@
 
 from __future__ import print_function
 
-from couchbase_v2.exceptions import HTTPError
+from couchbase_core.exceptions import HTTPError, CouchbaseQueryError
+
 from couchbase_tests.base import MockTestCase
 from couchbase_v2.n1ql import N1QLQuery
 import json
@@ -52,7 +53,7 @@ class N1QLTest(MockTestCase):
     def test_httperror_str(self):
         q = self.cb.n1ql_query('CREATE INDEX abc#123 ON abc (col_1)')
 
-        with self.assertRaises(HTTPError) as c:
+        with self.assertRaises(QueryException) as c:
             q.execute()
 
         self.assertIn('0x3B', str(c.exception))
