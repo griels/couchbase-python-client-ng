@@ -802,6 +802,11 @@ class DurabilityErrorCode(CompatibilityEnum):
 
 _LCB_SYNCREP_MAP = {item.value:item.orig_value for item in DurabilityErrorCode}
 
+
+class SubdocGenericError(CouchbaseError):
+    pass
+
+
 _LCB_ERRNO_MAP = dict(list({
     C.LCB_ERR_AUTHENTICATION:       AuthError,
     C.LCB_ERR_INVALID_DELTA:     DeltaBadvalError,
@@ -822,6 +827,8 @@ _LCB_ERRNO_MAP = dict(list({
     C.LCB_ERR_TIMEOUT:        TimeoutError,
     C.LCB_ERR_CONNECT_ERROR:    ConnectError,
     C.LCB_ERR_BUCKET_NOT_FOUND:    BucketNotFoundError,
+    C.LCB_ERR_QUERY: QueryException,
+    C.LCB_ERR_QUERY_INDEX: QueryException,
     #C.LCB_EBADHANDLE:       BadHandleError,
     C.LCB_ERR_INVALID_HOST_FORMAT: InvalidError,
     C.LCB_ERR_INVALID_CHAR:     InvalidError,
@@ -839,7 +846,8 @@ _LCB_ERRNO_MAP = dict(list({
     C.LCB_ERR_SUBDOC_PATH_MISMATCH: SubdocPathMismatchError,
     C.LCB_ERR_SUBDOC_CANNOT_INSERT_VALUE: SubdocCantInsertValueError,
     C.LCB_ERR_SUBDOC_DELTA_RANGE: SubdocBadDeltaError,
-    C.LCB_ERR_SUBDOC_NUMBER_TOO_BIG: SubdocNumberTooBigError
+    C.LCB_ERR_SUBDOC_NUMBER_TOO_BIG: SubdocNumberTooBigError,
+    C.LCB_ERR_SUBDOC_GENERIC: SubdocGenericError
 }.items()) + list(_PYCBC_CRYPTO_ERR_MAP.items()) + list(_LCB_SYNCREP_MAP.items()))
 
 

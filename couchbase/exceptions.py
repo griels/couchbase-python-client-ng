@@ -229,6 +229,7 @@ V3Mapping=dict(list({
            C.LCB_ERR_TEMPORARY_FAILURE:         TempFailException,
            C.LCB_ERR_DOCUMENT_EXISTS:      KeyExistsException,
            C.LCB_ERR_DOCUMENT_NOT_FOUND:       KeyNotFoundException,
+           C.LCB_ERR_QUERY_INDEX: QueryException,
            C.LCB_ERR_DLOPEN_FAILED: couchbase_core.exceptions.DlopenFailedError,
            C.LCB_ERR_DLSYM_FAILED: couchbase_core.exceptions.DlsymFailedError,
            C.LCB_ERR_NETWORK:    couchbase_core.exceptions.NetworkError,
