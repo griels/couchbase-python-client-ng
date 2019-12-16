@@ -1,9 +1,11 @@
 from typing import *
 
-from couchbase.management.queries import QueryIndexManager
 from couchbase_core.exceptions import CouchbaseError
 from .management.users import UserManager
 from .management.buckets import BucketManager
+from .management.analytics import AnalyticsIndexManager
+from .management.search import SearchIndexManager
+from .management.queries import QueryIndexManager
 from couchbase.management.admin import Admin
 from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics, IDiagnosticsResult
 from couchbase.fulltext import ISearchResult, SearchResult, SearchOptions
@@ -19,7 +21,7 @@ import multiprocessing
 from multiprocessing.pool import ThreadPool
 import couchbase.exceptions
 import couchbase_core._libcouchbase as _LCB
-from copy import copy, deepcopy
+from copy import deepcopy
 from couchbase_core._pyport import raise_from
 
 
@@ -301,9 +303,13 @@ class Cluster(object):
         # type: (...) -> QueryIndexManager
         return QueryIndexManager(self.admin)
 
-    def nodes(self):
-        # type: (...) -> INodeManager
-        return self._cluster
+    def analytics_indexes(self):
+        # type: (...) -> AnalyticsIndexManager
+        return AnalyticsIndexManager(self.admin)
+
+    def search_indexes(self):
+        # type: (...) -> SearchIndexManager
+        return SearchIndexManager(self.admin)
 
     def buckets(self):
         # type: (...) -> BucketManager

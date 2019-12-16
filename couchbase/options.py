@@ -73,7 +73,7 @@ class OptionBlock(dict):
     def __init__(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         super(OptionBlock, self).__init__(**kwargs)
-
+        self._args = args
 
 T = TypeVar('T', bound=OptionBlock)
 
