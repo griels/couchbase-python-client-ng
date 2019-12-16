@@ -1,9 +1,10 @@
 from typing import *
 
-from couchbase.management.queries import QueryIndexManager
 from couchbase_core.exceptions import CouchbaseError
 from .management.users import UserManager
 from .management.buckets import BucketManager
+from .management.analytics import AnalyticsIndexManager
+from .management.queries import QueryIndexManager
 from couchbase.management.admin import Admin
 from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics, IDiagnosticsResult
 from couchbase.fulltext import ISearchResult, SearchResult, SearchOptions
@@ -19,6 +20,7 @@ import multiprocessing
 from multiprocessing.pool import ThreadPool
 import couchbase.exceptions
 import couchbase_core._libcouchbase as _LCB
+from copy import deepcopy
 from couchbase_core._pyport import raise_from
 
 
@@ -56,7 +58,17 @@ def options_to_func(orig,  # type: U
 
 
 class AnalyticsOptions(OptionBlock):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(AnalyticsOptions, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def of(cls, *args, **kwargs):
+        if len(args) and isinstance(args[0], cls):
+            result=deepcopy(args[0])  # type: AnalyticsOptions
+            result.update(**kwargs)
+        else:
+            result=AnalyticsOptions(*args, **kwargs)
+        return result
 
 
 class QueryOptions(OptionBlock, IQueryResult):
@@ -203,7 +215,7 @@ class Cluster(object):
                         *options,  # type: AnalyticsOptions
                         **kwargs
                         ):
-        # type: (...) -> IAnalyticsResult
+        # type: (...) -> AnalyticsResult
         """
         Executes an Analytics query against the remote cluster and returns a IAnalyticsResult with the results of the query.
         :param statement: the analytics statement to execute
@@ -212,8 +224,9 @@ class Cluster(object):
         Throws Any exceptions raised by the underlying platform - HTTP_TIMEOUT for example.
         :except ServiceNotFoundException - service does not exist or cannot be located.
         """
-
-        return AnalyticsResult(self._operate_on_cluster(CoreClient.analytics_query, AnalyticsException, statement, **forward_args(kwargs,*options)))
+        final_opts = AnalyticsOptions.of(*options, **kwargs)
+        return AnalyticsResult(
+            self._operate_on_cluster(CoreClient.analytics_query, AnalyticsException, statement, final_opts, **final_opts))
 
     @overload
     def search_query(self,
@@ -290,9 +303,13 @@ class Cluster(object):
         # type: (...) -> QueryIndexManager
         return QueryIndexManager(self.admin)
 
-    def nodes(self):
-        # type: (...) -> INodeManager
-        return self._cluster
+    def analytics_indexes(self):
+        # type: (...) -> AnalyticsIndexManager
+        return AnalyticsIndexManager(self.admin)
+
+    def search_indexes(self):
+        # type: (...) -> SearchIndexManager
+        return SearchIndexManager(self.admin)
 
     def buckets(self):
         # type: (...) -> BucketManager
