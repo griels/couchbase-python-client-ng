@@ -1,15 +1,13 @@
 from typing import *
-import couchbase.options
 from .options import Cardinal, OptionBlock
 from couchbase_core.durability import Durability
 
 
 class ReplicateTo(Cardinal):
-    Value = couchbase.options.Value
-
+    pass
 
 class PersistTo(Cardinal):
-    Value = couchbase.options.Value
+    pass
 
 
 T = TypeVar('T', bound=OptionBlock)
@@ -17,8 +15,8 @@ T = TypeVar('T', bound=OptionBlock)
 
 class ClientDurableOption(object):
     def dur_client(self,  # type: T
-                   replicate_to,  # type: couchbase.options.Value
-                   persist_to,  # type: couchbase.options.Value
+                   replicate_to,  # type: ReplicateTo
+                   persist_to,  # type: PersistTo
                    ):
         # type: (...) -> T.ClientDurable
         self['replicate_to'] = replicate_to

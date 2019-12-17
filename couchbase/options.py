@@ -1,4 +1,5 @@
 import copy
+from datetime import timedelta
 from typing import *
 
 import couchbase.exceptions
@@ -45,12 +46,12 @@ class Value(object):
     def __float__(self):
         return self.value
 
-
-class Cardinal(OptionBlock):
-    ONE = Value(1)
-    TWO = Value(2)
-    THREE = Value(3)
-    NONE = Value(0)
+from enum import IntEnum
+class Cardinal(IntEnum):
+    ONE = 1
+    TWO = 2
+    THREE = 3
+    NONE = 4
 
 
 OptionBlockDeriv = TypeVar('OptionBlockDeriv', bound=OptionBlock)
@@ -77,10 +78,58 @@ class Forwarder(with_metaclass(ABCMeta)):
                 end_options[k] = v
         return end_options
 
+    def reverse_args(self, **kwargs):
+        end_options={}
+        for k, v in kwargs.items():
+            map_item = self.reverse_mapping().get(k, None)
+            if not (map_item is None):
+                for out_k, out_f in map_item.items():
+                    try:
+                        end_options[out_k] = out_f(v)
+                    except:
+                        pass
+            else:
+                end_options[k] = v
+        return end_options
+
+    def reverse_mapping(self):
+        reverse_map={}
+        for v3_arg_name, v3_to_v2_mapping in self.arg_mapping():
+            for v2_arg_name, v3_to_v2_converter in v3_to_v2_mapping.items():
+                reverse_map[v2_arg_name]=v3_to_v2_converter
+
     @abstractmethod
     def arg_mapping(self):
         pass
 
+from enum import Enum
+
+class ArgMapping(object):
+    def __init__(self, forward, backward=None):
+        self.forward=forward
+        self.backward=backward or forward
+    def __getitem__(self, item):
+
+        return self.forward(value)
+    def __neg__(self):
+        return ArgMapping(self.backward, self.forward)
+
+class Identity(ArgMapping):
+    def __init__(self):
+        super(Identity, self).__init__(lambda x:x)
+
+from .durability import ReplicateTo, PersistTo
+
+x=timedelta()
+class ArgMapping(Enum):
+    spec = {'specs': Identity}
+    id= {'key': Identity}
+    replicate_to= {'replicate_to':ReplicateTo},
+    persist_to= {"persist_to": PersistTo},
+    timeout= {'ttl': timedelta},
+    expiry = {'ttl': int}
+    self = {}
+    options = {}
 
 def timedelta_as_timestamp(duration  # type: timedelta
                         ):

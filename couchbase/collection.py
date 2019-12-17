@@ -956,7 +956,6 @@ class CBCollection(CoreClient):
             name = rv[1]
             friend_exists = rv.exists(2)
 
-        .. seealso:: :meth:`retrieve_in` which acts as a convenience wrapper
         """
 
         final_options=forward_args(kwargs, *options)
