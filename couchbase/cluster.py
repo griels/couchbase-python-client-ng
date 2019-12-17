@@ -228,7 +228,7 @@ class Cluster(object):
         Throws Any exceptions raised by the underlying platform - HTTP_TIMEOUT for example.
         :except ServiceNotFoundException - service does not exist or cannot be located.
         """
-        final_opts = AnalyticsOptions.of(*options, **kwargs)
+        final_opts = AnalyticsOptions.of(kwargs, *options)
         return AnalyticsResult(
             self._operate_on_cluster(CoreClient.analytics_query, AnalyticsException, statement, final_opts, **final_opts))
 
