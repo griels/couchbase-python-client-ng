@@ -1,18 +1,38 @@
-from couchbase_tests.base import ConnectionTestCase
+from couchbase_tests.base import ConnectionTestCase, CollectionTestCase
 from couchbase_core._libcouchbase import FMT_UTF8
 import couchbase_core.subdocument as SD
 import couchbase_core.exceptions as E
 import traceback
 import logging
+from couchbase_core import abstractmethod
 
 
-class SubdocTest(ConnectionTestCase):
+class SubdocTestBase(CollectionTestCase):
+    @abstractmethod
+    def check_empty_path(self, cb, key):
+        pass
+
+    @abstractmethod
+    def expected_subdoc_main_rc(self, sdresult):
+        pass
+
+    @abstractmethod
+    def retrieve_in(self, key, *paths, **kwargs):
+        import couchbase_core.subdocument as SD
+        return self.cb.lookup_in(key, *tuple(SD.get(x) for x in paths), **kwargs)
+
+    def mutate_in(self, key, specs, **kwargs):
+
+        pass
+
+
+
     def setUp(self):
-        super(SubdocTest, self).setUp()
+        super(SubdocTestBase, self).setUp()
         cb = self.cb
         k = self.gen_key('sd_precheck')
         try:
-            cb.retrieve_in(k, 'pth')
+            cb.lookup_in(k, 'pth')
         except (E.NotSupportedError, E.UnknownCommandError):
             self.skipTest('Subdoc not supported on this server version')
         except E.CouchbaseError:
@@ -34,16 +54,16 @@ class SubdocTest(ConnectionTestCase):
         self.assertTrue(result.cas)
 
         # Try when path is not found
-        rv = cb.retrieve_in(key, 'path2')
-        # TODO: this fails, with the subdoc generic code.  Odd.  I don't
+        rv = self.retrieve_in(key, 'path2')
+        # This works
         # want to make it pass yet, as I think that is wrong.
-        self.assertIn(rv.rc, (E.SubdocPathNotFoundError.CODE, E.SubdocGenericError.CODE))
+        self.assertEqual(self.expected_subdoc_main_rc(rv), rv.rc)
         self.assertRaises(E.SubdocPathNotFoundError, rv.__getitem__, 0)
         self.assertRaises(E.SubdocPathNotFoundError, rv.__getitem__, 'path2')
 
         # Try when there is a mismatch
         self.assertRaises(E.SubdocPathMismatchError,
-                          cb.retrieve_in, key, 'path1[0]')
+                          self.retrieve_in, key, 'path1[0]')
 
         # Try existence
         result = cb.lookup_in(key, SD.exists('path1'))
@@ -69,13 +89,10 @@ class SubdocTest(ConnectionTestCase):
         self.assertRaises(E.DocumentNotJsonError,
                           cb.lookup_in, bkey, SD.exists('path'))
 
-        # Empty paths fail for get_in
-        #self.assertRaises(E.SubdocEmptyPathError,
-        #                  cb.retrieve_in, key, '')
-
+        self.check_empty_path(cb, key)
         # Try on non-existing document. Should fail
         self.assertRaises(E.NotFoundError,
-                          cb.retrieve_in, 'non-exist', 'path')
+                          self.retrieve_in, 'non-exist', 'path')
 
     def test_mutate_in(self):
         cb = self.cb
@@ -83,7 +100,7 @@ class SubdocTest(ConnectionTestCase):
         cb.upsert(key, {})
 
         cb.mutate_in(key, SD.upsert('newDict', ['hello']))
-        result = cb.retrieve_in(key, 'newDict')
+        result = self.retrieve_in(key, 'newDict')
         self.assertEqual(['hello'], result[0])
 
         # Create deep path without create_parents
@@ -94,7 +111,7 @@ class SubdocTest(ConnectionTestCase):
         # Create deep path using create_parents
         cb.mutate_in(key,
                      SD.upsert('new.parent.path', 'value', create_parents=True))
-        result = cb.retrieve_in(key, 'new.parent')
+        result = self.retrieve_in(key, 'new.parent')
         self.assertEqual('value', result[0]['path'])
 
         # Test CAS operations
@@ -112,11 +129,11 @@ class SubdocTest(ConnectionTestCase):
 
         # Test insert on new path, should succeed
         cb.mutate_in(key, SD.insert('anotherDict', {}))
-        self.assertEqual({}, cb.retrieve_in(key, 'anotherDict')[0])
+        self.assertEqual({}, self.retrieve_in(key, 'anotherDict')[0])
 
         # Test replace, should not fail
         cb.mutate_in(key, SD.replace('newDict', {'Hello': 'World'}))
-        self.assertEqual('World', cb.retrieve_in(key, 'newDict')[0]['Hello'])
+        self.assertEqual('World', self.retrieve_in(key, 'newDict')[0]['Hello'])
 
         # Test replace with missing value, should fail
         self.assertRaises(E.SubdocPathNotFoundError,
@@ -124,11 +141,11 @@ class SubdocTest(ConnectionTestCase):
 
         # Test with empty string (should be OK)
         cb.mutate_in(key, SD.upsert('empty', ''))
-        self.assertEqual('', cb.retrieve_in(key, 'empty')[0])
+        self.assertEqual('', self.retrieve_in(key, 'empty')[0])
 
         # Test with null (None). Should be OK
         cb.mutate_in(key, SD.upsert('null', None))
-        self.assertEqual(None, cb.retrieve_in(key, 'null')[0])
+        self.assertEqual(None, self.retrieve_in(key, 'null')[0])
 
         # Test with empty path. Should throw some kind of error?
         self.assertRaises(
@@ -234,25 +251,25 @@ class SubdocTest(ConnectionTestCase):
 
         cb.upsert(key, {'array': []})
         cb.mutate_in(key, SD.array_append('array', True))
-        self.assertEqual([True], cb.retrieve_in(key, 'array')[0])
+        self.assertEqual([True], self.retrieve_in(key, 'array')[0])
 
         cb.mutate_in(key, SD.array_append('array', 1, 2, 3))
-        self.assertEqual([True, 1, 2, 3], cb.retrieve_in(key, 'array')[0])
+        self.assertEqual([True, 1, 2, 3], self.retrieve_in(key, 'array')[0])
 
         cb.mutate_in(key, SD.array_prepend('array', [42]))
-        self.assertEqual([[42], True, 1, 2, 3], cb.retrieve_in(key, 'array')[0])
+        self.assertEqual([[42], True, 1, 2, 3], self.retrieve_in(key, 'array')[0])
 
     def test_result_iter(self):
         cb = self.cb
         key = self.gen_key('sditer')
         cb.upsert(key, [1, 2, 3])
-        vals = cb.retrieve_in(key, '[0]', '[1]', '[2]')
+        vals = self.retrieve_in(key, '[0]', '[1]', '[2]')
         v1, v2, v3 = vals
         self.assertEqual(1, v1)
         self.assertEqual(2, v2)
         self.assertEqual(3, v3)
 
-        vals = cb.retrieve_in(key, '[0]', '[34]', '[3]')
+        vals = self.retrieve_in(key, '[0]', '[34]', '[3]')
         self.assertFalse(vals.success)
         it = iter(vals)
         self.assertEqual(1, next(it))
@@ -285,7 +302,7 @@ class SubdocTest(ConnectionTestCase):
         cb = self.cb
         key = self.gen_key('create_doc')
         cb.mutate_in(key, SD.upsert('new.path', 'newval'), upsert_doc=True)
-        self.assertEqual('newval', cb.retrieve_in(key, 'new.path')[0])
+        self.assertEqual('newval', self.retrieve_in(key, 'new.path')[0])
 
         # Check 'insert_doc'
 
@@ -293,4 +310,24 @@ class SubdocTest(ConnectionTestCase):
         cb.remove(key)
 
         cb.mutate_in(key, SD.upsert('new.path', 'newval'), insert_doc=True)
-        self.assertEqual('newval', cb.retrieve_in(key, 'new.path')[0])
+        self.assertEqual('newval', self.retrieve_in(key, 'new.path')[0])
+
+
+class SubdocTest(SubdocTestBase):
+    def expected_subdoc_main_rc(self, sdresult):
+        return {E.SubdocPathNotFoundError.CODE: E.SubdocGenericError.CODE}.get(sdresult,sdresult.rc)
+
+    def check_empty_path(self, cb, key):
+        pass
+
+
+class V2SubdocTest(SubdocTestBase):
+    def expected_subdoc_main_rc(self, sdresult):
+        return {E.SubdocPathNotFoundError.CODE: E.SubdocPathNotFoundError.CODE}.get(sdresult,sdresult.rc)
+
+    def check_empty_path(self, cb, key):
+        # Empty paths fail for get_in
+        self.assertRaises(E.SubdocEmptyPathError,
+                          cb.lookup_in, key, '')
+
+#del SubdocTestBase
