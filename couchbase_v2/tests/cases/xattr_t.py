@@ -19,7 +19,7 @@ class XattrTest(MockTestCase):
         self.assertFalse('my.attr' in body.value)
 
         # Try using lookup_in
-        rv = cb.retrieve_in(k, 'my.attr')
+        rv = cb.lookup_in(k, 'my.attr')
         self.assertFalse(rv.exists('my.attr'))
 
         # Finally, use lookup_in with 'xattrs' attribute enabled

@@ -718,7 +718,6 @@ class Client(_Base):
             name = rv[1]
             friend_exists = rv.exists(2)
 
-        .. seealso:: :meth:`retrieve_in` which acts as a convenience wrapper
         """
         return super(Client, self).lookup_in({key: tuple(specs)}, **kwargs)
 

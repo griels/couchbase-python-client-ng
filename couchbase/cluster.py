@@ -5,6 +5,7 @@ from couchbase_core.exceptions import CouchbaseError
 from .management.search import SearchIndexManager
 from .management.users import UserManager
 from .management.buckets import BucketManager
+from .management.analytics import AnalyticsIndexManager
 from couchbase.management.admin import Admin
 from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics, IDiagnosticsResult
 from couchbase.fulltext import ISearchResult, SearchResult, SearchOptions
@@ -302,12 +303,13 @@ class Cluster(object):
         # type: (...) -> QueryIndexManager
         return QueryIndexManager(self.admin)
 
-    def search_indexes(self):
-        return SearchIndexManager(self.admin)
+    def analytics_indexes(self):
+        # type: (...) -> AnalyticsIndexManager
+        return AnalyticsIndexManager(self.admin)
 
-    def nodes(self):
-        # type: (...) -> INodeManager
-        return self._cluster
+    def search_indexes(self):
+        # type: (...) -> SearchIndexManager
+        return SearchIndexManager(self.admin)
 
     def buckets(self):
         # type: (...) -> BucketManager
