@@ -8,7 +8,7 @@ from .subdocument import LookupInSpec, MutateInSpec, MutateInOptions, \
     gen_projection_spec
 from .result import GetResult, get_result_wrapper, SDK2Result, ResultPrecursor, LookupInResult, MutateInResult, \
     MutationResult, _wrap_in_mutation_result, SDK2AsyncResult, get_mutation_result, get_multi_mutation_result
-from .options import forward_args, Seconds, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64, AcceptableInts
+from .options import forward_args, timedelta, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64, AcceptableInts
 from .options import OptionBlock, AcceptableInts
 from .durability import ReplicateTo, PersistTo, ClientDurableOption, ServerDurableOption
 from couchbase_core._libcouchbase import Bucket as _Base
@@ -20,6 +20,7 @@ from typing import *
 from couchbase_core.durability import Durability
 from couchbase_core._pyport import with_metaclass, xrange
 from couchbase_core.asynchronous.bucket import AsyncClientFactory
+from datetime import timedelta
 
 
 class DeltaValue(ConstrainedInt):
@@ -126,10 +127,10 @@ class GetOptions(OptionBlock):
         return GetOptionsProject(self, *args)
 
     def timeout(self,
-                duration  # type: Seconds
+                duration  # type: timedelta
                 ):
         # type: (...) -> GetOptionsNonProject
-        self['timeout'] = duration.__int__()
+        self['timeout'] = duration
         return GetOptionsNonProject(self)
 
     def __copy__(self):
@@ -333,7 +334,7 @@ class CBCollection(CoreClient):
     def get(self,
             key,  # type:str
             project=None,  # type: Iterable[str]
-            expiry=None,  # type: Seconds
+            expiry=None,  # type: timedelta
             quiet=None,  # type: bool
             replica=False,  # type: bool
             no_format=False  # type: bool
@@ -354,7 +355,7 @@ class CBCollection(CoreClient):
         :param string key: The key to fetch. The type of key is the same
             as mentioned in :meth:`upsert`
 
-        :param couchbase.options.Seconds expiry: If specified, indicates that the key's expiry
+        :param timedelta expiry: If specified, indicates that the key's expiry
             time should be *modified* when retrieving the value.
 
         :param boolean quiet: causes `get` to return None instead of
@@ -406,7 +407,7 @@ class CBCollection(CoreClient):
 
         Update the expiry time::
 
-            rv = cb.get("key", expiry=Seconds(10))
+            rv = cb.get("key", expiry=timedelta(seconds=10))
             # Expires in ten seconds
 
         """
@@ -599,9 +600,9 @@ class CBCollection(CoreClient):
 
         Update the expiry time of a key ::
 
-            cb.upsert("key", expiry=Seconds(100))
+            cb.upsert("key", expiry=timedelta(seconds=100))
             # expires in 100 seconds
-            cb.touch("key", expiry=Seconds(0))
+            cb.touch("key", expiry=timedelta(seconds=0))
             # key should never expire now
 
         :raise: The same things that :meth:`get` does
@@ -711,7 +712,7 @@ class CBCollection(CoreClient):
 
     def exists(self,  # type: CBCollection
                id,  # type: str
-               timeout=None,  # type: Seconds
+               timeout=None,  # type: timedelta
                ):
         # type: (...) -> IExistsResult
         """
@@ -739,7 +740,7 @@ class CBCollection(CoreClient):
                id,  # type: str
                value,  # type: Any
                cas=0,  # type: int
-               expiry=Seconds(0),  # type: Seconds
+               expiry=None,  # type: timedelta
                format=None,
                persist_to=PersistTo.NONE,  # type: PersistTo.Value
                replicate_to=ReplicateTo.NONE,  # type: ReplicateTo.Value
@@ -851,7 +852,7 @@ class CBCollection(CoreClient):
     def insert(self,
                id,  # type: str
                value,  # type: Any
-               expiry=Seconds(0),  # type: Seconds
+               expiry=None,  # type: timedelta
                format=None,  # type: str
                persist_to=PersistTo.NONE,  # type: PersistTo.Value
                replicate_to=ReplicateTo.NONE,  # type: ReplicateTo.Value
@@ -885,7 +886,7 @@ class CBCollection(CoreClient):
                 id,  # type: str
                 value,  # type: Any
                 cas=0,  # type: int
-                expiry=None,  # type: Seconds
+                expiry=None,  # type: timedelta
                 format=None,  # type: bool
                 persist_to=PersistTo.NONE,  # type: PersistTo.Value
                 replicate_to=ReplicateTo.NONE,  # type: ReplicateTo.Value
@@ -1189,7 +1190,7 @@ class CBCollection(CoreClient):
                   id,  # type: str
                   delta,  # type: DeltaValue
                   initial=None,  # type: SignedInt64
-                  expiry=Seconds(0),  # type: Seconds
+                  expiry=None,  # type: timedelta
                   durability_level=Durability.NONE  # type: Durability
                   ):
         # type: (...) -> ResultPrecursor
@@ -1231,7 +1232,7 @@ class CBCollection(CoreClient):
            `delta` is ignored. If this parameter is `None` then no
            initial value is used
         :param SignedInt64 initial: :class:`couchbase.options.SignedInt64` or `None`
-        :param Seconds expiry: The lifetime for the key, after which it will
+        :param timedelta expiry: The lifetime for the key, after which it will
            expire
         :param Durability durability_level: Sync replication durability level.
 
@@ -1266,7 +1267,7 @@ class CBCollection(CoreClient):
                   id,  # type: str
                   delta,  # type: DeltaValue
                   initial=None,  # type: SignedInt64
-                  expiry=Seconds(0),  # type: Seconds
+                  expiry=None,  # type: timedelta
                   durability_level=Durability.NONE  # type: Durability
                   ):
         # type: (...) -> ResultPrecursor
@@ -1308,7 +1309,7 @@ class CBCollection(CoreClient):
            `delta` is ignored. If this parameter is `None` then no
            initial value is used
         :param SignedInt64 initial: :class:`couchbase.options.SignedInt64` or `None`
-        :param Seconds expiry: The lifetime for the key, after which it will
+        :param timedelta expiry: The lifetime for the key, after which it will
            expire
         :param Durability durability_level: Sync replication durability level.
 
