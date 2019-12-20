@@ -27,20 +27,7 @@ class OptionBlockTimeOut(OptionBlock):
                 duration  # type: timedelta
                 ):
         # type: (...) -> T
-        self['ttl'] = duration
-        return self
-
-
-class OptionBlockTimeOutVerbatim(OptionBlock):
-    def __init__(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        super(OptionBlockTimeOutVerbatim, self).__init__(**kwargs)
-
-    def timeout(self,  # type: T
-                duration  # type: timedelta
-                ):
-        # type: (...) -> T
-        self['timeout'] = duration.total_seconds()
+        self['timeout'] = duration
         return self
 
 
@@ -100,13 +87,17 @@ def timedelta_as_timestamp(duration  # type: timedelta
     # type: (...)->int
     return int(duration.total_seconds())
 
+def timedelta_as_microseconds(duration  # type: timedelta
+                           ):
+    # type: (...)->int
+    return int(duration.total_seconds()*10e6)
 
 class DefaultForwarder(Forwarder):
     def arg_mapping(self):
         return {'spec': {'specs': lambda x: x}, 'id': {},
                 'replicate_to': {"replicate_to": int},
                 'persist_to': {"persist_to": int},
-                'timeout': {'timeout': timedelta.total_seconds},
+                'timeout': {'timeout': timedelta_as_microseconds},
                 'expiry': {'ttl': timedelta_as_timestamp}, 'self': {}, 'options': {}}
 
 
@@ -115,7 +106,7 @@ class TimeoutForwarder(Forwarder):
         return {'spec': {'specs': lambda x: x}, 'id': {},
                 'replicate_to': {"replicate_to": int},
                 'persist_to': {"persist_to": int},
-                'timeout': {'timeout': timedelta.total_seconds},
+                'timeout': {'timeout': timedelta_as_microseconds},
                 'expiry': {'ttl': timedelta_as_timestamp}, 'self': {}, 'options': {}}
 
 

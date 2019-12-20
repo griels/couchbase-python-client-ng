@@ -52,7 +52,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
     unsigned int lock = 0;
     struct getcmd_vars_st *gv = (struct getcmd_vars_st *)arg;
     unsigned long ttl = gv->u.ttl;
-    unsigned long timeout = 0;
+    unsigned long timeout = cv->timeout;
     PyObject *ttl_O = NULL;
     PyObject *timeout_O = NULL;
 
@@ -91,6 +91,11 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
                 rv = -1;
                 goto GT_DONE;
             }
+            if (cv->timeout && timeout_O) {
+                PYCBC_EXC_WRAP(PYCBC_EXC_ARGUMENTS, 0, "Both global and single TTL specified");
+                rv = -1;
+                goto GT_DONE;
+            }
 
             if (!rv) {
                 PYCBC_EXC_WRAP_KEY(PYCBC_EXC_ARGUMENTS, 0, "Couldn't get sub-parmeters for key", curkey);
@@ -102,7 +107,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
         }
 
         rv = pycbc_get_timestamp(ttl_O, &ttl, 1);
-        rv = pycbc_get_timestamp(timeout_O, &timeout, 1);
+        rv = rv?rv:pycbc_get_timestamp(timeout_O, &timeout, 1);
         if (rv < 0) {
             rv = -1;
             goto GT_DONE;
@@ -136,7 +141,21 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
             CMDSCOPE_NG(GET, get)
             {
                 lcb_cmdget_locktime(cmd, lock);
+#ifdef PYCBC_GEN_COMMON
                 COMMON_OPTS(PYCBC_get_ATTR, get, get);
+#else
+                lcb_cmdget_expiry(cmd, ttl);
+                lcb_cmdget_timeout(cmd, timeout);
+                lcb_cmdget_key(cmd, (keybuf).buffer, (keybuf).length);
+                {
+                    if (pycbc_Context_check(context, "_file_name_", "N/A", 147)) {
+                        (void) lcb_cmdget_parent_span(((cmd)), ((context)->span));;
+                    }
+                    else { ; }
+                };
+                PYCBC_EXCEPTION_LOG_NOCLEAR;
+                pycbc_MultiResult_init_context(cv->mres, curkey, context, self);;;
+#endif
                 err = pycbc_get(collection, cv->mres, cmd);
             }
         } break;
@@ -244,24 +263,26 @@ get_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs, int optype,
     PyObject *ttl_O = NULL;
     PyObject *replica_O = NULL;
     PyObject *nofmt_O = NULL;
+    PyObject *timeout_O = NULL;
     pycbc_DURABILITY_LEVEL durability_level = LCB_DURABILITYLEVEL_NONE;
     struct pycbc_common_vars cv = PYCBC_COMMON_VARS_STATIC_INIT;
     struct getcmd_vars_st gv = { 0 };
 #define X(name, target, type) name,
     static char *kwlist[] = {
-            "keys", "ttl", "quiet", "replica", "no_format", "durability_level", NULL};
+            "keys", "ttl", "quiet", "replica", "no_format", "durability_level", "timeout", NULL};
 #undef X
     PYCBC_COLLECTION_INIT(self, kwargs)
     int rv = PyArg_ParseTupleAndKeywords(args,
                                          kwargs,
-                                         "O|OOOOI",
+                                         "O|OOOOIO",
                                          kwlist,
                                          &kobj,
                                          &ttl_O,
                                          &is_quiet,
                                          &replica_O,
                                          &nofmt_O,
-                                         &durability_level);
+                                         &durability_level,
+                                         &timeout_O);
 
     if (!rv) {
         if (!PyErr_Occurred()) {
@@ -320,7 +341,7 @@ get_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs, int optype,
 
     rv = pycbc_common_vars_init(&cv, self, argopts, ncmds, 0);
     cv.durability_level = durability_level;
-
+    rv = pycbc_get_timestamp(timeout_O, &cv.timeout, 1);
     if (rv < 0) {
         return NULL;
     }

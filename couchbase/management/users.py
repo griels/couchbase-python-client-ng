@@ -9,7 +9,7 @@ from couchbase_core._pyport import ulp, with_metaclass
 from couchbase_core import ABCMeta
 from couchbase_core.exceptions import HTTPError
 from typing import *
-from couchbase.options import OptionBlockTimeOutVerbatim
+from couchbase.options import OptionBlockTimeOut
 from couchbase_core.exceptions import ErrorMapper, NotSupportedWrapper
 
 
@@ -676,37 +676,37 @@ class Group(JSONMapping, IGroup):
         return '{}:{}'.format(self.name, repr(self._raw_json))
 
 
-class GetUserOptions(OptionBlockTimeOutVerbatim):
+class GetUserOptions(OptionBlockTimeOut):
     pass
 
 
-class UpsertUserOptions(OptionBlockTimeOutVerbatim):
+class UpsertUserOptions(OptionBlockTimeOut):
     pass
 
 
-class GetRolesOptions(OptionBlockTimeOutVerbatim):
+class GetRolesOptions(OptionBlockTimeOut):
     pass
 
 
-class GetGroupOptions(OptionBlockTimeOutVerbatim):
+class GetGroupOptions(OptionBlockTimeOut):
     pass
 
 
-class GetAllGroupsOptions(OptionBlockTimeOutVerbatim):
+class GetAllGroupsOptions(OptionBlockTimeOut):
     pass
 
 
-class DropGroupOptions(OptionBlockTimeOutVerbatim):
+class DropGroupOptions(OptionBlockTimeOut):
     pass
 
 
-class DropUserOptions(OptionBlockTimeOutVerbatim):
+class DropUserOptions(OptionBlockTimeOut):
     pass
 
 
-class GetAllUsersOptions(OptionBlockTimeOutVerbatim):
+class GetAllUsersOptions(OptionBlockTimeOut):
     pass
 
 
-class UpsertGroupOptions(OptionBlockTimeOutVerbatim):
+class UpsertGroupOptions(OptionBlockTimeOut):
     pass
