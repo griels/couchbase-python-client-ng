@@ -91,7 +91,7 @@ class QueryIndexManager(GenericManager):
 
         return info
 
-    def _n1ql_index_create(self, bucket_name, ix, defer=False, ignore_exists=False, primary=False, fields=None, cond = None, **kwargs):
+    def _n1ql_index_create(self, bucket_name, ix, defer=False, ignore_exists=False, primary=False, fields=None, cond = None, timeout=None, **kwargs):
         """
         Create an index for use with N1QL.
 
@@ -143,6 +143,8 @@ class QueryIndexManager(GenericManager):
             'defer': defer
         }
 
+        if timeout:
+            options['timeout']=timeout
         # Now actually create the indexes
         return IxmgmtRequest(self._admin_bucket, 'create', info, **options).execute()
 

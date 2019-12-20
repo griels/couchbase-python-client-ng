@@ -73,7 +73,7 @@ class OptionBlock(dict):
     def __init__(self, *args, **kwargs):
         # type: (*Any, **Any) -> None
         super(OptionBlock, self).__init__(**kwargs)
-
+        self._args = args
 
 T = TypeVar('T', bound=OptionBlock)
 
@@ -143,10 +143,7 @@ class Forwarder(with_metaclass(ABCMeta)):
             map_item = self.arg_mapping().get(k, None)
             if not (map_item is None):
                 for out_k, out_f in map_item.items():
-                    try:
-                        end_options[out_k] = out_f(v)
-                    except:
-                        pass
+                    end_options[out_k] = out_f(v)
             else:
                 end_options[k] = v
         return end_options
