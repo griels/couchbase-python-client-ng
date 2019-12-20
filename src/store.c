@@ -58,7 +58,7 @@ handle_item_kv(pycbc_Item *itm, PyObject *options, const struct storecmd_vars *s
         }
 
         if (ttl_O) {
-            if (-1 == pycbc_get_ttl(ttl_O, &skc->ttl, 1)) {
+            if (-1 == pycbc_get_timestamp(ttl_O, &skc->ttl, 1)) {
                 return -1;
             }
 
@@ -369,7 +369,7 @@ set_common, pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
         goto GT_FAIL;
     }
 
-    rv = pycbc_get_ttl(ttl_O, &scv.ttl, 1);
+    rv = pycbc_get_timestamp(ttl_O, &scv.ttl, 1);
     if (rv < 0) {
         goto GT_FAIL;
     }

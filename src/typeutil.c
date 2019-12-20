@@ -151,7 +151,7 @@ pycbc_BufFromString(PyObject *obj, char **key, Py_ssize_t *nkey, PyObject **newk
 
 
 int
-pycbc_get_ttl(PyObject *obj, unsigned long *ttl, int nonzero)
+pycbc_get_timestamp(PyObject *obj, unsigned long *ttl, int nonzero)
 {
     if (obj == NULL || PyObject_IsTrue(obj) == 0) {
         if (!nonzero) {

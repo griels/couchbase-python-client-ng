@@ -1,4 +1,3 @@
-import time
 import copy
 from typing import *
 
@@ -6,67 +5,7 @@ import couchbase.exceptions
 import ctypes
 from couchbase_core import abstractmethod, ABCMeta
 from couchbase_core._pyport import with_metaclass
-
-
-class FiniteDuration(object):
-    def __init__(self, seconds  # type: Union[float,int]
-                 ):
-        self.value = seconds
-
-    @staticmethod
-    def time():
-        return FiniteDuration(time.time())
-
-    def __float__(self):
-        return float(self.value)
-
-    def __int__(self):
-        return int(self.value)
-
-    def __add__(self, other):
-        result = copy.deepcopy(self)
-        result.value += other.value
-        return result
-
-    def __lt__(self, other):
-        return self.value < other.value
-
-    def __gt__(self, other):
-        return self.value > other.value
-
-
-class Duration(float):
-    def __init__(self, seconds  # type: Union[float,int]
-                 ):
-        # type: (...) -> None
-        super(Duration, self).__init__(seconds)
-
-
-class Seconds(FiniteDuration):
-    def __init__(self,
-                 seconds  # type: Union[float,int]
-                 ):
-        # type: (...) -> None
-        super(Seconds, self).__init__(seconds)
-
-
-class Durations:
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def minutes(minutes  # type: int
-                ):
-        return Seconds(minutes * 60)
-
-    @staticmethod
-    def days(days  # type: int
-             ):
-        return Durations.minutes(days * 24 * 60)
-
-    @staticmethod
-    def seconds(seconds):
-        return Seconds(seconds)
+from datetime import timedelta
 
 
 class OptionBlock(dict):
@@ -74,6 +13,7 @@ class OptionBlock(dict):
         # type: (*Any, **Any) -> None
         super(OptionBlock, self).__init__(**kwargs)
         self._args = args
+
 
 T = TypeVar('T', bound=OptionBlock)
 
@@ -84,9 +24,10 @@ class OptionBlockTimeOut(OptionBlock):
         super(OptionBlockTimeOut, self).__init__(**kwargs)
 
     def timeout(self,  # type: T
-                duration):
+                duration  # type: timedelta
+                ):
         # type: (...) -> T
-        self['ttl'] = duration.__int__()
+        self['ttl'] = duration
         return self
 
 
@@ -96,9 +37,10 @@ class OptionBlockTimeOutVerbatim(OptionBlock):
         super(OptionBlockTimeOutVerbatim, self).__init__(**kwargs)
 
     def timeout(self,  # type: T
-                duration):
+                duration  # type: timedelta
+                ):
         # type: (...) -> T
-        self['timeout'] = duration.__float__()
+        self['timeout'] = duration.total_seconds()
         return self
 
 
@@ -153,13 +95,19 @@ class Forwarder(with_metaclass(ABCMeta)):
         pass
 
 
+def timedelta_as_timestamp(duration  # type: timedelta
+                        ):
+    # type: (...)->int
+    return int(duration.total_seconds())
+
+
 class DefaultForwarder(Forwarder):
     def arg_mapping(self):
         return {'spec': {'specs': lambda x: x}, 'id': {},
                 'replicate_to': {"replicate_to": int},
                 'persist_to': {"persist_to": int},
-                'timeout': {'ttl': Duration.__float__},
-                'expiry': {'ttl': int}, 'self': {}, 'options': {}}
+                'timeout': {'timeout': timedelta.total_seconds},
+                'expiry': {'ttl': timedelta_as_timestamp}, 'self': {}, 'options': {}}
 
 
 class TimeoutForwarder(Forwarder):
@@ -167,8 +115,8 @@ class TimeoutForwarder(Forwarder):
         return {'spec': {'specs': lambda x: x}, 'id': {},
                 'replicate_to': {"replicate_to": int},
                 'persist_to': {"persist_to": int},
-                'timeout': {'timeout': Duration.__float__},
-                'expiry': {'ttl': int}, 'self': {}, 'options': {}}
+                'timeout': {'timeout': timedelta.total_seconds},
+                'expiry': {'ttl': timedelta_as_timestamp}, 'self': {}, 'options': {}}
 
 
 forward_args = DefaultForwarder().forward_args

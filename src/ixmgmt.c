@@ -87,7 +87,6 @@ pycbc_Bucket__ixmanage(pycbc_Bucket *self, PyObject *args, PyObject *kwargs)
     cmd.spec.flags = cmdflags;
     cmd.spec.rawjson = params;
     cmd.spec.nrawjson = nparams;
-
     if (!strcmp(action, "create")) {
         action_fn = lcb_n1x_create;
     } else if (!strcmp(action, "drop")) {

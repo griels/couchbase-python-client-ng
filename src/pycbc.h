@@ -223,7 +223,7 @@ PyObject *pycbc_none_or_value(PyObject *maybe_value);
  * @param nonzero whether to allow a value of 0 for the TTL
  * @return 0 on success, nonzero on error.
  */
-int pycbc_get_ttl(PyObject *obj, unsigned long *ttl, int nonzero);
+int pycbc_get_timestamp(PyObject *obj, unsigned long *ttl, int nonzero);
 
 /**
  * Fetches a valid 32 bit integer from the object. The object must be a long

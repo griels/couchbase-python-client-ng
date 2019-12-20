@@ -12,7 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from couchbase.options import Durations
+from datetime import timedelta
+
 from couchbase.bucket import Bucket
 from couchbase.management.queries import QueryIndex, QueryIndexNotFoundException, IndexAlreadyExistsException
 from couchbase_tests.base import SkipTest, CollectionTestCase
@@ -46,7 +47,7 @@ class IndexManagementTestCase(CollectionTestCase):
         mgr = self.cluster.query_indexes()
 
         bucket_name = self.cluster_info.bucket_name
-        mgr.create_primary_index(bucket_name,timeout=Durations)
+        mgr.create_primary_index(bucket_name,timeout=timedelta(seconds=60))
 
         # Ensure we can issue a query
         qstr = 'select * from {0} limit 1'.format(self.cluster_info.bucket_name)
@@ -92,7 +93,7 @@ class IndexManagementTestCase(CollectionTestCase):
         fields = ('fld1', 'fld2')
         bucket_name=self.cluster_info.bucket_name
         self.mgr._admin_bucket.timeout=10000
-        self.mgr.create_index(bucket_name, ixname, fields=fields,timeout=Durations.days(1))
+        self.mgr.create_index(bucket_name, ixname, fields=fields,timeout=timedelta(days=1))
         mgr=self.mgr
         qq = 'select {1}, {2} from `{0}` where {1}=1 and {2}=2 limit 1'\
             .format(bucket_name, *fields)
