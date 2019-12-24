@@ -2,6 +2,7 @@ from typing import *
 
 from couchbase.management.queries import QueryIndexManager
 from couchbase_core.exceptions import CouchbaseError
+from .management.analytics import AnalyticsIndexManager
 from .management.users import UserManager
 from .management.buckets import BucketManager
 from couchbase.management.admin import Admin
@@ -19,6 +20,7 @@ import multiprocessing
 from multiprocessing.pool import ThreadPool
 import couchbase.exceptions
 import couchbase_core._libcouchbase as _LCB
+from copy import deepcopy
 from couchbase_core._pyport import raise_from
 
 
@@ -56,7 +58,17 @@ def options_to_func(orig,  # type: U
 
 
 class AnalyticsOptions(OptionBlock):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(AnalyticsOptions, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def of(cls, *args, **kwargs):
+        if len(args) and isinstance(args[0], cls):
+            result=deepcopy(args[0])  # type: AnalyticsOptions
+            result.update(**kwargs)
+        else:
+            result=AnalyticsOptions(*args, **kwargs)
+        return result
 
 
 class QueryOptions(OptionBlock, QueryResultProtocol):
@@ -203,7 +215,7 @@ class Cluster(object):
                         *options,  # type: AnalyticsOptions
                         **kwargs
                         ):
-        # type: (...) -> IAnalyticsResult
+        # type: (...) -> AnalyticsResult
         """
         Executes an Analytics query against the remote cluster and returns a IAnalyticsResult with the results of the query.
         :param statement: the analytics statement to execute
@@ -289,6 +301,10 @@ class Cluster(object):
     def query_indexes(self):
         # type: (...) -> QueryIndexManager
         return QueryIndexManager(self.admin)
+
+    def analytics_indexes(self):
+        # type: (...) -> AnalyticsIndexManager
+        return AnalyticsIndexManager(self)
 
     def nodes(self):
         # type: (...) -> INodeManager
