@@ -20,6 +20,7 @@ import multiprocessing
 from multiprocessing.pool import ThreadPool
 import couchbase.exceptions
 import couchbase_core._libcouchbase as _LCB
+from copy import deepcopy
 from couchbase_core._pyport import raise_from
 
 
@@ -57,7 +58,17 @@ def options_to_func(orig,  # type: U
 
 
 class AnalyticsOptions(OptionBlock):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(AnalyticsOptions, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def of(cls, *args, **kwargs):
+        if len(args) and isinstance(args[0], cls):
+            result=deepcopy(args[0])  # type: AnalyticsOptions
+            result.update(**kwargs)
+        else:
+            result=AnalyticsOptions(*args, **kwargs)
+        return result
 
 
 class QueryOptions(OptionBlock, IQueryResult):
@@ -204,7 +215,7 @@ class Cluster(object):
                         *options,  # type: AnalyticsOptions
                         **kwargs
                         ):
-        # type: (...) -> IAnalyticsResult
+        # type: (...) -> AnalyticsResult
         """
         Executes an Analytics query against the remote cluster and returns a IAnalyticsResult with the results of the query.
         :param statement: the analytics statement to execute
@@ -293,6 +304,7 @@ class Cluster(object):
 
     def search_indexes(self):
         return SearchIndexManager(self.admin)
+
     def nodes(self):
         # type: (...) -> INodeManager
         return self._cluster
