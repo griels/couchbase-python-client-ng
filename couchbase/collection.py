@@ -21,6 +21,10 @@ from couchbase_core.durability import Durability
 from couchbase_core._pyport import with_metaclass, xrange
 from couchbase_core.asynchronous.bucket import AsyncClientFactory
 from datetime import timedelta
+try:
+    from typing import Protocol
+except:
+    from typing_extensions import Protocol
 
 
 class DeltaValue(ConstrainedInt):
@@ -674,118 +678,151 @@ class CBCollection(CoreClient):
           return ExistsResult(False)
 
     class UpsertOptions(OptionBlock, ClientDurableOption, ServerDurableOption):
-        def __init__(self, *args, **kwargs):
-            super(CBCollection.UpsertOptions, self).__init__(*args, **kwargs)
+        @overload
+        def __new__(cls,
+                    key=None,  # type: str
+                    value=None,  # type: Any
+                    cas=0,  # type: int
+                    expiry=None,  # type: timedelta
+                    format=None,
+                    persist_to=PersistTo.NONE,  # type: PersistTo.Value
+                    replicate_to=ReplicateTo.NONE,  # type: ReplicateTo.Value
+                    durability_level=Durability.NONE  # type: Durability
+                    ):
+            pass
 
-    @overload
-    def upsert(self, key, value, *options  # type: UpsertOptions
-               ):
-        pass
+        def __new__(cls,
+                    key=None,  # type: str
+                    value=None,  # type: Any
+                    **kwargs
+                    ):
+            return super(CBCollection.UpsertOptions, cls).__new__(**kwargs)
 
-    @overload
-    def upsert(self,
-               id,  # type: str
-               value,  # type: Any
-               cas=0,  # type: int
-               expiry=None,  # type: timedelta
-               format=None,
-               persist_to=PersistTo.NONE,  # type: PersistTo.Value
-               replicate_to=ReplicateTo.NONE,  # type: ReplicateTo.Value
-               durability_level=Durability.NONE  # type: Durability
-               ):
-        # type: (...) -> MutationResult
-        pass
 
-    @_wrap_in_mutation_result
-    def upsert(self,
-               id,  # type: str
-               value,  # type: Any
-               *options,  # type: UpsertOptions
-               **kwargs  # type: Any
-               ):
-        # type: (...) -> MutationResult
-        """Unconditionally store the object in Couchbase.
+    class UpsertAction(MutationResult):
+        #
+        # @overload
+        # def __new__(cls, self,  # type: CBCollection
+        #              id, value, *options  # type: UpsertOptions
+        #              ):
+        #     # type: (...) -> MutationResult
+        #     pass
+        #
+        # @overload
+        # def __new__(cls,
+        #              self,  # type: CBCollection
+        #              id,  # type: str
+        #              value,  # type: Any
+        #              **kwargs  # type: Any
+        #              ):
+        #     # type: (...) -> MutationResult
+        #     pass
 
-        :param key:
-            The key to set the value with. By default, the key must be
-            either a :class:`bytes` or :class:`str` object encodable as
-            UTF-8. If a custom `transcoder` class is used (see
-            :meth:`~__init__`), then the key object is passed directly
-            to the transcoder, which may serialize it how it wishes.
-        :type key: string or bytes
+        @_wrap_in_mutation_result
+        def __call__(cls,
+                     self,  # type: CBCollection
+                     key,  # type: str
+                     value,  # type: Any
+                     **kwargs  # type: Any
+                     ):
+            # type: (...) -> MutationResult
+            """Unconditionally store the object in Couchbase.
 
-        :param value: The value to set for the key.
-            This should be a native Python value which will be transparently
-            serialized to JSON by the library. Do not pass already-serialized
-            JSON as the value or it will be serialized again.
+            :param key:
+                The key to set the value with. By default, the key must be
+                either a :class:`bytes` or :class:`str` object encodable as
+                UTF-8. If a custom `transcoder` class is used (see
+                :meth:`~__init__`), then the key object is passed directly
+                to the transcoder, which may serialize it how it wishes.
+            :type key: string or bytes
 
-            If you are using a different `format` setting (see `format`
-            parameter), and/or a custom transcoder then value for this
-            argument may need to conform to different criteria.
+            :param value: The value to set for the key.
+                This should be a native Python value which will be transparently
+                serialized to JSON by the library. Do not pass already-serialized
+                JSON as the value or it will be serialized again.
 
-        :param int cas: The _CAS_ value to use. If supplied, the value
-            will only be stored if it already exists with the supplied
-            CAS
+                If you are using a different `format` setting (see `format`
+                parameter), and/or a custom transcoder then value for this
+                argument may need to conform to different criteria.
 
-        :param expiry: If specified, the key will expire after this
-            many seconds
+            :param int cas: The _CAS_ value to use. If supplied, the value
+                will only be stored if it already exists with the supplied
+                CAS
 
-        :param int format: If specified, indicates the `format` to use
-            when encoding the value. If none is specified, it will use
-            the `default_format` For more info see
-            :attr:`~.default_format`
+            :param expiry: If specified, the key will expire after this
+                many seconds
 
-        :param int persist_to:
-            Perform durability checking on this many nodes nodes for
-            persistence to disk. See :meth:`endure` for more information
+            :param int format: If specified, indicates the `format` to use
+                when encoding the value. If none is specified, it will use
+                the `default_format` For more info see
+                :attr:`~.default_format`
 
-        :param int replicate_to: Perform durability checking on this
-            many replicas for presence in memory. See :meth:`endure` for
-            more information.
+            :param int persist_to:
+                Perform durability checking on this many nodes nodes for
+                persistence to disk. See :meth:`endure` for more information
 
-        :param Durability durability_level: Durability level
+            :param int replicate_to: Perform durability checking on this
+                many replicas for presence in memory. See :meth:`endure` for
+                more information.
 
-        :raise: :exc:`.ArgumentError` if an argument is supplied that is
-            not applicable in this context. For example setting the CAS
-            as a string.
-        :raise: :exc`.CouchbaseNetworkError`
-        :raise: :exc:`.KeyExistsError` if the key already exists on the
-            server with a different CAS value.
-        :raise: :exc:`.ValueFormatError` if the value cannot be
-            serialized with chosen encoder, e.g. if you try to store a
-            dictionary in plain mode.
-        :return: :class:`~.Result`.
+            :param Durability durability_level: Durability level
 
-        Simple set::
+            :raise: :exc:`.ArgumentError` if an argument is supplied that is
+                not applicable in this context. For example setting the CAS
+                as a string.
+            :raise: :exc`.CouchbaseNetworkError`
+            :raise: :exc:`.KeyExistsError` if the key already exists on the
+                server with a different CAS value.
+            :raise: :exc:`.ValueFormatError` if the value cannot be
+                serialized with chosen encoder, e.g. if you try to store a
+                dictionary in plain mode.
+            :return: :class:`~.Result`.
 
-            cb.upsert('key', 'value')
+            Simple set::
 
-        Force JSON document format for value::
+                cb.upsert('key', 'value')
 
-            cb.upsert('foo', {'bar': 'baz'}, format=couchbase_core.FMT_JSON)
+            Force JSON document format for value::
 
-        Insert JSON from a string::
+                cb.upsert('foo', {'bar': 'baz'}, format=couchbase_core.FMT_JSON)
 
-            JSONstr = '{"key1": "value1", "key2": 123}'
-            JSONobj = json.loads(JSONstr)
-            cb.upsert("documentID", JSONobj, format=couchbase_core.FMT_JSON)
+            Insert JSON from a string::
 
-        Force UTF8 document format for value::
+                JSONstr = '{"key1": "value1", "key2": 123}'
+                JSONobj = json.loads(JSONstr)
+                cb.upsert("documentID", JSONobj, format=couchbase_core.FMT_JSON)
 
-            cb.upsert('foo', "<xml></xml>", format=couchbase_core.FMT_UTF8)
+            Force UTF8 document format for value::
 
-        Perform optimistic locking by specifying last known CAS version::
+                cb.upsert('foo', "<xml></xml>", format=couchbase_core.FMT_UTF8)
 
-            cb.upsert('foo', 'bar', cas=8835713818674332672)
+            Perform optimistic locking by specifying last known CAS version::
 
-        Simple set with durability::
+                cb.upsert('foo', 'bar', cas=8835713818674332672)
 
-            cb.upsert('key', 'value', durability_level=Durability.MAJORITY_AND_PERSIST_ON_MASTER)
+            Simple set with durability::
 
-        """
+                cb.upsert('key', 'value', durability_level=Durability.MAJORITY_AND_PERSIST_ON_MASTER)
 
-        final_options = forward_args(kwargs, *options)
-        return ResultPrecursor(self.bucket.upsert(id, value, **final_options), final_options)
+            """
+            final_options = forward_args(kwargs, *options)
+            return ResultPrecursor(self.bucket.upsert(key, value, **final_options), final_options)
+
+    class ActionVerb(Protocol):
+        ActionArgs=TypeVar('ActionArgs',bound=Tuple)
+        ActionResult=TypeVar('ActionResult',bound=Any)
+        ActionVerbType=TypeVar('ActionVerb', bound=Callable[[ActionArgs],ActionResult])
+        @staticmethod
+        def _verb_to_member(verb_class  # type: Type[CBCollection.ActionVerb.ActionVerbType]
+                            ):
+            # type: (...)->Callable[[CBCollection]+ActionArgs,ActionResult]]
+            #@wraps(verb_class)
+            def wrapper(self,
+                        *args, **kwargs):
+                return verb_class(self, *args, **kwargs)
+            return wrapper
+
+    upsert=ActionVerb._verb_to_member(UpsertAction)
 
     def insert(self,
                id,  # type: str

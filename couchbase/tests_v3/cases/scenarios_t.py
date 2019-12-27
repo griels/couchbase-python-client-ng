@@ -582,6 +582,7 @@ class Scenarios(CollectionTestCase):
         _LCB._init_helpers(**messed_helpers)
 
         def do_upsert():
+            self.coll.upsert()
             self.coll.upsert('king_arthur', {'name': 'Arthur', 'email': 'kingarthur@couchbase.com',
                                              'interests': ['Holy Grail', 'African Swallows']})
 
