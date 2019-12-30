@@ -5,11 +5,11 @@ from couchbase_core.exceptions import CouchbaseError
 from .management.users import UserManager
 from .management.buckets import BucketManager
 from couchbase.management.admin import Admin
-from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics, IDiagnosticsResult
+from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics, DiagnosticsResultProtocol
 from couchbase.fulltext import SearchResultProtocol, SearchResult, SearchOptions
 from couchbase_core.fulltext import Query, Facet
 from .analytics import AnalyticsResult
-from .n1ql import QueryResult, IQueryResult
+from .n1ql import QueryResult, QueryResultProtocol
 from .options import OptionBlock, forward_args, OptionBlockDeriv
 from .bucket import BucketOptions, Bucket, CoreClient
 from couchbase_core.cluster import Cluster as SDK2Cluster, Authenticator as SDK2Authenticator
@@ -59,7 +59,7 @@ class AnalyticsOptions(OptionBlock):
     pass
 
 
-class QueryOptions(OptionBlock, IQueryResult):
+class QueryOptions(OptionBlock, QueryResultProtocol):
     @property
     @abstractmethod
     def is_live(self):
@@ -164,7 +164,7 @@ class Cluster(object):
               statement,  # type: str,
               *options  # type: QueryOptions
               ):
-        # type: (...) -> IQueryResult
+        # type: (...) -> QueryResultProtocol
         pass
 
     def query(self,
@@ -172,7 +172,7 @@ class Cluster(object):
               *options,  # type: QueryOptions
               **kwargs  # type: Any
               ):
-        # type: (...) -> IQueryResult
+        # type: (...) -> QueryResultProtocol
         """
         Perform a N1QL query.
 
@@ -256,7 +256,7 @@ class Cluster(object):
                     reportId=None,  # type: str
                     timeout=None
                     ):
-        # type: (...) -> IDiagnosticsResult
+        # type: (...) -> DiagnosticsResultProtocol
         """
         Creates a diagnostics report that can be used to determine the healthfulness of the Cluster.
         :param reportId - an optional string name for the generated report.

@@ -5,10 +5,10 @@ from couchbase.options import timedelta, forward_args
 from couchbase.management.generic import GenericManager
 from couchbase_core import mk_formstr, JSONMapping, Mapped
 from couchbase_core.auth_domain import AuthDomain
-from couchbase_core._pyport import ulp, with_metaclass
+from typing import *
+from couchbase_core._pyport import ulp, with_metaclass, Protocol
 from couchbase_core import ABCMeta
 from couchbase_core.exceptions import HTTPError
-from typing import *
 from couchbase.options import OptionBlockTimeOut
 from couchbase_core.exceptions import ErrorMapper, NotSupportedWrapper
 
@@ -108,14 +108,14 @@ class UserManager(GenericManager):
 
     @overload
     def upsert_user(self,  # type: UserManager
-                    user,  # type: IUser
+                    user,  # type: UserProtocol
                     domain=AuthDomain.Local,  # type: AuthDomain
                     timeout=None  # type: timedelta
                     ):
         pass
 
     def upsert_user(self,  # type: UserManager
-                    user,  # type: IUser
+                    user,  # type: UserProtocol
                     domain=AuthDomain.Local,  # type: AuthDomain
                     *options,  # type: UpsertUserOptions
                     **kwargs
@@ -123,7 +123,7 @@ class UserManager(GenericManager):
         """
         Creates or updates a user.
 
-        :param IUser user: the new version of the user.
+        :param UserProtocol user: the new version of the user.
         :param AuthDomain domain: name of the user domain (local | external). Defaults to local.
         :param timedelta timeout: the time allowed for the operation to be terminated. This is controlled by the client.
 
@@ -425,7 +425,7 @@ class RoleAndOrigins(object):
         pass
 
 
-class IUser(object):
+class UserProtocol(Protocol):
     def __init__(self):
         """Mutable. Models the user properties that may be updated via this API.
         All properties of the User class MUST have associated setters except for "username" which is fixed when the object is created"""
@@ -475,7 +475,7 @@ class IUser(object):
         pass
 
 
-class User(IUser):
+class User(UserProtocol):
     @overload
     def __init__(self, username=None, display_name=None, password=None, groups=None, roles=None):
         pass
@@ -533,7 +533,7 @@ class UserAndMetadata(object):
 
     @property
     def user(self):
-        # type: (...) -> IUser
+        # type: (...) -> UserProtocol
         """- returns a new mutable User object each time this method is called.
         Modifying the fields of the returned User MUST have no effect on the UserAndMetadata object it came from."""
 
@@ -572,7 +572,7 @@ class RawUserAndMetadata(UserAndMetadata):
 
     @property
     def user(self):
-        # type: (...) -> IUser
+        # type: (...) -> UserProtocol
         """- returns a new mutable User object each time this method is called.
         Modifying the fields of the returned User MUST have no effect on the UserAndMetadata object it came from."""
         return User(**self._raw_data.get('user'))
@@ -600,7 +600,7 @@ class RawUserAndMetadata(UserAndMetadata):
         return set(self._raw_data.get('external_groups'))
 
 
-class IGroup(object):
+class GroupProtocol(Protocol):
     """Mutable. Defines a set of roles that may be inherited by users.
     All properties of the Group class MUST have associated setters except for "name" which is fixed when the object is created."""
 
@@ -635,7 +635,7 @@ class IGroup(object):
         pass
 
 
-class Group(JSONMapping, IGroup):
+class Group(JSONMapping, GroupProtocol):
     defaults = {'description': '', 'ldap_group_ref': ''}
 
     @overload

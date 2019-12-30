@@ -185,7 +185,7 @@ class Bucket(object):
                    *view_options, # type: ViewOptions
                    **kwargs
                    ):
-        # type: (...) -> IViewResult
+        # type: (...) -> ViewResultProtocol
         """
         Run a View Query
         :param str design_doc: design document

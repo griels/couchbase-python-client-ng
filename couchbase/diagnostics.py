@@ -2,6 +2,7 @@ from abc import abstractmethod
 from typing import Optional, Mapping, Union, Any
 from enum import Enum
 from couchbase_core import JSON
+from couchbase_core._pyport import Protocol
 
 
 class ServiceType(Enum):
@@ -13,7 +14,7 @@ class ServiceType(Enum):
     Config = "config"
 
 
-class IEndPointDiagnostics:
+class EndpointDiagnosticsProtocol(Protocol):
     @abstractmethod
     def type(self):
         # type: (...) -> ServiceType
@@ -50,7 +51,7 @@ class IEndPointDiagnostics:
         pass
 
 
-class IDiagnosticsResult:
+class DiagnosticsResultProtocol(Protocol):
     @abstractmethod
     def id(self):
         # type: (...) -> str
@@ -68,11 +69,11 @@ class IDiagnosticsResult:
 
     @abstractmethod
     def services(self):
-        # type: (...) -> Mapping[str, IEndPointDiagnostics]
+        # type: (...) -> Mapping[str, EndpointDiagnosticsProtocol]
         pass
 
 
-class EndPointDiagnostics(IEndPointDiagnostics):
+class EndPointDiagnostics(EndpointDiagnosticsProtocol):
     def __init__(self,  # type: EndPointDiagnostics
                  service_type,  # type: Union[ServiceType,str]
                  raw_endpoint  # type: JSON
@@ -115,7 +116,7 @@ class EndPointDiagnostics(IEndPointDiagnostics):
         return self._raw_endpoint.get('scope')
 
 
-class DiagnosticsResult(IDiagnosticsResult):
+class DiagnosticsResult(DiagnosticsResultProtocol):
     def __init__(self,  # type: DiagnosticsResult
                  source_diagnostics  # type: Mapping[str,Any]
                  ):
@@ -134,5 +135,5 @@ class DiagnosticsResult(IDiagnosticsResult):
         return self._src_diagnostics.get('sdk')
 
     def services(self):
-        # type: (...) -> Mapping[str, IEndPointDiagnostics]
+        # type: (...) -> Mapping[str, EndpointDiagnosticsProtocol]
         return self._src_diagnostics.get('services', {})

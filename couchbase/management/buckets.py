@@ -3,6 +3,7 @@ from ..options import OptionBlock
 from couchbase.management.generic import GenericManager
 from typing import *
 from couchbase_core import abstractmethod, mk_formstr
+from couchbase_core._pyport import Protocol
 
 
 class BucketManager(GenericManager):
@@ -101,14 +102,14 @@ class BucketManager(GenericManager):
                                  content=mk_formstr(params))
 
     def update_bucket(self,  # type: BucketManager
-                      settings,  # type: IBucketSettings
+                      settings,  # type: BucketSettingsProtocol
                       *options  # type: UpdateBucketOptions
                       ):
         """
         Updates a bucket. Every setting must be set to what the user wants it to be after the update.
         Any settings that are not set to their desired values may be reverted to default values by the server.
 
-        :param IBucketSettings settings: settings for the bucket.
+        :param BucketSettingsProtocol settings: settings for the bucket.
         :raises: InvalidArgumentsException
         :raises: BucketDoesNotExistException
         """
@@ -133,7 +134,7 @@ class BucketManager(GenericManager):
                    bucket_name,  # type: str
                    *options  # type: GetBucketOptions
                    ):
-        # type: (...) -> IBucketSettings
+        # type: (...) -> BucketSettingsProtocol
         """
         Gets a bucket's settings.
 
@@ -141,7 +142,7 @@ class BucketManager(GenericManager):
         :returns: settings for the bucket. Note: the ram quota returned is in bytes
         not mb so requires x  / 1024 twice. Also Note: FlushEnabled is not a setting returned by the server, if flush is enabled then the doFlush endpoint will be listed and should be used to populate the field.
 
-        :rtype: IBucketSettings
+        :rtype: BucketSettingsProtocol
         :raises: BucketNotFoundException
         :raises: InvalidArgumentsException
         """
@@ -150,14 +151,14 @@ class BucketManager(GenericManager):
     def get_all_buckets(self,  # type: BucketManager
                         *options  # type: GetAllBucketOptions
                         ):
-        # type: (...) -> Iterable[IBucketSettings]
+        # type: (...) -> Iterable[BucketSettingsProtocol]
 
         """
         Gets all bucket settings. Note,  # type: the ram quota returned is in bytes
         not mb so requires x  / 1024 twice.
 
         :returns: An iterable of settings for each bucket.
-        :rtype: Iterable[IBucketSettings]
+        :rtype: Iterable[BucketSettingsProtocol]
         """
         return list(
             map(lambda x: BucketSettings(**x),
@@ -180,7 +181,7 @@ class BucketManager(GenericManager):
             "/pools/default/buckets/{bucket_name}/controller/doFlush".format(bucket_name=bucket_name), method='POST')
 
 
-class IBucketSettings(object):
+class BucketSettingsProtocol(Protocol):
     @property
     @abstractmethod
     def name(self):
@@ -247,7 +248,7 @@ class IBucketSettings(object):
         pass
 
 
-class BucketSettings(IBucketSettings, dict):
+class BucketSettings(BucketSettingsProtocol, dict):
     @overload
     def __init__(self, name=None, flush_enabled=None, ram_quota_mb=None, num_replicas=None, replica_indexes=None, bucket_type=None, ejection_method=None, max_ttl=None, compression_mode=None):
         pass
@@ -322,7 +323,7 @@ class BucketSettings(IBucketSettings, dict):
         return self
 
 
-class ICreateBucketSettings(IBucketSettings):
+class CreateBucketSettingsProtocol(BucketSettingsProtocol, Protocol):
     """CreateBucketSettings is a superset of BucketSettings providing one extra property, ConflictResolutionType:
     The reasoning for this is that on Update ConflictResolutionType cannot be present in the JSON payload at all.
     """
@@ -334,7 +335,7 @@ class ICreateBucketSettings(IBucketSettings):
         pass
 
 
-class CreateBucketSettings(ICreateBucketSettings, BucketSettings):
+class CreateBucketSettings(CreateBucketSettingsProtocol, BucketSettings):
     @overload
     def __init__(self, name=None, flush_enabled=None, ram_quota_mb=None, num_replicas=None, replica_indexes=None, bucket_type=None, ejection_method=None, max_ttl=None, compression_mode=None, conflict_resolution_type=None, bucket_password=None):
         pass

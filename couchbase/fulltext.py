@@ -43,7 +43,7 @@ class SearchRow(Protocol):
 class SearchRowLocations(Protocol):
     def get_all(self):
          # type: (...) -> List[SearchRowLocation]
-         # list all locations (any field, any term)
+         """list all locations (any field, any term)"""
          pass
 
     # list all locations for a given field (any term)
@@ -72,8 +72,10 @@ class SearchRowLocations(Protocol):
 
     def terms(self):
         # type: (...) -> Set[str]
-        """List all terms in this locations,
-        considering all fields (so a set):"""
+        """
+        List all terms in this locations,
+        considering all fields (so a set):
+        """
         pass
 
     def terms_for(self,

@@ -26,7 +26,7 @@ from couchbase_core.n1ql import N1QLRequest
 from typing import *
 
 
-class IQueryResult(object):
+class QueryResultProtocol(Protocol):
 
     @abstractmethod
     def request_id(self):
@@ -59,7 +59,7 @@ class IQueryResult(object):
         pass
 
 
-class QueryResult(IterableWrapper, IQueryResult):
+class QueryResult(IterableWrapper, QueryResultProtocol):
     def __init__(self,
                  parent  # type: N1QLRequest
                  ):
