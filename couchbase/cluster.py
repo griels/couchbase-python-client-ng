@@ -6,7 +6,7 @@ from .management.users import UserManager
 from .management.buckets import BucketManager
 from couchbase.management.admin import Admin
 from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics, IDiagnosticsResult
-from couchbase.fulltext import ISearchResult, SearchResult, SearchOptions
+from couchbase.fulltext import SearchResultProtocol, SearchResult, SearchOptions
 from couchbase_core.fulltext import Query, Facet
 from .analytics import AnalyticsResult
 from .n1ql import QueryResult, IQueryResult
@@ -237,7 +237,7 @@ class Cluster(object):
                      *options,  # type: SearchOptions
                      **kwargs
                      ):
-        # type: (...) -> ISearchResult
+        # type: (...) -> SearchResultProtocol
         """
         Executes a Search or FTS query against the remote cluster and returns a ISearchResult implementation with the results of the query.
 
