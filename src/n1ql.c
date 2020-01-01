@@ -87,6 +87,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
         cmd.cmdflags |= (1<<18);
         cmd.host = host;
     }
+    Py_INCREF(vres);
 
     PYCBC_TRACECMD_SCOPED(
             rc, n1ql, query, self->instance, *cmd.handle, context, mres, &cmd);
