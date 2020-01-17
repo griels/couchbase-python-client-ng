@@ -984,7 +984,7 @@ class CBCollection(CoreClient):
                   spec,  # type: MutateInSpec
                   *options  # type: MutateInOptions
                   ):
-        # type: (...) -> MutationResult
+        # type: (...) -> MutateInResult
         pass
 
     @overload
@@ -996,7 +996,7 @@ class CBCollection(CoreClient):
                   upsert_doc=False,  # type: bool
                   durability_level=Durability.NONE  # type: Durability
                   ):
-        # type: (...) -> MutationResult
+        # type: (...) -> MutateInResult
         pass
 
     @_inject_scope_and_collection
@@ -1006,7 +1006,7 @@ class CBCollection(CoreClient):
                   *options,  # type: MutateInOptions
                   **kwargs  # type: Any
                   ):
-        # type: (...) -> ResultPrecursor
+        # type: (...) -> MutateInResult
         """Perform multiple atomic modifications within a document.
 
         :param key: The key of the document to modify
