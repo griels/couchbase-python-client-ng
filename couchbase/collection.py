@@ -427,9 +427,10 @@ class CBCollection(CoreClient):
 
         """
         final_options = forward_args(kwargs, *options)
-        return ResultPrecursor(super(CBCollection, self).rget(id, **final_options), final_options)
+        return super(CBCollection, self).rget(id, **final_options)
 
     @_inject_scope_and_collection
+    @get_replica_result_wrapper
     def get_all_replicas(self,
                          id,         # type: str
                          *options,   # type: GetAllReplicasOptions
@@ -447,9 +448,7 @@ class CBCollection(CoreClient):
               :exc:`.DocumentUnretrievableError` if no replicas exist
       :return: A list(:class:`couchbase.result.GetReplicaResult`) object
       """
-      # NOTE: currently rgetall in the client returns a single result.  Lets
-      # raise NotImplementedException for now.
-      raise NotImplementedError("To be implemented in full SDK3 release")
+      return super(CBCollection, self).rgetall(id, **forward_args(kwargs, *options))
 
     @_inject_scope_and_collection
     def get_multi(self,  # type: CBCollection
