@@ -1248,7 +1248,10 @@ enum {
     PYCBC_MRES_F_SINGLE = 1 << 6,
 
     /* Hint to dispatch to the view callback functions */
-    PYCBC_MRES_F_VIEWS = 1 << 7
+    PYCBC_MRES_F_VIEWS = 1 << 7,
+
+    /** Hint that the operation will make multiple callbacks on a single key */
+    PYCBC_MRES_F_MULTI = 1 << 8
 };
 /**
  * Contextual info for enhanced error logging
