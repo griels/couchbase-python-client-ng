@@ -12,20 +12,27 @@ try:
 except:
     from typing_extensions import TypedDict
 
-OptionBlockBase = dict
+OptionBlockBase = TypedDict
+from typing import *
 
-
-class OptionBlock(OptionBlockBase):
-    def __init__(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
-        super(OptionBlock, self).__init__(**{k: v for k, v in kwargs.items() if v is not None})
-        self._args = args
+OptionBlock = TypedDict
+#
+# class OptionBlock(OptionBlockBase):
+#     def __init__(self, *args, **kwargs):
+#         # type: (*Any, **Any) -> None
+#         super(OptionBlock, self).__init__(**{k: v for k, v in kwargs.items() if v is not None})
+#         self._args = args
 
 
 T = TypeVar('T', bound=OptionBlock)
 
+class TimeOutBase(OptionBlock):
+    timeout:timedelta = None
+
+TimeOutBase()
 
 class OptionBlockTimeOut(OptionBlock):
+
     @overload
     def __init__(self,
                  timeout=None  # type: timedelta
@@ -37,13 +44,6 @@ class OptionBlockTimeOut(OptionBlock):
                  ):
         # type: (...) -> None
         super(OptionBlockTimeOut, self).__init__(**kwargs)
-
-    def timeout(self,  # type: T
-                duration  # type: timedelta
-                ):
-        # type: (...) -> T
-        self['timeout'] = duration
-        return self
 
 
 class Value(object):
