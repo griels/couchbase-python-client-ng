@@ -691,7 +691,6 @@ class CBCollection(CoreClient):
         """
         return ExistsResult(super(CBCollection,self).exists(key), **forward_args(kwargs, *options))
 
-
     @_mutate_result_and_inject
     def upsert(self,
                key,         # type: str
