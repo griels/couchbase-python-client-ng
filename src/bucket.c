@@ -1215,7 +1215,7 @@ Bucket__connect(pycbc_Bucket *self, PyObject* args, PyObject* kwargs)
         self->btype = pycbc_IntFromL(btype);
     }
 #ifdef PYCBC_TRACING
-    if (self->tracer) {
+    if (self->tracer && !self->tracer->is_lcb_tracer) {
         lcb_set_tracer(self->instance, self->tracer->tracer);
     }
 #endif

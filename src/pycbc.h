@@ -715,6 +715,7 @@ void *pycbc_capsule_value_or_null(PyObject *capsule, const char *capsule_name);
 typedef struct pycbc_Tracer {
     PyObject_HEAD
     lcbtrace_TRACER *tracer;
+    int is_lcb_tracer;
 } pycbc_Tracer_t;
 
 typedef struct {
