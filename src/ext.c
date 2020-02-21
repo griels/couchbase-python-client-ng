@@ -2939,10 +2939,7 @@ static PyObject *Tracer_parent(pycbc_Tracer_t *self, void *unused)
     pycbc_tracer_state *tracer_state =
             (self && self->tracer) ? (pycbc_tracer_state *)self->tracer->cookie
                                    : NULL;
-    if (self->is_lcb_tracer)
-    {
-        Py_RETURN_NONE;
-    }
+
     pycbc_assert(tracer_state);
     {
         PyObject *result = pycbc_none_or_value(tracer_state->parent);
@@ -2962,8 +2959,14 @@ static int Tracer__init__(pycbc_Tracer_t *self,
     lcbtrace_TRACER *child_tracer =
             (lcbtrace_TRACER *)pycbc_null_or_capsule_value(
                     threshold_tracer_capsule, "threshold_tracer");
-    self->is_lcb_tracer=self->tracer?1:0;
-    self->tracer = pycbc_tracer_new(parent, child_tracer);
+    if (parent){
+        self->tracer = pycbc_tracer_new(parent, child_tracer);
+        self->is_lcb_tracer=0;
+    }
+    else{
+        self->tracer = pycbc_tracer_new(NULL, child_tracer);
+        self->is_lcb_tracer=1;
+    }
 
     PYCBC_EXCEPTION_LOG_NOCLEAR;
     return rv;
