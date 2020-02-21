@@ -19,6 +19,7 @@
 #include "pycbc.h"
 #include "structmember.h"
 #include <libcouchbase/logger.h>
+#include "frameobject.h"
 /**
  * This file contains boilerplate for the module itself
  */
@@ -805,9 +806,27 @@ void pycbc_exception_log(const char *file,
                 file,
                 func,
                 line,
-                "***** EXCEPTION:[%R], [%R] *****",
+                "***** EXCEPTION:[%R], [%R] *****, traceback:",
                 type,
                 value);
+        if (traceback && PyTraceBack_Check(traceback))
+        {
+            PyTracebackObject* traceRoot = (PyTracebackObject*)traceback;
+            PyTracebackObject* pTrace = traceRoot;
+
+            while (pTrace != NULL)
+            {
+                PyFrameObject* frame = pTrace->tb_frame;
+                PyCodeObject* code = frame->f_code;
+
+                int lineNr = PyFrame_GetLineNumber(frame);
+                const char *sCodeName = PyUnicode_AsUTF8(code->co_name);
+                const char *sFileName = PyUnicode_AsUTF8(code->co_filename);
+
+                PYCBC_DEBUG_PYFORMAT_FILE_FUNC_AND_LINE(file, func, line, "    at %s (%s:%d); ", sCodeName, sFileName, lineNr);
+                pTrace = pTrace->tb_next;
+            }
+        }
         if (clear)
         {
             Py_XDECREF(type);
@@ -2948,6 +2967,11 @@ void pycbc_tracer_destructor(lcbtrace_TRACER *tracer)
             Py_XDECREF(state->parent);
             Py_XDECREF(state->id_map);
             Py_XDECREF(state->start_span_method);
+            if (state->child)
+            {
+                lcbtrace_destroy(state->child);
+            }
+
             PYCBC_FREE(state);
             tracer->cookie = NULL;
         }
@@ -3002,6 +3026,11 @@ static PyObject *Tracer_parent(pycbc_Tracer_t *self, void *unused)
     pycbc_tracer_state *tracer_state =
             (self && self->tracer) ? (pycbc_tracer_state *)self->tracer->cookie
                                    : NULL;
+            (pycbc_tracer_state *)self->tracer->cookie;
+    if (self->is_lcb_tracer)
+    {
+        Py_RETURN_NONE;
+    }
     pycbc_assert(tracer_state);
     {
         PyObject *result = pycbc_none_or_value(tracer_state->parent);
@@ -3021,7 +3050,14 @@ static int Tracer__init__(pycbc_Tracer_t *self,
     lcbtrace_TRACER *child_tracer =
             (lcbtrace_TRACER *)pycbc_capsule_value_or_null(
                     threshold_tracer_capsule, "threshold_tracer");
-    self->tracer = pycbc_tracer_new(parent, child_tracer);
+    if (parent){
+        self->tracer = pycbc_tracer_new(parent, child_tracer);
+        self->is_lcb_tracer=0;
+    }
+    else{
+        self->tracer = pycbc_tracer_new(NULL, child_tracer);
+        self->is_lcb_tracer=1;
+    }
 
     PYCBC_EXCEPTION_LOG_NOCLEAR;
     return rv;
