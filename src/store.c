@@ -445,7 +445,7 @@ set_common, pycbc_Bucket *self, PyObject *args, PyObject *kwargs,
                             cv.is_seqcmd,
                             cv.sched_cmds)
 
-    if (-1 == pycbc_common_vars_wait(&cv, self,context)) {
+    if (-1 == pycbc_common_vars_wait(&cv, self,PYCBC_PROPAGATE_TRACER(context))) {
         goto GT_DONE;
     }
 

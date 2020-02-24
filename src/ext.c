@@ -1526,6 +1526,7 @@ pycbc_stack_context_handle pycbc_Context_check(
         const char *func,
         int line)
 {
+    context=PYCBC_PROPAGATE_TRACER(context);
     PYCBC_DEBUG_LOG_WITH_FILE_FUNC_AND_LINE_NEWLINE(
             file, func, line, "checking context %p", context);
     if (!(context)) {
@@ -3031,7 +3032,7 @@ static int Tracer__init__(pycbc_Tracer_t *self,
         self->is_lcb_tracer=0;
     }
     else{
-        self->tracer = child_tracer;
+        self->tracer = pycbc_tracer_new(NULL, child_tracer);
         self->is_lcb_tracer=1;
     }
 

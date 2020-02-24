@@ -52,6 +52,8 @@ if loglevel:
     ch.setLevel(logging.getLevelName(loglevel))
     logging.getLogger().addHandler(ch)
 
+from twisted.internet.base import DelayedCall
+DelayedCall.debug=True
 
 def version_to_tuple(version_str, default=None):
     return tuple(map(int, str.split(version_str, "."))) if version_str else default
