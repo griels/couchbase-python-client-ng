@@ -69,7 +69,6 @@ static void event_fire_common(pycbc_Event *ev, short which)
 {
     lcb_socket_t fd = 0;
     PyObject *parent;
-
     if (ev->state == PYCBC_EVSTATE_FREED) {
         return;
     }
@@ -80,7 +79,9 @@ static void event_fire_common(pycbc_Event *ev, short which)
     Py_INCREF(ev);
     parent = ev->parent;
     Py_XINCREF(parent);
+    PYCBC_DEBUG_LOG("Calling handler with which %d", which)
     ev->cb.handler(fd, which, ev->cb.data);
+    PYCBC_DEBUG_LOG("Called handler with which %d", which)
     Py_XDECREF(parent);
     Py_DECREF(ev);
 }
@@ -411,9 +412,13 @@ modify_event_python(pycbc_IOPSWrapper *pio, pycbc_Event *ev,
         meth = pio->modtimer;
     }
     PyTuple_SET_ITEM(argtuple, 2, o_arg);
+#ifdef PYCBC_IOPS_DEBUG
     PYCBC_DEBUG_PYFORMAT("Calling %R with %R",meth,argtuple)
+#endif
     result = do_safecall(meth, argtuple);
+#ifdef PYCBC_IOPS_DEBUG
     PYCBC_DEBUG_PYFORMAT("Called %R with %R",meth,argtuple)
+#endif
     Py_DECREF(argtuple);
     Py_XDECREF(result);
 
