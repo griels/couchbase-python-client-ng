@@ -348,8 +348,9 @@ do_safecall(PyObject *callable, PyObject *args)
         PyErr_Fetch(&exctype, &excval, &exctb);
         PyErr_Clear();
     }
-
+    PYCBC_DEBUG_PYFORMAT("Calling %R with %R", callable, args)
     result = PyObject_CallObject(callable, args);
+    PYCBC_DEBUG_PYFORMAT("Called %R with %R", callable, args)
     if (!has_error) {
         /* No special handling here... */
         return result;
@@ -410,8 +411,9 @@ modify_event_python(pycbc_IOPSWrapper *pio, pycbc_Event *ev,
         meth = pio->modtimer;
     }
     PyTuple_SET_ITEM(argtuple, 2, o_arg);
-
+    PYCBC_DEBUG_PYFORMAT("Calling %R with %R",meth,argtuple)
     result = do_safecall(meth, argtuple);
+    PYCBC_DEBUG_PYFORMAT("Called %R with %R",meth,argtuple)
     Py_DECREF(argtuple);
     Py_XDECREF(result);
 
@@ -491,9 +493,10 @@ destroy_event_common(lcb_io_opt_t io, void *arg)
     pycbc_Event *ev = arg;
     lcb_U32 dummy = 0;
     pycbc_assert(ev->state != PYCBC_EVSTATE_ACTIVE);
-
+    PYCBC_DEBUG_LOG("Calling destroy event for %p", arg)
     modify_event_python(PYCBC_IOW_FROM_IOPS(io), ev, PYCBC_EVACTION_CLEANUP,
                         0, &dummy);
+    PYCBC_DEBUG_LOG("Called destroy event for %p", arg)
 
     ev->state = PYCBC_EVSTATE_FREED;
     Py_DECREF(ev);
