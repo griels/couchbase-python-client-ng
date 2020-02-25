@@ -21,6 +21,8 @@ from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
 
 from couchbase_tests.base import MockTestCase
 from txcouchbase.tests.base import gen_base
+import logging
+
 
 class RowsHandler(AsyncN1QLRequest):
     def __init__(self, *args, **kwargs):
@@ -63,11 +65,17 @@ class TxN1QLTests(gen_base(MockTestCase)):
         d = cb.n1qlQueryAll('SELECT mockrow')
 
         def verify(o):
+            logging.error("Called back")
+
             self.assertIsInstance(o, BatchedN1QLRequest)
             rows = [r for r in o]
             self.assertEqual(1, len(rows))
+            logging.error("End of callback")
 
-        return d.addCallback(verify)
+
+        result= d.addCallback(verify)
+        logging.error("ready to return")
+        return result
 
     def testEmpty(self):
         cb = self.make_connection()
