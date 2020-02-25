@@ -326,7 +326,7 @@ init_libcouchbase(void)
 #define PYCBC_CRYPTO_TYPES_ADAPTER(NAME, DOC, ...) \
     X(NAME, pycbc_##NAME##Type_init)
 #    define X_PYTYPES_NOTRACING(X)                         \
-        X(Client, pycbc_ClientType_init)                   \
+        X(Bucket, pycbc_BucketType_init)                   \
         /** Remember to keep base classes in order */      \
         X(Result, pycbc_ResultType_init)                   \
         X(OperationResult, pycbc_OperationResultType_init) \
@@ -345,10 +345,10 @@ init_libcouchbase(void)
         X(_SDResult, pycbc_SDResultType_init)              \
         PYCBC_CRYPTO_TYPES(PYCBC_CRYPTO_TYPES_ADAPTER)
 
-#    define X_PYTYPES_NOCOLLECTIONS(X)     \
+#define X_PYTYPES_NOCOLLECTIONS(X)     \
         X_PYTYPES_NOTRACING(X)         \
         X(Tracer, pycbc_TracerType_init)
-#    define PYCBC_COLLECTIONS_PROPER
+
 #    ifdef PYCBC_COLLECTIONS_PROPER
 #        define X_PYTYPES(X)           \
             X_PYTYPES_NOCOLLECTIONS(X) \
@@ -2842,21 +2842,8 @@ pycbc_Collection_t pycbc_Collection_as_value(pycbc_Bucket *self,
                                              PyObject *kwargs)
 {
     pycbc_Collection_t unit = {0};
-    pycbc_collection_init_from_fn_args(&unit, kwargs);
-    unit.stack_allocated = 1;
+    pycbc_collection_init_from_fn_args(&unit, self, kwargs);
     return unit;
-}
-
-pycbc_Collection_t *pycbc_Collection_ptr(pycbc_Bucket *self,
-                                         pycbc_Collection_t *in_place,
-                                         PyObject *kwargs)
-{
-    if (PyObject_IsInstance((PyObject *)self,
-                            (PyObject *)&pycbc_CollectionType)) {
-        return (pycbc_Collection_t *)self;
-    }
-    *in_place = pycbc_Collection_as_value(self, kwargs);
-    return in_place;
 }
 pycbc_tracer_payload_t *pycbc_Tracer_propagate_span(
         pycbc_Tracer_t *tracer, pycbc_tracer_payload_t *payload)
@@ -3039,7 +3026,6 @@ static PyObject *Tracer_parent(pycbc_Tracer_t *self, void *unused)
     pycbc_tracer_state *tracer_state =
             (self && self->tracer) ? (pycbc_tracer_state *)self->tracer->cookie
                                    : NULL;
-            (pycbc_tracer_state *)self->tracer->cookie;
     if (self->is_lcb_tracer)
     {
         Py_RETURN_NONE;
