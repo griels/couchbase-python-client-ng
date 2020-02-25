@@ -349,9 +349,10 @@ do_safecall(PyObject *callable, PyObject *args)
         PyErr_Fetch(&exctype, &excval, &exctb);
         PyErr_Clear();
     }
-    PYCBC_DEBUG_PYFORMAT("Calling %R with %R", pycbc_none_or_value(callable), pycbc_none_or_value(args))
+    PYCBC_EXCEPTION_LOG_NOCLEAR;
+    PYCBC_DEBUG_PYFORMAT("Calling %S with %S", pycbc_none_or_value(callable), pycbc_none_or_value(args))
     result = PyObject_CallObject(callable, args);
-    PYCBC_DEBUG_PYFORMAT("Called %R with %R", pycbc_none_or_value(callable), pycbc_none_or_value(args))
+    PYCBC_DEBUG_PYFORMAT("Called %S with %S, result was %S", pycbc_none_or_value(callable), pycbc_none_or_value(args), result?result:Py_None)
     if (!has_error) {
         /* No special handling here... */
         return result;
@@ -376,6 +377,7 @@ do_safecall(PyObject *callable, PyObject *args)
         Py_XDECREF(exctype);
         Py_XDECREF(excval);
         Py_XDECREF(exctb);
+        PYCBC_EXCEPTION_LOG_NOCLEAR;
     } else {
         PyErr_Restore(exctype, excval, exctb);
     }
@@ -412,10 +414,13 @@ modify_event_python(pycbc_IOPSWrapper *pio, pycbc_Event *ev,
         meth = pio->modtimer;
     }
     PyTuple_SET_ITEM(argtuple, 2, o_arg);
+    PYCBC_EXCEPTION_LOG_NOCLEAR;
+
 #ifdef PYCBC_IOPS_DEBUG
     PYCBC_DEBUG_PYFORMAT("Calling %R with %R",meth,argtuple)
 #endif
     result = do_safecall(meth, argtuple);
+    PYCBC_EXCEPTION_LOG_NOCLEAR;
 #ifdef PYCBC_IOPS_DEBUG
     PYCBC_DEBUG_PYFORMAT("Called %R with %R",meth,argtuple)
 #endif
