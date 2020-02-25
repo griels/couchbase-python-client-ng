@@ -1178,6 +1178,12 @@ void pycbc_Bucket_init_tracer(pycbc_Bucket *self)
         }
         PYCBC_DECREF(tracer_args);
     }
+#ifdef PYCBC_TRACING
+    if (self->tracer){//} && self->tracer->tracer!=threshold_tracer) {
+        lcb_set_tracer(self->instance, self->tracer->tracer);
+    }
+#endif
+
 }
 
 static PyObject*
@@ -1214,11 +1220,6 @@ Bucket__connect(pycbc_Bucket *self, PyObject* args, PyObject* kwargs)
         }
         self->btype = pycbc_IntFromL(btype);
     }
-#ifdef PYCBC_TRACING
-    if (self->tracer && !self->tracer->is_lcb_tracer) {
-        lcb_set_tracer(self->instance, self->tracer->tracer);
-    }
-#endif
     Py_RETURN_NONE;
 }
 
