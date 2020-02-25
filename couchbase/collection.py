@@ -11,7 +11,7 @@ from .result import GetResult, get_result_wrapper, SDK2Result, ResultPrecursor, 
 from .options import forward_args, Seconds, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64, AcceptableInts
 from .options import OptionBlock, AcceptableInts
 from .durability import ReplicateTo, PersistTo, ClientDurableOption, ServerDurableOption
-from couchbase_core._libcouchbase import Collection as _Base
+from couchbase_core._libcouchbase import Bucket as _Base
 import couchbase.exceptions
 from couchbase_core.client import Client as CoreClient
 import copy
@@ -180,7 +180,22 @@ def _mutate_result_and_inject(func  # type: RawCollectionMethod
 def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
                                  ):
     # type: (...) -> RawCollectionMethod
-    return func
+    @wraps(func)
+    def wrapped(self,  # type: CBCollection
+                *args,  # type: Any
+                **kwargs  # type:  Any
+                ):
+        # type: (...)->Any
+        if self.true_collections:
+            if self._self_name and not self._self_scope:
+                raise couchbase.exceptions.CollectionMissingException
+            if self._self_scope and self._self_name:
+                kwargs['scope'] = self._self_scope.name
+                kwargs['collection'] = self._self_name
+
+        return func(self, *args, **kwargs)
+
+    return wrapped
 
 
 class BinaryCollection(object):
@@ -237,11 +252,20 @@ class CBCollection(CoreClient):
         connstr = kwargs.pop('connection_string', kwargs.pop('connstr', None))
         connstr = connstr or args.pop(0)
         final_args = [connstr] + args
-        if parent:
-            kwargs['scope']=parent.name
-            kwargs['collection']=name
         super(CBCollection, self).__init__(*final_args, **kwargs)
+        self._init(name, parent)
 
+    def _init(self,
+              name,  # type: Optional[str]
+              scope  # type: Scope
+              ):
+        self._self_scope = scope  # type: Scope
+        self._self_name = name  # type: Optional[str]
+        self._self_true_collections = name and scope
+
+    @property
+    def true_collections(self):
+        return self._self_true_collections
 
     @classmethod
     def cast(cls,
