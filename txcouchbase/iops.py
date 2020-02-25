@@ -18,7 +18,7 @@ if THESEUS_LOGFILE:
     t = Tracer()
     t.install()
 
-    theseus_log = open(THESEUS_LOGFILE, 'wb')
+    theseus_log = open(THESEUS_LOGFILE, 'w')
     import twisted.internet.base
 
     twisted.internet.base.DelayedCall.debug = True
