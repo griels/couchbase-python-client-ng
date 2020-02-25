@@ -44,7 +44,7 @@ class NotReadyError(E.CouchbaseError):
     pass
 
 
-class Admin(LCB.Collection):
+class Admin(LCB.Bucket):
     """
     An administrative connection to a Couchbase cluster.
 
