@@ -14,9 +14,10 @@ import os
 
 THESEUS_LOGFILE = os.getenv("PYCBC_THESEUS_LOGFILE")
 if THESEUS_LOGFILE:
-    from theseus import Tracer
+    from theseus._tracer import Tracer
     t = Tracer()
     t.install()
+
     theseus_log = open(THESEUS_LOGFILE, 'wb')
     import twisted.internet.base
 

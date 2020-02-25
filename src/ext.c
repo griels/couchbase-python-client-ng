@@ -19,6 +19,7 @@
 #include "pycbc.h"
 #include "structmember.h"
 #include <libcouchbase/logger.h>
+#include "frameobject.h"
 /**
  * This file contains boilerplate for the module itself
  */
@@ -805,9 +806,27 @@ void pycbc_exception_log(const char *file,
                 file,
                 func,
                 line,
-                "***** EXCEPTION:[%R], [%R] *****",
+                "***** EXCEPTION:[%R], [%R] *****, traceback:",
                 type,
                 value);
+        if (traceback && PyTraceBack_Check(traceback))
+        {
+            PyTracebackObject* traceRoot = (PyTracebackObject*)traceback;
+            PyTracebackObject* pTrace = traceRoot;
+
+            while (pTrace != NULL)
+            {
+                PyFrameObject* frame = pTrace->tb_frame;
+                PyCodeObject* code = frame->f_code;
+
+                int lineNr = PyFrame_GetLineNumber(frame);
+                const char *sCodeName = PyUnicode_AsUTF8(code->co_name);
+                const char *sFileName = PyUnicode_AsUTF8(code->co_filename);
+
+                PYCBC_DEBUG_PYFORMAT_FILE_FUNC_AND_LINE(file, func, line, "    at %s (%s:%d); ", sCodeName, sFileName, lineNr);
+                pTrace = pTrace->tb_next;
+            }
+        }
         if (clear)
         {
             Py_XDECREF(type);
