@@ -202,7 +202,7 @@ observe_common(pycbc_Bucket *self, PyObject *args, PyObject *kwargs, int argopts
     }
 
     cv.is_seqcmd = 1;
-    if (-1 == pycbc_common_vars_wait(&cv, self, PYCBC_PROPAGATE_TRACER(context))) {
+    if (-1 == pycbc_common_vars_wait(&cv, self, context)) {
         goto GT_DONE;
     }
 

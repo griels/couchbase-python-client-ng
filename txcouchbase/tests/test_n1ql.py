@@ -67,10 +67,7 @@ class TxN1QLTests(gen_base(MockTestCase)):
             rows = [r for r in o]
             self.assertEqual(1, len(rows))
 
-        result= d.addCallback(verify)
-        import logging
-        logging.error("ready to return")
-        return result
+        return d.addCallback(verify)
 
     def testEmpty(self):
         cb = self.make_connection()

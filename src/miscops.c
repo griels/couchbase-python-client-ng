@@ -253,7 +253,7 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING, static, PyObject*, keyop_common, p
         }
     }
 
-    if (-1 == pycbc_common_vars_wait(&cv, self, PYCBC_PROPAGATE_TRACER(context))) {
+    if (-1 == pycbc_common_vars_wait(&cv, self, context)) {
         goto GT_DONE;
     }
 
@@ -334,7 +334,7 @@ TRACED_FUNCTION_WRAPPER(endure_multi, LCBTRACE_OP_REQUEST_ENCODING, Bucket)
         goto GT_DONE;
     }
 
-    if (-1 == pycbc_common_vars_wait(&cv, self, PYCBC_PROPAGATE_TRACER(context))) {
+    if (-1 == pycbc_common_vars_wait(&cv, self, context)) {
         goto GT_DONE;
     }
 
@@ -451,7 +451,7 @@ TRACED_FUNCTION_WRAPPER(_stats,LCBTRACE_OP_REQUEST_ENCODING,Bucket)
         goto GT_DONE;
     }
 
-    if (-1 == pycbc_common_vars_wait(&cv, self,PYCBC_PROPAGATE_TRACER(context))) {
+    if (-1 == pycbc_common_vars_wait(&cv, self, context)) {
         goto GT_DONE;
     }
 
@@ -484,7 +484,7 @@ TRACED_FUNCTION_WRAPPER(_ping,LCBTRACE_OP_REQUEST_ENCODING,Bucket)
         goto GT_DONE;
     }
 
-    if (-1 == pycbc_common_vars_wait(&cv, self, PYCBC_PROPAGATE_TRACER(context))) {
+    if (-1 == pycbc_common_vars_wait(&cv, self, context)) {
         goto GT_DONE;
     }
     lcb_sched_leave(self->instance);
@@ -521,7 +521,7 @@ TRACED_FUNCTION_WRAPPER(_diagnostics,LCBTRACE_OP_REQUEST_ENCODING,Bucket)
         goto GT_DONE;
     }
 
-    if (-1 == pycbc_common_vars_wait(&cv, self, PYCBC_PROPAGATE_TRACER(context))) {
+    if (-1 == pycbc_common_vars_wait(&cv, self, context)) {
         goto GT_DONE;
     }
     lcb_sched_leave(self->instance);

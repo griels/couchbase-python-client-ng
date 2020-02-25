@@ -27,16 +27,12 @@ cb_thr_end(pycbc_Bucket *self)
     Py_INCREF((PyObject *)self);
 }
 
-//#define PYCBC_DO_PROPAGATION
-
 static void
 cb_thr_begin(pycbc_Bucket *self)
 {
-    if (self && PYCBC_PROPAGATE_TRACER(self->tracer)) {
+    if (self && self->tracer) {
         PYCBC_DEBUG_LOG("propagating tracer from %p, %p", self, self->tracer);
-#ifdef PYCBC_DO_PROPAGATION
         pycbc_Tracer_propagate(self->tracer);
-#endif
     }
     if (Py_REFCNT(self) > 1) {
         Py_DECREF(self);
@@ -89,10 +85,8 @@ static int maybe_push_operr(pycbc_MultiResult *mres,
     }
     if (parent_context) {
         PYCBC_DEBUG_LOG_CONTEXT(parent_context, "maybe_push_operr")
-#ifdef PYCBC_DO_PROPAGATION
         pycbc_Result_propagate_context(
                 res, res->tracing_context, mres ? mres->parent : NULL);
-#endif
     }
     if (check_enoent && (mres->mropts & PYCBC_MRES_F_QUIET) &&
         (err == LCB_KEY_ENOENT || err == LCB_SUBDOC_PATH_ENOENT)) {
@@ -398,9 +392,7 @@ static int get_common_objects(const lcb_RESPBASE *resp,
             }
         }
         if (res && *res) {
-#ifdef PYCBC_DO_PROPAGATION
             pycbc_Result_propagate_context(*res, parent_context, *conn);
-#endif
         }
         PYCBC_CONTEXT_DEREF(decoding_context, 1);
         if (parent_context && parent_context->is_stub) {

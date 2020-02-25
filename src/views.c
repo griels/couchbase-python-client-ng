@@ -405,7 +405,7 @@ pycbc_ViewResult *pycbc_propagate_view_result(
 {
     pycbc_ViewResult *vres;
     PyObject *kwargs = pycbc_DummyKeywords;
-    if (PYCBC_CHECK_CONTEXT(PYCBC_PROPAGATE_TRACER(context))) {
+    if (PYCBC_CHECK_CONTEXT(context)) {
         kwargs = PyDict_New();
         PyDict_SetItemString(kwargs, "context", pycbc_Context_capsule(context));
     }
@@ -427,7 +427,7 @@ ViewResult__init__(PyObject *self_raw,
     pycbc_ViewResult *self = (pycbc_ViewResult *)self_raw;
     self->context_capsule =
             kwargs ? PyDict_GetItemString(kwargs, "context") : NULL;
-    if (PYCBC_PROPAGATE_TRACER(self->context_capsule)) {
+    if (self->context_capsule) {
         PYCBC_DEBUG_LOG("Got parent context %p\n",
                         pycbc_ViewResult_get_context(self));
     }

@@ -19,12 +19,6 @@
  * This file contains the base header for the Python Couchbase Client
  * @author Mark Nunberg
  */
-//#define PYCBC_DO_PROPAGATION
-#ifdef PYCBC_DO_PROPAGATION
-#define PYCBC_PROPAGATE_TRACER(X) (X)
-#else
-#define PYCBC_PROPAGATE_TRACER(X) (NULL)
-#endif
 
 #define PYCBC_TRACE_FINISH_SPANS
 #define PYCBC_GLOBAL_SCHED
