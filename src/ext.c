@@ -2968,6 +2968,11 @@ void pycbc_tracer_destructor(lcbtrace_TRACER *tracer)
             Py_XDECREF(state->parent);
             Py_XDECREF(state->id_map);
             Py_XDECREF(state->start_span_method);
+            if (state->child)
+            {
+                lcbtrace_destroy(state->child);
+            }
+
             PYCBC_FREE(state);
             tracer->cookie = NULL;
         }
