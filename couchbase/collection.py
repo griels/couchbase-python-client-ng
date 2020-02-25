@@ -198,6 +198,22 @@ def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
     return wrapped
 
 
+CoreBucketOpRead = TypeVar("CoreBucketOpRead", Callable[[Any], SDK2Result], Callable[[Any], GetResult])
+
+
+def _wrap_get_result(func  # type: CoreBucketOpRead
+                     ):
+    # type: (...) -> CoreBucketOpRead
+    @wraps(func)
+    def wrapped(self,  # type: CBCollection
+                *args,  # type: Any
+                **kwargs  # type:  Any
+                ):
+        # type: (...)->Any
+        return _inject_scope_and_collection(get_result_wrapper(func))(self,*args,**kwargs)
+
+    return wrapped
+
 class BinaryCollection(object):
     pass
 
@@ -266,6 +282,8 @@ class CBCollection(CoreClient):
     @property
     def true_collections(self):
         return self._self_true_collections
+    def _wrap_dsop(self, sdres, has_value=False, **kwargs):
+        return getattr(super(Collection, self)._wrap_dsop(sdres, has_value), 'value')
 
     @classmethod
     def cast(cls,
