@@ -349,9 +349,9 @@ do_safecall(PyObject *callable, PyObject *args)
         PyErr_Fetch(&exctype, &excval, &exctb);
         PyErr_Clear();
     }
-    PYCBC_DEBUG_PYFORMAT("Calling %R with %R", callable, args)
+    PYCBC_DEBUG_PYFORMAT("Calling %R with %R", pycbc_none_or_value(callable), pycbc_none_or_value(args))
     result = PyObject_CallObject(callable, args);
-    PYCBC_DEBUG_PYFORMAT("Called %R with %R", callable, args)
+    PYCBC_DEBUG_PYFORMAT("Called %R with %R", pycbc_none_or_value(callable), pycbc_none_or_value(args))
     if (!has_error) {
         /* No special handling here... */
         return result;
