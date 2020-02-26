@@ -1,6 +1,6 @@
 import json
 
-from couchbase_core._libcouchbase import Collection as _Base, FMT_JSON
+from couchbase_core._libcouchbase import Bucket as _Base
 
 import couchbase_core.exceptions as E
 from couchbase_core.analytics import AnalyticsQuery
