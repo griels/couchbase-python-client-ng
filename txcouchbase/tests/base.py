@@ -17,10 +17,17 @@
 from twisted.internet import defer
 from twisted.trial.unittest import TestCase
 
-from txcouchbase.bucket import Bucket
+from txcouchbase.bucket import V2Bucket
 from couchbase_tests.base import ConnectionTestCase
+from twisted.protocols import policies
 
-def gen_base(basecls):
+import twisted.internet.base
+
+twisted.internet.base.DelayedCall.debug = True
+import sys
+
+
+def gen_base(basecls, timeout=10):
     class _TxTestCase(basecls, TestCase):
         def register_cleanup(self, obj):
             d = defer.Deferred()
@@ -42,7 +49,7 @@ def gen_base(basecls):
 
         @property
         def factory(self):
-            return Bucket
+            return V2Bucket
 
         def setUp(self):
             super(_TxTestCase, self).setUp()
@@ -50,5 +57,20 @@ def gen_base(basecls):
 
         def tearDown(self):
             super(_TxTestCase, self).tearDown()
+
+    if timeout and sys.version_info < (3, 7):
+        class _TxTimeOut(_TxTestCase, policies.TimeoutMixin):
+            def __init__(self, *args, **kwargs):
+                super(_TxTestCase, self).__init__(*args, **kwargs)
+                self.setTimeout(timeout)
+
+            def timeoutConnection(self):
+                """
+                Called when the connection times out.
+
+                Override to define behavior other than dropping the connection.
+                """
+                raise TimeoutError("Timed out")
+        return _TxTimeOut
 
     return _TxTestCase

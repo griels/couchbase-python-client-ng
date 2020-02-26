@@ -5,21 +5,15 @@ from collections import namedtuple
 
 Details = namedtuple('Details', ['factory', 'get_value'])
 
-import sys
-
-
 try:
-    from acouchbase.bucket import Bucket, get_event_loop
-    from acouchbase.bucket import V3CoreClient
-    from acouchbase.bucket import asyncio
+    from txcouchbase.bucket import Bucket
+    from txcouchbase.bucket import Collection
 
 
     def asynct(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            future = f(*args, **kwargs)
-            loop = get_event_loop()
-            loop.run_until_complete(future)
+            return f(*args, **kwargs)
 
         return wrapper
 
@@ -32,8 +26,8 @@ try:
             raise
 
     default=Details(gen_collection, lambda x: x.content)
-    target_dict = {'V3CoreClient': Details(V3CoreClient, lambda x: x.value),
-                   'Collection': Details(gen_collection, lambda x: x.content)}
+    target_dict = {'V3CoreClient': Details(Collection, lambda x: x.value),
+                   'Collection': default}
 
 except (ImportError, SyntaxError):
     target_dict = {}

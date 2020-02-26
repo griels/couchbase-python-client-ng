@@ -541,10 +541,10 @@ pycbc_tc_encode_value(pycbc_Bucket *conn, PyObject *srcbuf, PyObject *srcflags,
 
 int
 pycbc_tc_decode_value(pycbc_Bucket *conn,
-                       const void *value,
-                       size_t nvalue,
-                       lcb_uint32_t flags,
-                       PyObject **pobj)
+                      const void *value,
+                      size_t nvalue,
+                      lcb_uint32_t flags,
+                      PyObject **pobj)
 {
     PyObject *result = NULL;
     PyObject *pint = NULL;
