@@ -28,9 +28,9 @@ try:
         except Exception as e:
             raise
 
-
+    default=Details(gen_collection, lambda x: x.content)
     target_dict = {'V3CoreClient': Details(V3CoreClient, lambda x: x.value),
-                   'Collection': Details(gen_collection, lambda x: x.content)}
+                   'Collection': default}
 
 except (ImportError, SyntaxError):
     target_dict = {}
@@ -46,11 +46,17 @@ class AioTestCase(MockTestCase):
     factory_name = None  # type: str
 
     def __init__(self, *args, **kwargs):
-        self.details = target_dict[self.factory_name]
+        self.details = target_dict.get(self.factory_name,default)
+        self._factory = self.details.factory
         super(AioTestCase, self).__init__(*args, **kwargs)
 
     @property
     def factory(self):
-        return self.details.factory
+        return self._factory
+
+    @factory.setter
+    def factory(self, item):
+        raise RuntimeError("This shouldn't happen, trying to override {} with {}".format(str(self._factory), str(item)))
+
 
     should_check_refcount = False
