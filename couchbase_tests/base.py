@@ -449,6 +449,7 @@ class CouchbaseTestCase(ResourcedTestCase):
                 MultiResult, Result, OperationResult, ValueResult,
                 ObserveInfo)
 
+        if not hasattr(self, 'factory'):
             self.factory = Bucket
             self.viewfactory = View
             self.cls_Result = Result
@@ -457,8 +458,9 @@ class CouchbaseTestCase(ResourcedTestCase):
             self.cls_ObserveInfo = ObserveInfo
             self.should_check_refcount = True
             warnings.warn('Using fallback (couchbase module) defaults')
-        else:
-            self.should_check_refcount = False
+            return
+
+        self.should_check_refcount = False
 
 
     def skipLcbMin(self, vstr):
