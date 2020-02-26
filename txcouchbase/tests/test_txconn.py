@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from unittest import SkipTest
+
 from twisted.internet import defer
 from couchbase_core.exceptions import (
     BucketNotFoundError,
@@ -22,8 +24,14 @@ from couchbase_tests.base import ConnectionTestCase
 from couchbase_core.connstr import ConnectionString
 from txcouchbase.tests.base import gen_base
 from txcouchbase.bucket import Bucket
+import sys
+from couchbase_tests.base import ClusterInformation
+from twisted.protocols import policies
 
-class BasicConnectionTest(gen_base(ConnectionTestCase)):
+class BasicConnectionTest(gen_base(ConnectionTestCase), policies.TimeoutMixin):
+    def __init__(self, *args, **kwargs):
+        super(BasicConnectionTest,self).__init__(*args,**kwargs)
+        self.setTimeout(60)
     def testConnectionSuccess(self):
         cb = self.make_connection()
         d = cb.connect()
@@ -37,6 +45,8 @@ class BasicConnectionTest(gen_base(ConnectionTestCase)):
         return self.assertFailure(d, BucketNotFoundError)
 
     def testBadEvent(self):
+        if sys.version_info>=(3,7):
+            raise SkipTest("Deadlocks on Python 3.x")
         cb = self.make_connection()
         self.assertRaises(ValueError, cb.registerDeferred,
                           'blah',

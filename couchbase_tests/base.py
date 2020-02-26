@@ -55,7 +55,11 @@ from pyrsistent import PRecord
 from couchbase.management.collections import CollectionSpec
 from couchbase.bucket import Bucket as V3Bucket
 from flaky import flaky
-
+if os.environ.get("PYCBC_CPPYY"):
+    try:
+        import cppyy
+    except:
+        pass
 
 class FlakyCounter(object):
     def __init__(self, max_runs, min_passes, **kwargs):
@@ -449,6 +453,7 @@ class CouchbaseTestCase(ResourcedTestCase):
                 MultiResult, Result, OperationResult, ValueResult,
                 ObserveInfo)
 
+        if not hasattr(self, 'factory'):
             self.factory = Bucket
             self.viewfactory = View
             self.cls_Result = Result
@@ -457,8 +462,9 @@ class CouchbaseTestCase(ResourcedTestCase):
             self.cls_ObserveInfo = ObserveInfo
             self.should_check_refcount = True
             warnings.warn('Using fallback (couchbase module) defaults')
-        else:
-            self.should_check_refcount = False
+            return
+
+        self.should_check_refcount = False
 
 
     def skipLcbMin(self, vstr):

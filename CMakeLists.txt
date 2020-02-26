@@ -36,7 +36,9 @@ else()
     set(RELEASE_TYPE Release)
 endif()
 
+if(HYBRID_BUILD)
 set(PYCBC_C_MOD_NAME "_dummy")
+endif()
 
 macro(use_cxx11)
 if (CMAKE_VERSION VERSION_LESS "3.1")
