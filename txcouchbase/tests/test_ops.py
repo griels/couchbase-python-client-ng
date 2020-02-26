@@ -88,7 +88,7 @@ class OperationTestCase(gen_base(ConnectionTestCase)):
         kv = self.gen_kv_dict(prefix = "test_multi_errors")
         cb.setMulti(kv)
 
-        rmkey = kv.keys()[0]
+        rmkey = list(kv.keys())[0]
         cb.delete(rmkey)
 
         d = cb.getMulti(kv.keys())
