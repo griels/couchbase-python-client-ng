@@ -13,7 +13,7 @@ from .options import forward_args, timedelta, OptionBlockTimeOut, OptionBlockDer
 from .options import OptionBlock, AcceptableInts, OptionBlockBase
 from .durability import ReplicateTo, PersistTo, ClientDurability, ServerDurability, DurabilityType, \
     ServerDurableOptionBlock, DurabilityOptionBlock
-from couchbase_core._libcouchbase import Collection as _Base
+from couchbase_core._libcouchbase import Bucket as _Base
 import couchbase.exceptions
 from couchbase_core.client import Client as CoreClient
 import copy
@@ -179,8 +179,61 @@ RawCollectionMethodInt = Callable[
 RawCollectionMethod = Union[RawCollectionMethodDefault, RawCollectionMethodInt]
 RawCollectionMethodSpecial = TypeVar('RawCollectionMethodSpecial', bound=RawCollectionMethod)
 
+
+def _get_result_and_inject(func  # type: RawCollectionMethod
+                           ):
+    # type: (...) ->RawCollectionMethod
+    result = _inject_scope_and_collection(get_result_wrapper(func))
+    result.__doc__ = func.__doc__
+    result.__name__ = func.__name__
+    return result
+
+
+def _mutate_result_and_inject(func  # type: RawCollectionMethod
+                              ):
+    # type: (...) ->RawCollectionMethod
+    result = _inject_scope_and_collection(_wrap_in_mutation_result(func))
+    result.__doc__ = func.__doc__
+    result.__name__ = func.__name__
+    return result
+
+
+def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
+                                 ):
+    # type: (...) -> RawCollectionMethod
+    @wraps(func)
+    def wrapped(self,  # type: CBCollection
+                *args,  # type: Any
+                **kwargs  # type:  Any
+                ):
+        # type: (...)->Any
+        if self.true_collections:
+            if self._self_name and not self._self_scope:
+                raise couchbase.exceptions.CollectionMissingException
+            if self._self_scope and self._self_name:
+                kwargs['scope'] = self._self_scope.name
+                kwargs['collection'] = self._self_name
+
+        return func(self, *args, **kwargs)
+
+    return wrapped
+
+
 CoreBucketOpRead = TypeVar("CoreBucketOpRead", Callable[[Any], CoreResult], Callable[[Any], GetResult])
 
+
+def _wrap_get_result(func  # type: CoreBucketOpRead
+                     ):
+    # type: (...) -> CoreBucketOpRead
+    @wraps(func)
+    def wrapped(self,  # type: CBCollection
+                *args,  # type: Any
+                **kwargs  # type:  Any
+                ):
+        # type: (...)->Any
+        return _inject_scope_and_collection(get_result_wrapper(func))(self,*args,**kwargs)
+
+    return wrapped
 
 class BinaryCollection(object):
     pass
@@ -204,7 +257,7 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
     def wrapper(target, keys, *options, **kwargs
                 ):
         return get_multi_mutation_result(target, wrapped, keys, *options, **kwargs)
-    return volatile(wrapper)
+    return volatile(_inject_scope_and_collection(wrapper))
 
 
 class CBCollection(CoreClient):
@@ -230,11 +283,20 @@ class CBCollection(CoreClient):
         connstr = kwargs.pop('connection_string', kwargs.pop('connstr', None))
         connstr = connstr or args.pop(0)
         final_args = [connstr] + args
-        if parent:
-            kwargs['scope']=parent.name
-            kwargs['collection']=name
         super(CBCollection, self).__init__(*final_args, **kwargs)
+        self._init(name, parent)
 
+    def _init(self,
+              name,  # type: Optional[str]
+              scope  # type: Scope
+              ):
+        self._self_scope = scope  # type: Scope
+        self._self_name = name  # type: Optional[str]
+        self._self_true_collections = name and scope
+
+    @property
+    def true_collections(self):
+        return self._self_true_collections
     def _wrap_dsop(self, sdres, has_value=False, **kwargs):
         return getattr(super(CBCollection, self)._wrap_dsop(sdres, has_value), 'value')
 
@@ -247,7 +309,7 @@ class CBCollection(CoreClient):
         # type: (...) -> CBCollection
         coll_args = copy.deepcopy(parent.bucket._bucket_args)
         coll_args.update(name=name, parent=parent)
-        result = parent.bucket._corebucket_class(parent.bucket._connstr, **coll_args)
+        result = parent.bucket._corebucket_class(parent.bucket._connstr, **parent.bucket._bucket_args)
         return result
 
     @property
@@ -282,7 +344,7 @@ class CBCollection(CoreClient):
         # no sense since expiry should have been with_expiry (a bool) in the options.
         return ResultPrecursor(x, options)
 
-    @get_result_wrapper
+    @_get_result_and_inject
     def get(self,
             key,        # type: str
             *options,   # type: GetOptions
@@ -314,7 +376,7 @@ class CBCollection(CoreClient):
         """
         return self._get_generic(key, kwargs, options)
 
-    @get_result_wrapper
+    @_get_result_and_inject
     def get_and_touch(self,
                       key,          # type: str
                       expiry,       # type: int
@@ -334,7 +396,7 @@ class CBCollection(CoreClient):
         kwargs['expiry'] = expiry
         return self._get_generic(key, kwargs, options)
 
-    @get_result_wrapper
+    @_get_result_and_inject
     def get_and_lock(self,
                      key,       # type: str
                      expiry,    # type: timedelta
@@ -354,6 +416,7 @@ class CBCollection(CoreClient):
         final_options = forward_args(kwargs, *options)
         return ResultPrecursor(_Base.lock(self, key, int(expiry.total_seconds()), **final_options), final_options)
 
+    @_inject_scope_and_collection
     @get_replica_result_wrapper
     def get_any_replica(self,
                         key,        # type: str
@@ -376,6 +439,7 @@ class CBCollection(CoreClient):
         final_options = forward_args(kwargs, *options)
         return super(CBCollection, self).rget(key, **final_options)
 
+    @_inject_scope_and_collection
     @get_replica_result_wrapper
     def get_all_replicas(self,
                          key,        # type: str
@@ -396,6 +460,7 @@ class CBCollection(CoreClient):
       """
       return super(CBCollection, self).rgetall(key, **forward_args(kwargs, *options))
 
+    @_inject_scope_and_collection
     @volatile
     def get_multi(self,         # type: CBCollection
                   keys,         # type: Iterable[str]
@@ -423,6 +488,7 @@ class CBCollection(CoreClient):
                      ):
         pass
 
+    @_inject_scope_and_collection
     @volatile
     def upsert_multi(self,  # type: CBCollection
                      keys,  # type: Dict[str,JSON]
@@ -472,6 +538,7 @@ class CBCollection(CoreClient):
         """
         return get_multi_mutation_result(self, CoreClient.upsert_multi, keys, *options, **kwargs)
 
+    @_inject_scope_and_collection
     @volatile
     def insert_multi(self,  # type: CBCollection
                      keys,  # type: Dict[str,JSON]
@@ -490,6 +557,7 @@ class CBCollection(CoreClient):
         """
         return get_multi_mutation_result(self, CoreClient.insert_multi, keys, *options, **kwargs)
 
+    @_inject_scope_and_collection
     @volatile
     def remove_multi(self,  # type: CBCollection
                      keys,  # type: Iterable[str]
@@ -587,7 +655,7 @@ class CBCollection(CoreClient):
         """
         return ExistsResult(self.bucket.exists(key, **forward_args(kwargs, *options)))
 
-    @_wrap_in_mutation_result
+    @_mutate_result_and_inject
     def upsert(self,
                key,         # type: str
                value,       # type: Any
@@ -688,7 +756,7 @@ class CBCollection(CoreClient):
         final_options = forward_args(kwargs, *options)
         return ResultPrecursor(_Base.insert(self, key, value, **final_options), final_options)
 
-    @_wrap_in_mutation_result
+    @_mutate_result_and_inject
     def replace(self,
                 key,        # type: str
                 value,      # type: Any
@@ -714,7 +782,7 @@ class CBCollection(CoreClient):
         final_options = forward_args(kwargs, *options)
         return ResultPrecursor(_Base.replace(self, key, value, **final_options), final_options)
 
-    @_wrap_in_mutation_result
+    @_mutate_result_and_inject
     def remove(self,        # type: CBCollection
                key,         # type: str
                *options,    # type: RemoveOptions
@@ -749,6 +817,7 @@ class CBCollection(CoreClient):
         final_options = forward_args(kwargs, *options)
         return ResultPrecursor(self.bucket.remove(key, **final_options), final_options)
 
+    @_inject_scope_and_collection
     def lookup_in(self,         # type: CBCollection
                   key,          # type: str
                   spec,         # type: LookupInSpec
@@ -784,6 +853,7 @@ class CBCollection(CoreClient):
         final_options = forward_args(kwargs, *options)
         return LookupInResult(self.bucket.lookup_in(key, spec, **final_options))
 
+    @_inject_scope_and_collection
     def mutate_in(self,  # type: CBCollection
                   key,  # type: str
                   spec,  # type: MutateInSpec
@@ -823,7 +893,7 @@ class CBCollection(CoreClient):
         # type: (...) -> BinaryCollection
         pass
 
-    @_wrap_in_mutation_result
+    @_mutate_result_and_inject
     def append(self,
                key,  # type: str
                value,  # type: str
@@ -872,7 +942,7 @@ class CBCollection(CoreClient):
         x = _Base.prepend(self, key, value, **forward_args(kwargs, *options))
         return ResultPrecursor(x, options)
 
-    @_wrap_in_mutation_result
+    @_mutate_result_and_inject
     def increment(self,
                   key,  # type: str
                   delta,  # type: DeltaValue
@@ -921,7 +991,7 @@ class CBCollection(CoreClient):
         x = _Base.counter(self, key, delta=int(DeltaValue.verified(delta)), **final_opts)
         return ResultPrecursor(x, final_opts)
 
-    @_wrap_in_mutation_result
+    @_mutate_result_and_inject
     def decrement(self,
                   key,          # type: str
                   delta,        # type: DeltaValue

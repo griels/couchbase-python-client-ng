@@ -19,7 +19,7 @@ from time import time
 
 from twisted.internet import reactor
 
-from txcouchbase.bucket import RawBucket, Bucket
+from txcouchbase.bucket import RawV2Bucket as RawBucket, V2Bucket as Bucket
 from couchbase_core import FMT_BYTES
 from couchbase_core.transcoder import Transcoder
 
