@@ -1,5 +1,7 @@
-import asyncio
-
+try:
+    import asyncio
+except:
+    pass
 from couchbase.management.admin import Admin
 
 from couchbase_core.mutation_state import MutationState
@@ -25,6 +27,7 @@ from couchbase.options import OptionBlockTimeOut
 from datetime import timedelta
 from couchbase.exceptions import AlreadyShutdownException
 from couchbase_core.cluster import *
+from typing import *
 
 T = TypeVar('T')
 
