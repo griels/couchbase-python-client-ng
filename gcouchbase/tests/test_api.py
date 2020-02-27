@@ -15,7 +15,7 @@ class GEventImplMixin(ApiImplementationMixin):
 
     def _implDtorHook(self):
         import gc
-        if not self.cb.closed:
+        if not getattr(self.cb,'closed',True):
             waiter = self.cb._get_close_future()
             del self.cb
             gc.collect()
