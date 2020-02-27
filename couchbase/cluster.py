@@ -1,4 +1,8 @@
-import asyncio
+try:
+    import asyncio
+except:
+    pass
+from typing import *
 from couchbase_core.mutation_state import MutationState
 from couchbase_core.asynchronous import AsyncClientFactory
 from couchbase.management.queries import QueryIndexManager
