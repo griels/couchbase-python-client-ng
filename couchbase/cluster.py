@@ -1,4 +1,7 @@
-import asyncio
+try:
+    import asyncio
+except:
+    pass
 from typing import *
 
 from couchbase_core.mutation_state import MutationState
@@ -352,6 +355,8 @@ class Cluster(CoreClient):
             verb(c, *args, **kwargs)
 
 
+    try:
+        _operate_on_entire_cluster=eval("""
     async def _operate_on_entire_cluster(self,
                                    verb,
                                    failtype,
@@ -375,7 +380,9 @@ class Cluster(CoreClient):
         results = []
         for d in done:
             results.append(d.result())
-        return results
+        return results""")
+    except:
+        pass
 
     def analytics_query(self,       # type: Cluster
                         statement,  # type: str,
