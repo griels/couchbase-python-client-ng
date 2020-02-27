@@ -47,7 +47,9 @@ class GEventTimer(TimerEvent):
         seconds = usecs / 1000000.0
         # This isn't the "clean" way, but it's much quicker.. and
         # since we're already using undocumented APIs, why not..
-        _PyxTimer.__init__(self.ev, get_hub().loop, seconds)
+        #self.ev.cancel()
+        self.ev = get_hub().loop.timer(seconds)
+        #_PyxTimer.__init__(self.ev, get_hub().loop, seconds)
         self.ev.start(self.ready_proxy, 0)
 
 
