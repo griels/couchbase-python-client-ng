@@ -25,3 +25,4 @@ flaky>=3.6.1
 twisted-theseus>=0.14.1.3; platform_system != 'Windows'
 Twisted>=19.10.0
 deepdiff[murmur]
+gevent
