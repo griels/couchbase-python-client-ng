@@ -93,7 +93,7 @@ class OperationTestCase(Base):
 
     def test_multi_errors(self  # type: Base
                         ):
-        #raise SkipTest("Fix async multiresults")
+        raise SkipTest("Fix async multiresults")
         cb = self.make_connection()
         kv = self.gen_kv_dict(prefix = "test_multi_errors")
         cb.upsert_multi(kv)
