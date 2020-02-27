@@ -1,4 +1,7 @@
-import asyncio
+try:
+    import asyncio
+except:
+    pass
 from typing import *
 
 from couchbase_core.mutation_state import MutationState
@@ -360,6 +363,8 @@ class Cluster(object):
         except Exception as e:
             raise_from(failtype(params=CouchbaseError.ParamType(message="Cluster operation failed", inner_cause=e)), e)
 
+    try:
+        _operate_on_entire_cluster=eval("""
     async def _operate_on_entire_cluster(self,
                                    verb,
                                    failtype,
@@ -383,7 +388,9 @@ class Cluster(object):
         results = []
         for d in done:
             results.append(d.result())
-        return results
+        return results""")
+    except:
+        pass
 
 
 
