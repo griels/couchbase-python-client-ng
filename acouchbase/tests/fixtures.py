@@ -5,18 +5,20 @@ from collections import namedtuple
 
 Details = namedtuple('Details', ['factory', 'get_value'])
 
+import sys
+
+
 try:
     from acouchbase.bucket import Bucket
     from acouchbase.bucket import V3CoreClient
     from acouchbase.bucket import asyncio
-
+    from acouchbase.asyncio_iops import get_event_loop
 
     def asynct(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
             future = f(*args, **kwargs)
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(future)
+            loop = get_event_loop()
 
         return wrapper
 
