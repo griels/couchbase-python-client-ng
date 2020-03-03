@@ -5,10 +5,10 @@ from .fixtures import asynct, AioTestCase
 from couchbase_core.n1ql import N1QLQuery
 from couchbase_core.exceptions import CouchbaseError
 from unittest import SkipTest
+from acouchbase.bucket import get_event_loop
 
 
 class CouchbaseBeerTest(AioTestCase):
-
     def setUp(self):
         try:
             return super(CouchbaseBeerTest,self).setUp(bucket='beer-sample')
