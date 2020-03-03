@@ -8,6 +8,8 @@ from couchbase_core.iops.base import (
     PYCBC_EVACTION_WATCH, PYCBC_EVACTION_UNWATCH
 )
 
+import selectors
+
 
 class AsyncioTimer(TimerEvent):
     def __init__(self):
@@ -25,9 +27,21 @@ class AsyncioTimer(TimerEvent):
 
 
 class IOPS(object):
+    required_methods = {'add_reader', 'remove_reader', 'add_writer', 'remove_writer'}
+
+    @staticmethod
+    def get_event_loop(evloop):
+        for meth in IOPS.required_methods:
+            abs_meth, actual_meth = (getattr(asyncio.AbstractEventLoop, meth), getattr(evloop.__class__, meth))
+            if abs_meth == actual_meth:
+                selector = selectors.SelectSelector()
+                loop = asyncio.SelectorEventLoop(selector)
+                return loop
+        return evloop
+
     def __init__(self, evloop = None):
         if evloop is None:
-            evloop = asyncio.get_event_loop()
+            evloop = IOPS.get_event_loop()
         self.loop = evloop
 
     def update_event(self, event, action, flags):
@@ -61,3 +75,4 @@ class IOPS(object):
         pass
     def timer_event_factory(self):
         return AsyncioTimer()
+
