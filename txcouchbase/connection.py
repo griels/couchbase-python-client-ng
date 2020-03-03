@@ -1,4 +1,4 @@
-from txcouchbase.bucket import Bucket, RawBucket
+from txcouchbase.bucket import V2Bucket as Bucket, RawV2Bucket as RawBucket
 from couchbase_core import _depr
 from couchbase_core.connstr import convert_1x_args
 

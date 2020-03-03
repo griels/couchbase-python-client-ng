@@ -17,10 +17,34 @@
 from twisted.internet import defer
 from twisted.trial.unittest import TestCase
 
-from txcouchbase.bucket import Bucket
-from couchbase_tests.base import ConnectionTestCase
+from couchbase_tests.base import CouchbaseTestCase
+from couchbase_core.client import Client
+import twisted.internet.base
+twisted.internet.base.DelayedCall.debug = True
+from typing import *
+T = TypeVar('T', bound=CouchbaseTestCase)
+Factory = Callable[[Any],Client]
 
-def gen_base(basecls):
+from txcouchbase.bucket import TxBucket
+
+
+def gen_collection(*args, **kwargs):
+    try:
+        if args:
+            connstr=args[0]
+        else:
+            connstr=kwargs.pop('connection_string')
+        base_bucket = TxBucket(*args, connection_string = connstr, **kwargs)
+        return base_bucket.default_collection()
+    except Exception as e:
+        raise
+
+
+def gen_base(basecls,  # type: Type[T]
+             timeout=5,
+             factory=gen_collection  # type: Factory
+             ):
+    # type: (...) -> Type[Union[T,CouchbaseTestCase]]
     class _TxTestCase(basecls, TestCase):
         def register_cleanup(self, obj):
             d = defer.Deferred()
@@ -33,6 +57,7 @@ def gen_base(basecls):
                 self.addCleanup(obj._async_shutdown)
 
         def make_connection(self, **kwargs):
+            # type: (...) -> Factory
             ret = super(_TxTestCase, self).make_connection(**kwargs)
             self.register_cleanup(ret)
             return ret
@@ -42,7 +67,7 @@ def gen_base(basecls):
 
         @property
         def factory(self):
-            return Bucket
+            return factory
 
         def setUp(self):
             super(_TxTestCase, self).setUp()
@@ -50,5 +75,16 @@ def gen_base(basecls):
 
         def tearDown(self):
             super(_TxTestCase, self).tearDown()
+
+        @classmethod
+        def setUpClass(cls) -> None:
+            import inspect
+            if timeout:
+                for name, method in inspect.getmembers(cls,inspect.isfunction):
+                    try:
+                        print("Setting {} timeout to 10 secs".format(name))
+                        getattr(cls,name).timeout=timeout
+                    except Exception as e:
+                        print(e)
 
     return _TxTestCase
