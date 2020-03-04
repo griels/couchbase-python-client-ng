@@ -1,3 +1,4 @@
+from __future__ import annotations
 from .n1ql import *
 from couchbase_core.n1ql import N1QLRequest
 from couchbase.options import OptionBlockTimeOut
@@ -74,15 +75,17 @@ class AnalyticsResult(QueryResult):
         self._params=parent._params
 
 
-class AnalyticsOptions(OptionBlockTimeOut):
-    VALID_OPTS = ['timeout', 'read_only', 'scan_consistency', 'client_context_id', 'positional_parameters',
-                  'named_parameters', 'raw']
+from couchbase.cluster import QueryScanConsistency, QueryProfile
 
+
+class AnalyticsOptions(OptionBlockTimeOut):
+    VALID_OPTS = {'timeout', 'read_only', 'scan_consistency', 'client_context_id', 'positional_parameters',
+                  'named_parameters', 'raw'}
     @overload
     def __init__(self,
                  timeout=None,  # type: timedelta
                  read_only=None,  # type: bool
-                 scan_consistency=None,  # type: QueryScanConsistency
+                 scan_consistency=None,  # type: 'couchbase.cluster.QueryScanConsistency'
                  client_context_id=None,  # type: str
                  priority=None,  # type: bool
                  positional_parameters=None,  # type: Iterable[str]
@@ -112,25 +115,23 @@ class AnalyticsOptions(OptionBlockTimeOut):
         # now the named parameters.  NOTE: all the kwargs that are
         # not VALID_OPTS must be named parameters, and the kwargs
         # OVERRIDE the list of named_parameters
-        new_keys = list(filter(lambda x: x not in self.VALID_OPTS, args.keys()))
+        new_keys = args.keys()-self.VALID_OPTS
         named_parameters = args.pop('named_parameters', {})
-        for k in new_keys:
-            named_parameters[k] = args[k]
+        named_parameters.update({k: args[k] for k in new_keys})
 
         query = AnalyticsQuery(statement, *positional_parameters, **named_parameters)
 
         # TODO: there is surely a cleaner way...
-        for k in self.VALID_OPTS:
-            v = args.get(k, None)
-            if v:
-                if k == 'scan_consistency':
-                    query.consistency = v.as_string()
-                if k == 'timeout':
-                    query.timeout = v
-                if k == 'read_only':
-                    query.readonly = v
-                if k == 'profile':
-                    query.profile = v.as_string()
+        identity=lambda x:x
+        for k, v in [(k, args.get(k)) for k in
+                     (self.VALID_OPTS & args.keys())]:  # self.VALIDOPTS would need to be a set
+
+            (prop, conversion) = {'scan_consistency': (AnalyticsQuery.consistency, QueryScanConsistency.as_string),
+                                  'profile':          (AnalyticsQuery.profile, QueryProfile.as_string),
+                                  'read_only': (AnalyticsQuery.readonly, identity),
+                                  'timeout': (AnalyticsQuery.timeout, identity)}.get(k)
+            prop.setter(query, conversion(v))
+
         return query
 
 
