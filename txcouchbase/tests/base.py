@@ -17,17 +17,30 @@
 from twisted.internet import defer
 from twisted.trial.unittest import TestCase
 
-from txcouchbase.bucket import V2Bucket
-from couchbase_tests.base import ConnectionTestCase
-from twisted.protocols import policies
-
+from couchbase_tests.base import CouchbaseTestCase
+from couchbase_core.client import Client
 import twisted.internet.base
-
 twisted.internet.base.DelayedCall.debug = True
-import sys
+from typing import *
+T = TypeVar('T', bound=object)
+Factory = Callable[[Any],Client]
+
+from txcouchbase.bucket import Bucket
 
 
-def gen_base(basecls, timeout=10):
+def gen_collection(*args, **kwargs):
+    try:
+        base_bucket = Bucket(*args, **kwargs)
+        return base_bucket.default_collection()
+    except Exception as e:
+        raise
+
+
+def gen_base(basecls,  # type: Type[T]
+             timeout=None,
+             factory=gen_collection  # type: Factory
+             ):
+    # type: (...) -> Union[Type[T],Type[CouchbaseTestCase]]
     class _TxTestCase(basecls, TestCase):
         def register_cleanup(self, obj):
             d = defer.Deferred()
@@ -40,6 +53,7 @@ def gen_base(basecls, timeout=10):
                 self.addCleanup(obj._async_shutdown)
 
         def make_connection(self, **kwargs):
+            # type: (...) -> Factory
             ret = super(_TxTestCase, self).make_connection(**kwargs)
             self.register_cleanup(ret)
             return ret
@@ -49,7 +63,7 @@ def gen_base(basecls, timeout=10):
 
         @property
         def factory(self):
-            return V2Bucket
+            return factory
 
         def setUp(self):
             super(_TxTestCase, self).setUp()
@@ -58,19 +72,15 @@ def gen_base(basecls, timeout=10):
         def tearDown(self):
             super(_TxTestCase, self).tearDown()
 
-    if timeout and sys.version_info < (3, 7):
-        class _TxTimeOut(_TxTestCase, policies.TimeoutMixin):
-            def __init__(self, *args, **kwargs):
-                super(_TxTestCase, self).__init__(*args, **kwargs)
-                self.setTimeout(timeout)
-
-            def timeoutConnection(self):
-                """
-                Called when the connection times out.
-
-                Override to define behavior other than dropping the connection.
-                """
-                raise TimeoutError("Timed out")
-        return _TxTimeOut
+        @classmethod
+        def setUpClass(cls) -> None:
+            import inspect
+            if timeout:
+                for name, method in inspect.getmembers(cls,inspect.isfunction):
+                    try:
+                        print("Setting {} timeout to 10 secs".format(name))
+                        getattr(cls,name).timeout=timeout
+                    except Exception as e:
+                        print(e)
 
     return _TxTestCase
