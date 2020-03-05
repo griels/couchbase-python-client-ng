@@ -35,7 +35,7 @@ except (ImportError, SyntaxError):
 targets = list(map(lambda x: (x,), target_dict.keys()))
 
 
-def parameterize_asyncio(cls):
+def parameterize_twisted(cls):
     return parameterized_class(('factory_name',), targets)(cls)
 
 

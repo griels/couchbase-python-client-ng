@@ -44,7 +44,10 @@ class TxIOEvent(IOEvent):
         super(TxIOEvent, self).__init__()
 
     def doRead(self):
-        self.ready_r()
+        try:
+            self.ready_r()
+        except Exception as e:
+            raise
 
     def doWrite(self):
         self.ready_w()

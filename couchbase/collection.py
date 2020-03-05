@@ -6,8 +6,10 @@ from mypy_extensions import VarArg, KwArg, Arg
 
 from .subdocument import LookupInSpec, MutateInSpec, MutateInOptions, \
     gen_projection_spec
-from .result import GetResult, GetReplicaResult, ExistsResult, get_result_wrapper, CoreResult, ResultPrecursor, LookupInResult, MutateInResult, \
-    MutationResult, _wrap_in_mutation_result, AsyncGetResult, get_replica_result_wrapper, get_mutation_result, get_multi_mutation_result
+from .result import GetResult, GetReplicaResult, ExistsResult, get_result_wrapper, CoreResult, ResultPrecursor, \
+    LookupInResult, MutateInResult, \
+    MutationResult, _wrap_in_mutation_result, AsyncGetResult, get_replica_result_wrapper, get_mutation_result, \
+    get_multi_mutation_result, get_multi_get_result
 from .options import forward_args, timedelta, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64, \
     AcceptableInts
 from .options import OptionBlock, AcceptableInts, OptionBlockBase
@@ -447,6 +449,7 @@ class CBCollection(CoreClient):
       """
       return super(CBCollection, self).rgetall(key, **forward_args(kwargs, *options))
 
+
     @_inject_scope_and_collection
     def get_multi(self,  # type: CBCollection
                   keys,  # type: Iterable[str]
@@ -463,7 +466,8 @@ class CBCollection(CoreClient):
         :rtype: dict
         """
         raw_result = super(CBCollection,self).get_multi(keys, **forward_args(kwargs, *options))
-        return {k: AsyncGetResult(v) for k, v in raw_result.items()}
+        return get_multi_get_result(self, CoreClient.get_multi, keys, *options, **kwargs)
+        #return get_multi_mutation_result(){k: AsyncGetResult(v) for k, v in raw_result.items()}
 
     @overload
     def upsert_multi(self,  # type: CBCollection
@@ -802,7 +806,7 @@ class CBCollection(CoreClient):
         """
 
         final_options = forward_args(kwargs, *options)
-        return ResultPrecursor(_Base.insert(self, key, value, **final_options), final_options)
+        return _Base.insert(self, key, value, **final_options)
 
     @_mutate_result_and_inject
     def replace(self,
