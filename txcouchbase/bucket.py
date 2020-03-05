@@ -155,6 +155,16 @@ class RawClientFactory(object):
                 self._conncb = self._evq['connect']
                 self._dtorcb = self._evq['_dtor']
 
+            def _do_n1ql_query(self, *args, **kwargs):
+                super_obj = super(async_base, self)
+                meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
+                return meth(*args, **kwargs)
+
+            def _do_view_query(self, *args, **kwargs):
+                super_obj = super(async_base, self)
+                meth = getattr(super_obj, 'view_query', getattr(super_obj, 'query', None))
+                return meth(*args, **kwargs)
+
             def registerDeferred(self, event, d):
                 """
                 Register a defer to be fired at the firing of a specific event.
@@ -235,14 +245,13 @@ class RawClientFactory(object):
 
                 """
                 d = Deferred()
-                opres.callback = d.callback
 
                 def _on_err(mres, ex_type, ex_val, ex_tb):
                     try:
                         raise ex_type(ex_val)
                     except CouchbaseError:
                         d.errback()
-                opres.errback = _on_err
+                opres.set_callbacks(d.callback, _on_err)
                 return d
 
             def queryEx(self, viewcls, *args, **kwargs):
@@ -261,7 +270,7 @@ class RawClientFactory(object):
                 """
 
                 kwargs['itercls'] = viewcls
-                o = super(async_base, self).query(*args, **kwargs)
+                o = self._do_view_query(*args, **kwargs)
                 if not self.connected:
                     self.connect().addCallback(lambda x: o.start())
                 else:
@@ -293,7 +302,7 @@ class RawClientFactory(object):
                     return self.connect().addCallback(cb)
 
                 kwargs['itercls'] = BatchedView
-                o = super(RawClient, self).query(*args, **kwargs)
+                o = self._do_view_query(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
 
@@ -312,7 +321,7 @@ class RawClientFactory(object):
                 .. seealso:: :meth:`queryEx`, around which this method wraps
                 """
                 kwargs['itercls'] = cls
-                o = super(async_base, self).n1ql_query(*args, **kwargs)
+                o = self._do_n1ql_query(*args, **kwargs)
                 if not self.connected:
                     self.connect().addCallback(lambda x: o.start())
                 else:
@@ -349,7 +358,7 @@ class RawClientFactory(object):
                     return self.connect().addCallback(cb)
 
                 kwargs['itercls'] = BatchedN1QLRequest
-                o = super(RawClient, self).n1ql_query(*args, **kwargs)
+                o = self._do_n1ql_query(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
 
@@ -481,7 +490,8 @@ class ClientFactory(object):
                 self._evq['connect'].schedule(qop)
                 return qop
 
-            def _wrap(self, meth, *args, **kwargs):
+            def _wrap(self,  # type: Client
+                      meth, *args, **kwargs):
                 """
                 Calls a given method with the appropriate arguments, or defers such
                 a call until the instance has been connected
