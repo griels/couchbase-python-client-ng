@@ -31,6 +31,7 @@ from txcouchbase.iops import v0Iops
 from couchbase.bucket import Bucket as V3SyncBucket
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
 from couchbase_core.client import Client as CoreClient
+from couchbase.cluster import Cluster as V3SyncCluster
 from typing import *
 
 
@@ -155,6 +156,16 @@ class RawClientFactory(object):
                 self._conncb = self._evq['connect']
                 self._dtorcb = self._evq['_dtor']
 
+            def _do_n1ql_query(self, *args, **kwargs):
+                super_obj = super(async_base, self)
+                meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
+                return meth(*args, **kwargs)
+
+            def _do_view_query(self, *args, **kwargs):
+                super_obj = super(async_base, self)
+                meth = getattr(super_obj, 'view_query', getattr(super_obj, 'query', None))
+                return meth(*args, **kwargs)
+
             def registerDeferred(self, event, d):
                 """
                 Register a defer to be fired at the firing of a specific event.
@@ -235,17 +246,16 @@ class RawClientFactory(object):
 
                 """
                 d = Deferred()
-                opres.callback = d.callback
 
                 def _on_err(mres, ex_type, ex_val, ex_tb):
                     try:
                         raise ex_type(ex_val)
                     except CouchbaseError:
                         d.errback()
-                opres.errback = _on_err
+                opres.set_callbacks(d.callback, _on_err)
                 return d
 
-            def queryEx(self, viewcls, *args, **kwargs):
+            def view_query_ex(self, viewcls, *args, **kwargs):
                 """
                 Query a view, with the ``viewcls`` instance receiving events
                 of the query as they arrive.
@@ -261,7 +271,7 @@ class RawClientFactory(object):
                 """
 
                 kwargs['itercls'] = viewcls
-                o = super(async_base, self).query(*args, **kwargs)
+                o = self._do_view_query(*args, **kwargs)
                 if not self.connected:
                     self.connect().addCallback(lambda x: o.start())
                 else:
@@ -269,7 +279,7 @@ class RawClientFactory(object):
 
                 return o
 
-            def queryAll(self, *args, **kwargs):
+            def view_query(self, *args, **kwargs):
                 """
                 Returns a :class:`Deferred` object which will have its callback invoked
                 with a :class:`BatchedView` when the results are complete.
@@ -289,15 +299,15 @@ class RawClientFactory(object):
                 """
 
                 if not self.connected:
-                    cb = lambda x: self.queryAll(*args, **kwargs)
+                    cb = lambda x: self.view_query(*args, **kwargs)
                     return self.connect().addCallback(cb)
 
                 kwargs['itercls'] = BatchedView
-                o = super(RawClient, self).query(*args, **kwargs)
+                o = self._do_view_query(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
 
-            def n1qlQueryEx(self, cls, *args, **kwargs):
+            def query_ex(self, cls, *args, **kwargs):
                 """
                 Execute a N1QL statement providing a custom handler for rows.
 
@@ -312,14 +322,14 @@ class RawClientFactory(object):
                 .. seealso:: :meth:`queryEx`, around which this method wraps
                 """
                 kwargs['itercls'] = cls
-                o = super(async_base, self).n1ql_query(*args, **kwargs)
+                o = self._do_n1ql_query(*args, **kwargs)
                 if not self.connected:
                     self.connect().addCallback(lambda x: o.start())
                 else:
                     o.start()
                 return o
 
-            def n1qlQueryAll(self, *args, **kwargs):
+            def query(self, *args, **kwargs):
                 """
                 Execute a N1QL query, retrieving all rows.
 
@@ -345,15 +355,15 @@ class RawClientFactory(object):
                 .. seealso:: :meth:`~couchbase_v2.bucket.Bucket.n1ql_query`
                 """
                 if not self.connected:
-                    cb = lambda x: self.n1qlQueryAll(*args, **kwargs)
+                    cb = lambda x: self.query(*args, **kwargs)
                     return self.connect().addCallback(cb)
 
                 kwargs['itercls'] = BatchedN1QLRequest
-                o = super(RawClient, self).n1ql_query(*args, **kwargs)
+                o = self._do_n1ql_query(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
 
-            def searchQueryEx(self, cls, *args, **kwargs):
+            def search(self, cls, *args, **kwargs):
                 """
                 Experimental Method
 
@@ -377,7 +387,7 @@ class RawClientFactory(object):
                     o.start()
                 return o
 
-            def searchQueryAll(self, *args, **kwargs):
+            def search_all(self, *args, **kwargs):
                 """
                 Experimental Method
 
@@ -405,7 +415,7 @@ class RawClientFactory(object):
                 """
 
                 if not self.connected:
-                    cb = lambda x: self.searchQueryAll(*args, **kwargs)
+                    cb = lambda x: self.search_all(*args, **kwargs)
                     return self.connect().addCallback(cb)
 
                 kwargs['itercls'] = BatchedSearchRequest
@@ -481,7 +491,8 @@ class ClientFactory(object):
                 self._evq['connect'].schedule(qop)
                 return qop
 
-            def _wrap(self, meth, *args, **kwargs):
+            def _wrap(self,  # type: Client
+                      meth, *args, **kwargs):
                 """
                 Calls a given method with the appropriate arguments, or defers such
                 a call until the instance has been connected
@@ -507,11 +518,16 @@ class ClientFactory(object):
 
 
 V2Bucket = ClientFactory.gen_client(RawV2Bucket)
-AsyncCBCollection = ClientFactory.gen_client(RawCollection)
-Collection = AsyncCBCollection
+TxCollection = ClientFactory.gen_client(RawCollection)
 
 
-class Bucket(V3SyncBucket):
+class TxBucket(V3SyncBucket):
     def __init__(self, *args, **kwargs):
-        kwargs['corebucket_class'] = AsyncCBCollection
-        super(Bucket, self).__init__(*args, **kwargs)
+        kwargs['collection_factory'] = TxCollection
+        super(TxBucket, self).__init__(*args, **kwargs)
+
+
+class TxCluster(V3SyncCluster):
+    def __init__(self, *args, **kwargs):
+        kwargs['bucket_factory'] = TxBucket
+        super(TxCluster, self).__init__(*args, **kwargs)
