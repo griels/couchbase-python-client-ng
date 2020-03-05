@@ -17,17 +17,22 @@
 from twisted.internet import defer
 from twisted.trial.unittest import TestCase
 
-from txcouchbase.bucket import V2Bucket
-from couchbase_tests.base import ConnectionTestCase
+from txcouchbase.bucket import V2Bucket, Bucket as V3Bucket
+from couchbase_tests.base import CouchbaseTestCase
 from twisted.protocols import policies
 
 import twisted.internet.base
-
+from .fixtures import gen_collection
 twisted.internet.base.DelayedCall.debug = True
 import sys
+from typing import *
+T = TypeVar('T', bound=object)
 
-
-def gen_base(basecls, timeout=10):
+def gen_base(basecls,  # type: Type[T]
+             timeout=10,
+             factory=V2Bucket
+             ):
+    # type: (...) -> Union[Type[T],Type[CouchbaseTestCase]]
     class _TxTestCase(basecls, TestCase):
         def register_cleanup(self, obj):
             d = defer.Deferred()
@@ -40,6 +45,7 @@ def gen_base(basecls, timeout=10):
                 self.addCleanup(obj._async_shutdown)
 
         def make_connection(self, **kwargs):
+            # type: (...) -> factory
             ret = super(_TxTestCase, self).make_connection(**kwargs)
             self.register_cleanup(ret)
             return ret
@@ -49,7 +55,7 @@ def gen_base(basecls, timeout=10):
 
         @property
         def factory(self):
-            return V2Bucket
+            return factory
 
         def setUp(self):
             super(_TxTestCase, self).setUp()

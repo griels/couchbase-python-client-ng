@@ -105,7 +105,7 @@ class ResultProtocol(Protocol):
         raise NotImplementedError()
 
 
-class Result(ResultProtocol):
+class Result(object):
     @internal
     def __init__(self,
                  cas,  # type: int
@@ -352,6 +352,7 @@ class AsyncGetResult(AsyncWrapper.gen_wrapper(GetResult)):
                  ):
         super(AsyncGetResult, self).__init__(core_result)
 
+
 class AsyncGetReplicaResult(AsyncWrapper.gen_wrapper(GetReplicaResult)):
     def __init__(self,
                  sdk2_result  # type: SDK2Result
@@ -369,6 +370,9 @@ class AsyncMutationResult(AsyncWrapper.gen_wrapper(MutationResult)):
 # TODO: eliminate the options shortly.  They serve no purpose
 ResultPrecursor = NamedTuple('ResultPrecursor', [('orig_result', CoreResult), ('orig_options', Mapping[str, Any])])
 
+def get_wrapped_get_result(x):
+    factory_class = AsyncGetResult if issubclass(type(x), AsyncResult) else GetResult
+    return factory_class(x)
 
 def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
                        ):
@@ -376,8 +380,8 @@ def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
     @wraps(func)
     def wrapped(*args, **kwargs):
         x, options = func(*args, **kwargs)
-        factory_class=AsyncGetResult if issubclass(type(x), AsyncResult) else GetResult
-        return factory_class(x)
+        return get_wrapped_get_result(x)
+
 
     wrapped.__name__ = func.__name__
     wrapped.__doc__ = func.__name__
@@ -432,13 +436,51 @@ def get_mutation_result(result  # type: ResultPrecursor
     factory_class = AsyncMutationResult if issubclass(type(orig_result), AsyncResult) else MutationResult
     return factory_class(orig_result)
 
+class MultiMutationResult(dict):
+    def __init__(self, raw_result, final_options):
+        self.update({k: get_mutation_result(ResultPrecursor(v, final_options)) for k, v in raw_result.items()})
 
-def get_multi_mutation_result(target, wrapped, keys, *options, **kwargs):
-    final_options = forward_args(kwargs, *options)
-    raw_result = wrapped(target, keys, **final_options)
-    return {k: get_mutation_result(ResultPrecursor(v, final_options)) for k, v in raw_result.items()}
+class MultiResultBase(dict):
+    def converter(self, value, final_options=None):
+        pass
 
+    def __init__(self, raw_result, final_options):
+        super(MultiResultBase,self).__init__({k: self.converter(v, final_options) for k, v in raw_result.items()})
 
+class MultiGetResult(MultiResult):
+    def converter(self, raw_value,final_options=None):
+        return get_wrapped_get_result(raw_value)
+    def __init__(self, *args, **kwargs):
+        super(MultiGetResult, self).__init__(*args, **kwargs)
+
+class AsyncMultiMutationResult(AsyncWrapper.gen_wrapper(MultiMutationResult)):
+    def __init__(self,
+                 *args, **kwargs  # type: CoreResult
+                 ):
+        # type (...)->None
+        super(AsyncMultiMutationResult, self).__init__(*args, **kwargs)
+
+class AsyncMultiGetResult(AsyncWrapper.gen_wrapper(MultiGetResult)):
+    def __init__(self,
+                 *args, **kwargs  # type: CoreResult
+                 ):
+        # type (...)->None
+        super(AsyncMultiGetResult, self).__init__(*args, **kwargs)
+
+class MultiResultWrapper(object):
+    def __init__(self, orig_result_type, async_result_type=None):
+        self.orig_result_type=orig_result_type
+        self.async_result_type=async_result_type or AsyncWrapper.gen_wrapper(orig_result_type)
+    def get_multi_result(self, target, wrapped, keys, *options, **kwargs):
+        final_options = forward_args(kwargs, *options)
+        raw_result = wrapped(target, keys, **final_options)
+        orig_result = getattr(raw_result,'orig_result',raw_result)
+        factory_class = self.async_result_type if issubclass(type(orig_result), AsyncResult) else self.orig_result_type
+        result = factory_class(orig_result)
+        return result
+
+get_multi_mutation_result=MultiResultWrapper(MultiMutationResult, AsyncMultiMutationResult).get_multi_result
+get_multi_get_result=MultiResultWrapper(MultiGetResult, AsyncMultiGetResult).get_multi_result
 def _wrap_in_mutation_result(func  # type: Callable[[Any,...],CoreResult]
                              ):
     # type: (...) -> Callable[[Any,...],MutationResult]

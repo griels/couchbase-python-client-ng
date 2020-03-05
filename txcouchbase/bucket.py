@@ -235,7 +235,10 @@ class RawClientFactory(object):
 
                 """
                 d = Deferred()
-                opres.callback = d.callback
+                try:
+                    opres.callback = d.callback
+                except Exception as e:
+                    raise(e)
 
                 def _on_err(mres, ex_type, ex_val, ex_tb):
                     try:
@@ -312,7 +315,7 @@ class RawClientFactory(object):
                 .. seealso:: :meth:`queryEx`, around which this method wraps
                 """
                 kwargs['itercls'] = cls
-                o = super(async_base, self).n1ql_query(*args, **kwargs)
+                o = super(async_base, self).query(*args, **kwargs)
                 if not self.connected:
                     self.connect().addCallback(lambda x: o.start())
                 else:
@@ -349,7 +352,7 @@ class RawClientFactory(object):
                     return self.connect().addCallback(cb)
 
                 kwargs['itercls'] = BatchedN1QLRequest
-                o = super(RawClient, self).n1ql_query(*args, **kwargs)
+                o = super(RawClient, self).query(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
 
@@ -481,7 +484,8 @@ class ClientFactory(object):
                 self._evq['connect'].schedule(qop)
                 return qop
 
-            def _wrap(self, meth, *args, **kwargs):
+            def _wrap(self,  # type: Client
+                      meth, *args, **kwargs):
                 """
                 Calls a given method with the appropriate arguments, or defers such
                 a call until the instance has been connected
@@ -490,6 +494,11 @@ class ClientFactory(object):
                     return self._connectSchedule(self._wrap, meth, *args, **kwargs)
 
                 opres = meth(self, *args, **kwargs)
+                def err_callback(*args, **kwargs):
+                    pass
+                def val_callback(*args, **kwargs):
+                    pass
+                opres.set_callbacks(val_callback,err_callback)
                 return self.defer(opres)
 
 
