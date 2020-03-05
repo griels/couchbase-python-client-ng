@@ -49,7 +49,7 @@ class TxN1QLTests(gen_base(MockTestCase)):
     def testIncremental(self):
         cb = self.make_connection()
         d = defer.Deferred()
-        o = cb.n1qlQueryEx(RowsHandler, 'SELECT mockrow')
+        o = cb.query_ex(RowsHandler, 'SELECT mockrow')
         self.assertIsInstance(o, RowsHandler)
 
         def verify(*args):
@@ -62,7 +62,7 @@ class TxN1QLTests(gen_base(MockTestCase)):
 
     def testBatched(self):
         cb = self.make_connection()
-        d = cb.n1qlQueryAll('SELECT mockrow')
+        d = cb.query('SELECT mockrow')
 
         def verify(o):
             logging.error("Called back")
@@ -79,7 +79,7 @@ class TxN1QLTests(gen_base(MockTestCase)):
 
     def testEmpty(self):
         cb = self.make_connection()
-        d = cb.n1qlQueryAll('SELECT emptyrow')
+        d = cb.query('SELECT emptyrow')
 
         def verify(o):
             self.assertIsInstance(o, BatchedN1QLRequest)
