@@ -1,6 +1,5 @@
 import asyncio
 from typing import *
-
 from couchbase_core.mutation_state import MutationState
 
 from couchbase.management.queries import QueryIndexManager
@@ -222,12 +221,14 @@ class Cluster(object):
     def __init__(self,
                  connection_string,  # type: str
                  *options,           # type: ClusterOptions
+                 bucket_factory=Bucket,  # type: Any
                  **kwargs            # type: Any
                  ):
         """
         Create a Cluster object.
         An Authenticator must be provided, either as the authenticator named parameter, or within the options argument.
         :param str connection_string: the connection string for the cluster.
+        :param Callable bucket_factory: factory for producing couchbase.bucket.Bucket derivatives
         :param ClusterOptions options: options for the cluster.
         :param Any kwargs: Override corresponding value in options.
         """
@@ -236,8 +237,12 @@ class Cluster(object):
         authenticator = cluster_opts.pop('authenticator', None)
         if not authenticator:
             raise ArgumentError("Authenticator is mandatory")
+        bucket_factory = cluster_opts.pop('bucket_factory', Bucket)  # type: Bucket
+
+        def corecluster_bucket_factory(connstr, bname=None, **kwargs):
+            return bucket_factory(connstr, name=bname, admin=self._admin, **kwargs)
         cluster_opts.update(
-            bucket_class=lambda connstr, bname=None, **kwargs: Bucket(connstr, name=bname, admin=self._admin, **kwargs))
+            bucket_factory=corecluster_bucket_factory)
         self._cluster = CoreCluster(connection_string, **cluster_opts)  # type: CoreCluster
         self._authenticate(authenticator)
 

@@ -116,13 +116,13 @@ class Bucket(object):
         pass
 
     def __init__(self,
-                 connection_string,              # type: str
-                 name=None,                      # type: str
-                 corebucket_class=CBCollection,  # type: Type[CoreClient]
-                 admin=None,                     # type: Admin
+                 connection_string,  # type: str
+                 name=None,  # type: str
+                 collection_factory=CBCollection,  # type: Type[CoreClient]
+                 admin=None,  # type: Admin
                  *options,
                  **kwargs
-                ):
+                 ):
         # type: (...) -> None
         """
         Connect to a bucket.
@@ -201,10 +201,10 @@ class Bucket(object):
 
         """
         self._name = name
-        self._connstr=connection_string
-        self._bucket_args=forward_args(kwargs, *options)
-        self._bucket_args['bucket']=name
-        self._corebucket_class=corebucket_class
+        self._connstr = connection_string
+        self._bucket_args = forward_args(kwargs, *options)
+        self._bucket_args['bucket'] = name
+        self._collection_factory = collection_factory
 
         self._bucket = CoreClient(connection_string, **self._bucket_args)
         self._admin = admin
