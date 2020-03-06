@@ -245,17 +245,17 @@ class RawClientFactory(object):
 
                 """
                 d = Deferred()
-                try:
-                    opres.callback = d.callback
-                except Exception as e:
-                    raise(e)
+                def val_callback(*args, **kwargs):
+                    return d.callback(*args, **kwargs)
+                #opres.callback = val_callback
 
                 def _on_err(mres, ex_type, ex_val, ex_tb):
                     try:
                         raise ex_type(ex_val)
                     except CouchbaseError:
                         d.errback()
-                opres.errback = _on_err
+                opres.set_callbacks(d.callback, _on_err)
+                #opres.errback = _on_err
                 return d
 
             def queryEx(self, viewcls, *args, **kwargs):
@@ -504,15 +504,6 @@ class ClientFactory(object):
                     return self._connectSchedule(self._wrap, meth, *args, **kwargs)
 
                 opres = meth(self, *args, **kwargs)
-                def err_callback(*args, **kwargs):
-                    pass
-                def val_callback(*args, **kwargs):
-                    pass
-                try:
-                    pass
-                    opres.set_callbacks(val_callback,err_callback)
-                except:
-                    pass
                 return self.defer(opres)
 
 

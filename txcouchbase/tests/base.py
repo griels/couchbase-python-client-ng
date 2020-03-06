@@ -31,7 +31,7 @@ Factory = Callable[[Any],Client]
 
 
 def gen_base(basecls,  # type: Type[T]
-             timeout=10,
+             timeout=None,
              factory=gen_collection  # type: Factory
              ):
     # type: (...) -> Union[Type[T],Type[CouchbaseTestCase]]
@@ -69,11 +69,12 @@ def gen_base(basecls,  # type: Type[T]
         @classmethod
         def setUpClass(cls) -> None:
             import inspect
-            for name, method in inspect.getmembers(cls,inspect.isfunction):
-                try:
-                    print("Setting {} timeout to 10 secs".format(name))
-                    getattr(cls,name).timeout=timeout
-                except Exception as e:
-                    print(e)
+            if timeout:
+                for name, method in inspect.getmembers(cls,inspect.isfunction):
+                    try:
+                        print("Setting {} timeout to 10 secs".format(name))
+                        getattr(cls,name).timeout=timeout
+                    except Exception as e:
+                        print(e)
 
     return _TxTestCase
