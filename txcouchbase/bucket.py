@@ -160,6 +160,11 @@ class RawClientFactory(object):
                 meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
                 return meth(*args, **kwargs)
 
+            def _do_view_query(self, *args, **kwargs):
+                super_obj = super(async_base, self)
+                meth = getattr(super_obj, 'view_query', getattr(super_obj, 'query', None))
+                return meth(*args, **kwargs)
+
             def registerDeferred(self, event, d):
                 """
                 Register a defer to be fired at the firing of a specific event.
@@ -269,7 +274,7 @@ class RawClientFactory(object):
                 """
 
                 kwargs['itercls'] = viewcls
-                o = super(async_base, self).query(*args, **kwargs)
+                o = self._do_view_query(*args, **kwargs)
                 if not self.connected:
                     self.connect().addCallback(lambda x: o.start())
                 else:
@@ -301,7 +306,7 @@ class RawClientFactory(object):
                     return self.connect().addCallback(cb)
 
                 kwargs['itercls'] = BatchedView
-                o = super(RawClient, self).query(*args, **kwargs)
+                o = self._do_view_query(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
 

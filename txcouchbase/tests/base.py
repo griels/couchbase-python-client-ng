@@ -32,7 +32,7 @@ Factory = Callable[[Any],Client]
 
 def gen_base(basecls,  # type: Type[T]
              timeout=10,
-             factory=V2Bucket  # type: Factory
+             factory=gen_collection  # type: Factory
              ):
     # type: (...) -> Union[Type[T],Type[CouchbaseTestCase]]
     class _TxTestCase(basecls, TestCase):
@@ -66,19 +66,14 @@ def gen_base(basecls,  # type: Type[T]
         def tearDown(self):
             super(_TxTestCase, self).tearDown()
 
-    if timeout and sys.version_info < (3, 7):
-        class _TxTimeOut(_TxTestCase, policies.TimeoutMixin):
-            def __init__(self, *args, **kwargs):
-                super(_TxTestCase, self).__init__(*args, **kwargs)
-                self.setTimeout(timeout)
-
-            def timeoutConnection(self):
-                """
-                Called when the connection times out.
-
-                Override to define behavior other than dropping the connection.
-                """
-                raise TimeoutError("Timed out")
-        return _TxTimeOut
+        @classmethod
+        def setUpClass(cls) -> None:
+            import inspect
+            for name, method in inspect.getmembers(cls,inspect.isfunction):
+                try:
+                    print("Setting {} timeout to 10 secs".format(name))
+                    getattr(cls,name).timeout=timeout
+                except Exception as e:
+                    print(e)
 
     return _TxTestCase
