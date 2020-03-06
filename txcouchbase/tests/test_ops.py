@@ -93,15 +93,15 @@ class OperationTestCase(Base):
 
     def test_multi_errors(self  # type: Base
                         ):
-        raise SkipTest("Fix async multiresults")
+        #raise SkipTest("Fix async multiresults")
         cb = self.make_connection()
         kv = self.gen_kv_dict(prefix = "test_multi_errors")
-        cb.upsertMulti(kv)
+        cb.upsert_multi(kv)
 
         rmkey = list(kv.keys())[0]
         cb.remove(rmkey)
 
-        d = cb.getMulti(kv.keys())
+        d = cb.get_multi(kv.keys())
 
         def t(err):
             self.assertIsInstance(err.value, NotFoundError)
