@@ -155,6 +155,11 @@ class RawClientFactory(object):
                 self._conncb = self._evq['connect']
                 self._dtorcb = self._evq['_dtor']
 
+            def _do_n1ql_query(self, *args, **kwargs):
+                super_obj = super(async_base, self)
+                meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
+                return meth(*args, **kwargs)
+
             def registerDeferred(self, event, d):
                 """
                 Register a defer to be fired at the firing of a specific event.
@@ -315,7 +320,7 @@ class RawClientFactory(object):
                 .. seealso:: :meth:`queryEx`, around which this method wraps
                 """
                 kwargs['itercls'] = cls
-                o = super(async_base, self).query(*args, **kwargs)
+                o = self._do_n1ql_query(*args, **kwargs)
                 if not self.connected:
                     self.connect().addCallback(lambda x: o.start())
                 else:
@@ -352,7 +357,7 @@ class RawClientFactory(object):
                     return self.connect().addCallback(cb)
 
                 kwargs['itercls'] = BatchedN1QLRequest
-                o = super(RawClient, self).query(*args, **kwargs)
+                o = self._do_n1ql_query(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
 
@@ -498,7 +503,11 @@ class ClientFactory(object):
                     pass
                 def val_callback(*args, **kwargs):
                     pass
-                opres.set_callbacks(val_callback,err_callback)
+                try:
+                    pass
+                    opres.set_callbacks(val_callback,err_callback)
+                except:
+                    pass
                 return self.defer(opres)
 
 
