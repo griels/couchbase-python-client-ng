@@ -264,7 +264,7 @@ class RawClientFactory(object):
                 """
 
                 kwargs['itercls'] = viewcls
-                o = super(async_base, self).query(*args, **kwargs)
+                o = RawClient._n1ql_query(self, *args, **kwargs)
                 if not self.connected:
                     self.connect().addCallback(lambda x: o.start())
                 else:
@@ -296,7 +296,7 @@ class RawClientFactory(object):
                     return self.connect().addCallback(cb)
 
                 kwargs['itercls'] = BatchedView
-                o = super(RawClient, self).query(*args, **kwargs)
+                o = RawClient.n1ql_query(self ,*args, **kwargs)
                 o.start()
                 return o._getDeferred()
 
@@ -315,7 +315,7 @@ class RawClientFactory(object):
                 .. seealso:: :meth:`queryEx`, around which this method wraps
                 """
                 kwargs['itercls'] = cls
-                o = super(async_base, self).query(*args, **kwargs)
+                o = RawClient.n1ql_query(self, *args, **kwargs)
                 if not self.connected:
                     self.connect().addCallback(lambda x: o.start())
                 else:
@@ -352,7 +352,7 @@ class RawClientFactory(object):
                     return self.connect().addCallback(cb)
 
                 kwargs['itercls'] = BatchedN1QLRequest
-                o = super(RawClient, self).query(*args, **kwargs)
+                o = RawClient.n1ql_query(self, *args, **kwargs)
                 o.start()
                 return o._getDeferred()
 
@@ -415,6 +415,7 @@ class RawClientFactory(object):
                 o = super(async_base, self).search(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
+        RawClient.n1ql_query=getattr(RawClient,'n1ql_query',RawClient.query)
         return RawClient
 
 
@@ -498,7 +499,10 @@ class ClientFactory(object):
                     pass
                 def val_callback(*args, **kwargs):
                     pass
-                opres.set_callbacks(val_callback,err_callback)
+                try:
+                    opres.set_callbacks(val_callback,err_callback)
+                except:
+                    pass
                 return self.defer(opres)
 
 

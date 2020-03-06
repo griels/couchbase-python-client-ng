@@ -41,7 +41,7 @@ class OperationTestCase(Base):
         return d
 
     def testSimpleGet(self):
-        raise SkipTest("fix async wrapper")
+        #raise SkipTest("fix async wrapper")
         cb = self.make_connection()
         key = self.gen_key("test_simple_get")
         value = "simple_value"
@@ -57,7 +57,7 @@ class OperationTestCase(Base):
         return d_get
 
     def testMultiSet(self):
-        raise SkipTest("Fix multi async results")
+        #raise SkipTest("Fix multi async results")
         cb = self.make_connection()
         kvs = self.gen_kv_dict(prefix="test_multi_set")
         d_set = cb.upsertMulti(kvs)
@@ -76,7 +76,7 @@ class OperationTestCase(Base):
         return d_set
 
     def testSingleError(self):
-        raise SkipTest("fix async result")
+        #raise SkipTest("fix async result")
         cb = self.make_connection()
         key = self.gen_key("test_single_error")
 
@@ -93,7 +93,7 @@ class OperationTestCase(Base):
 
     def testMultiErrors(self  # type: Base
                         ):
-        raise SkipTest("Fix async multiresults")
+        #raise SkipTest("Fix async multiresults")
         cb = self.make_connection()
         kv = self.gen_kv_dict(prefix = "test_multi_errors")
         cb.upsertMulti(kv)
