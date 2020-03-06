@@ -437,17 +437,20 @@ def get_mutation_result(result  # type: CoreResult
     return factory_class(orig_result)
 
 
-class MultiMutationResult(dict):
-    def __init__(self, raw_result):
-        self.update({k: get_mutation_result(v) for k, v in raw_result.items()})
-
-
 class MultiResultBase(dict):
     def converter(self, value):
         pass
 
     def __init__(self, raw_result):
         super(MultiResultBase,self).__init__({k: self.converter(v) for k, v in raw_result.items()})
+
+
+class MultiMutationResult(MultiResultBase):
+    def converter(self, raw_value):
+        return get_mutation_result(raw_value)
+
+    def __init__(self, *args, **kwargs):
+        super(MultiMutationResult, self).__init__(*args, **kwargs)
 
 
 class MultiGetResult(MultiResultBase):
@@ -476,13 +479,13 @@ class AsyncMultiGetResult(AsyncWrapper.gen_wrapper(MultiGetResult)):
 
 class MultiResultWrapper(object):
     def __init__(self, orig_result_type, async_result_type=None):
-        self.orig_result_type=orig_result_type
-        self.async_result_type=async_result_type or AsyncWrapper.gen_wrapper(orig_result_type)
+        self.orig_result_type = orig_result_type
+        self.async_result_type = async_result_type or AsyncWrapper.gen_wrapper(orig_result_type)
 
     def get_multi_result(self, target, wrapped, keys, *options, **kwargs):
         final_options = forward_args(kwargs, *options)
         raw_result = wrapped(target, keys, **final_options)
-        orig_result = getattr(raw_result,'orig_result',raw_result)
+        orig_result = getattr(raw_result, 'orig_result', raw_result)
         factory_class = self.async_result_type if issubclass(type(orig_result), AsyncResult) else self.orig_result_type
         result = factory_class(orig_result)
         return result
