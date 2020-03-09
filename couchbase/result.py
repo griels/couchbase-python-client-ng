@@ -213,6 +213,8 @@ class PingResult(object):
         self._sdk = original.get("sdk", None)
         self._version = original.get("version", None)
         self._endpoints = dict()
+        # TODO remove this - do not merge with this debug statement in here
+        print(original)
         for k, v in original['services'].items():
             # construct an EndpointPingReport for each
             k = ServiceType(k)
