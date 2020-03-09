@@ -224,18 +224,6 @@ def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
 CoreBucketOpRead = TypeVar("CoreBucketOpRead", Callable[[Any], CoreResult], Callable[[Any], GetResult])
 
 
-def _wrap_get_result(func  # type: CoreBucketOpRead
-                     ):
-    # type: (...) -> CoreBucketOpRead
-    @wraps(func)
-    def wrapped(self,  # type: CBCollection
-                *args,  # type: Any
-                **kwargs  # type:  Any
-                ):
-        # type: (...)->Any
-        return _inject_scope_and_collection(get_result_wrapper(func))(self,*args,**kwargs)
-
-    return wrapped
 
 class BinaryCollection(object):
     pass
