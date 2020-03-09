@@ -1,10 +1,23 @@
-import abc
+from datetime import timedelta
+from enum import Enum
+from typing import *
 
+import attr
+from six import with_metaclass
 
-from couchbase_core.exceptions import CouchbaseError
-from couchbase_core.views.iterator import AlreadyQueriedError
-from couchbase_core import _to_json
+import couchbase_core
+from couchbase_core import abstractmethod, JSON, _to_json, iterable_wrapper
 from couchbase_core._pyport import unicode
+from couchbase.exceptions import CouchbaseError
+from couchbase_core.views.iterator import AlreadyQueriedError
+from couchbase_core.supportability import internal
+from .options import OptionBlockTimeOut, UnsignedInt32, UnsignedInt64
+from couchbase_core import ABCMeta
+import abc
+import cattr
+
+
+SearchQueryRow = JSON
 
 
 def _genprop(converter, *apipaths, **kwargs):
@@ -74,6 +87,7 @@ def _highlight(value):
         raise ValueError(
             'Highlight must be "html" or "ansi", got {0}'.format(value))
     return value
+
 
 def _consistency(value):
     """
@@ -322,7 +336,7 @@ class SortGeoDistance(Sort):
         super(SortGeoDistance, self).__init__('geo_distance', **kwargs)
 
     location = _genprop(_location_conv, 'location',
-                        doc='`(lat, lon)` of point of origin')
+                        doc='`(lon, lat)` of point of origin')
     field = _genprop_str('field', doc='Field that contains the distance')
     unit = _genprop_str('unit', doc='Distance unit used for measuring')
 
@@ -337,6 +351,12 @@ def _convert_sort(s):
         return s
     else:
         return list(s)
+
+
+# there is a v2 Params class that does what we want here -
+# so for now the SearchOptions can just use it under the
+# hood.  Later when we eliminate the v2 stuff, we can move
+# that logic over into SearchOptions itself
 
 
 class Params(object):
@@ -498,7 +518,8 @@ class RawQuery(Query):
 class _SingleQuery(Query):
     __metaclass__ = abc.ABCMeta
 
-    @abc.abstractproperty
+    @property
+    @abstractmethod
     def _TERMPROP(self):
         """Name of the JSON property that contains the mandatory match spec"""
 
@@ -721,16 +742,17 @@ class GeoBoundingBoxQuery(Query):
 
     top_left = _genprop(
         _location_conv, 'top_left',
-        doc='Tuple of `(lat, lon)` for the top left corner of bounding box')
+        doc='Tuple of `(lon, lat)` for the top left corner of bounding box')
     bottom_right = _genprop(
         _location_conv, 'bottom_right',
-        doc='Tuple of `(lat, lon`) for the bottom right corner of bounding box')
+        doc='Tuple of `(lon, lat`) for the bottom right corner of bounding box')
 
 
 class _RangeQuery(Query):
     __metaclass__ = abc.ABCMeta
 
-    @abc.abstractproperty
+    @property
+    @abstractmethod
     def _MINMAX(self):
         return 'min_name', 'max_name'
 
@@ -853,7 +875,8 @@ class TermRangeQuery(_RangeQuery):
 class _CompoundQuery(Query):
     __metaclass__ = abc.ABCMeta
 
-    @abc.abstractproperty
+    @property
+    @abstractmethod
     def _COMPOUND_FIELDS(self):
         """
         Field to contain the compound queries. should return an iterable of
@@ -1070,7 +1093,7 @@ def make_search_body(index, query, params=None):
     :param index: The index name to query
     :param query: The query itself
     :param params: Modifiers for the query
-    :type params: :class:`couchbase_core.fulltext.Params`
+    :type params: :class:`couchbase.search.Params`
     :return: A dictionary suitable for serialization
     """
     dd = {}
@@ -1133,7 +1156,10 @@ class SearchRequest(object):
 
     @property
     def raw(self):
-        return self.__raw
+        try:
+            return self.__raw
+        except Exception as e:
+            raise
 
     def execute(self):
         """
@@ -1231,11 +1257,241 @@ class SearchRequest(object):
 
         self._start()
         while self._do_iter:
-            raw_rows = self.raw.fetch(self._mres)
-            for row in self._process_payload(raw_rows):
+            try:
+                raw_rows = self.raw.fetch(self._mres)
+            except Exception as e:
+                raise
+            actual_rows=list(raw_rows)
+            for row in self._process_payload(actual_rows):
                 yield row
 
     def __repr__(self):
         return (
             '<{0.__class__.__name__} body={0._body!r} response={1}>'.format(
                 self, self.raw.value if self.raw else '<PENDING>'))
+
+
+
+@attr.s
+class SearchRowLocation(object):
+    field = attr.attr(type=str)
+    term = attr.attr(type=str)
+    position = attr.attr(type=UnsignedInt32)
+    start = attr.attr(type=UnsignedInt32)
+    end = attr.attr(type=UnsignedInt32)
+    array_positions = attr.attr(factory=list, type=List[UnsignedInt32])
+
+
+class SearchRowFields(Dict[str, Any]):
+    def __init__(self, *args, **kwargs):
+        if kwargs:
+            pass
+        super(SearchRowFields, self).__init__(*args, **kwargs)
+
+cattr.register_structure_hook(SearchRowFields, lambda x, t: t(x))
+
+
+class SearchRowLocations(object):
+    def __init__(self, orig_data):
+        self._real_data=orig_data
+    def get_all(self):
+        # type: (...) -> List[SearchRowLocation]
+        """list all locations (any field, any term)"""
+        results=[]
+        for field, terms in self._real_data.items():
+            for term, entries in terms.items():
+                results.extend(self.get(field,term))
+        return results
+
+    # list all locations for a given field (any term)
+    def get(self,
+            field,  # type: str
+            term  # type: str
+            ):
+        # type: (...) -> List[SearchRowLocation]
+        """List all locations for a given field and term"""
+        entries_for_field=self._real_data.get(field,dict())
+        return [SearchRowLocation(field, term, v['pos'], v['start'],v['end'],v['array_positions']) for v in self._real_data[field][term]]
+
+    def fields(self):
+        # type: (...) -> List[str]
+        """
+        :return: the fields in this location
+        """
+        return self._real_data.keys()
+
+    def terms(self):
+        # type: (...) -> Set[str]
+        """
+        List all terms in this locations,
+        considering all fields (so a set):
+        """
+        result=set()
+        for field in self._real_data.values():
+            result.update(field.keys())
+        return result
+
+    def terms_for(self,
+                  field  # type:str
+                  ):
+        # type: (...) -> list[str]
+        """ list the terms for a given field """
+        return list(self._real_data[field].keys())
+
+def searchRowLocations(x, t):
+    return t(x)
+
+cattr.register_structure_hook(SearchRowLocations, searchRowLocations)
+
+@attr.s
+class SearchRow(object):
+    def __init__(self, *args, **kwargs):
+        super(SearchRow, self).__init__(*args, **kwargs)
+    """A single entry of search results. The server calls them "hits", and represents as a JSON object. The following interface describes the contents of the result row."""
+    index=attr.ib(type=str)
+    id=attr.ib(type=str)
+    score=attr.ib(type=float)
+    explanation=attr.ib(factory=dict, type=JSON)
+    locations=attr.ib(factory=SearchRowLocations, type=SearchRowLocations)  # type: SearchRowLocations
+    fragments=attr.ib(factory=dict, type=Optional[Mapping[str, str]])
+    fields=attr.ib(default=attr.Factory(SearchRowFields), type=SearchRowFields)
+
+@attr.s
+class SearchFacetResult(object):
+    """ An individual facet result has both metadata and details,
+    as each facet can define ranges into which results are categorized."""
+    name = attr.attr(type=str)
+    field = attr.attr(type=str)
+    total = attr.attr(type=UnsignedInt64)
+    missing = attr.attr(type=UnsignedInt64)
+    other = attr.attr(type=UnsignedInt64)
+
+""" If top-level "error" property exists, then SDK should build and throw CouchbaseException with its content."""
+
+
+@attr.attrs
+class SearchMetrics(object):
+    took = attr.attr(type=timedelta)
+    total_rows = attr.attr(type=UnsignedInt64)
+    max_score = attr.attr(type=float)
+    success_partition_count = attr.attr(type=UnsignedInt64)
+    error_partition_count = attr.attr(type=UnsignedInt64)
+
+    @property
+    def total_partition_count(self  # type: SearchMetrics
+                              ):
+        # type: (...) -> UnsignedInt64
+        return self.success_partition_count + self.error_partition_count
+
+
+class HighlightStyle(Enum):
+    Ansi = 'ansi'
+    Html = 'html'
+
+
+class SearchOptions(OptionBlockTimeOut):
+    @overload
+    def __init__(self,
+                 timeout=None,           # type: timedelta
+                 limit=None,             # type: int
+                 skip=None,              # type: int
+                 explain=None,           # type: bool
+                 fields=None,            # type: List[str]
+                 highlight_style=None,   # type: HighlightStyle
+                 highlight_fields=None,  # type: List[str]
+                 scan_consistency=None,  # type: cluster.QueryScanConsistency
+                 consistent_with=None,   # type: couchbase_core.MutationState
+                 facets=None,            # type: Dict[str, couchbase.search.Facet]
+                 raw=None,               # type: JSON
+                 sort=None               # type: List[str]
+                 ):
+        pass
+
+    def __init__(self,
+                 **kwargs   # type: Any
+                 ):
+        # convert highlight_style to str if it is present...
+        style = kwargs.get('highlight_style', None)
+        if(style) :
+            kwargs['highlight_style'] = style.value
+
+        super(SearchOptions, self).__init__(**kwargs)
+
+
+@attr.s
+class SearchMetaData(object):
+    """Represents the meta-data returned along with a search query result."""
+    metrics = attr.ib(type=SearchMetrics)
+    errors =attr.ib(type=Mapping[str, Exception])
+
+
+class MetaData(object):
+    def __init__(self,
+                 raw_data  # type: JSON
+                 ):
+        self._raw_data = raw_data
+
+    @property
+    def _status(self):
+        # type: (...) -> Dict[str,int]
+        return self._raw_data.get('status',{})
+
+    def success_count(self):
+        # type: (...) -> int
+        return self._status.get('successful')
+
+    def error_count(self):
+        # type: (...) -> int
+        return self._status.get('failed')
+
+    def took(self):
+        # type: (...) -> timedelta
+        return timedelta(microseconds=self._raw_data.get('took'))
+
+    def total_hits(self):
+        # type: (...) -> int
+        return self._raw_data.get('total_hits')
+
+    def max_score(self):
+        # type: (...) -> float
+        return self._raw_data.get('max_score')
+
+
+class SearchResultBase(object):
+    @internal
+    def __init__(self,
+                 *args, row_factory=None, **kwargs  # type: SearchRequest
+                 ):
+        """
+        The SearchResult interface provides a means of mapping the results of a Search query into an object.
+        The description and details on the fields can be found in the Couchbase Full Text Search Index Query (FTS) RFC.
+
+
+        """
+
+        super(SearchResultBase, self).__init__(*args, row_factory=(row_factory or self._row_factory), **kwargs)
+
+    def _row_factory(self,
+                   orig_value  # type: JSON
+                   ):
+        # type: (...) -> SearchRow
+        try:
+            result= cattr.structure(orig_value, SearchRow)
+            return result
+        except Exception as e:
+            raise
+
+    def facets(self):
+        # type: (...) -> Dict[str, SearchFacetResult]
+        return {k: cattr.structure(dict(name=k, **v), SearchFacetResult) for k, v in
+                super(SearchResultBase, self).facets.items()}
+
+    def metadata(self):  # type: (...) -> MetaData
+        return MetaData(super(SearchResultBase, self).meta)
+
+    @classmethod
+    def mk_kwargs(cls, kwargs):
+        return SearchRequest.mk_kwargs(kwargs)
+
+class SearchResult(SearchResultBase, iterable_wrapper(SearchRequest)):
+    pass
