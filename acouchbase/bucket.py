@@ -96,7 +96,7 @@ Collection = AsyncCBCollection
 
 class Bucket(V3SyncBucket):
     def __init__(self, *args, **kwargs):
-        kwargs['collection_class'] = AsyncCBCollection
+        kwargs['collection_factory'] = AsyncCBCollection
         super(Bucket, self).__init__(*args, **kwargs)
 
 

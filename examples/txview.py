@@ -1,6 +1,6 @@
 from twisted.internet import reactor
 
-from txcouchbase.bucket import Bucket
+from txcouchbase.bucket import V2Bucket as Bucket
 
 def on_view_rows(res):
     for row in res:

@@ -25,12 +25,12 @@ from typing import *
 T = TypeVar('T', bound=object)
 Factory = Callable[[Any],Client]
 
-from txcouchbase.bucket import Bucket
+from txcouchbase.bucket import TxBucket
 
 
 def gen_collection(*args, **kwargs):
     try:
-        base_bucket = Bucket(*args, **kwargs)
+        base_bucket = TxBucket(*args, **kwargs)
         return base_bucket.default_collection()
     except Exception as e:
         raise

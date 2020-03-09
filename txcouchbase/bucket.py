@@ -31,6 +31,7 @@ from txcouchbase.iops import v0Iops
 from couchbase.bucket import Bucket as V3SyncBucket
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
 from couchbase_core.client import Client as CoreClient
+from couchbase.cluster import Cluster as V3SyncCluster
 from typing import *
 
 
@@ -517,11 +518,16 @@ class ClientFactory(object):
 
 
 V2Bucket = ClientFactory.gen_client(RawV2Bucket)
-AsyncCBCollection = ClientFactory.gen_client(RawCollection)
-Collection = AsyncCBCollection
+TxCollection = ClientFactory.gen_client(RawCollection)
 
 
-class Bucket(V3SyncBucket):
+class TxBucket(V3SyncBucket):
     def __init__(self, *args, **kwargs):
-        kwargs['collection_class'] = AsyncCBCollection
-        super(Bucket, self).__init__(*args, **kwargs)
+        kwargs['collection_factory'] = TxCollection
+        super(TxBucket, self).__init__(*args, **kwargs)
+
+
+class TxCluster(V3SyncCluster):
+    def __init__(self, *args, **kwargs):
+        kwargs['bucket_factory'] = TxBucket
+        super(TxCluster, self).__init__(*args, **kwargs)

@@ -113,7 +113,7 @@ class Bucket(object):
     def __init__(self,
                  connection_string,  # type: str
                  name=None,  # type: str
-                 collection_class=CBCollection,  # type: Type[CoreClient]
+                 collection_factory=CBCollection,  # type: Type[CoreClient]
                  admin=None,  # type: Admin
                  *options,
                  **kwargs
@@ -199,7 +199,7 @@ class Bucket(object):
         self._connstr = connection_string
         self._bucket_args = forward_args(kwargs, *options)
         self._bucket_args['bucket'] = name
-        self._collection_class = collection_class
+        self._collection_factory = collection_factory
 
         self._bucket = CoreClient(connection_string, **self._bucket_args)
         self._admin = admin

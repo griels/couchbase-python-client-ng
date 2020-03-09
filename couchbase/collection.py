@@ -311,7 +311,7 @@ class CBCollection(CoreClient):
         # type: (...) -> CBCollection
         coll_args = copy.deepcopy(parent.bucket._bucket_args)
         coll_args.update(name=name, parent=parent)
-        result = parent.bucket._collection_class(parent.bucket._connstr, **parent.bucket._bucket_args)
+        result = parent.bucket._collection_factory(parent.bucket._connstr, **parent.bucket._bucket_args)
         return result
 
     @property
