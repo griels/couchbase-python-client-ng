@@ -23,7 +23,7 @@ Contents:
    api/views
    api/analytics
    api/n1ql
-   api/fulltext
+   api/search
    api/results
    api/exceptions
    api/transcoder
@@ -39,7 +39,7 @@ Asynchronous APIs
    :maxdepth: 2
 
    api/txcouchbase
-   api/gcouchbase
+
 
 Internal APIs
 =============
