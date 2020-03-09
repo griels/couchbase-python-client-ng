@@ -332,17 +332,41 @@ class AsyncWrapper(object):
                 self._kwargs = kwargs
 
             def set_callbacks(self, on_ok_orig, on_err_orig):
-                def on_ok(res):
-                    on_ok_orig(base(res, **self._kwargs))
-
-                def on_err(res, excls, excval, exctb):
-                    on_err_orig(res, excls, excval, exctb)
-
-                self._original.set_callbacks(on_ok, on_err)
+                self.callback=on_ok_orig
+                self.errback=on_err_orig
 
             def clear_callbacks(self, *args):
                 self._original.clear_callbacks(*args)
 
+            class ResCallback(object):
+                def __init__(self, on_ok_orig, **kwargs):
+                    self._on_ok_orig=on_ok_orig
+                    self._kwargs=kwargs
+
+                def __call__(self, res):
+                    self._on_ok_orig(base(res, **self._kwargs))
+
+            @property
+            def callback(self):
+                return self._original.callback._on_ok_orig
+
+            @callback.setter
+            def callback(self, on_ok_orig):
+                self._original.callback=Wrapped.ResCallback(on_ok_orig)
+
+            class ErrCallBack(object):
+                def __init__(self, orig_callback):
+                    self._on_err_orig=orig_callback
+                def __call__(self, res, excls, excval, exctb):
+                    self._on_err_orig(res, excls, excval, exctb)
+
+            @property
+            def errback(self):
+                return self._original.errback._on_err_orig
+
+            @errback.setter
+            def errback(self, on_err_orig):
+                self._original.errback=Wrapped.ErrCallBack(on_err_orig)
         return Wrapped
 
 
