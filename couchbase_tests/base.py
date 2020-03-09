@@ -245,7 +245,7 @@ class ClusterInformation(object):
     def make_connection(self,
                         conncls,  # type: Type[ClientType]
                         **kwargs):
-        # type: (type, **Any) -> ClientType
+        # type: (...) -> ClientType
         connargs = self.make_connargs(**kwargs)
         return conncls(**connargs)
 
@@ -817,7 +817,7 @@ class ClusterTestCase(CouchbaseTestCase):
         self.fail("successful {} after {} times waiting {} seconds between calls".format(func, num_times, seconds_between))
 
     @staticmethod
-    def _passthru(result, *args, **kwargs):
+    def _passthrough(result, *_, **__):
         return result
 
     def _fail(self, message):
@@ -829,8 +829,14 @@ class ClusterTestCase(CouchbaseTestCase):
     def checkResult(self, result, callback):
         return callback(result)
 
-    def try_n_times(self, num_times, seconds_between, func, *args, on_success=None, **kwargs):
-        on_success = on_success or self._passthru
+    def try_n_times(self,
+                    num_times,
+                    seconds_between,
+                    func,
+                    *args,
+                    on_success=None,
+                    **kwargs):
+        on_success = on_success or self._passthrough
         for _ in range(num_times):
             try:
                 ret = func(*args, **kwargs)
@@ -840,6 +846,21 @@ class ClusterTestCase(CouchbaseTestCase):
                 print("got exception {}, sleeping...".format(e))
                 time.sleep(seconds_between)
         return self._fail("unsuccessful {} after {} times, waiting {} seconds between calls".format(func, num_times, seconds_between))
+
+    Triable = TypeVar('Triable', bound=Callable)
+
+
+    def try_n_times_decorator(self,
+                              func,  # type: ClusterTestCase.Triable
+                              num_times,
+                              seconds_between,
+                              on_success=None
+                              ):
+        # type: (...) -> ClusterTestCase.Triable
+        def wrapper(*args, **kwargs):
+            success_func = kwargs.pop('on_success', on_success) or self._passthrough
+            return self.try_n_times(num_times, seconds_between, func, *args, on_success=success_func, **kwargs)
+        return wrapper
 
     def factory(self, *args, **kwargs):
         return V3Bucket(*args, username="default", **kwargs).default_collection()

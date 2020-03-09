@@ -274,21 +274,15 @@ def recursive_reload(module, paths=None, mdict=None):
     reload(module)
 
 
-from couchbase_core.fulltext import SearchRequest
-from couchbase_core.n1ql import N1QLRequest
-from couchbase_core.views.iterator import View
-
-IterableQuery = Union[SearchRequest, N1QLRequest, View]
-
-WrappedIterable = TypeVar('T', bound=IterableQuery)
+WrappedIterable = TypeVar('T', bound=Iterable[Any])
 
 
 def iterable_wrapper(basecls  # type: Type[WrappedIterable]
                      ):
-    # type: (...) -> Union[Type['IterableWrapper'], Type[WrappedIterable]]
+    # type: (...) -> Type[WrappedIterable]
     class IterableWrapper(basecls):
         def __init__(self,
-                     *args, **kwargs  # type: IterableQuery
+                     *args, **kwargs
                      ):
             super(IterableWrapper, self).__init__(*args, **kwargs)
             self.done = False
