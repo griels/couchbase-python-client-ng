@@ -272,8 +272,9 @@ class Bucket(CoreClient):
         :param ViewOptions view_options: Options to use when querying a view index.
         :return: ViewResult containing the view results
         """
+        #view_options=kwargs.pop('itercls', ViewResult)
         res = CoreClient.view_query(self, design_doc, view_name, **forward_args(kwargs, *view_options))
-        return res# ViewResult(res)
+        return res#return ViewResult(res)
 
     def view_indexes(self  # type: Bucket
                      ):
