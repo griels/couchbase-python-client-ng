@@ -546,10 +546,7 @@ class TxBucket(ClientFactory.gen_client(RawTxBucket)):
     def __init__(self, *args, **kwargs):
         super(TxBucket,self).__init__(collection_factory=self.collection_factory, *args, **kwargs)
 
-    def collection_factory(self  # type: TxBucket
-                           ):
-        # type: (...) -> TxCollection
-        return TxCollection()
+    collection_factory = TxCollection
 
 
 class TxCluster(V3SyncCluster):

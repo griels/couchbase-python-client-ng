@@ -106,7 +106,7 @@ class Bucket(CoreClient):
     def __init__(self,
                  connection_string,  # type: str
                  name=None,  # type: str
-                 collection_factory=CBCollection,  # type: Type[CoreClient]
+                 collection_factory=CBCollection,  # type: Type[CBCollection]
                  admin=None,  # type: Admin
                  *options,
                  **kwargs
@@ -196,6 +196,20 @@ class Bucket(CoreClient):
 
         super(Bucket,self).__init__(connection_string, **self._bucket_args)
         self._admin = admin
+
+    def cast(self,  # type: Bucket
+             scope,    # type: Scope
+             name,      # type: Optional[str]
+             *options   # type: CollectionOptions
+             ):
+        # type: (...) -> CBCollection
+        coll_args = {}#copy.deepcopy(parent.bucket._bucket_args)
+        coll_args.update(name=name, parent=scope)
+        try:
+            result = self._collection_factory(name=name, parent_scope=scope)
+        except Exception as e:
+            raise
+        return result
 
     @property
     def name(self):

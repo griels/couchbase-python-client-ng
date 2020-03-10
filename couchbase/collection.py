@@ -257,11 +257,12 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
         return get_multi_mutation_result(target, wrapped, keys, *options, **kwargs)
     return _inject_scope_and_collection(wrapper)
 
+
 import wrapt
 
-class CBCollection(wrapt.ObjectProxy):
 
-    def __init__(self,  # type:CBCollection
+class CBCollection(wrapt.ObjectProxy):
+    def __init__(self,  # type: CBCollection
                  name = None,  # type: str
                  parent_scope = None,  # type: Scope
                  *options,
@@ -279,7 +280,7 @@ class CBCollection(wrapt.ObjectProxy):
         :param str name: name of collection
         :param CollectionOptions options: miscellaneous options
         """
-        assert issubclass(type(parent.bucket), CoreClient)
+        assert issubclass(type(parent_scope.bucket), CoreClient)
         super(CBCollection, self).__init__(parent_scope.bucket)
         self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
@@ -296,20 +297,6 @@ class CBCollection(wrapt.ObjectProxy):
     def _wrap_dsop(self, sdres, has_value=False, **kwargs):
         return getattr(super(CBCollection, self)._wrap_dsop(sdres, has_value), 'value')
 
-    @classmethod
-    def cast(cls,
-             parent,    # type: Scope
-             name,      # type: Optional[str]
-             *options   # type: CollectionOptions
-             ):
-        # type: (...) -> CBCollection
-        coll_args = {}#copy.deepcopy(parent.bucket._bucket_args)
-        coll_args.update(name=name, parent=parent)
-        try:
-            result = parent.bucket._collection_factory(parent)
-        except Exception as e:
-            raise
-        return result
 
     @property
     def bucket(self):
@@ -1150,14 +1137,8 @@ class Scope(object):
         :raise: CollectionNotFoundException
         :raise: AuthorizationException
         """
-        return self._gen_collection(None, *options)
+        return self.bucket.cast(self, None, *options)
 
-    def _gen_collection(self,
-                        collection_name,  # type: Optional[str]
-                        *options  # type: CollectionOptions
-                        ):
-        # type: (...) -> CBCollection
-        return CBCollection.cast(self, collection_name, *options)
     @volatile
     def collection(self,
                         collection_name,  # type: str
@@ -1175,7 +1156,7 @@ class Scope(object):
         :raise: AuthorizationException
 
         """
-        return self._gen_collection(collection_name, *options)
+        return self.bucket.cast(self, collection_name, *options)
 
 
 Collection = CBCollection
