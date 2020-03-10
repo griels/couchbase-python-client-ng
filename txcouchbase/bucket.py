@@ -21,6 +21,7 @@ This file contains the twisted-specific bits for the Couchbase client.
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
+from couchbase_core.asynchronous.rowsbase import AsyncRowsBase
 from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
@@ -28,8 +29,9 @@ from couchbase_core.asynchronous.fulltext import AsyncSearchRequest
 from couchbase_core.asynchronous.events import EventQueue
 from couchbase_core.exceptions import CouchbaseError
 from txcouchbase.iops import v0Iops
-from couchbase.bucket import Bucket as V3SyncBucket
+from couchbase.bucket import Bucket as V3SyncBucket, ViewResult
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
+from couchbase_core.views.iterator import View
 from couchbase_core.client import Client as CoreClient
 from couchbase.cluster import Cluster as V3SyncCluster
 from typing import *
@@ -90,9 +92,28 @@ class BatchedRowMixin(object):
         return iter(self.__rows)
 
 
+class AsyncViewResultBase(AsyncViewBase, ViewResult):
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize a new AsyncViewBase object. This is intended to be
+        subclassed in order to implement the require methods to be
+        invoked on error, data, and row events.
+
+        Usage of this class is not as a standalone, but rather as
+        an ``itercls`` parameter to the
+        :meth:`~couchbase_core.connection.Connection.query` method of the
+        connection object.
+        """
+        ViewResult.__init__(self, *args, **kwargs)
+
 class BatchedView(BatchedRowMixin, AsyncViewBase):
     def __init__(self, *args, **kwargs):
         AsyncViewBase.__init__(self, *args, **kwargs)
+        BatchedRowMixin.__init__(self, *args, **kwargs)
+
+class BatchedViewResult(BatchedRowMixin, AsyncViewResultBase):
+    def __init__(self, *args, **kwargs):
+        AsyncViewResultBase.__init__(self, *args, **kwargs)
         BatchedRowMixin.__init__(self, *args, **kwargs)
 
 #class BatchedViewResult(BatchedView):
@@ -139,12 +160,12 @@ class ConnectionEventQueue(TxEventQueue):
 T = TypeVar('T', bound=CoreClient)
 
 
-class RawClientFactory(object):
+class TxRawClientFactory(object):
     @staticmethod
     def gen_raw(async_base  # type: Type[T]
                 ):
         # type: (...) -> Type[T]
-        class RawClient(async_base):
+        class TxRawClient(async_base):
             def __init__(self, connstr=None, **kwargs):
                 """
                 Bucket subclass for Twisted. This inherits from the 'AsyncBucket' class,
@@ -153,7 +174,7 @@ class RawClientFactory(object):
                 if connstr and 'connstr' not in kwargs:
                     kwargs['connstr'] = connstr
                 iops = v0Iops(reactor)
-                super(RawClient, self).__init__(iops=iops, **kwargs)
+                super(TxRawClient, self).__init__(iops=iops, **kwargs)
 
                 self._evq = {
                     'connect': ConnectionEventQueue(),
@@ -163,7 +184,7 @@ class RawClientFactory(object):
                 self._conncb = self._evq['connect']
                 self._dtorcb = self._evq['_dtor']
 
-            def _do_n1ql_query(self,  # type: RawClient
+            def _do_n1ql_query(self,  # type: TxRawClient
                                *args,  # type: Any
                                **kwargs  # type: Any
                                ):
@@ -263,7 +284,10 @@ class RawClientFactory(object):
                         raise ex_type(ex_val)
                     except CouchbaseError:
                         d.errback()
-                opres.set_callbacks(d.callback, _on_err)
+                try:
+                    opres.set_callbacks(d.callback, _on_err)
+                except Exception as e:
+                    raise
                 return d
 
             def view_query_ex(self, viewcls, *args, **kwargs):
@@ -313,7 +337,7 @@ class RawClientFactory(object):
                     cb = lambda x: self.view_query(*args, **kwargs)
                     return self.connect().addCallback(cb)
 
-                kwargs['itercls'] = BatchedView
+                kwargs['itercls'] = BatchedViewResult
                 o = self._do_view_query(*args, **kwargs)
                 try:
                     o.start()
@@ -436,18 +460,18 @@ class RawClientFactory(object):
                 o = super(async_base, self).search(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
-        return RawClient
+        return TxRawClient
 
 
-RawV2Bucket = RawClientFactory.gen_raw(V2AsyncBucket)
-RawCollection = RawClientFactory.gen_raw(BaseAsyncCBCollection)
+RawV2Bucket = TxRawClientFactory.gen_raw(V2AsyncBucket)
+RawCollection = TxRawClientFactory.gen_raw(BaseAsyncCBCollection)
 
-class ClientFactory(object):
+class TxClientFactory(object):
     @staticmethod
     def gen_client(raw_class  # type: Type[T]
                    ):
         # type: (...) -> Type[T]
-        class Client(raw_class):
+        class TxDeferredClient(raw_class):
             def __init__(self, *args, **kwargs):
                 """
                 This class inherits from :class:`RawBucket`.
@@ -498,7 +522,7 @@ class ClientFactory(object):
                   d_get.addCallback(on_mres)
 
                 """
-                super(Client, self).__init__(*args, **kwargs)
+                super(TxDeferredClient, self).__init__(*args, **kwargs)
 
             def _connectSchedule(self, f, meth, *args, **kwargs):
                 qop = Deferred()
@@ -506,7 +530,7 @@ class ClientFactory(object):
                 self._evq['connect'].schedule(qop)
                 return qop
 
-            def _wrap(self,  # type: Client
+            def _wrap(self,  # type: TxDeferredClient
                       meth, *args, **kwargs):
                 """
                 Calls a given method with the appropriate arguments, or defers such
@@ -529,17 +553,18 @@ class ClientFactory(object):
             for x in raw_class._MEMCACHED_OPERATIONS:
                 if locals().get(x+'_multi', None):
                     locals().update({x+"Multi": locals()[x+"_multi"]})
-        return Client
+        return TxDeferredClient
 
 
-V2Bucket = ClientFactory.gen_client(RawV2Bucket)
-TxCollection = ClientFactory.gen_client(RawCollection)
+V2Bucket = TxClientFactory.gen_client(RawV2Bucket)
+TxCollection = TxClientFactory.gen_client(RawCollection)
 
-from couchbase.bucket import AsyncBucket as V3AsyncBucket
-RawTxBucket = RawClientFactory.gen_raw(V3AsyncBucket)
+from couchbase.bucket import AsyncBucket as V3AsyncBucket, ViewResult, ViewResult
+
+RawTxBucket = TxRawClientFactory.gen_raw(V3AsyncBucket)
 
 
-class TxBucket(ClientFactory.gen_client(RawTxBucket)):
+class TxBucket(TxClientFactory.gen_client(RawTxBucket)):
     def __init__(self, *args, **kwargs):
         super(TxBucket,self).__init__(collection_factory=TxCollection, *args, **kwargs)
 
