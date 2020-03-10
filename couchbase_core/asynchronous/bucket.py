@@ -26,11 +26,17 @@ from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.exceptions import ArgumentError
 from couchbase_core._pyport import with_metaclass
 from couchbase_core.client import Client as CoreClient
+from typing import *
+
+
+T = TypeVar('T', bound=CoreClient)
 
 
 class AsyncClientFactory(type):
     @staticmethod
-    def gen_async_client(syncbase):
+    def gen_async_client(syncbase  # type: Type[T]
+                         ):
+        # type: (...) -> Type[T]
         class AsyncClientSpecialised(syncbase):
             """
             This class contains the low-level async implementation of the
