@@ -10,6 +10,8 @@ from .collection import Scope
 from datetime import timedelta
 from enum import Enum
 import logging
+from couchbase_core.asynchronous import AsyncClientFactory
+
 
 class ViewScanConsistency(Enum):
     NOT_BOUNDED = 'ok'
@@ -98,7 +100,7 @@ class PingOptions(OptionBlockTimeOut):
         super(PingOptions, self).__init__(**kwargs)
 
 
-class Bucket(object):
+class Bucket(CoreClient):
     _bucket = None  # type: CoreClient
 
     @overload
@@ -201,7 +203,7 @@ class Bucket(object):
         self._bucket_args['bucket'] = name
         self._collection_factory = collection_factory
 
-        self._bucket = CoreClient(connection_string, **self._bucket_args)
+        super(Bucket,self).__init__(connection_string, **self._bucket_args)
         self._admin = admin
 
     @property
@@ -286,3 +288,8 @@ class Bucket(object):
         :raise: CouchbaseError for various communication issues.
         """
         return PingResult(self._bucket.ping(**forward_args(kwargs, *options)))
+
+
+class AsyncBucket(AsyncClientFactory.gen_async_client(Bucket)):
+    def __init__(self, *args, **kwargs):
+        super(AsyncBucket, self).__init__(*args, **kwargs)

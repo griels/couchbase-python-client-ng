@@ -28,7 +28,10 @@ import sys
 from nose.tools import timed
 
 
-class BasicConnectionTest(gen_base(ConnectionTestCase)):
+Base=gen_base(ConnectionTestCase)  # type: ConnectionTestCase
+
+
+class BasicConnectionTest(Base):
     def __init__(self, *args, **kwargs):
         super(BasicConnectionTest,self).__init__(*args,**kwargs)
 
@@ -38,8 +41,10 @@ class BasicConnectionTest(gen_base(ConnectionTestCase)):
         d.addCallback(lambda x: self.assertTrue(cb.connected))
         return d
 
-    def testConnectionFailure(self):
-        raise SkipTest("need to make the initial SDK3 couchbase.bucket.Bucket constructor async")
+    def testConnectionFailure(self  # type: Base
+                              ):
+        #raise SkipTest("need to make the initial SDK3 couchbase.bucket.Bucket constructor async")
+
         cb = self.make_connection(bucket='blahblah')
         d = cb.connect()
         d.addCallback(lambda x: x, cb)

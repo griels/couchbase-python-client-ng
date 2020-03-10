@@ -521,10 +521,21 @@ V2Bucket = ClientFactory.gen_client(RawV2Bucket)
 TxCollection = ClientFactory.gen_client(RawCollection)
 
 
-class TxBucket(V3SyncBucket):
+class AsyncV3Bucket(V3SyncBucket):
     def __init__(self, *args, **kwargs):
-        kwargs['collection_factory'] = TxCollection
-        super(TxBucket, self).__init__(*args, **kwargs)
+        super(AsyncV3Bucket, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def _gen_memd_wrappers(cls, factory):
+        return CoreClient._gen_memd_wrappers(factory)
+
+    _MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
+    _MEMCACHED_NOMULTI=CoreClient._MEMCACHED_NOMULTI
+
+
+from couchbase.bucket import AsyncBucket as V3AsyncBucket
+RawTxBucket = RawClientFactory.gen_raw(V3AsyncBucket)
+TxBucket = ClientFactory.gen_client(RawTxBucket)
 
 
 class TxCluster(V3SyncCluster):

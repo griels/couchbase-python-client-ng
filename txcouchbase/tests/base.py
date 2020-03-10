@@ -40,7 +40,7 @@ def gen_base(basecls,  # type: Type[T]
              timeout=None,
              factory=gen_collection  # type: Factory
              ):
-    # type: (...) -> Union[Type[T],Type[CouchbaseTestCase]]
+    # type: (...) -> Type[Union[T,CouchbaseTestCase]
     class _TxTestCase(basecls, TestCase):
         def register_cleanup(self, obj):
             d = defer.Deferred()
@@ -84,3 +84,4 @@ def gen_base(basecls,  # type: Type[T]
                         print(e)
 
     return _TxTestCase
+
