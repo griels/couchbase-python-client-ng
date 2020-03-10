@@ -15,7 +15,7 @@
 #
 from twisted.internet import defer
 
-from txcouchbase.bucket import BatchedView
+from txcouchbase.bucket import BatchedView, TxBucket
 from couchbase_core.exceptions import HTTPError
 from couchbase_core.asynchronous.view import AsyncViewBase
 
@@ -45,6 +45,7 @@ class RowsHandler(AsyncViewBase):
 
 
 class TxViewsTests(gen_base(ViewTestCase)):
+
     def make_connection(self, **kwargs):
         return super(TxViewsTests, self).make_connection(bucket='beer-sample')
 

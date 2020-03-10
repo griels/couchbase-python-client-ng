@@ -22,7 +22,7 @@ from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
 from couchbase_tests.base import MockTestCase
 from txcouchbase.tests.base import gen_base
 import logging
-
+from txcouchbase.bucket import TxBucket
 
 class RowsHandler(AsyncN1QLRequest):
     def __init__(self, *args, **kwargs):
@@ -44,8 +44,12 @@ class RowsHandler(AsyncN1QLRequest):
         self.cached_error = ex
         self.deferred.errback(ex)
 
+from txcouchbase.bucket import V2Bucket
 
 class TxN1QLTests(gen_base(MockTestCase)):
+    @property
+    def factory(self):
+        return V2Bucket
     def testIncremental(self):
         cb = self.make_connection()
         d = defer.Deferred()
