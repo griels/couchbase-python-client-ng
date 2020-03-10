@@ -21,6 +21,7 @@ This file contains the twisted-specific bits for the Couchbase client.
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
+from couchbase_core.asynchronous.rowsbase import AsyncRowsBase
 from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
@@ -28,8 +29,9 @@ from couchbase_core.asynchronous.fulltext import AsyncSearchRequest
 from couchbase_core.asynchronous.events import EventQueue
 from couchbase_core.exceptions import CouchbaseError
 from txcouchbase.iops import v0Iops
-from couchbase.bucket import Bucket as V3SyncBucket
+from couchbase.bucket import Bucket as V3SyncBucket, ViewResult
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
+from couchbase_core.views.iterator import View
 from couchbase_core.client import Client as CoreClient
 from couchbase.cluster import Cluster as V3SyncCluster
 from typing import *
@@ -90,9 +92,28 @@ class BatchedRowMixin(object):
         return iter(self.__rows)
 
 
+class AsyncViewResultBase(AsyncViewBase, ViewResult):
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize a new AsyncViewBase object. This is intended to be
+        subclassed in order to implement the require methods to be
+        invoked on error, data, and row events.
+
+        Usage of this class is not as a standalone, but rather as
+        an ``itercls`` parameter to the
+        :meth:`~couchbase_core.connection.Connection.query` method of the
+        connection object.
+        """
+        ViewResult.__init__(self, *args, **kwargs)
+
 class BatchedView(BatchedRowMixin, AsyncViewBase):
     def __init__(self, *args, **kwargs):
         AsyncViewBase.__init__(self, *args, **kwargs)
+        BatchedRowMixin.__init__(self, *args, **kwargs)
+
+class BatchedViewResult(BatchedRowMixin, AsyncViewResultBase):
+    def __init__(self, *args, **kwargs):
+        AsyncViewResultBase.__init__(self, *args, **kwargs)
         BatchedRowMixin.__init__(self, *args, **kwargs)
 
 #class BatchedViewResult(BatchedView):
@@ -313,7 +334,7 @@ class TxRawClientFactory(object):
                     cb = lambda x: self.view_query(*args, **kwargs)
                     return self.connect().addCallback(cb)
 
-                kwargs['itercls'] = BatchedView
+                kwargs['itercls'] = BatchedViewResult
                 o = self._do_view_query(*args, **kwargs)
                 try:
                     o.start()
