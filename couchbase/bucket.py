@@ -11,6 +11,8 @@ from .collection import Scope
 from datetime import timedelta
 from enum import Enum
 import logging
+from couchbase_core.asynchronous import AsyncClientFactory
+
 
 
 class ViewScanConsistency(Enum):
@@ -103,22 +105,12 @@ class PingOptions(OptionBlockTimeOut):
         super(PingOptions, self).__init__(**kwargs)
 
 
-class Bucket(object):
-    _bucket = None  # type: CoreClient
-
-    @overload
-    def __init__(self,
-                 connection_string,     # type: str
-                 name=None,             # type: str
-                 admin=None,            # type: Admin
-                 ):
-        # type: (...) -> None
-        pass
+class Bucket(CoreClient):
 
     def __init__(self,
-                 connection_string,  # type: str
+                 connection_string = None,  # type: str
                  name=None,  # type: str
-                 collection_factory=CBCollection,  # type: Type[CoreClient]
+                 collection_factory=CBCollection,  # type: Type[CBCollection]
                  admin=None,  # type: Admin
                  *options,
                  **kwargs
@@ -206,9 +198,12 @@ class Bucket(object):
         self._bucket_args['bucket'] = name
         self._collection_factory = collection_factory
 
-        self._bucket = CoreClient(connection_string, **self._bucket_args)
+        super(Bucket,self).__init__(connection_string, **self._bucket_args)
         self._admin = admin
 
+    @property
+    def _bucket(self):
+        return self
     @property
     def name(self):
         # type: (...) -> str
@@ -268,14 +263,13 @@ class Bucket(object):
         :param ViewOptions view_options: Options to use when querying a view index.
         :return: ViewResult containing the view results
         """
-        cb = self._bucket  # type: CoreClient
-        res = cb.view_query(design_doc, view_name, **forward_args(kwargs, *view_options))
-        return ViewResult(res)
+        res = CoreClient.view_query(self, design_doc, view_name, **forward_args(kwargs, *view_options))
+        return res
 
     def view_indexes(self  # type: Bucket
                      ):
         # type: (...) -> ViewIndexManager
-        return ViewIndexManager(self._bucket, self._admin, self._name)
+        return ViewIndexManager(self, self._admin, self._name)
 
     def ping(self,
              *options,   # type: PingOptions
@@ -290,7 +284,7 @@ class Bucket(object):
         :return: PingResult representing the state of all the pinged services.
         :raise: CouchbaseError for various communication issues.
         """
-        return PingResult(self._bucket.ping(**forward_args(kwargs, *options)))
+        return PingResult(super(Bucket,self).ping(**forward_args(kwargs, *options)))
 
     @property
     def kv_timeout(self):
@@ -304,13 +298,13 @@ class Bucket(object):
             # Get the current default:
             timeout = bucket.kv_timeout
         """
-        return timedelta(seconds=self._bucket._get_timeout_common(_LCB.LCB_CNTL_OP_TIMEOUT))
+        return timedelta(seconds=self._get_timeout_common(_LCB.LCB_CNTL_OP_TIMEOUT))
 
     @kv_timeout.setter
     def kv_timeout(self,
                    timeout  # type: timedelta
                    ):
-        self._bucket._set_timeout_common(_LCB.LCB_CNTL_OP_TIMEOUT, timeout.total_seconds())
+        self._set_timeout_common(_LCB.LCB_CNTL_OP_TIMEOUT, timeout.total_seconds())
 
     @property
     def view_timeout(self):
@@ -326,14 +320,14 @@ class Bucket(object):
         """
         # lets use the private function in the private _bucket for now.  Soon
         # that _bucket will be gone and we will have migrated this all into here.
-        return timedelta(seconds=self._bucket._get_timeout_common(_LCB.LCB_CNTL_VIEW_TIMEOUT))
+        return timedelta(seconds=self._get_timeout_common(_LCB.LCB_CNTL_VIEW_TIMEOUT))
 
     @view_timeout.setter
     def view_timeout(self,
                      timeout  # type: timedelta
                      ):
         # (...) -> None
-        self._bucket._set_timeout_common(_LCB.LCB_CNTL_VIEW_TIMEOUT, timeout.total_seconds())
+        self._set_timeout_common(_LCB.LCB_CNTL_VIEW_TIMEOUT, timeout.total_seconds())
 
     @property
     def tracing_orphaned_queue_flush_interval(self):
@@ -346,14 +340,14 @@ class Bucket(object):
 
         """
 
-        return timedelta(seconds=self._bucket._cntl(op=_LCB.TRACING_ORPHANED_QUEUE_FLUSH_INTERVAL,
+        return timedelta(seconds=self._cntl(op=_LCB.TRACING_ORPHANED_QUEUE_FLUSH_INTERVAL,
                                                     value_type="timeout"))
 
     @tracing_orphaned_queue_flush_interval.setter
     def tracing_orphaned_queue_flush_interval(self,
                                               val   # type: timedelta
                                               ):
-        self._bucket._cntl(op=_LCB.TRACING_ORPHANED_QUEUE_FLUSH_INTERVAL,
+        self._cntl(op=_LCB.TRACING_ORPHANED_QUEUE_FLUSH_INTERVAL,
                            value=val.total_seconds(),
                            value_type="timeout")
 
@@ -368,13 +362,13 @@ class Bucket(object):
 
         """
 
-        return self._bucket._cntl(op=_LCB.TRACING_ORPHANED_QUEUE_SIZE, value_type="uint32_t")
+        return self._cntl(op=_LCB.TRACING_ORPHANED_QUEUE_SIZE, value_type="uint32_t")
 
     @tracing_orphaned_queue_size.setter
     def tracing_orphaned_queue_size(self,
                                     val     # type: int
                                     ):
-        self._bucket._cntl(op=_LCB.TRACING_ORPHANED_QUEUE_SIZE, value=val, value_type="uint32_t")
+        self._cntl(op=_LCB.TRACING_ORPHANED_QUEUE_SIZE, value=val, value_type="uint32_t")
 
     @property
     def tracing_threshold_queue_flush_interval(self):
@@ -387,14 +381,14 @@ class Bucket(object):
 
         """
 
-        return timedelta(seconds=self._bucket._cntl(op=_LCB.TRACING_THRESHOLD_QUEUE_FLUSH_INTERVAL,
+        return timedelta(seconds=self._cntl(op=_LCB.TRACING_THRESHOLD_QUEUE_FLUSH_INTERVAL,
                                                     value_type="timeout"))
 
     @tracing_threshold_queue_flush_interval.setter
     def tracing_threshold_queue_flush_interval(self,
                                                val  # type: timedelta
                                                ):
-        self._bucket._cntl(op=_LCB.TRACING_THRESHOLD_QUEUE_FLUSH_INTERVAL,
+        self._cntl(op=_LCB.TRACING_THRESHOLD_QUEUE_FLUSH_INTERVAL,
                            value=val.total_seconds(),
                            value_type="timeout")
 
@@ -409,11 +403,11 @@ class Bucket(object):
 
         """
 
-        return self._bucket._cntl(op=_LCB.TRACING_THRESHOLD_QUEUE_SIZE, value_type="uint32_t")
+        return self._cntl(op=_LCB.TRACING_THRESHOLD_QUEUE_SIZE, value_type="uint32_t")
 
     @tracing_threshold_queue_size.setter
     def tracing_threshold_queue_size(self, val):
-        self._bucket._cntl(op=_LCB.TRACING_THRESHOLD_QUEUE_SIZE, value=val, value_type="uint32_t")
+        self._cntl(op=_LCB.TRACING_THRESHOLD_QUEUE_SIZE, value=val, value_type="uint32_t")
 
     @property
     def tracing_threshold_kv(self):
@@ -426,13 +420,13 @@ class Bucket(object):
 
         """
 
-        return timedelta(seconds=self._bucket._cntl(op=_LCB.TRACING_THRESHOLD_KV, value_type="timeout"))
+        return timedelta(seconds=self._cntl(op=_LCB.TRACING_THRESHOLD_KV, value_type="timeout"))
 
     @tracing_threshold_kv.setter
     def tracing_threshold_kv(self,
                              val    # type: timedelta
                              ):
-        self._bucket._cntl(op=_LCB.TRACING_THRESHOLD_KV, value=val.total_seconds(), value_type="timeout")
+        self._cntl(op=_LCB.TRACING_THRESHOLD_KV, value=val.total_seconds(), value_type="timeout")
 
     @property
     def tracing_threshold_view(self):
@@ -444,11 +438,14 @@ class Bucket(object):
             cb.tracing_threshold_view = timedelta(seconds=0.5)
 
         """
-        return timedelta(seconds=self._bucket._cntl(op=_LCB.TRACING_THRESHOLD_VIEW, value_type="timeout"))
+        return timedelta(seconds=self._cntl(op=_LCB.TRACING_THRESHOLD_VIEW, value_type="timeout"))
 
     @tracing_threshold_view.setter
     def tracing_threshold_view(self,
                                val      # type: timedelta
                                ):
-        self._bucket._cntl(op=_LCB.TRACING_THRESHOLD_VIEW, value=val.total_seconds(), value_type="timeout")
+        self._cntl(op=_LCB.TRACING_THRESHOLD_VIEW, value=val.total_seconds(), value_type="timeout")
 
+
+
+AsyncBucket=AsyncClientFactory.gen_async_client(Bucket)
