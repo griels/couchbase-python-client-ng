@@ -1,3 +1,5 @@
+from twisted.internet.defer import Deferred
+
 from couchbase_core.subdocument import Spec
 from couchbase_core.supportability import internal
 from .options import timedelta, forward_args
@@ -9,7 +11,7 @@ from boltons.funcutils import wraps
 from couchbase_core import abstractmethod, IterableWrapper
 from couchbase_core.result import AsyncResult
 from couchbase_core._pyport import Protocol
-from couchbase_core.views.iterator import View as CoreView
+from couchbase_core.views.iterator import View as CoreView, View
 from couchbase.diagnostics import EndpointPingReport, ServiceType
 
 Proxy_T = TypeVar('Proxy_T')
@@ -179,10 +181,14 @@ class MutationResult(Result):
     def __init__(self,
                 core_result    # type: CoreResult
                 ):
-      super(MutationResult, self).__init__(core_result.cas, core_result.rc)
-      mutinfo = getattr(core_result, '_mutinfo', None)
-      muttoken = MutationToken(mutinfo) if mutinfo else None
-      self.mutationToken = muttoken
+        try:
+            super(MutationResult, self).__init__(core_result.cas, core_result.rc)
+        except:
+            raise
+        mutinfo = getattr(core_result, '_mutinfo', None)
+        muttoken = MutationToken(mutinfo) if mutinfo else None
+        self.mutationToken = muttoken
+
 
     def mutation_token(self):
         # type: () -> MutationToken
@@ -321,6 +327,21 @@ class GetReplicaResult(GetResult):
         raise NotImplementedError("To be implemented in final sdk3 release")
 
 
+try:
+    from twisted.internet.defer import Deferred
+
+    def is_deferred(orig_result):
+        return issubclass(type(orig_result), Deferred)
+except:
+    def is_deferred(orig_result):
+        return False
+
+import logging
+def is_async_result(orig_result):
+    print("Got orig_result {}".format(str(orig_result)))
+    return issubclass(type(orig_result), AsyncResult) or is_deferred(orig_result)
+
+
 class AsyncWrapper(object):
     @staticmethod
     def gen_wrapper(base):
@@ -335,10 +356,14 @@ class AsyncWrapper(object):
                 def on_ok(res):
                     on_ok_orig(base(res, **self._kwargs))
 
-                def on_err(res, excls, excval, exctb):
-                    on_err_orig(res, excls, excval, exctb)
+                def on_err(*args, **kwargs):
+                    on_err_orig(*args, **kwargs)
 
-                self._original.set_callbacks(on_ok, on_err)
+                try:
+                    self._original.set_callbacks(on_ok, on_err)
+                except:
+                    self._original.callback=on_ok
+                    self._original.errback=on_err
 
             def clear_callbacks(self, *args):
                 self._original.clear_callbacks(*args)
@@ -437,17 +462,23 @@ def get_mutation_result(result  # type: CoreResult
     return factory_class(orig_result)
 
 
-class MultiMutationResult(dict):
-    def __init__(self, raw_result):
-        self.update({k: get_mutation_result(v) for k, v in raw_result.items()})
-
-
 class MultiResultBase(dict):
     def converter(self, value):
         pass
 
     def __init__(self, raw_result):
-        super(MultiResultBase,self).__init__({k: self.converter(v) for k, v in raw_result.items()})
+        try:
+            super(MultiResultBase,self).__init__({k: self.converter(v) for k, v in raw_result.items()})
+        except Exception as e:
+            raise
+
+
+class MultiMutationResult(MultiResultBase):
+    def converter(self, raw_value):
+        return get_mutation_result(raw_value)
+
+    def __init__(self, *args, **kwargs):
+        super(MultiMutationResult, self).__init__(*args, **kwargs)
 
 
 class MultiGetResult(MultiResultBase):
@@ -476,13 +507,16 @@ class AsyncMultiGetResult(AsyncWrapper.gen_wrapper(MultiGetResult)):
 
 class MultiResultWrapper(object):
     def __init__(self, orig_result_type, async_result_type=None):
-        self.orig_result_type=orig_result_type
-        self.async_result_type=async_result_type or AsyncWrapper.gen_wrapper(orig_result_type)
+        self.orig_result_type = orig_result_type
+        self.async_result_type = async_result_type or AsyncWrapper.gen_wrapper(orig_result_type)
 
-    def get_multi_result(self, target, wrapped, keys, *options, **kwargs):
+    def get_multi_result(self, wrapped, keys, *options, **kwargs):
         final_options = forward_args(kwargs, *options)
-        raw_result = wrapped(target, keys, **final_options)
-        orig_result = getattr(raw_result,'orig_result',raw_result)
+        try:
+            raw_result = wrapped(keys, **final_options)
+        except Exception as e:
+            raise
+        orig_result = getattr(raw_result, 'orig_result', raw_result)
         factory_class = self.async_result_type if issubclass(type(orig_result), AsyncResult) else self.orig_result_type
         result = factory_class(orig_result)
         return result
@@ -522,18 +556,18 @@ class ViewResultProtocol(ResultProtocol, Protocol):
         pass
 
 
-class ViewResult(IterableWrapper):
-    def __init__(self, core_view  # type: CoreView
+class ViewResult(IterableWrapper, CoreView):
+    def __init__(self, *args, **kwargs  # type: CoreView
                 ):
-        super(ViewResult, self).__init__(core_view)
-
+        CoreView.__init__(self,*args, **kwargs)
+        IterableWrapper.__init__(self, self)
     @property
     def error(self):
-        return self.parent.errors
+        return self.errors
 
     @property
     def success(self):
-        return not self.parent.errors
+        return not self.errors
 
     @property
     def cas(self):

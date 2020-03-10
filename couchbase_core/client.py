@@ -724,7 +724,10 @@ class Client(_Base):
         return super(Client, self).lookup_in({key: tuple(specs)}, **kwargs)
 
     def get(self, *args, **kwargs):
-        return super(Client, self).get(*args,**kwargs)
+        try:
+            return super(Client, self).get(*args,**kwargs)
+        except Exception as e:
+            raise
 
     def rget(self, key, replica_index=None, quiet=None, **kwargs):
         """Get an item from a replica node
