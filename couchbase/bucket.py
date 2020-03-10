@@ -101,7 +101,6 @@ class PingOptions(OptionBlockTimeOut):
 
 
 class Bucket(CoreClient):
-    _bucket = None  # type: CoreClient
 
     def __init__(self,
                  connection_string,  # type: str
@@ -270,9 +269,8 @@ class Bucket(CoreClient):
         :param ViewOptions view_options: Options to use when querying a view index.
         :return: ViewResult containing the view results
         """
-        cb = self._bucket  # type: CoreClient
-        res = cb.view_query(design_doc, view_name, **forward_args(kwargs, *view_options))
-        return ViewResult(res)
+        res = CoreClient.view_query(self, design_doc, view_name, **forward_args(kwargs, *view_options))
+        return res# ViewResult(res)
 
     def view_indexes(self  # type: Bucket
                      ):
