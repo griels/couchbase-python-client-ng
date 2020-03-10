@@ -28,7 +28,7 @@ from testresources import ResourcedTestCase as ResourcedTestCaseReal, TestResour
 
 from couchbase.exceptions import CollectionAlreadyExistsException, ScopeAlreadyExistsException, NotSupportedError
 import couchbase_core
-from couchbase import Cluster, ClusterOptions, CBCollection, JSONDocument
+from couchbase import Cluster, ClusterOptions, CBCollection, JSONDocument, CoreClient
 from couchbase_core.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
 import couchbase_core._libcouchbase as _LCB
@@ -46,12 +46,11 @@ import couchbase_core._libcouchbase
 import traceback
 
 from typing import *
-from couchbase_v2.bucket import Bucket
+from couchbase_v2.bucket import Bucket as V2Bucket
 if os.environ.get("PYCBC_TRACE_GC") in ['FULL', 'STATS_LEAK_ONLY']:
     gc.set_debug(gc.DEBUG_STATS | gc.DEBUG_LEAK)
 
 from utilspie.collectionsutils import frozendict
-from pyrsistent import PRecord
 from couchbase.management.collections import CollectionSpec
 from couchbase.bucket import Bucket as V3Bucket
 from flaky import flaky
@@ -178,6 +177,8 @@ PYCBC_CB_VERSION = 'PYCBC/' + cb_version
 
 CONFIG_FILE = 'tests.ini' # in cwd
 
+ClientType = TypeVar('ClientType', bound=CoreClient)
+
 
 class ClusterInformation(object):
     def __init__(self):
@@ -232,8 +233,10 @@ class ClusterInformation(object):
         ret.update(overrides)
         return ret
 
-    def make_connection(self, conncls, **kwargs):
-        # type: (type, **Any) -> Bucket
+    def make_connection(self,
+                        conncls,  # type: Type[ClientType]
+                        **kwargs):
+        # type: (type, **Any) -> ClientType
         connargs = self.make_connargs(**kwargs)
         return conncls(**connargs)
 
@@ -443,14 +446,11 @@ class CouchbaseTestCase(ResourcedTestCase):
         self._key_counter = 0
 
         if not hasattr(self, 'factory'):
-            from couchbase_v2.bucket import Bucket
             from couchbase_v2.views.iterator import View
             from couchbase_core.result import (
                 MultiResult, Result, OperationResult, ValueResult,
                 ObserveInfo)
-
-        if not hasattr(self, 'factory'):
-            self.factory = Bucket
+            self.factory = V2Bucket
             self.viewfactory = View
             self.cls_Result = Result
             self.cls_MultiResult = MultiResult

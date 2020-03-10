@@ -103,15 +103,6 @@ class PingOptions(OptionBlockTimeOut):
 class Bucket(CoreClient):
     _bucket = None  # type: CoreClient
 
-    @overload
-    def __init__(self,
-                 connection_string,     # type: str
-                 name=None,             # type: str
-                 admin=None,            # type: Admin
-                 ):
-        # type: (...) -> None
-        pass
-
     def __init__(self,
                  connection_string,  # type: str
                  name=None,  # type: str
@@ -290,6 +281,4 @@ class Bucket(CoreClient):
         return PingResult(self._bucket.ping(**forward_args(kwargs, *options)))
 
 
-class AsyncBucket(AsyncClientFactory.gen_async_client(Bucket)):
-    def __init__(self, *args, **kwargs):
-        super(AsyncBucket, self).__init__(*args, **kwargs)
+AsyncBucket=AsyncClientFactory.gen_async_client(Bucket)

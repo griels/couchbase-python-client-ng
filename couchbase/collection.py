@@ -1,5 +1,5 @@
-from couchbase_core.supportability import uncommitted, volatile
-from couchbase_core import abstractmethod, JSON
+from couchbase_core.supportability import volatile
+from couchbase_core import JSON
 
 from boltons.funcutils import wraps
 from mypy_extensions import VarArg, KwArg, Arg
@@ -8,20 +8,16 @@ from .subdocument import LookupInSpec, MutateInSpec, MutateInOptions, \
     gen_projection_spec
 from .result import GetResult, GetReplicaResult, ExistsResult, get_result_wrapper, CoreResult, ResultPrecursor, \
     LookupInResult, MutateInResult, \
-    MutationResult, _wrap_in_mutation_result, AsyncGetResult, get_replica_result_wrapper, get_mutation_result, \
-    get_multi_mutation_result, get_multi_get_result
-from .options import forward_args, timedelta, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64, \
-    AcceptableInts
-from .options import OptionBlock, AcceptableInts, OptionBlockBase
-from .durability import ReplicateTo, PersistTo, ClientDurability, ServerDurability, DurabilityType, \
-    ServerDurableOptionBlock, DurabilityOptionBlock
+    MutationResult, _wrap_in_mutation_result, get_replica_result_wrapper, get_multi_mutation_result, get_multi_get_result
+from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64
+from .options import OptionBlock, AcceptableInts
 from couchbase_core._libcouchbase import Bucket as _Base
 import couchbase.exceptions
 from couchbase_core.client import Client as CoreClient
 import copy
 
 from typing import *
-from couchbase.durability import Durability, DurabilityType, ServerDurability, ClientDurability, ServerDurableOptionBlock, ClientDurableOptionBlock, DurabilityOptionBlock
+from couchbase.durability import Durability, DurabilityType, ServerDurableOptionBlock, DurabilityOptionBlock
 from couchbase_core.asynchronous.bucket import AsyncClientFactory
 from datetime import timedelta
 
@@ -261,10 +257,14 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
         return get_multi_mutation_result(target, wrapped, keys, *options, **kwargs)
     return _inject_scope_and_collection(wrapper)
 
+import wrapt
 
-class CBCollection(CoreClient):
-    def __init__(self,
-                 *args,
+class CBCollection(wrapt.ObjectProxy):
+
+    def __init__(self,  # type:CBCollection
+                 name = None,  # type: str
+                 parent_scope = None,  # type: Scope
+                 *options,
                  **kwargs
                  ):
         # type: (...) -> None
@@ -279,23 +279,17 @@ class CBCollection(CoreClient):
         :param str name: name of collection
         :param CollectionOptions options: miscellaneous options
         """
-        name = kwargs.pop('name', None)
-        parent = kwargs.pop('parent', None)
-        args = list(args)
-        connstr = kwargs.pop('connection_string', kwargs.pop('connstr', None))
-        connstr = connstr or args.pop(0)
-        final_args = [connstr] + args
-        super(CBCollection, self).__init__(*final_args, **kwargs)
-        self._init(name, parent)
-
-    def _init(self,
-              name,  # type: Optional[str]
-              scope  # type: Scope
-              ):
-        self._self_scope = scope  # type: Scope
+        assert issubclass(type(parent.bucket), CoreClient)
+        super(CBCollection, self).__init__(parent_scope.bucket)
+        self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
-        self._self_true_collections = name and scope
+        self._self_true_collections = name and parent_scope
 
+    _MEMCACHED_NOMULTI=CoreClient._MEMCACHED_NOMULTI
+    _MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
+    @classmethod
+    def _gen_memd_wrappers(cls, factory):
+        return CoreClient._gen_memd_wrappers(factory)
     @property
     def true_collections(self):
         return self._self_true_collections
@@ -309,9 +303,12 @@ class CBCollection(CoreClient):
              *options   # type: CollectionOptions
              ):
         # type: (...) -> CBCollection
-        coll_args = copy.deepcopy(parent.bucket._bucket_args)
+        coll_args = {}#copy.deepcopy(parent.bucket._bucket_args)
         coll_args.update(name=name, parent=parent)
-        result = parent.bucket._collection_factory(parent.bucket._connstr, **parent.bucket._bucket_args)
+        try:
+            result = parent.bucket._collection_factory(parent)
+        except Exception as e:
+            raise
         return result
 
     @property
@@ -1184,6 +1181,4 @@ class Scope(object):
 Collection = CBCollection
 
 
-class AsyncCBCollection(AsyncClientFactory.gen_async_client(CBCollection)):
-    def __init__(self, *args, **kwargs):
-        super(AsyncCBCollection, self).__init__(*args, **kwargs)
+AsyncCBCollection = AsyncClientFactory.gen_async_client(CBCollection)

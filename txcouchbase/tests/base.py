@@ -22,7 +22,7 @@ from couchbase_core.client import Client
 import twisted.internet.base
 twisted.internet.base.DelayedCall.debug = True
 from typing import *
-T = TypeVar('T', bound=object)
+T = TypeVar('T', bound=CouchbaseTestCase)
 Factory = Callable[[Any],Client]
 
 from txcouchbase.bucket import TxBucket
@@ -30,7 +30,11 @@ from txcouchbase.bucket import TxBucket
 
 def gen_collection(*args, **kwargs):
     try:
-        base_bucket = TxBucket(*args, **kwargs)
+        if args:
+            connstr=args[0]
+        else:
+            connstr=kwargs.pop('connection_string')
+        base_bucket = TxBucket(*args, connection_string = connstr, **kwargs)
         return base_bucket.default_collection()
     except Exception as e:
         raise
@@ -40,7 +44,7 @@ def gen_base(basecls,  # type: Type[T]
              timeout=None,
              factory=gen_collection  # type: Factory
              ):
-    # type: (...) -> Type[Union[T,CouchbaseTestCase]
+    # type: (...) -> Type[Union[T,CouchbaseTestCase]]
     class _TxTestCase(basecls, TestCase):
         def register_cleanup(self, obj):
             d = defer.Deferred()

@@ -133,10 +133,14 @@ class ConnectionEventQueue(TxEventQueue):
         raise err
 
 
+T = TypeVar('T', bound=CoreClient)
+
+
 class RawClientFactory(object):
     @staticmethod
-    def gen_raw(async_base  # type: Type[CoreClient]
+    def gen_raw(async_base  # type: Type[T]
                 ):
+        # type: (...) -> Type[T]
         class RawClient(async_base):
             def __init__(self, connstr=None, **kwargs):
                 """
@@ -428,10 +432,11 @@ class RawClientFactory(object):
 RawV2Bucket = RawClientFactory.gen_raw(V2AsyncBucket)
 RawCollection = RawClientFactory.gen_raw(BaseAsyncCBCollection)
 
-
 class ClientFactory(object):
     @staticmethod
-    def gen_client(raw_class):
+    def gen_client(raw_class  # type: Type[T]
+                   ):
+        # type: (...) -> Type[T]
         class Client(raw_class):
             def __init__(self, *args, **kwargs):
                 """
@@ -519,23 +524,32 @@ class ClientFactory(object):
 
 V2Bucket = ClientFactory.gen_client(RawV2Bucket)
 TxCollection = ClientFactory.gen_client(RawCollection)
-
-
-class AsyncV3Bucket(V3SyncBucket):
-    def __init__(self, *args, **kwargs):
-        super(AsyncV3Bucket, self).__init__(*args, **kwargs)
-
-    @classmethod
-    def _gen_memd_wrappers(cls, factory):
-        return CoreClient._gen_memd_wrappers(factory)
-
-    _MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
-    _MEMCACHED_NOMULTI=CoreClient._MEMCACHED_NOMULTI
+#
+#
+# class AsyncV3Bucket(V3SyncBucket):
+#     def __init__(self, *args, **kwargs):
+#         super(AsyncV3Bucket, self).__init__(*args, **kwargs)
+#
+#     @classmethod
+#     def _gen_memd_wrappers(cls, factory):
+#         return CoreClient._gen_memd_wrappers(factory)
+#
+#     _MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
+#     _MEMCACHED_NOMULTI=CoreClient._MEMCACHED_NOMULTI
 
 
 from couchbase.bucket import AsyncBucket as V3AsyncBucket
 RawTxBucket = RawClientFactory.gen_raw(V3AsyncBucket)
-TxBucket = ClientFactory.gen_client(RawTxBucket)
+
+
+class TxBucket(ClientFactory.gen_client(RawTxBucket)):
+    def __init__(self, *args, **kwargs):
+        super(TxBucket,self).__init__(collection_factory=self.collection_factory, *args, **kwargs)
+
+    def collection_factory(self  # type: TxBucket
+                           ):
+        # type: (...) -> TxCollection
+        return TxCollection()
 
 
 class TxCluster(V3SyncCluster):
