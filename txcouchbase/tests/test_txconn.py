@@ -28,7 +28,10 @@ import sys
 from nose.tools import timed
 
 
-class BasicConnectionTest(gen_base(ConnectionTestCase)):
+Base=gen_base(ConnectionTestCase)  # type: ConnectionTestCase
+
+
+class BasicConnectionTest(Base):
     def __init__(self, *args, **kwargs):
         super(BasicConnectionTest,self).__init__(*args,**kwargs)
 
