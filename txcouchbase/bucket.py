@@ -95,6 +95,9 @@ class BatchedView(BatchedRowMixin, AsyncViewBase):
         AsyncViewBase.__init__(self, *args, **kwargs)
         BatchedRowMixin.__init__(self, *args, **kwargs)
 
+#class BatchedViewResult(BatchedView):
+#    def __init__(self, *args, **kwargs):
+#        super(Bat)
 
 class BatchedN1QLRequest(BatchedRowMixin, AsyncN1QLRequest):
     def __init__(self, *args, **kwargs):
@@ -133,10 +136,14 @@ class ConnectionEventQueue(TxEventQueue):
         raise err
 
 
+T = TypeVar('T', bound=CoreClient)
+
+
 class RawClientFactory(object):
     @staticmethod
-    def gen_raw(async_base  # type: Type[CoreClient]
+    def gen_raw(async_base  # type: Type[T]
                 ):
+        # type: (...) -> Type[T]
         class RawClient(async_base):
             def __init__(self, connstr=None, **kwargs):
                 """
@@ -156,15 +163,19 @@ class RawClientFactory(object):
                 self._conncb = self._evq['connect']
                 self._dtorcb = self._evq['_dtor']
 
-            def _do_n1ql_query(self, *args, **kwargs):
-                super_obj = super(async_base, self)
-                meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
-                return meth(*args, **kwargs)
+            def _do_n1ql_query(self,  # type: RawClient
+                               *args,  # type: Any
+                               **kwargs  # type: Any
+                               ):
+                # type: (...) -> Any
+                #super_obj = super(async_base, self)
+                #meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
+                return super(async_base,self).query(*args, **kwargs)
 
             def _do_view_query(self, *args, **kwargs):
-                super_obj = super(async_base, self)
-                meth = getattr(super_obj, 'view_query', getattr(super_obj, 'query', None))
-                return meth(*args, **kwargs)
+                #super_obj = super(async_base, self)
+                #meth = getattr(super_obj, 'view_query', getattr(super_obj, 'query', None))
+                return super(async_base,self).view_query(*args, **kwargs)
 
             def registerDeferred(self, event, d):
                 """
@@ -304,7 +315,10 @@ class RawClientFactory(object):
 
                 kwargs['itercls'] = BatchedView
                 o = self._do_view_query(*args, **kwargs)
-                o.start()
+                try:
+                    o.start()
+                except Exception as e:
+                    raise
                 return o._getDeferred()
 
             def query_ex(self, cls, *args, **kwargs):
@@ -428,10 +442,11 @@ class RawClientFactory(object):
 RawV2Bucket = RawClientFactory.gen_raw(V2AsyncBucket)
 RawCollection = RawClientFactory.gen_raw(BaseAsyncCBCollection)
 
-
 class ClientFactory(object):
     @staticmethod
-    def gen_client(raw_class):
+    def gen_client(raw_class  # type: Type[T]
+                   ):
+        # type: (...) -> Type[T]
         class Client(raw_class):
             def __init__(self, *args, **kwargs):
                 """
@@ -520,6 +535,8 @@ class ClientFactory(object):
 V2Bucket = ClientFactory.gen_client(RawV2Bucket)
 TxCollection = ClientFactory.gen_client(RawCollection)
 
+from couchbase.bucket import AsyncBucket as V3AsyncBucket
+RawTxBucket = RawClientFactory.gen_raw(V3AsyncBucket)
 
 class TxBucket(V3SyncBucket):
     def __init__(self, *args, **kwargs):

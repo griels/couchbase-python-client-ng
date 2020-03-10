@@ -296,6 +296,8 @@ class CBCollection(CoreClient):
         self._self_name = name  # type: Optional[str]
         self._self_true_collections = name and scope
 
+#    _MEMCACHED_NOMULTI=CoreClient._MEMCACHED_NOMULTI
+#    _MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
     @property
     def true_collections(self):
         return self._self_true_collections
@@ -1184,6 +1186,4 @@ class Scope(object):
 Collection = CBCollection
 
 
-class AsyncCBCollection(AsyncClientFactory.gen_async_client(CBCollection)):
-    def __init__(self, *args, **kwargs):
-        super(AsyncCBCollection, self).__init__(*args, **kwargs)
+AsyncCBCollection = AsyncClientFactory.gen_async_client(CBCollection)

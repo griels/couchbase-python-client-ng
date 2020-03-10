@@ -10,6 +10,8 @@ from .collection import Scope
 from datetime import timedelta
 from enum import Enum
 import logging
+from couchbase_core.asynchronous import AsyncClientFactory
+
 
 class ViewScanConsistency(Enum):
     NOT_BOUNDED = 'ok'
@@ -113,7 +115,7 @@ class Bucket(object):
     def __init__(self,
                  connection_string,  # type: str
                  name=None,  # type: str
-                 collection_factory=CBCollection,  # type: Type[CoreClient]
+                 collection_factory=CBCollection,  # type: Type[CBCollection]
                  admin=None,  # type: Admin
                  *options,
                  **kwargs
@@ -263,9 +265,8 @@ class Bucket(object):
         :param ViewOptions view_options: Options to use when querying a view index.
         :return: ViewResult containing the view results
         """
-        cb = self._bucket  # type: CoreClient
-        res = cb.view_query(design_doc, view_name, **forward_args(kwargs, *view_options))
-        return ViewResult(res)
+        res = CoreClient.view_query(self, design_doc, view_name, **forward_args(kwargs, *view_options))
+        return res# ViewResult(res)
 
     def view_indexes(self  # type: Bucket
                      ):
@@ -286,3 +287,6 @@ class Bucket(object):
         :raise: CouchbaseError for various communication issues.
         """
         return PingResult(self._bucket.ping(**forward_args(kwargs, *options)))
+
+
+AsyncBucket=AsyncClientFactory.gen_async_client(Bucket)

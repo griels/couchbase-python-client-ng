@@ -22,7 +22,7 @@ from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
 from couchbase_tests.base import MockTestCase
 from txcouchbase.tests.base import gen_base
 import logging
-
+from txcouchbase.bucket import TxBucket
 
 class RowsHandler(AsyncN1QLRequest):
     def __init__(self, *args, **kwargs):
