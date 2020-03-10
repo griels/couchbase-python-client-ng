@@ -95,6 +95,9 @@ class BatchedView(BatchedRowMixin, AsyncViewBase):
         AsyncViewBase.__init__(self, *args, **kwargs)
         BatchedRowMixin.__init__(self, *args, **kwargs)
 
+#class BatchedViewResult(BatchedView):
+#    def __init__(self, *args, **kwargs):
+#        super(Bat)
 
 class BatchedN1QLRequest(BatchedRowMixin, AsyncN1QLRequest):
     def __init__(self, *args, **kwargs):
@@ -133,11 +136,15 @@ class ConnectionEventQueue(TxEventQueue):
         raise err
 
 
-class RawClientFactory(object):
+T = TypeVar('T', bound=CoreClient)
+
+
+class TxRawClientFactory(object):
     @staticmethod
-    def gen_raw(async_base  # type: Type[CoreClient]
+    def gen_raw(async_base  # type: Type[T]
                 ):
-        class RawClient(async_base):
+        # type: (...) -> Type[T]
+        class TxRawClient(async_base):
             def __init__(self, connstr=None, **kwargs):
                 """
                 Bucket subclass for Twisted. This inherits from the 'AsyncBucket' class,
@@ -146,7 +153,7 @@ class RawClientFactory(object):
                 if connstr and 'connstr' not in kwargs:
                     kwargs['connstr'] = connstr
                 iops = v0Iops(reactor)
-                super(RawClient, self).__init__(iops=iops, **kwargs)
+                super(TxRawClient, self).__init__(iops=iops, **kwargs)
 
                 self._evq = {
                     'connect': ConnectionEventQueue(),
@@ -156,15 +163,19 @@ class RawClientFactory(object):
                 self._conncb = self._evq['connect']
                 self._dtorcb = self._evq['_dtor']
 
-            def _do_n1ql_query(self, *args, **kwargs):
+            def _do_n1ql_query(self,  # type: TxRawClient
+                               *args,  # type: Any
+                               **kwargs  # type: Any
+                               ):
+                # type: (...) -> Any
                 super_obj = super(async_base, self)
                 meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
                 return meth(*args, **kwargs)
 
             def _do_view_query(self, *args, **kwargs):
-                super_obj = super(async_base, self)
-                meth = getattr(super_obj, 'view_query', getattr(super_obj, 'query', None))
-                return meth(*args, **kwargs)
+                #super_obj = super(async_base, self)
+                #meth = getattr(super_obj, 'view_query', getattr(super_obj, 'query', None))
+                return super(async_base,self).view_query(*args, **kwargs)
 
             def registerDeferred(self, event, d):
                 """
@@ -304,7 +315,10 @@ class RawClientFactory(object):
 
                 kwargs['itercls'] = BatchedView
                 o = self._do_view_query(*args, **kwargs)
-                o.start()
+                try:
+                    o.start()
+                except Exception as e:
+                    raise
                 return o._getDeferred()
 
             def query_ex(self, cls, *args, **kwargs):
@@ -422,17 +436,18 @@ class RawClientFactory(object):
                 o = super(async_base, self).search(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
-        return RawClient
+        return TxRawClient
 
 
-RawV2Bucket = RawClientFactory.gen_raw(V2AsyncBucket)
-RawCollection = RawClientFactory.gen_raw(BaseAsyncCBCollection)
+RawV2Bucket = TxRawClientFactory.gen_raw(V2AsyncBucket)
+RawCollection = TxRawClientFactory.gen_raw(BaseAsyncCBCollection)
 
-
-class ClientFactory(object):
+class TxClientFactory(object):
     @staticmethod
-    def gen_client(raw_class):
-        class Client(raw_class):
+    def gen_client(raw_class  # type: Type[T]
+                   ):
+        # type: (...) -> Type[T]
+        class TxDeferredClient(raw_class):
             def __init__(self, *args, **kwargs):
                 """
                 This class inherits from :class:`RawBucket`.
@@ -483,7 +498,7 @@ class ClientFactory(object):
                   d_get.addCallback(on_mres)
 
                 """
-                super(Client, self).__init__(*args, **kwargs)
+                super(TxDeferredClient, self).__init__(*args, **kwargs)
 
             def _connectSchedule(self, f, meth, *args, **kwargs):
                 qop = Deferred()
@@ -491,7 +506,7 @@ class ClientFactory(object):
                 self._evq['connect'].schedule(qop)
                 return qop
 
-            def _wrap(self,  # type: Client
+            def _wrap(self,  # type: TxDeferredClient
                       meth, *args, **kwargs):
                 """
                 Calls a given method with the appropriate arguments, or defers such
@@ -514,17 +529,20 @@ class ClientFactory(object):
             for x in raw_class._MEMCACHED_OPERATIONS:
                 if locals().get(x+'_multi', None):
                     locals().update({x+"Multi": locals()[x+"_multi"]})
-        return Client
+        return TxDeferredClient
 
 
-V2Bucket = ClientFactory.gen_client(RawV2Bucket)
-TxCollection = ClientFactory.gen_client(RawCollection)
+V2Bucket = TxClientFactory.gen_client(RawV2Bucket)
+TxCollection = TxClientFactory.gen_client(RawCollection)
+
+from couchbase.bucket import AsyncBucket as V3AsyncBucket, ViewResult, ViewResult
+
+RawTxBucket = TxRawClientFactory.gen_raw(V3AsyncBucket)
 
 
-class TxBucket(V3SyncBucket):
+class TxBucket(TxClientFactory.gen_client(RawTxBucket)):
     def __init__(self, *args, **kwargs):
-        kwargs['collection_factory'] = TxCollection
-        super(TxBucket, self).__init__(*args, **kwargs)
+        super(TxBucket,self).__init__(collection_factory=TxCollection, *args, **kwargs)
 
 
 class TxCluster(V3SyncCluster):
