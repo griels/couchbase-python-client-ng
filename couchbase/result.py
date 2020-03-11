@@ -396,7 +396,7 @@ class AsyncMutationResult(AsyncWrapper.gen_wrapper(MutationResult)):
 ResultPrecursor = NamedTuple('ResultPrecursor', [('orig_result', CoreResult), ('orig_options', Mapping[str, Any])])
 
 def get_wrapped_get_result(x):
-    factory_class = AsyncGetResult if is_async_result(x) else GetResult
+    factory_class = AsyncGetResult if issubclass(type(x), AsyncResult) else GetResult
     return factory_class(x)
 
 def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
@@ -416,7 +416,7 @@ def get_replica_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
                        ):
 
     def factory_class(x):
-        factory=AsyncGetReplicaResult if is_async_result(x) else GetReplicaResult
+        factory=AsyncGetReplicaResult if issubclass(type(x), AsyncResult) else GetReplicaResult
         return factory(x)
 
     # type: (...) -> Callable[[Any], GetResult]
@@ -458,7 +458,7 @@ def get_mutation_result(result  # type: CoreResult
                         ):
     # type (...)->MutationResult
     orig_result = getattr(result,'orig_result',result)
-    factory_class = AsyncMutationResult if is_async_result(orig_result) else MutationResult
+    factory_class = AsyncMutationResult if issubclass(type(orig_result), AsyncResult) else MutationResult
     return factory_class(orig_result)
 
 
@@ -517,7 +517,7 @@ class MultiResultWrapper(object):
         except Exception as e:
             raise
         orig_result = getattr(raw_result, 'orig_result', raw_result)
-        factory_class = self.async_result_type if is_async_result(orig_result) else self.orig_result_type
+        factory_class = self.async_result_type if issubclass(type(orig_result), AsyncResult) else self.orig_result_type
         result = factory_class(orig_result)
         return result
 
