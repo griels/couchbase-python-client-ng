@@ -242,8 +242,11 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
     @wraps(wrapped)
     def wrapper(target, keys, *options, **kwargs
                 ):
-        return get_multi_mutation_result(target, wrapped, keys, *options, **kwargs)
+        def retarget(*args, **kwargs):
+            return wrapped(target, *args, **kwargs)
+        return get_multi_mutation_result(retarget, keys, *options, **kwargs)
     return _inject_scope_and_collection(wrapper)
+
 
 
 import wrapt
@@ -454,7 +457,7 @@ class CBCollection(wrapt.ObjectProxy):
         :return: a dictionary of :class:`~.GetResult` objects by key
         :rtype: dict
         """
-        return get_multi_get_result(self.bucket, CoreClient.get_multi, keys, *options, **kwargs)
+        return get_multi_get_result(self.bucket.get_multi,  keys, *options, **kwargs)
 
     @overload
     def upsert_multi(self,  # type: CBCollection
@@ -512,7 +515,7 @@ class CBCollection(wrapt.ObjectProxy):
 
         .. seealso:: :meth:`upsert`
         """
-        return get_multi_mutation_result(self.__wrapped__, CoreClient.upsert_multi, keys, *options, **kwargs)
+        return get_multi_mutation_result(self.bucket.upsert_multi, keys, *options, **kwargs)
 
     @_inject_scope_and_collection
     def insert_multi(self,  # type: CBCollection
@@ -530,7 +533,7 @@ class CBCollection(wrapt.ObjectProxy):
 
         .. seealso:: :meth:`upsert_multi` - for other optional arguments
         """
-        return get_multi_mutation_result(self, CoreClient.insert_multi, keys, *options, **kwargs)
+        return get_multi_mutation_result(self.bucket.insert_multi, keys, *options, **kwargs)
 
     @_inject_scope_and_collection
     def remove_multi(self,  # type: CBCollection
@@ -548,7 +551,7 @@ class CBCollection(wrapt.ObjectProxy):
 
         .. seealso:: :meth:`upsert_multi` - for other optional arguments
         """
-        return get_multi_mutation_result(self, CoreClient.remove_multi, keys, *options, **kwargs)
+        return get_multi_mutation_result(self.bucket.remove_multi, keys, *options, **kwargs)
 
     replace_multi = _wrap_multi_mutation_result(CoreClient.replace_multi)
     touch_multi = _wrap_multi_mutation_result(CoreClient.touch_multi)
