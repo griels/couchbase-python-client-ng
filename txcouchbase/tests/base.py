@@ -42,7 +42,7 @@ def gen_collection(*args, **kwargs):
 
 
 def gen_base(basecls,  # type: Type[T]
-             timeout=None,
+             timeout=10,
              factory=gen_collection  # type: Factory
              ):
     # type: (...) -> Type[Union[T,CouchbaseTestCase]]
