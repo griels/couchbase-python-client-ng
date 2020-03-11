@@ -44,12 +44,11 @@ class RowsHandler(AsyncN1QLRequest):
         self.cached_error = ex
         self.deferred.errback(ex)
 
-from txcouchbase.bucket import V2Bucket
 
 class TxN1QLTests(gen_base(MockTestCase)):
     @property
     def factory(self):
-        return V2Bucket
+        return TxBucket
     def testIncremental(self):
         cb = self.make_connection()
         d = defer.Deferred()
