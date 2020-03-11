@@ -160,12 +160,12 @@ class ConnectionEventQueue(TxEventQueue):
 T = TypeVar('T', bound=CoreClient)
 
 
-class RawClientFactory(object):
+class TxRawClientFactory(object):
     @staticmethod
     def gen_raw(async_base  # type: Type[T]
                 ):
         # type: (...) -> Type[T]
-        class RawClient(async_base):
+        class TxRawClient(async_base):
             def __init__(self, connstr=None, **kwargs):
                 """
                 Bucket subclass for Twisted. This inherits from the 'AsyncBucket' class,
@@ -174,7 +174,7 @@ class RawClientFactory(object):
                 if connstr and 'connstr' not in kwargs:
                     kwargs['connstr'] = connstr
                 iops = v0Iops(reactor)
-                super(RawClient, self).__init__(iops=iops, **kwargs)
+                super(TxRawClient, self).__init__(iops=iops, **kwargs)
 
                 self._evq = {
                     'connect': ConnectionEventQueue(),
@@ -184,7 +184,7 @@ class RawClientFactory(object):
                 self._conncb = self._evq['connect']
                 self._dtorcb = self._evq['_dtor']
 
-            def _do_n1ql_query(self,  # type: RawClient
+            def _do_n1ql_query(self,  # type: TxRawClient
                                *args,  # type: Any
                                **kwargs  # type: Any
                                ):
@@ -284,7 +284,10 @@ class RawClientFactory(object):
                         raise ex_type(ex_val)
                     except CouchbaseError:
                         d.errback()
-                opres.set_callbacks(d.callback, _on_err)
+                try:
+                    opres.set_callbacks(d.callback, _on_err)
+                except Exception as e:
+                    raise
                 return d
 
             def view_query_ex(self, viewcls, *args, **kwargs):
@@ -457,18 +460,18 @@ class RawClientFactory(object):
                 o = super(async_base, self).search(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
-        return RawClient
+        return TxRawClient
 
 
-RawV2Bucket = RawClientFactory.gen_raw(V2AsyncBucket)
-RawCollection = RawClientFactory.gen_raw(BaseAsyncCBCollection)
+RawV2Bucket = TxRawClientFactory.gen_raw(V2AsyncBucket)
+RawCollection = TxRawClientFactory.gen_raw(BaseAsyncCBCollection)
 
-class ClientFactory(object):
+class TxClientFactory(object):
     @staticmethod
     def gen_client(raw_class  # type: Type[T]
                    ):
         # type: (...) -> Type[T]
-        class Client(raw_class):
+        class TxDeferredClient(raw_class):
             def __init__(self, *args, **kwargs):
                 """
                 This class inherits from :class:`RawBucket`.
@@ -519,7 +522,7 @@ class ClientFactory(object):
                   d_get.addCallback(on_mres)
 
                 """
-                super(Client, self).__init__(*args, **kwargs)
+                super(TxDeferredClient, self).__init__(*args, **kwargs)
 
             def _connectSchedule(self, f, meth, *args, **kwargs):
                 qop = Deferred()
@@ -527,7 +530,7 @@ class ClientFactory(object):
                 self._evq['connect'].schedule(qop)
                 return qop
 
-            def _wrap(self,  # type: Client
+            def _wrap(self,  # type: TxDeferredClient
                       meth, *args, **kwargs):
                 """
                 Calls a given method with the appropriate arguments, or defers such
@@ -550,11 +553,11 @@ class ClientFactory(object):
             for x in raw_class._MEMCACHED_OPERATIONS:
                 if locals().get(x+'_multi', None):
                     locals().update({x+"Multi": locals()[x+"_multi"]})
-        return Client
+        return TxDeferredClient
 
 
-V2Bucket = ClientFactory.gen_client(RawV2Bucket)
-TxCollection = ClientFactory.gen_client(RawCollection)
+V2Bucket = TxClientFactory.gen_client(RawV2Bucket)
+TxCollection = TxClientFactory.gen_client(RawCollection)
 #
 #
 # class AsyncV3Bucket(V3SyncBucket):
@@ -571,14 +574,16 @@ TxCollection = ClientFactory.gen_client(RawCollection)
 
 from couchbase.bucket import AsyncBucket as V3AsyncBucket, ViewResult, ViewResult
 
-RawTxBucket = RawClientFactory.gen_raw(V3AsyncBucket)
+RawTxBucket = TxRawClientFactory.gen_raw(V3AsyncBucket)
 
 
-class TxBucket(ClientFactory.gen_client(RawTxBucket)):
+class TxBucket(TxClientFactory.gen_client(RawTxBucket)):
     def __init__(self, *args, **kwargs):
-        super(TxBucket,self).__init__(collection_factory=self.collection_factory, *args, **kwargs)
+        super(TxBucket,self).__init__(collection_factory=TxBucket.collection_factory, *args, **kwargs)
 
-    collection_factory = TxCollection
+    @staticmethod
+    def collection_factory(*args,**kwargs):
+        return TxCollection(*args, **kwargs)
 
 
 class TxCluster(V3SyncCluster):

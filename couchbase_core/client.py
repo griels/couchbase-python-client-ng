@@ -51,9 +51,9 @@ ViewSubType = TypeVar('ViewSubType', bound=Type[ViewInstance])
 class Client(_Base):
     _MEMCACHED_NOMULTI = ('stats', 'lookup_in', 'mutate_in')
     _MEMCACHED_OPERATIONS = ('upsert', 'get', 'insert', 'append', 'prepend',
-                             'replace', 'remove', 'counter', 'touch',
-                             'lock', 'unlock', 'stats',
-                             'lookup_in', 'mutate_in')
+                                  'replace', 'remove',  'touch',
+                                  'lock', 'unlock', 'stats',
+                                  'lookup_in', 'mutate_in')
 
     def __init__(self, *args, **kwargs):
         """Connect to a bucket.
@@ -724,7 +724,10 @@ class Client(_Base):
         return super(Client, self).lookup_in({key: tuple(specs)}, **kwargs)
 
     def get(self, *args, **kwargs):
-        return super(Client, self).get(*args,**kwargs)
+        try:
+            return super(Client, self).get(*args,**kwargs)
+        except Exception as e:
+            raise
 
     def rget(self, key, replica_index=None, quiet=None, **kwargs):
         """Get an item from a replica node
@@ -1034,8 +1037,13 @@ class Client(_Base):
 
         .. seealso:: :meth:`upsert`
         """
-        return _Base.upsert_multi(self, keys, ttl=ttl, format=format,
+        args=[keys]
+        kwargs.update(ttl=ttl,format=format)
+        try:
+            return super(Client,self).upsert_multi(*args,
                                   **kwargs)
+        except Exception as e:
+            return self.__wrapped__.upsert_multi(*args, **kwargs)
 
     def insert_multi(self,  # type: Client
                      keys,  # type: Mapping[str,Any]
@@ -1328,8 +1336,12 @@ class Client(_Base):
         return _Base.counter_multi(self, kvs, initial=initial, delta=delta,
                                    ttl=ttl, durability_level=durability_level.value)
 
+
     @classmethod
     def _gen_memd_wrappers(cls, factory):
+        return Client._gen_memd_wrappers_impl(cls,factory)
+    @staticmethod
+    def _gen_memd_wrappers_impl(cls, factory):
         """Generates wrappers for all the memcached operations.
         :param factory: A function to be called to return the wrapped
             method. It will be called with two arguments; the first is
