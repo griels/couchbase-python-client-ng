@@ -303,14 +303,14 @@ class CBCollection(CoreClient):
 
     @classmethod
     def cast(cls,
-             parent,    # type: Scope
+             parent_scope,    # type: Scope
              name,      # type: Optional[str]
              *options   # type: CollectionOptions
              ):
         # type: (...) -> CBCollection
-        coll_args = {}# copy.deepcopy(parent.bucket._bucket_args)
-        coll_args.update(name=name, parent=parent)
-        result = parent.bucket._collection_factory(parent.bucket._connstr, **parent.bucket._bucket_args)
+        coll_args = dict(**parent_scope.bucket._bucket_args)
+        coll_args.update(name=name, parent_scope=parent_scope)
+        result = parent_scope.bucket._collection_factory(connection_string=parent_scope.bucket._connstr, **coll_args)
         return result
 
     @property

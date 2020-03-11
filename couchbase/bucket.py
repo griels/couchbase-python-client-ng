@@ -103,7 +103,7 @@ class PingOptions(OptionBlockTimeOut):
 class Bucket(CoreClient):
 
     def __init__(self,
-                 connection_string,  # type: str
+                 connection_string = None,  # type: str
                  name=None,  # type: str
                  collection_factory=CBCollection,  # type: Type[CBCollection]
                  admin=None,  # type: Admin
