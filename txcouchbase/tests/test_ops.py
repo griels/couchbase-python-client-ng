@@ -40,7 +40,6 @@ class OperationTestCase(Base):
         return d
 
     def test_simple_get(self):
-        raise SkipTest()
         cb = self.make_connection()
         key = self.gen_key("test_simple_get")
         value = "simple_value"
