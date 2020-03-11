@@ -299,13 +299,13 @@ class CBCollection(wrapt.ObjectProxy):
     def true_collections(self):
         return self._self_true_collections
     def _wrap_dsop(self, sdres, has_value=False, **kwargs):
-        return getattr(super(CBCollection, self)._wrap_dsop(sdres, has_value), 'value')
-
-
+        return getattr(self.bucket._wrap_dsop(sdres, has_value), 'value')
+    #map_add=CoreClient.map_add
+    #map_get=CoreClient.map_get
     @property
     def bucket(self):
         # type: (...) -> CoreClient
-        return super(CBCollection,self)
+        return self.__wrapped__
 
     MAX_GET_OPS = 16
 
@@ -414,7 +414,7 @@ class CBCollection(wrapt.ObjectProxy):
 
         """
         final_options = forward_args(kwargs, *options)
-        return super(CBCollection, self).rget(key, **final_options)
+        return self.bucket.rget(key, **final_options)
 
     @_inject_scope_and_collection
     @get_replica_result_wrapper
@@ -435,7 +435,7 @@ class CBCollection(wrapt.ObjectProxy):
               :exc:`.DocumentUnretrievableError` if no replicas exist
       :return: A list(:class:`couchbase.result.GetReplicaResult`) object
       """
-      return super(CBCollection, self).rgetall(key, **forward_args(kwargs, *options))
+      return self.bucket.rgetall(key, **forward_args(kwargs, *options))
 
 
     @_inject_scope_and_collection
@@ -695,7 +695,7 @@ class CBCollection(wrapt.ObjectProxy):
         return ExistsResult(super(CBCollection,self).exists(key), **forward_args(kwargs, *options))
 
     @_mutate_result_and_inject
-    def upsert(self,
+    def upsert(self,        # type: CBCollection
                key,         # type: str
                value,       # type: Any
                *options,    # type: UpsertOptions
@@ -793,7 +793,7 @@ class CBCollection(wrapt.ObjectProxy):
         """
 
         final_options = forward_args(kwargs, *options)
-        return _Base.insert(self, key, value, **final_options)
+        return self.bucket.insert(key, value, **final_options)
 
     @_mutate_result_and_inject
     def replace(self,
@@ -819,7 +819,7 @@ class CBCollection(wrapt.ObjectProxy):
         """
 
         final_options = forward_args(kwargs, *options)
-        return ResultPrecursor(_Base.replace(self, key, value, **final_options), final_options)
+        return ResultPrecursor(self.bucket.replace(key, value, **final_options), final_options)
 
     @_mutate_result_and_inject
     def remove(self,        # type: CBCollection
