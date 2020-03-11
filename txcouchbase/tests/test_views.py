@@ -44,7 +44,7 @@ class RowsHandler(AsyncViewBase):
         self._d.errback(ex)
 
 
-class TxViewsTests(gen_base(ViewTestCase,factory=TxBucket)):
+class TxViewsTests(gen_base(ViewTestCase)):
 
     def make_connection(self, **kwargs):
         return super(TxViewsTests, self).make_connection(bucket='beer-sample')
