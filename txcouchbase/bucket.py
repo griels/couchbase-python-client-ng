@@ -168,9 +168,9 @@ class RawClientFactory(object):
                                **kwargs  # type: Any
                                ):
                 # type: (...) -> Any
-                #super_obj = super(async_base, self)
-                #meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
-                return super(async_base,self).query(*args, **kwargs)
+                super_obj = super(async_base, self)
+                meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
+                return meth(*args, **kwargs)
 
             def _do_view_query(self, *args, **kwargs):
                 #super_obj = super(async_base, self)
@@ -534,29 +534,13 @@ class ClientFactory(object):
 
 V2Bucket = ClientFactory.gen_client(RawV2Bucket)
 TxCollection = ClientFactory.gen_client(RawCollection)
-#
-#
-# class AsyncV3Bucket(V3SyncBucket):
-#     def __init__(self, *args, **kwargs):
-#         super(AsyncV3Bucket, self).__init__(*args, **kwargs)
-#
-#     @classmethod
-#     def _gen_memd_wrappers(cls, factory):
-#         return CoreClient._gen_memd_wrappers(factory)
-#
-#     _MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
-#     _MEMCACHED_NOMULTI=CoreClient._MEMCACHED_NOMULTI
-
 
 from couchbase.bucket import AsyncBucket as V3AsyncBucket
 RawTxBucket = RawClientFactory.gen_raw(V3AsyncBucket)
 
-
-class TxBucket(ClientFactory.gen_client(RawTxBucket)):
+class TxBucket(V3SyncBucket):
     def __init__(self, *args, **kwargs):
-        super(TxBucket,self).__init__(collection_factory=self.collection_factory, *args, **kwargs)
-
-    collection_factory = TxCollection
+        super(TxBucket,self).__init__(collection_factory=TxCollection, *args, **kwargs)
 
 
 class TxCluster(V3SyncCluster):
