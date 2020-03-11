@@ -8,6 +8,7 @@ from typing import *
 from boltons.funcutils import wraps
 from couchbase_core import abstractmethod, IterableWrapper
 from couchbase_core.result import AsyncResult
+
 from couchbase_core._pyport import Protocol
 from couchbase_core.views.iterator import View as CoreView, View
 from couchbase.diagnostics import EndpointPingReport, ServiceType
@@ -179,10 +180,14 @@ class MutationResult(Result):
     def __init__(self,
                 core_result    # type: CoreResult
                 ):
-      super(MutationResult, self).__init__(core_result.cas, core_result.rc)
-      mutinfo = getattr(core_result, '_mutinfo', None)
-      muttoken = MutationToken(mutinfo) if mutinfo else None
-      self.mutationToken = muttoken
+        try:
+            super(MutationResult, self).__init__(core_result.cas, core_result.rc)
+        except:
+            raise
+        mutinfo = getattr(core_result, '_mutinfo', None)
+        muttoken = MutationToken(mutinfo) if mutinfo else None
+        self.mutationToken = muttoken
+
 
     def mutation_token(self):
         # type: () -> MutationToken
@@ -321,6 +326,21 @@ class GetReplicaResult(GetResult):
         raise NotImplementedError("To be implemented in final sdk3 release")
 
 
+try:
+    from twisted.internet.defer import Deferred
+
+    def is_deferred(orig_result):
+        return issubclass(type(orig_result), Deferred)
+except:
+    def is_deferred(orig_result):
+        return False
+
+import logging
+def is_async_result(orig_result):
+    print("Got orig_result {}".format(str(orig_result)))
+    return issubclass(type(orig_result), AsyncResult) or is_deferred(orig_result)
+
+
 class AsyncWrapper(object):
     @staticmethod
     def gen_wrapper(base):
@@ -357,8 +377,8 @@ class AsyncWrapper(object):
             class ErrCallBack(object):
                 def __init__(self, orig_callback):
                     self._on_err_orig=orig_callback
-                def __call__(self, res, excls, excval, exctb):
-                    self._on_err_orig(res, excls, excval, exctb)
+                def __call__(self, *args, **kwargs):
+                    self._on_err_orig(*args, **kwargs)
 
             @property
             def errback(self):
@@ -395,7 +415,7 @@ class AsyncMutationResult(AsyncWrapper.gen_wrapper(MutationResult)):
 ResultPrecursor = NamedTuple('ResultPrecursor', [('orig_result', CoreResult), ('orig_options', Mapping[str, Any])])
 
 def get_wrapped_get_result(x):
-    factory_class = AsyncGetResult if issubclass(type(x), AsyncResult) else GetResult
+    factory_class = AsyncGetResult if is_async_result(x) else GetResult
     return factory_class(x)
 
 def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
@@ -415,7 +435,7 @@ def get_replica_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
                        ):
 
     def factory_class(x):
-        factory=AsyncGetReplicaResult if issubclass(type(x), AsyncResult) else GetReplicaResult
+        factory=AsyncGetReplicaResult if is_async_result(x) else GetReplicaResult
         return factory(x)
 
     # type: (...) -> Callable[[Any], GetResult]
@@ -452,12 +472,11 @@ class MutationToken(object):
         # type: (...) -> str
         raise NotImplementedError()
 
-
 def get_mutation_result(result  # type: CoreResult
                         ):
     # type (...)->MutationResult
     orig_result = getattr(result,'orig_result',result)
-    factory_class = AsyncMutationResult if issubclass(type(orig_result), AsyncResult) else MutationResult
+    factory_class = AsyncMutationResult if is_async_result(orig_result) else MutationResult
     return factory_class(orig_result)
 
 
@@ -510,7 +529,7 @@ class MultiResultWrapper(object):
         final_options = forward_args(kwargs, *options)
         raw_result = wrapped(target, keys, **final_options)
         orig_result = getattr(raw_result, 'orig_result', raw_result)
-        factory_class = self.async_result_type if issubclass(type(orig_result), AsyncResult) else self.orig_result_type
+        factory_class = self.async_result_type if is_async_result(orig_result) else self.orig_result_type
         result = factory_class(orig_result)
         return result
 
