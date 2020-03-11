@@ -281,7 +281,7 @@ class CBCollection(wrapt.ObjectProxy):
         :param CollectionOptions options: miscellaneous options
         """
         assert issubclass(type(parent_scope.bucket), CoreClient)
-        super(CBCollection,self).__init__(parent_scope.bucket)
+        super(CBCollection, self).__init__(parent_scope.bucket)
         self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
         self._self_true_collections = name and parent_scope
@@ -708,7 +708,7 @@ class CBCollection(wrapt.ObjectProxy):
         return ExistsResult(self.bucket.exists(key), **forward_args(kwargs, *options))
 
     @_mutate_result_and_inject
-    def upsert(self,
+    def upsert(self,        # type: CBCollection
                key,         # type: str
                value,       # type: Any
                *options,    # type: UpsertOptions
