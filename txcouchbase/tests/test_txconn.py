@@ -28,7 +28,7 @@ import sys
 from nose.tools import timed
 
 
-Base=gen_base(ConnectionTestCase)  # type: ConnectionTestCase
+Base=gen_base(ConnectionTestCase, factory=V2Bucket)  # type: ConnectionTestCase
 
 
 class BasicConnectionTest(Base):
