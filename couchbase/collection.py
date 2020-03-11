@@ -258,7 +258,10 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
     return _inject_scope_and_collection(wrapper)
 
 
-class CBCollection(CoreClient):
+import wrapt
+
+
+class CBCollection(wrapt.ObjectProxy):
     def __init__(self,  # type: CBCollection
                  name = None,  # type: str
                  parent_scope = None,  # type: Scope
@@ -277,41 +280,23 @@ class CBCollection(CoreClient):
         :param str name: name of collection
         :param CollectionOptions options: miscellaneous options
         """
-        #args = list(args)
-        connstr = kwargs.pop('connection_string', kwargs.pop('connstr', None))
-        #connstr = connstr or args.pop(0)
-        final_args = [connstr]# + args
-        super(CBCollection, self).__init__(*final_args, **kwargs)
+        assert issubclass(type(parent_scope.bucket), CoreClient)
+        super(CBCollection, self).__init__(parent_scope.bucket)
         self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
         self._self_true_collections = name and parent_scope
 
-    #def __str__(self):
-    #    return "Proxy of {}".format(str(self.__wrapped__))
-    #def __repr__(self):
-    #    return "Proxy of {}".format(repr(self.__wrapped__))
-    #_MEMCACHED_NOMULTI=CoreClient._MEMCACHED_NOMULTI
-    #_MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
-    #@classmethod
-    #def _gen_memd_wrappers(cls, factory):
-    #    return CoreClient._gen_memd_wrappers(factory)
+    _MEMCACHED_NOMULTI=CoreClient._MEMCACHED_NOMULTI
+    _MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
+    @classmethod
+    def _gen_memd_wrappers(cls, factory):
+        return CoreClient._gen_memd_wrappers(factory)
     @property
     def true_collections(self):
         return self._self_true_collections
     def _wrap_dsop(self, sdres, has_value=False, **kwargs):
         return getattr(super(CBCollection, self)._wrap_dsop(sdres, has_value), 'value')
 
-    @classmethod
-    def cast(cls,
-             parent,    # type: Scope
-             name,      # type: Optional[str]
-             *options   # type: CollectionOptions
-             ):
-        # type: (...) -> CBCollection
-        coll_args = {}# copy.deepcopy(parent.bucket._bucket_args)
-        coll_args.update(name=name, parent=parent)
-        result = parent.bucket._collection_factory(parent.bucket._connstr, **parent.bucket._bucket_args)
-        return result
 
     @property
     def bucket(self):
@@ -1152,14 +1137,8 @@ class Scope(object):
         :raise: CollectionNotFoundException
         :raise: AuthorizationException
         """
-        return self._gen_collection(None, *options)
+        return self.bucket.cast(self, None, *options)
 
-    def _gen_collection(self,
-                        collection_name,  # type: Optional[str]
-                        *options  # type: CollectionOptions
-                        ):
-        # type: (...) -> CBCollection
-        return CBCollection.cast(self, collection_name, *options)
     @volatile
     def collection(self,
                         collection_name,  # type: str
@@ -1177,7 +1156,7 @@ class Scope(object):
         :raise: AuthorizationException
 
         """
-        return self._gen_collection(collection_name, *options)
+        return self.bucket.cast(self, collection_name, *options)
 
 
 Collection = CBCollection
