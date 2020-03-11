@@ -100,17 +100,7 @@ class PingOptions(OptionBlockTimeOut):
         super(PingOptions, self).__init__(**kwargs)
 
 
-class Bucket(object):
-    _bucket = None  # type: CoreClient
-
-    @overload
-    def __init__(self,
-                 connection_string,     # type: str
-                 name=None,             # type: str
-                 admin=None,            # type: Admin
-                 ):
-        # type: (...) -> None
-        pass
+class Bucket(CoreClient):
 
     def __init__(self,
                  connection_string,  # type: str
@@ -203,7 +193,7 @@ class Bucket(object):
         self._bucket_args['bucket'] = name
         self._collection_factory = collection_factory
 
-        self._bucket = CoreClient(connection_string, **self._bucket_args)
+        super(Bucket,self).__init__(connection_string, **self._bucket_args)
         self._admin = admin
 
     @property
