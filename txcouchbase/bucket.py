@@ -538,7 +538,8 @@ TxCollection = ClientFactory.gen_client(RawCollection)
 from couchbase.bucket import AsyncBucket as V3AsyncBucket
 RawTxBucket = RawClientFactory.gen_raw(V3AsyncBucket)
 
-class TxBucket(V3SyncBucket):
+
+class TxBucket(ClientFactory.gen_client(RawTxBucket)):
     def __init__(self, *args, **kwargs):
         super(TxBucket,self).__init__(collection_factory=TxCollection, *args, **kwargs)
 
