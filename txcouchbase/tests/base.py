@@ -35,6 +35,7 @@ def gen_collection(*args, **kwargs):
         else:
             connstr=kwargs.pop('connection_string')
         base_bucket = TxBucket(*args, connection_string = connstr, **kwargs)
+
         return base_bucket.default_collection()
     except Exception as e:
         raise
