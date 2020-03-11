@@ -46,6 +46,9 @@ class RowsHandler(AsyncN1QLRequest):
 
 
 class TxN1QLTests(gen_base(MockTestCase)):
+    @property
+    def factory(self):
+        return TxBucket
     def testIncremental(self):
         cb = self.make_connection()
         d = defer.Deferred()
