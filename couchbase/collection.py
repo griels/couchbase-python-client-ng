@@ -259,8 +259,10 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
 
 
 class CBCollection(CoreClient):
-    def __init__(self,
+    def __init__(self,  # type: CBCollection
                  *args,
+                 name = None,  # type: str
+                 parent_scope = None,  # type: Scope
                  **kwargs
                  ):
         # type: (...) -> None
@@ -275,22 +277,14 @@ class CBCollection(CoreClient):
         :param str name: name of collection
         :param CollectionOptions options: miscellaneous options
         """
-        name = kwargs.pop('name', None)
-        parent = kwargs.pop('parent', None)
         args = list(args)
         connstr = kwargs.pop('connection_string', kwargs.pop('connstr', None))
         connstr = connstr or args.pop(0)
         final_args = [connstr] + args
         super(CBCollection, self).__init__(*final_args, **kwargs)
-        self._init(name, parent)
-
-    def _init(self,
-              name,  # type: Optional[str]
-              scope  # type: Scope
-              ):
-        self._self_scope = scope  # type: Scope
+        self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
-        self._self_true_collections = name and scope
+        self._self_true_collections = name and parent_scope
 
     #def __str__(self):
     #    return "Proxy of {}".format(str(self.__wrapped__))
