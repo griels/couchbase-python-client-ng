@@ -282,7 +282,7 @@ class CBCollection(wrapt.ObjectProxy):
     _MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
     @classmethod
     def _gen_memd_wrappers(cls, factory):
-        return CoreClient._gen_memd_wrappers_retarget(CBCollection, factory)
+        return CoreClient._gen_memd_wrappers_retarget(cls, factory)
     @property
     def true_collections(self):
         return self._self_true_collections
@@ -441,8 +441,8 @@ class CBCollection(wrapt.ObjectProxy):
         :return: a dictionary of :class:`~.GetResult` objects by key
         :rtype: dict
         """
-        raw_result = super(CBCollection,self).get_multi(keys, **forward_args(kwargs, *options))
-        return get_multi_get_result(self, CoreClient.get_multi, keys, *options, **kwargs)
+        raw_result = self.bucket.get_multi(keys, **forward_args(kwargs, *options))
+        return get_multi_get_result(self.bucket, CoreClient.get_multi, keys, *options, **kwargs)
 
     @overload
     def upsert_multi(self,  # type: CBCollection
@@ -680,7 +680,7 @@ class CBCollection(wrapt.ObjectProxy):
         :return: An ExistsResult object with a boolean value indicating the presence of the document.
         :raise: Any exceptions raised by the underlying platform.
         """
-        return ExistsResult(super(CBCollection,self).exists(key), **forward_args(kwargs, *options))
+        return ExistsResult(self.bucket.exists(key), **forward_args(kwargs, *options))
 
     @_mutate_result_and_inject
     def upsert(self,        # type: CBCollection
@@ -1065,7 +1065,7 @@ class CBCollection(wrapt.ObjectProxy):
         """
 
         final_opts = self._check_delta_initial(kwargs, *options)
-        x = super(CBCollection, self).counter(key, delta=-int(DeltaValue.verified(delta)), **final_opts)
+        x = self.bucket.counter(key, delta=-int(DeltaValue.verified(delta)), **final_opts)
         return ResultPrecursor(x, final_opts)
 
     @staticmethod
