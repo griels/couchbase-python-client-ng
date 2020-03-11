@@ -281,7 +281,7 @@ class CBCollection(wrapt.ObjectProxy):
         :param CollectionOptions options: miscellaneous options
         """
         assert issubclass(type(parent_scope.bucket), CoreClient)
-        super(CBCollection, self).__init__(parent_scope.bucket)
+        super(CBCollection,self).__init__(parent_scope.bucket)
         self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
         self._self_true_collections = name and parent_scope
@@ -294,18 +294,31 @@ class CBCollection(wrapt.ObjectProxy):
     _MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
     @classmethod
     def _gen_memd_wrappers(cls, factory):
-        return CoreClient._gen_memd_wrappers_retarget(CBCollection, factory)
+        return CoreClient._gen_memd_wrappers_retarget(cls, factory)
     @property
     def true_collections(self):
         return self._self_true_collections
     def _wrap_dsop(self, sdres, has_value=False, **kwargs):
-        return getattr(super(CBCollection, self)._wrap_dsop(sdres, has_value), 'value')
+        return getattr(self.bucket._wrap_dsop(sdres, has_value), 'value')
 
+    @staticmethod
+    def cast(parent_scope,    # type: Scope
+             name,      # type: Optional[str]
+             *options   # type: CollectionOptions
+             ):
+        # type: (...) -> CBCollection
+        coll_args = {}#copy.deepcopy(parent.bucket._bucket_args)
+        coll_args.update(name=name, parent=parent_scope)
+        try:
+            result = parent_scope.bucket._collection_factory(name=name, parent_scope=parent_scope)
+        except Exception as e:
+            raise
+        return result
 
     @property
     def bucket(self):
         # type: (...) -> CoreClient
-        return super(CBCollection,self)
+        return self.__wrapped__
 
     MAX_GET_OPS = 16
 
@@ -389,8 +402,8 @@ class CBCollection(wrapt.ObjectProxy):
                      ):
         # type: (...) -> GetResult
         final_options = forward_args(kwargs, *options)
-        x = _Base.get(self, key, expiry, **final_options)
-        _Base.lock(self, key, options)
+        x = self.bucket.get(key, expiry, **final_options)
+        self.bucket.lock(key, options)
         return ResultPrecursor(x, options)
 
     @_inject_scope_and_collection
@@ -414,7 +427,7 @@ class CBCollection(wrapt.ObjectProxy):
 
         """
         final_options = forward_args(kwargs, *options)
-        return super(CBCollection, self).rget(key, **final_options)
+        return self.bucket.rget(key, **final_options)
 
     @_inject_scope_and_collection
     @get_replica_result_wrapper
@@ -435,7 +448,7 @@ class CBCollection(wrapt.ObjectProxy):
               :exc:`.DocumentUnretrievableError` if no replicas exist
       :return: A list(:class:`couchbase.result.GetReplicaResult`) object
       """
-      return super(CBCollection, self).rgetall(key, **forward_args(kwargs, *options))
+      return self.bucket.rgetall(key, **forward_args(kwargs, *options))
 
 
     @_inject_scope_and_collection
@@ -453,7 +466,7 @@ class CBCollection(wrapt.ObjectProxy):
         :return: a dictionary of :class:`~.GetResult` objects by key
         :rtype: dict
         """
-        raw_result = super(CBCollection,self).get_multi(keys, **forward_args(kwargs, *options))
+        raw_result = self.bucket.get_multi(keys, **forward_args(kwargs, *options))
         return get_multi_get_result(self, CoreClient.get_multi, keys, *options, **kwargs)
 
     @overload
@@ -586,7 +599,7 @@ class CBCollection(wrapt.ObjectProxy):
         .. seealso:: :meth:`get` - which can be used to get *and* update the
             expiry
         """
-        return _Base.touch(self, key, **forward_args(kwargs, *options))
+        return self.bucket.touch(key, **forward_args(kwargs, *options))
 
     @_wrap_in_mutation_result
     def unlock(self,
@@ -611,7 +624,7 @@ class CBCollection(wrapt.ObjectProxy):
 
         .. seealso:: :meth:`lock`
         """
-        return _Base.unlock(self, key, **forward_args(kwargs, *options))
+        return self.bucket.unlock(key, **forward_args(kwargs, *options))
 
     def lock(self,  # type: CBCollection
              key,  # type: str
@@ -677,7 +690,7 @@ class CBCollection(wrapt.ObjectProxy):
         .. seealso:: :meth:`get`, :meth:`unlock`
         """
         final_options = forward_args(kwargs, *options)
-        return _Base.lock(self, key, **final_options)
+        return self.bucket.lock(key, **final_options)
 
     def exists(self,      # type: CBCollection
                key,       # type: str
@@ -692,7 +705,7 @@ class CBCollection(wrapt.ObjectProxy):
         :return: An ExistsResult object with a boolean value indicating the presence of the document.
         :raise: Any exceptions raised by the underlying platform.
         """
-        return ExistsResult(super(CBCollection,self).exists(key), **forward_args(kwargs, *options))
+        return ExistsResult(self.bucket.exists(key), **forward_args(kwargs, *options))
 
     @_mutate_result_and_inject
     def upsert(self,
@@ -793,7 +806,7 @@ class CBCollection(wrapt.ObjectProxy):
         """
 
         final_options = forward_args(kwargs, *options)
-        return _Base.insert(self, key, value, **final_options)
+        return self.bucket.insert(key, value, **final_options)
 
     @_mutate_result_and_inject
     def replace(self,
@@ -819,7 +832,7 @@ class CBCollection(wrapt.ObjectProxy):
         """
 
         final_options = forward_args(kwargs, *options)
-        return ResultPrecursor(_Base.replace(self, key, value, **final_options), final_options)
+        return ResultPrecursor(self.bucket.replace(key, value, **final_options), final_options)
 
     @_mutate_result_and_inject
     def remove(self,        # type: CBCollection
@@ -964,7 +977,7 @@ class CBCollection(wrapt.ObjectProxy):
 
         :raise: :exc:`.NotStoredError` if the key does not exist
         """
-        x = _Base.append(self, key, value, forward_args(kwargs, *options))
+        x = self.bucket.append(key, value, forward_args(kwargs, *options))
         return ResultPrecursor(x, options)
 
     def prepend(self,
@@ -978,7 +991,7 @@ class CBCollection(wrapt.ObjectProxy):
 
         .. seealso:: :meth:`append`
         """
-        x = _Base.prepend(self, key, value, **forward_args(kwargs, *options))
+        x = self.bucket.prepend(key, value, **forward_args(kwargs, *options))
         return ResultPrecursor(x, options)
 
     @_mutate_result_and_inject
@@ -1027,7 +1040,7 @@ class CBCollection(wrapt.ObjectProxy):
 
         """
         final_opts = self._check_delta_initial(kwargs, *options)
-        x = _Base.counter(self, key, delta=int(DeltaValue.verified(delta)), **final_opts)
+        x = self.bucket.counter(key, delta=int(DeltaValue.verified(delta)), **final_opts)
         return ResultPrecursor(x, final_opts)
 
     @_mutate_result_and_inject
@@ -1077,7 +1090,7 @@ class CBCollection(wrapt.ObjectProxy):
         """
 
         final_opts = self._check_delta_initial(kwargs, *options)
-        x = super(CBCollection, self).counter(key, delta=-int(DeltaValue.verified(delta)), **final_opts)
+        x = self.bucket.counter(key, delta=-int(DeltaValue.verified(delta)), **final_opts)
         return ResultPrecursor(x, final_opts)
 
     @staticmethod
@@ -1141,8 +1154,14 @@ class Scope(object):
         :raise: CollectionNotFoundException
         :raise: AuthorizationException
         """
-        return self.bucket.cast(self, None, *options)
+        return self._gen_collection(None, *options)
 
+    def _gen_collection(self,
+                        collection_name,  # type: Optional[str]
+                        *options  # type: CollectionOptions
+                        ):
+        # type: (...) -> CBCollection
+        return CBCollection.cast(self, collection_name, *options)
     @volatile
     def collection(self,
                         collection_name,  # type: str
@@ -1160,7 +1179,7 @@ class Scope(object):
         :raise: AuthorizationException
 
         """
-        return self.bucket.cast(self, collection_name, *options)
+        return self._gen_collection(collection_name, *options)
 
 
 Collection = CBCollection

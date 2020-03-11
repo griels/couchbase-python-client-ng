@@ -88,4 +88,3 @@ def gen_base(basecls,  # type: Type[T]
                         print(e)
 
     return _TxTestCase
-
