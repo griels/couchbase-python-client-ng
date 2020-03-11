@@ -57,7 +57,8 @@ class OperationTestCase(Base):
         d_get.addCallback(t)
         return d_get
 
-    def test_multi_set(self):
+    def test_multi_set(self  # type: Base
+                       ):
         cb = self.make_connection()
         kvs = self.gen_kv_dict(prefix="test_multi_set")
         d_set = cb.upsertMulti(kvs)

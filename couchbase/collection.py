@@ -454,8 +454,7 @@ class CBCollection(wrapt.ObjectProxy):
         :return: a dictionary of :class:`~.GetResult` objects by key
         :rtype: dict
         """
-        raw_result = self.bucket.get_multi(keys, **forward_args(kwargs, *options))
-        return get_multi_get_result(self, CoreClient.get_multi, keys, *options, **kwargs)
+        return get_multi_get_result(self.bucket, CoreClient.get_multi, keys, *options, **kwargs)
 
     @overload
     def upsert_multi(self,  # type: CBCollection
