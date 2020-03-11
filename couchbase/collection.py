@@ -1015,7 +1015,7 @@ class CBCollection(wrapt.ObjectProxy):
 
         """
         final_opts = self._check_delta_initial(kwargs, *options)
-        x = _Base.counter(self, key, delta=int(DeltaValue.verified(delta)), **final_opts)
+        x = self.bucket.counter(key, delta=int(DeltaValue.verified(delta)), **final_opts)
         return ResultPrecursor(x, final_opts)
 
     @_mutate_result_and_inject

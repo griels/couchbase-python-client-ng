@@ -22,7 +22,7 @@ from couchbase_core.exceptions import NotFoundError
 
 from couchbase.result import GetResult, MutationResult, MultiMutationResult
 
-Base=gen_base(ConnectionTestCase)
+Base=gen_base(ConnectionTestCase, timeout=10)
 
 
 class OperationTestCase(Base):
