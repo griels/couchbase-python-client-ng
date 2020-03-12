@@ -282,7 +282,9 @@ class CBCollectionBaseCC(CoreClient):
     def bucket(self):
         # type: (...) -> CoreClient
         return super(CBCollectionBaseCC,self)
-
+    @property
+    def multi_dest(self):
+        return self
 
 class CBCollectionBaseOP(wrapt.ObjectProxy):
     def __init__(self,  # type: CBCollectionBaseOP
@@ -313,6 +315,9 @@ class CBCollectionBaseOP(wrapt.ObjectProxy):
     def bucket(self):
         # type: (...) -> CoreClient
         return self._self_scope.bucket
+    @property
+    def multi_dest(self):
+        return self.bucket
 
 
 CBCollectionBase=CBCollectionBaseCC

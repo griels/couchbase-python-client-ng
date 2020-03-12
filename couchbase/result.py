@@ -181,10 +181,14 @@ class MutationResult(Result):
     def __init__(self,
                 core_result    # type: CoreResult
                 ):
-      super(MutationResult, self).__init__(core_result.cas, core_result.rc)
-      mutinfo = getattr(core_result, '_mutinfo', None)
-      muttoken = MutationToken(mutinfo) if mutinfo else None
-      self.mutationToken = muttoken
+        try:
+            super(MutationResult, self).__init__(core_result.cas, core_result.rc)
+        except:
+            raise
+        mutinfo = getattr(core_result, '_mutinfo', None)
+        muttoken = MutationToken(mutinfo) if mutinfo else None
+        self.mutationToken = muttoken
+
 
     def mutation_token(self):
         # type: () -> MutationToken
@@ -321,6 +325,21 @@ class GetReplicaResult(GetResult):
     @property
     def is_replica(self):
         raise NotImplementedError("To be implemented in final sdk3 release")
+
+
+try:
+    from twisted.internet.defer import Deferred
+
+    def is_deferred(orig_result):
+        return issubclass(type(orig_result), Deferred)
+except:
+    def is_deferred(orig_result):
+        return False
+
+import logging
+def is_async_result(orig_result):
+    print("Got orig_result {}".format(str(orig_result)))
+    return issubclass(type(orig_result), AsyncResult) or is_deferred(orig_result)
 
 
 class AsyncWrapper(object):
@@ -485,8 +504,6 @@ class AsyncMultiGetResult(AsyncWrapper.gen_wrapper(MultiGetResult)):
         # type (...)->None
         super(AsyncMultiGetResult, self).__init__(*args, **kwargs)
 
-def is_async_result(orig_result):
-    return issubclass(type(orig_result), AsyncResult) or issubclass(type(orig_result),Deferred)
 
 class MultiResultWrapper(object):
     def __init__(self, orig_result_type, async_result_type=None):
