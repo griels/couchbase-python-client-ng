@@ -9,7 +9,7 @@ from boltons.funcutils import wraps
 from couchbase_core import abstractmethod, IterableWrapper
 from couchbase_core.result import AsyncResult
 from couchbase_core._pyport import Protocol
-from couchbase_core.views.iterator import View as CoreView
+from couchbase_core.views.iterator import View as CoreView, View
 from couchbase.diagnostics import EndpointPingReport, ServiceType
 from enum import Enum
 
@@ -526,18 +526,18 @@ class ViewResultProtocol(ResultProtocol, Protocol):
         pass
 
 
-class ViewResult(IterableWrapper):
-    def __init__(self, core_view  # type: CoreView
+class ViewResult(IterableWrapper, CoreView):
+    def __init__(self, *args, **kwargs  # type: CoreView
                 ):
-        super(ViewResult, self).__init__(core_view)
-
+        CoreView.__init__(self,*args, **kwargs)
+        IterableWrapper.__init__(self, self)
     @property
     def error(self):
-        return self.parent.errors
+        return self.errors
 
     @property
     def success(self):
-        return not self.parent.errors
+        return not self.errors
 
     @property
     def cas(self):
