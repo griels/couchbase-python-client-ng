@@ -343,7 +343,7 @@ class CBCollection(CBCollectionBase):
     _MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
     @classmethod
     def _gen_memd_wrappers(cls, factory):
-        return CoreClient._gen_memd_wrappers_retarget(CBCollection, factory)
+        return CoreClient._gen_memd_wrappers_retarget(cls, factory)
     @property
     def true_collections(self):
         return self._self_true_collections
