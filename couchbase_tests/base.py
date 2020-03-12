@@ -842,7 +842,7 @@ def skip_if_no_collections(func):
 class CollectionTestCase(ClusterTestCase):
     coll = None  # type: CBCollection
     initialised = defaultdict(lambda: {})
-
+    cb = None  # type: CBCollection
     def __init__(self, *args, **kwargs):
         super(CollectionTestCase, self).__init__(*args, **kwargs)
 
@@ -878,7 +878,7 @@ class CollectionTestCase(ClusterTestCase):
                 coll = scope.collection(collection_name) if collection_name else scope.default_collection()
                 setattr(self, dest, coll)
 
-        self.cb = self.coll
+        self.cb = self.coll  # type: CBCollection
 
     @staticmethod
     def _upsert_collection(cm, collection_name, scope_name):
