@@ -465,7 +465,8 @@ RawCollection = TxRawClientFactory.gen_raw(BaseAsyncCBCollection)
 
 class TxClientFactory(object):
     @staticmethod
-    def gen_client(raw_class  # type: Type[T]
+    def gen_client(raw_class,  # type: Type[T]
+                   **injected_kwargs  # type: Any
                    ):
         # type: (...) -> Type[T]
         class TxDeferredClient(raw_class):
@@ -519,6 +520,7 @@ class TxClientFactory(object):
                   d_get.addCallback(on_mres)
 
                 """
+                kwargs.update(injected_kwargs)
                 super(TxDeferredClient, self).__init__(*args, **kwargs)
 
             def _connectSchedule(self, f, meth, *args, **kwargs):
@@ -566,7 +568,7 @@ class TxBucket(TxClientFactory.gen_client(RawTxBucket)):
         super(TxBucket,self).__init__(collection_factory=TxCollection, *args, **kwargs)
 
 
-class TxCluster(V3SyncCluster):
-    def __init__(self, *args, **kwargs):
-        kwargs['bucket_factory'] = TxBucket
-        super(TxCluster, self).__init__(*args, **kwargs)
+from couchbase.cluster import AsyncCluster as V3AsyncCluster
+RawTxCluster=TxRawClientFactory.gen_raw(V3AsyncCluster)
+TxCluster=TxClientFactory.gen_client(RawTxCluster,bucket_factory=TxBucket)
+

@@ -827,8 +827,6 @@ class ClusterTestCase(CouchbaseTestCase):
         self.bucket_name = bucket_name
 
 
-ParamClusterTestCase = parameterized_class(('cluster_factory',), [(Cluster,), (Cluster.connect,)])(ClusterTestCase)
-
 
 def skip_if_no_collections(func):
     @wraps(func)

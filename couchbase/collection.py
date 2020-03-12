@@ -282,7 +282,10 @@ class CBCollectionBaseCC(CoreClient):
         """
         args = list(args)
         connstr = kwargs.pop('connection_string', kwargs.pop('connstr', None))
-        connstr = connstr or args.pop(0)
+        try:
+            connstr = connstr or args.pop(0)
+        except Exception as e:
+            pass
         final_args = [connstr] + args
         super(CBCollectionBaseCC, self).__init__(*final_args, **kwargs)
         self._self_scope = parent_scope  # type: Scope

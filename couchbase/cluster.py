@@ -1,7 +1,8 @@
 import asyncio
 from typing import *
-from couchbase_core.mutation_state import MutationState
 
+from couchbase_core.mutation_state import MutationState
+from couchbase_core.asynchronous import AsyncClientFactory
 from couchbase.management.queries import QueryIndexManager
 from couchbase.management.search import SearchIndexManager
 from couchbase_core.exceptions import CouchbaseError
@@ -26,6 +27,7 @@ import couchbase_core._libcouchbase as _LCB
 from couchbase_core._pyport import raise_from
 from couchbase.options import OptionBlockTimeOut
 from datetime import timedelta
+from couchbase_core.cluster import *
 
 T = TypeVar('T')
 
@@ -245,7 +247,7 @@ class QueryOptions(OptionBlockTimeOut):
         return self
 
 
-class Cluster(object):
+class Cluster(CoreClient):
     clusterbucket = None  # type: CoreClient
 
     class ClusterOptions(OptionBlock):
@@ -275,7 +277,7 @@ class Cluster(object):
         authenticator = cluster_opts.pop('authenticator', None)
         if not authenticator:
             raise ArgumentError("Authenticator is mandatory")
-        bucket_factory = cluster_opts.pop('bucket_factory', Bucket)  # type: Bucket
+
 
         def corecluster_bucket_factory(connstr, bname=None, **kwargs):
             return bucket_factory(connstr, name=bname, admin=self.admin, **kwargs)
@@ -283,7 +285,7 @@ class Cluster(object):
             bucket_factory=corecluster_bucket_factory)
         self._cluster = CoreCluster(connection_string, **cluster_opts)  # type: CoreCluster
         self._authenticate(authenticator)
-
+        super(Cluster,self).__init__(str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
     @staticmethod
     def connect(connection_string,  # type: str
                 *options,  # type: ClusterOptions
@@ -307,7 +309,6 @@ class Cluster(object):
         credentials = authenticator.get_credentials()
         self._clusteropts = credentials.get('options', {})
         self._clusteropts['bucket'] = "default"
-        self._clusterclient = None
         auth = credentials.get('options')
         self.admin = Admin(auth.get('username'), auth.get('password'), connstr=str(self.connstr))
 
@@ -358,10 +359,8 @@ class Cluster(object):
                             failtype,  # type: Type[CouchbaseError]
                             *args,
                             **kwargs):
-        if not self._clusterclient:
-            self._clusterclient = CoreClient(str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
         try:
-            return verb(self._clusterclient, *args, **kwargs)
+            return verb(super(Cluster,self), *args, **kwargs)
         except Exception as e:
             raise_from(failtype(params=CouchbaseError.ParamType(message="Cluster operation failed", inner_cause=e)), e)
 
@@ -372,14 +371,14 @@ class Cluster(object):
                                    **kwargs):
         # if you don't have a cluster client yet, then you don't have any other buckets open either, so
         # this is the same as operate_on_cluster
-        if not self._clusterclient:
-            return self._operate_on_cluster(verb, failtype, *args, **kwargs)
+        #if not self._clusterclient:
+        #    return self._operate_on_cluster(verb, failtype, *args, **kwargs)
 
         async def coroutine(client, verb, *args, **kwargs):
             return verb(client, *args, **kwargs)
         # ok, lets loop over all the buckets, and the clusterclient.  And lets do it async so it isn't miserably
         # slow.  So we will create a list of tasks and execute them together...
-        tasks = [asyncio.ensure_future(coroutine(self._clusterclient, verb, *args, **kwargs))]
+        tasks = [asyncio.ensure_future(coroutine(super, verb, *args, **kwargs))]
         for name, c in self._cluster._buckets.items():
             client = c()
             if client:
@@ -498,5 +497,8 @@ class Cluster(object):
 
     def _is_dev_preview(self):
         return self.admin.http_request(path="/pools").value.get("isDeveloperPreview", False)
+
+
+AsyncCluster = AsyncClientFactory.gen_async_client(Cluster)
 
 ClusterOptions = Cluster.ClusterOptions
