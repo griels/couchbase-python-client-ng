@@ -220,18 +220,6 @@ def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
 CoreBucketOpRead = TypeVar("CoreBucketOpRead", Callable[[Any], CoreResult], Callable[[Any], GetResult])
 
 
-def _wrap_get_result(func  # type: CoreBucketOpRead
-                     ):
-    # type: (...) -> CoreBucketOpRead
-    @wraps(func)
-    def wrapped(self,  # type: CBCollection
-                *args,  # type: Any
-                **kwargs  # type:  Any
-                ):
-        # type: (...)->Any
-        return _inject_scope_and_collection(get_result_wrapper(func))(self,*args,**kwargs)
-
-    return wrapped
 
 class BinaryCollection(object):
     pass
@@ -254,8 +242,11 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
     @wraps(wrapped)
     def wrapper(target, keys, *options, **kwargs
                 ):
-        return get_multi_mutation_result(target, wrapped, keys, *options, **kwargs)
+        def retarget(*args, **kwargs):
+            return wrapped(target, *args, **kwargs)
+        return get_multi_mutation_result(retarget, keys, *options, **kwargs)
     return _inject_scope_and_collection(wrapper)
+
 
 
 import wrapt
@@ -291,7 +282,9 @@ class CBCollectionBaseCC(CoreClient):
     def bucket(self):
         # type: (...) -> CoreClient
         return super(CBCollectionBaseCC,self)
-
+    @property
+    def multi_dest(self):
+        return self
 
 class CBCollectionBaseOP(wrapt.ObjectProxy):
     def __init__(self,  # type: CBCollectionBaseOP
@@ -322,6 +315,9 @@ class CBCollectionBaseOP(wrapt.ObjectProxy):
     def bucket(self):
         # type: (...) -> CoreClient
         return self._self_scope.bucket
+    @property
+    def multi_dest(self):
+        return self.bucket
 
 
 CBCollectionBase=CBCollectionBaseCC
@@ -508,8 +504,7 @@ class CBCollection(CBCollectionBase):
         :return: a dictionary of :class:`~.GetResult` objects by key
         :rtype: dict
         """
-        raw_result = self.bucket.get_multi(keys, **forward_args(kwargs, *options))
-        return get_multi_get_result(self, CoreClient.get_multi, keys, *options, **kwargs)
+        return get_multi_get_result(self.bucket.get_multi,  keys, *options, **kwargs)
 
     @overload
     def upsert_multi(self,  # type: CBCollection
@@ -567,7 +562,7 @@ class CBCollection(CBCollectionBase):
 
         .. seealso:: :meth:`upsert`
         """
-        return get_multi_mutation_result(self, CoreClient.upsert_multi, keys, *options, **kwargs)
+        return get_multi_mutation_result(self.bucket.upsert_multi, keys, *options, **kwargs)
 
     @_inject_scope_and_collection
     def insert_multi(self,  # type: CBCollection
@@ -585,7 +580,7 @@ class CBCollection(CBCollectionBase):
 
         .. seealso:: :meth:`upsert_multi` - for other optional arguments
         """
-        return get_multi_mutation_result(self, CoreClient.insert_multi, keys, *options, **kwargs)
+        return get_multi_mutation_result(self.bucket.insert_multi, keys, *options, **kwargs)
 
     @_inject_scope_and_collection
     def remove_multi(self,  # type: CBCollection
@@ -603,7 +598,7 @@ class CBCollection(CBCollectionBase):
 
         .. seealso:: :meth:`upsert_multi` - for other optional arguments
         """
-        return get_multi_mutation_result(self, CoreClient.remove_multi, keys, *options, **kwargs)
+        return get_multi_mutation_result(self.bucket.remove_multi, keys, *options, **kwargs)
 
     replace_multi = _wrap_multi_mutation_result(CoreClient.replace_multi)
     touch_multi = _wrap_multi_mutation_result(CoreClient.touch_multi)
