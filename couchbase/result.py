@@ -1,3 +1,5 @@
+from twisted.internet.defer import Deferred
+
 from couchbase_core.subdocument import Spec
 from couchbase_core.supportability import internal
 from .options import timedelta, forward_args
@@ -332,41 +334,21 @@ class AsyncWrapper(object):
                 self._kwargs = kwargs
 
             def set_callbacks(self, on_ok_orig, on_err_orig):
-                self.callback=on_ok_orig
-                self.errback=on_err_orig
+                def on_ok(res):
+                    on_ok_orig(base(res, **self._kwargs))
+
+                def on_err(*args, **kwargs):
+                    on_err_orig(*args, **kwargs)
+
+                try:
+                    self._original.set_callbacks(on_ok, on_err)
+                except:
+                    self._original.callback=on_ok
+                    self._original.errback=on_err
 
             def clear_callbacks(self, *args):
                 self._original.clear_callbacks(*args)
 
-            class ResCallback(object):
-                def __init__(self, on_ok_orig, **kwargs):
-                    self._on_ok_orig=on_ok_orig
-                    self._kwargs=kwargs
-
-                def __call__(self, res):
-                    self._on_ok_orig(base(res, **self._kwargs))
-
-            @property
-            def callback(self):
-                return self._original.callback._on_ok_orig
-
-            @callback.setter
-            def callback(self, on_ok_orig):
-                self._original.callback=Wrapped.ResCallback(on_ok_orig)
-
-            class ErrCallBack(object):
-                def __init__(self, orig_callback):
-                    self._on_err_orig=orig_callback
-                def __call__(self, res, excls, excval, exctb):
-                    self._on_err_orig(res, excls, excval, exctb)
-
-            @property
-            def errback(self):
-                return self._original.errback._on_err_orig
-
-            @errback.setter
-            def errback(self, on_err_orig):
-                self._original.errback=Wrapped.ErrCallBack(on_err_orig)
         return Wrapped
 
 
@@ -466,7 +448,10 @@ class MultiResultBase(dict):
         pass
 
     def __init__(self, raw_result):
-        super(MultiResultBase,self).__init__({k: self.converter(v) for k, v in raw_result.items()})
+        try:
+            super(MultiResultBase,self).__init__({k: self.converter(v) for k, v in raw_result.items()})
+        except Exception as e:
+            raise
 
 
 class MultiMutationResult(MultiResultBase):
@@ -500,15 +485,20 @@ class AsyncMultiGetResult(AsyncWrapper.gen_wrapper(MultiGetResult)):
         # type (...)->None
         super(AsyncMultiGetResult, self).__init__(*args, **kwargs)
 
+def is_async_result(orig_result):
+    return issubclass(type(orig_result), AsyncResult) or issubclass(type(orig_result),Deferred)
 
 class MultiResultWrapper(object):
     def __init__(self, orig_result_type, async_result_type=None):
         self.orig_result_type = orig_result_type
         self.async_result_type = async_result_type or AsyncWrapper.gen_wrapper(orig_result_type)
 
-    def get_multi_result(self, target, wrapped, keys, *options, **kwargs):
+    def get_multi_result(self, wrapped, keys, *options, **kwargs):
         final_options = forward_args(kwargs, *options)
-        raw_result = wrapped(target, keys, **final_options)
+        try:
+            raw_result = wrapped(keys, **final_options)
+        except Exception as e:
+            raise
         orig_result = getattr(raw_result, 'orig_result', raw_result)
         factory_class = self.async_result_type if issubclass(type(orig_result), AsyncResult) else self.orig_result_type
         result = factory_class(orig_result)
