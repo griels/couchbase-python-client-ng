@@ -260,9 +260,41 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
 
 import wrapt
 
+class CBCollectionBaseCC(CoreClient):
+    def __init__(self,  # type: CBCollectionBaseCC
+                 *args,
+                 name = None,  # type: str
+                 parent_scope = None,  # type: Scope
+                 **kwargs
+                 ):
+        # type: (...) -> None
+        """
+        Couchbase collection. Should only be invoked by internal API, e.g.
+        by :meth:`couchbase.collection.scope.Scope.collection` or
+        :meth:`couchbase.bucket.Bucket.default_collection`.
 
-class CBCollection(wrapt.ObjectProxy):
-    def __init__(self,  # type: CBCollection
+        Args as for CoreClient, plus:
+
+        :param couchbase.collections.Scope parent: parent scope
+        :param str name: name of collection
+        :param CollectionOptions options: miscellaneous options
+        """
+        args = list(args)
+        connstr = kwargs.pop('connection_string', kwargs.pop('connstr', None))
+        connstr = connstr or args.pop(0)
+        final_args = [connstr] + args
+        super(CBCollectionBaseCC, self).__init__(*final_args, **kwargs)
+        self._self_scope = parent_scope  # type: Scope
+        self._self_name = name  # type: Optional[str]
+        self._self_true_collections = name and parent_scope
+    @property
+    def bucket(self):
+        # type: (...) -> CoreClient
+        return super(CBCollectionBaseCC,self)
+
+
+class CBCollectionBaseOP(wrapt.ObjectProxy):
+    def __init__(self,  # type: CBCollectionBaseOP
                  name = None,  # type: str
                  parent_scope = None,  # type: Scope
                  *options,
@@ -281,12 +313,28 @@ class CBCollection(wrapt.ObjectProxy):
         :param CollectionOptions options: miscellaneous options
         """
         assert issubclass(type(parent_scope.bucket), CoreClient)
-        super(CBCollection,self).__init__(parent_scope.bucket)
-        #self.bucket.__init__(parent_scope.bucket)
+        super(CBCollectionBaseOP,self).__init__(parent_scope.bucket)
         self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
         self._self_true_collections = name and parent_scope
 
+    @property
+    def bucket(self):
+        # type: (...) -> CoreClient
+        return self._self_scope.bucket
+
+
+CBCollectionBase=CBCollectionBaseCC
+
+
+class CBCollection(CBCollectionBase):
+    def __init__(self,  # type: CBCollection
+                 name = None,  # type: str
+                 parent_scope = None,  # type: Scope
+                 *options,
+                 **kwargs
+                 ):
+        super(CBCollection,self).__init__(name=name, parent_scope=parent_scope, *options, **kwargs)
     def __str__(self):
         return "CBColleciton of {}".format(str(self.bucket))
     def __repr__(self):
@@ -302,26 +350,17 @@ class CBCollection(wrapt.ObjectProxy):
     def _wrap_dsop(self, sdres, has_value=False, **kwargs):
         return getattr(self.bucket._wrap_dsop(sdres, has_value), 'value')
 
-    @staticmethod
-    def cast(bucket,  # type: Bucket
-             scope,    # type: Scope
+    @classmethod
+    def cast(cls,
+             parent_scope,    # type: Scope
              name,      # type: Optional[str]
              *options   # type: CollectionOptions
              ):
         # type: (...) -> CBCollection
-        coll_args = {}#copy.deepcopy(parent.bucket._bucket_args)
-        coll_args.update(name=name, parent=scope)
-        try:
-            result = bucket._collection_factory(name=name, parent_scope=scope)
-        except Exception as e:
-            raise
+        coll_args = dict(**parent_scope.bucket._bucket_args)
+        coll_args.update(name=name, parent_scope=parent_scope)
+        result = parent_scope.bucket._collection_factory(connection_string=parent_scope.bucket._connstr, **coll_args)
         return result
-
-
-    @property
-    def bucket(self):
-        # type: (...) -> CoreClient
-        return self._self_scope.bucket
 
     MAX_GET_OPS = 16
 
@@ -528,7 +567,7 @@ class CBCollection(wrapt.ObjectProxy):
 
         .. seealso:: :meth:`upsert`
         """
-        return get_multi_mutation_result(self.bucket, CoreClient.upsert_multi, keys, *options, **kwargs)
+        return get_multi_mutation_result(self, CoreClient.upsert_multi, keys, *options, **kwargs)
 
     @_inject_scope_and_collection
     def insert_multi(self,  # type: CBCollection
@@ -1164,7 +1203,7 @@ class Scope(object):
                         *options  # type: CollectionOptions
                         ):
         # type: (...) -> CBCollection
-        return CBCollection.cast(self.bucket, self, collection_name, *options)
+        return CBCollection.cast(self, collection_name, *options)
     @volatile
     def collection(self,
                         collection_name,  # type: str
