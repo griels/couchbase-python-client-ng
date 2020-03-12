@@ -750,7 +750,7 @@ class CBCollection(CBCollectionBase):
         return ExistsResult(self.bucket.exists(key), **forward_args(kwargs, *options))
 
     @_mutate_result_and_inject
-    def upsert(self,
+    def upsert(self,        # type: CBCollection
                key,         # type: str
                value,       # type: Any
                *options,    # type: UpsertOptions
