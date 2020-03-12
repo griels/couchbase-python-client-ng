@@ -321,6 +321,21 @@ class GetReplicaResult(GetResult):
         raise NotImplementedError("To be implemented in final sdk3 release")
 
 
+try:
+    from twisted.internet.defer import Deferred
+
+    def is_deferred(orig_result):
+        return issubclass(type(orig_result), Deferred)
+except:
+    def is_deferred(orig_result):
+        return False
+
+import logging
+def is_async_result(orig_result):
+    print("Got orig_result {}".format(str(orig_result)))
+    return issubclass(type(orig_result), AsyncResult) or is_deferred(orig_result)
+
+
 class AsyncWrapper(object):
     @staticmethod
     def gen_wrapper(base):
