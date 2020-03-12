@@ -22,7 +22,7 @@ from couchbase_core.exceptions import NotFoundError
 
 from couchbase.result import GetResult, MutationResult, MultiMutationResult
 
-Base=gen_base(ConnectionTestCase)
+Base=gen_base(ConnectionTestCase, timeout=10)
 
 
 class OperationTestCase(Base):
@@ -56,7 +56,8 @@ class OperationTestCase(Base):
         d_get.addCallback(t)
         return d_get
 
-    def test_multi_set(self):
+    def test_multi_set(self  # type: Base
+                       ):
         cb = self.make_connection()
         kvs = self.gen_kv_dict(prefix="test_multi_set")
         d_set = cb.upsertMulti(kvs)
@@ -92,15 +93,15 @@ class OperationTestCase(Base):
 
     def test_multi_errors(self  # type: Base
                         ):
-        raise SkipTest("Fix async multiresults")
+        #raise SkipTest("Fix async multiresults")
         cb = self.make_connection()
         kv = self.gen_kv_dict(prefix = "test_multi_errors")
-        cb.upsertMulti(kv)
+        cb.upsert_multi(kv)
 
         rmkey = list(kv.keys())[0]
         cb.remove(rmkey)
 
-        d = cb.getMulti(kv.keys())
+        d = cb.get_multi(kv.keys())
 
         def t(err):
             self.assertIsInstance(err.value, NotFoundError)
