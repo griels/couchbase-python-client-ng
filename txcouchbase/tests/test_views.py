@@ -15,7 +15,7 @@
 #
 from twisted.internet import defer
 
-from txcouchbase.bucket import BatchedView, TxBucket
+from txcouchbase.bucket import BatchedView, TxBucket, BatchedViewResult
 from couchbase_core.exceptions import HTTPError
 from couchbase_core.asynchronous.view import AsyncViewBase
 
@@ -44,7 +44,7 @@ class RowsHandler(AsyncViewBase):
         self._d.errback(ex)
 
 
-class TxViewsTests(gen_base(ViewTestCase)):
+class TxViewsTests(gen_base(ViewTestCase,factory=TxBucket)):
 
     def make_connection(self, **kwargs):
         return super(TxViewsTests, self).make_connection(bucket='beer-sample')
@@ -58,7 +58,7 @@ class TxViewsTests(gen_base(ViewTestCase)):
         d = cb.view_query('beer', 'brewery_beers', limit=10)
 
         def _verify(o):
-            self.assertIsInstance(o, BatchedView)
+            self.assertIsInstance(o, BatchedViewResult)
             rows = list(o)
             self.assertEqual(len(rows), 10)
 
