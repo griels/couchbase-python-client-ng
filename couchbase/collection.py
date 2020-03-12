@@ -343,7 +343,7 @@ class CBCollection(CBCollectionBase):
     _MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
     @classmethod
     def _gen_memd_wrappers(cls, factory):
-        return CoreClient._gen_memd_wrappers_retarget(CBCollection, factory)
+        return CoreClient._gen_memd_wrappers_retarget(cls, factory)
     @property
     def true_collections(self):
         return self._self_true_collections
@@ -750,7 +750,7 @@ class CBCollection(CBCollectionBase):
         return ExistsResult(self.bucket.exists(key), **forward_args(kwargs, *options))
 
     @_mutate_result_and_inject
-    def upsert(self,
+    def upsert(self,        # type: CBCollection
                key,         # type: str
                value,       # type: Any
                *options,    # type: UpsertOptions
