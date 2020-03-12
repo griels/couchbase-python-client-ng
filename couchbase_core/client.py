@@ -1034,11 +1034,9 @@ class Client(_Base):
 
         .. seealso:: :meth:`upsert`
         """
-        try:
-            return _Base.upsert_multi(self, keys, ttl=ttl, format=format,
-                                      **kwargs)
-        except Exception as e:
-            raise
+        return _Base.upsert_multi(self, keys, ttl=ttl, format=format,
+                                  **kwargs)
+
     def insert_multi(self,  # type: Client
                      keys,  # type: Mapping[str,Any]
                      ttl=0,  # type: int
