@@ -15,7 +15,9 @@
 #
 from unittest import SkipTest
 
+from couchbase.cluster import ClassicAuthenticator, ClusterOptions
 from twisted.internet import defer
+
 from couchbase_core.exceptions import (
     BucketNotFoundError,
     ObjectDestroyedError)
@@ -23,7 +25,7 @@ from couchbase_core.exceptions import (
 from couchbase_tests.base import ConnectionTestCase
 from couchbase_core.connstr import ConnectionString
 from txcouchbase.tests.base import gen_base
-from txcouchbase.bucket import V2Bucket
+from txcouchbase.bucket import V2Bucket, TxCluster
 import sys
 from nose.tools import timed
 

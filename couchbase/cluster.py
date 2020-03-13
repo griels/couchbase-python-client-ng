@@ -1,7 +1,8 @@
 import asyncio
 from typing import *
-from couchbase_core.mutation_state import MutationState
 
+from couchbase_core.mutation_state import MutationState
+from couchbase_core.asynchronous import AsyncClientFactory
 from couchbase.management.queries import QueryIndexManager
 from couchbase.management.search import SearchIndexManager
 from couchbase.management.analytics import AnalyticsIndexManager
@@ -24,6 +25,7 @@ from couchbase_core._pyport import raise_from
 from couchbase.options import OptionBlockTimeOut
 from datetime import timedelta
 from couchbase.exceptions import AlreadyShutdownException
+from couchbase_core.cluster import *
 
 T = TypeVar('T')
 
@@ -207,7 +209,7 @@ class QueryOptions(OptionBlockTimeOut):
         return self
 
 
-class Cluster(object):
+class Cluster(CoreClient):
     clusterbucket = None  # type: CoreClient
 
     class ClusterOptions(OptionBlock):
@@ -237,7 +239,7 @@ class Cluster(object):
         authenticator = cluster_opts.pop('authenticator', None)
         if not authenticator:
             raise ArgumentError("Authenticator is mandatory")
-        bucket_factory = cluster_opts.pop('bucket_factory', Bucket)  # type: Bucket
+
 
         def corecluster_bucket_factory(connstr, bname=None, **kwargs):
             return bucket_factory(connstr, name=bname, admin=self._admin, **kwargs)
@@ -245,6 +247,8 @@ class Cluster(object):
             bucket_factory=corecluster_bucket_factory)
         self._cluster = CoreCluster(connection_string, **cluster_opts)  # type: CoreCluster
         self._authenticate(authenticator)
+        super(Cluster,self).__init__(str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
+        self._clusterclient = super(Cluster,self)
 
     @staticmethod
     def connect(connection_string,  # type: str
@@ -273,7 +277,6 @@ class Cluster(object):
         credentials = authenticator.get_credentials()
         self._clusteropts = credentials.get('options', {})
         self._clusteropts['bucket'] = "default"
-        self._clusterclient = None
         auth = credentials.get('options')
         self._admin = Admin(auth.get('username'), auth.get('password'), connstr=str(self.connstr))
 
@@ -344,7 +347,7 @@ class Cluster(object):
                                         **kwargs):
         clients = [v() for k, v in self._cluster._buckets.items()]
         clients = [v for v in clients if v]
-        clients.append(self._get_clusterclient())
+        clients.append(self)
         for c in clients:
             verb(c, *args, **kwargs)
 
@@ -760,5 +763,8 @@ class Cluster(object):
         """
         mode = self._get_clusterclient()._cntl(op=_LCB.LCB_CNTL_SSL_MODE, value_type='int')
         return mode & _LCB.LCB_SSL_ENABLED != 0
+
+
+AsyncCluster = AsyncClientFactory.gen_async_client(Cluster)
 
 ClusterOptions = Cluster.ClusterOptions
