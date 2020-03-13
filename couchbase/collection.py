@@ -287,8 +287,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
 
     @classmethod
     def _gen_memd_wrappers(cls, factory):
-        return CoreClient._gen_memd_wrappers_retarget(CBCollectionBase, factory)
-
+        return CoreClient._gen_memd_wrappers_retarget(cls, factory)
     @property
     def true_collections(self):
         return self._self_true_collections
