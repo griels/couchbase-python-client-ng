@@ -26,6 +26,7 @@ try:
 except:
     from typing_extensions import TypedDict
 import os
+import wrapt
 
 
 class DeltaValue(ConstrainedInt):
@@ -258,96 +259,42 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
         return get_multi_mutation_result(target, wrapped, keys, *options, **kwargs)
     return _inject_scope_and_collection(wrapper)
 
+from couchbase_core import abstractmethod, ABCMeta, with_metaclass
 
-import wrapt
-
-class CBCollectionBaseCC(CoreClient):
-    def __init__(self,  # type: CBCollectionBaseCC
-                 *args,
-                 name = None,  # type: str
-                 parent_scope = None,  # type: Scope
-                 **kwargs
-                 ):
-        # type: (...) -> None
-        """
-        Couchbase collection. Should only be invoked by internal API, e.g.
-        by :meth:`couchbase.collection.scope.Scope.collection` or
-        :meth:`couchbase.bucket.Bucket.default_collection`.
-
-        Args as for CoreClient, plus:
-
-        :param couchbase.collections.Scope parent: parent scope
-        :param str name: name of collection
-        :param CollectionOptions options: miscellaneous options
-        """
-        args = list(args)
-        connstr = kwargs.pop('connection_string', kwargs.pop('connstr', None))
-        connstr = connstr or args.pop(0)
-        final_args = [connstr] + args
-        super(CBCollectionBaseCC, self).__init__(*final_args, **kwargs)
-        self._self_scope = parent_scope  # type: Scope
-        self._self_name = name  # type: Optional[str]
-        self._self_true_collections = name and parent_scope
-    @property
-    def bucket(self):
-        # type: (...) -> CoreClient
-        return super(CBCollectionBaseCC,self)
-
-
-class CBCollectionBaseOP(wrapt.ObjectProxy):
-    def __init__(self,  # type: CBCollectionBaseOP
+class CBCollectionBase(with_metaclass(ABCMeta)):
+    def __init__(self,  # type: CBCollectionBase
                  name = None,  # type: str
                  parent_scope = None,  # type: Scope
                  *options,
                  **kwargs
                  ):
         # type: (...) -> None
-        """
-        Couchbase collection. Should only be invoked by internal API, e.g.
-        by :meth:`couchbase.collection.scope.Scope.collection` or
-        :meth:`couchbase.bucket.Bucket.default_collection`.
-
-        Args as for CoreClient, plus:
-
-        :param couchbase.collections.Scope parent: parent scope
-        :param str name: name of collection
-        :param CollectionOptions options: miscellaneous options
-        """
-        assert issubclass(type(parent_scope.bucket), CoreClient)
-        super(CBCollectionBaseOP,self).__init__(parent_scope.bucket)
         self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
         self._self_true_collections = name and parent_scope
 
     @property
+    @abstractmethod
     def bucket(self):
-        # type: (...) -> CoreClient
-        return self._self_scope.bucket
+        pass
 
-
-CBCollectionBase = CBCollectionBaseCC if (not os.getenv("PYCBC_COLL_SHARED")) else CBCollectionBaseOP
-
-
-class CBCollection(CBCollectionBase):
-    def __init__(self,  # type: CBCollection
-                 name = None,  # type: str
-                 parent_scope = None,  # type: Scope
-                 *options,
-                 **kwargs
-                 ):
-        super(CBCollection,self).__init__(name=name, parent_scope=parent_scope, *options, **kwargs)
     def __str__(self):
-        return "CBColleciton of {}".format(str(self.bucket))
+        return "CBCollectionBase of {}".format(str(self.bucket))
+
     def __repr__(self):
-        return "CBCollection of {}".format(repr(self.bucket))
+        return "CBCollectionBase of {}".format(repr(self.bucket))
+
     _MEMCACHED_NOMULTI=CoreClient._MEMCACHED_NOMULTI
     _MEMCACHED_OPERATIONS=CoreClient._MEMCACHED_OPERATIONS
+
     @classmethod
     def _gen_memd_wrappers(cls, factory):
-        return CoreClient._gen_memd_wrappers_retarget(CBCollection, factory)
+        return CoreClient._gen_memd_wrappers_retarget(CBCollectionBase, factory)
+
     @property
     def true_collections(self):
         return self._self_true_collections
+
     def _wrap_dsop(self, sdres, has_value=False, **kwargs):
         return getattr(self.bucket._wrap_dsop(sdres, has_value), 'value')
 
@@ -357,7 +304,7 @@ class CBCollection(CBCollectionBase):
              name,      # type: Optional[str]
              *options   # type: CollectionOptions
              ):
-        # type: (...) -> CBCollection
+        # type: (...) -> CBCollectionBase
         coll_args = dict(**parent_scope.bucket._bucket_args)
         coll_args.update(name=name, parent_scope=parent_scope)
         result = parent_scope.bucket._collection_factory(connection_string=parent_scope.bucket._connstr, **coll_args)
@@ -372,11 +319,11 @@ class CBCollection(CBCollectionBase):
         project = opts.pop('project', None)
         with_expiry = opts.pop('with_expiry', False)
         if project:
-            if len(project) <= CBCollection.MAX_GET_OPS:
+            if len(project) <= CBCollectionBase.MAX_GET_OPS:
                 spec = gen_projection_spec(project)
             else:
                 raise couchbase.exceptions.ArgumentError(
-                    "Project only accepts {} operations or less".format(CBCollection.MAX_GET_OPS))
+                    "Project only accepts {} operations or less".format(CBCollectionBase.MAX_GET_OPS))
         if not project and not opts.get('with_expiry', False):
             x = self.bucket.get(key, **opts)
         else:
@@ -495,7 +442,7 @@ class CBCollection(CBCollectionBase):
 
 
     @_inject_scope_and_collection
-    def get_multi(self,  # type: CBCollection
+    def get_multi(self,  # type: CBCollectionBase
                   keys,  # type: Iterable[str]
                   *options,  # type: GetOptions
                   **kwargs
@@ -513,7 +460,7 @@ class CBCollection(CBCollectionBase):
         return get_multi_get_result(self, CoreClient.get_multi, keys, *options, **kwargs)
 
     @overload
-    def upsert_multi(self,  # type: CBCollection
+    def upsert_multi(self,  # type: CBCollectionBase
                      keys,  # type: Mapping[str,Any]
                      ttl=0,  # type: int
                      format=None,  # type: int
@@ -522,7 +469,7 @@ class CBCollection(CBCollectionBase):
         pass
 
     @_inject_scope_and_collection
-    def upsert_multi(self,  # type: CBCollection
+    def upsert_multi(self,  # type: CBCollectionBase
                      keys,  # type: Dict[str,JSON]
                      *options,  # type: GetOptions
                      **kwargs
@@ -571,7 +518,7 @@ class CBCollection(CBCollectionBase):
         return get_multi_mutation_result(self, CoreClient.upsert_multi, keys, *options, **kwargs)
 
     @_inject_scope_and_collection
-    def insert_multi(self,  # type: CBCollection
+    def insert_multi(self,  # type: CBCollectionBase
                      keys,  # type: Dict[str,JSON]
                      *options,  # type: GetOptions
                      **kwargs
@@ -589,7 +536,7 @@ class CBCollection(CBCollectionBase):
         return get_multi_mutation_result(self, CoreClient.insert_multi, keys, *options, **kwargs)
 
     @_inject_scope_and_collection
-    def remove_multi(self,  # type: CBCollection
+    def remove_multi(self,  # type: CBCollectionBase
                      keys,  # type: Iterable[str]
                      *options,  # type: GetOptions
                      **kwargs
@@ -669,7 +616,7 @@ class CBCollection(CBCollectionBase):
         """
         return self.bucket.unlock(key, **forward_args(kwargs, *options))
 
-    def lock(self,  # type: CBCollection
+    def lock(self,  # type: CBCollectionBase
              key,  # type: str
              *options,  # type: LockOptions
              **kwargs  # type: Any
@@ -735,7 +682,7 @@ class CBCollection(CBCollectionBase):
         final_options = forward_args(kwargs, *options)
         return self.bucket.lock(key, **final_options)
 
-    def exists(self,      # type: CBCollection
+    def exists(self,      # type: CBCollectionBase
                key,       # type: str
                *options,  # type: ExistsOptions
                **kwargs   # type: Any
@@ -878,7 +825,7 @@ class CBCollection(CBCollectionBase):
         return ResultPrecursor(self.bucket.replace(key, value, **final_options), final_options)
 
     @_mutate_result_and_inject
-    def remove(self,        # type: CBCollection
+    def remove(self,        # type: CBCollectionBase
                key,         # type: str
                *options,    # type: RemoveOptions
                **kwargs
@@ -913,7 +860,7 @@ class CBCollection(CBCollectionBase):
         return ResultPrecursor(self.bucket.remove(key, **final_options), final_options)
 
     @_inject_scope_and_collection
-    def lookup_in(self,         # type: CBCollection
+    def lookup_in(self,         # type: CBCollectionBase
                   key,          # type: str
                   spec,         # type: LookupInSpec
                   *options,     # type: LookupInOptions
@@ -949,7 +896,7 @@ class CBCollection(CBCollectionBase):
         return LookupInResult(self.bucket.lookup_in(key, spec, **final_options))
 
     @_inject_scope_and_collection
-    def mutate_in(self,  # type: CBCollection
+    def mutate_in(self,  # type: CBCollectionBase
                   key,  # type: str
                   spec,  # type: MutateInSpec
                   *options,  # type: MutateInOptions
@@ -1151,7 +1098,7 @@ class Scope(object):
                  parent,  # type: couchbase.bucket.Bucket
                  name=None  # type: str
                  ):
-        # type: (...) -> Any
+        # type: (...) -> None
         """
         Collection scope representation.
         Constructor should only be invoked internally.
@@ -1186,7 +1133,7 @@ class Scope(object):
                            *options,  # type: Any
                            **kwargs  # type: Any
                            ):
-        # type: (...) -> CBCollection
+        # type: (...) -> CBCollectionBase
         """
         Returns the default collection for this bucket.
 
@@ -1203,14 +1150,14 @@ class Scope(object):
                         collection_name,  # type: Optional[str]
                         *options  # type: CollectionOptions
                         ):
-        # type: (...) -> CBCollection
-        return CBCollection.cast(self, collection_name, *options)
+        # type: (...) -> CBCollectionBase
+        return CBCollectionBase.cast(self, collection_name, *options)
     @volatile
     def collection(self,
                         collection_name,  # type: str
                         *options  # type: CollectionOptions
                         ):
-        # type: (...) -> CBCollection
+        # type: (...) -> CBCollectionBase
         """
         Gets the named collection for this bucket.
 
@@ -1225,6 +1172,69 @@ class Scope(object):
         return self._gen_collection(collection_name, *options)
 
 
+class CBCollectionShared(CBCollectionBase, wrapt.ObjectProxy):
+    def __init__(self,  # type: CBCollectionShared
+                 name = None,  # type: str
+                 parent_scope = None,  # type: Scope
+                 *options,
+                 **kwargs
+                 ):
+        # type: (...) -> None
+        """
+        Couchbase collection. Should only be invoked by internal API, e.g.
+        by :meth:`couchbase.collection.scope.Scope.collection` or
+        :meth:`couchbase.bucket.Bucket.default_collection`.
+
+        Args as for CoreClient, plus:
+
+        :param couchbase.collections.Scope parent: parent scope
+        :param str name: name of collection
+        :param CollectionOptions options: miscellaneous options
+        """
+        assert issubclass(type(parent_scope.bucket), CoreClient)
+        wrapt.ObjectProxy.__init__(self, parent_scope.bucket)
+        CBCollectionBase.__init__(self, parent_scope=parent_scope, *options, **kwargs)
+
+    @property
+    def bucket(self  # type: CBCollectionShared
+               ):
+        # type: (...) -> CoreClient
+        return self._self_scope.bucket
+
+
+class CBCollectionNonShared(CBCollectionBase, CoreClient):
+    def __init__(self,  # type: CBCollectionNonShared
+                 *options,
+                 name = None,  # type: str
+                 parent_scope = None,  # type: Scope
+                 **kwargs
+                 ):
+        # type: (...) -> None
+        """
+        Couchbase collection. Should only be invoked by internal API, e.g.
+        by :meth:`couchbase.collection.scope.Scope.collection` or
+        :meth:`couchbase.bucket.Bucket.default_collection`.
+
+        Args as for CoreClient, plus:
+
+        :param couchbase.collections.Scope parent: parent scope
+        :param str name: name of collection
+        :param CollectionOptions options: miscellaneous options
+        """
+        options = list(options)
+        connstr = kwargs.pop('connection_string', kwargs.pop('connstr', None))
+        connstr = connstr or options.pop(0)
+        final_args = [connstr] + options
+        CoreClient.__init__(self, *final_args, **kwargs)
+        CBCollectionBase.__init__(self, *options, name=name, parent_scope=parent_scope, **kwargs)
+    @property
+    def bucket(self  # type: CBCollectionNonShared
+               ):
+        # type: (...) -> CoreClient
+        return super(CoreClient,self)
+
+
+CBCollection=CBCollectionNonShared
 Collection = CBCollection
 
 
