@@ -11,7 +11,6 @@ from .result import GetResult, GetReplicaResult, ExistsResult, get_result_wrappe
     MutationResult, _wrap_in_mutation_result, get_replica_result_wrapper, get_multi_mutation_result, get_multi_get_result
 from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64
 from .options import OptionBlock, AcceptableInts
-from couchbase_core._libcouchbase import Bucket as _Base
 import couchbase.exceptions
 from couchbase_core.client import Client as CoreClient
 import copy
@@ -26,7 +25,7 @@ try:
 except:
     from typing_extensions import TypedDict
 import os
-import wrapt
+from couchbase_core import abstractmethod, ABCMeta, with_metaclass
 
 
 class DeltaValue(ConstrainedInt):
@@ -259,16 +258,25 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
         return get_multi_mutation_result(target, wrapped, keys, *options, **kwargs)
     return _inject_scope_and_collection(wrapper)
 
-from couchbase_core import abstractmethod, ABCMeta, with_metaclass
 
-class CBCollectionBase(with_metaclass(ABCMeta)):
+class CBCollectionBase(CoreClient):
     def __init__(self,  # type: CBCollectionBase
+                 connstr = None, # type: str
                  name = None,  # type: str
                  parent_scope = None,  # type: Scope
                  *options,
                  **kwargs
                  ):
         # type: (...) -> None
+
+        options = list(options)
+        connstr = kwargs.pop('connection_string', kwargs.pop('connstr', None))
+        connstr = connstr or (options.pop(0) if options else None)
+        if connstr:
+            final_options = [connstr] + options
+            super(CBCollectionBase,self).__init__(*final_options, connstr=connstr, **kwargs)
+        else:
+            super(CBCollectionBase,self).__init__(connstr, *options, **kwargs)
         self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
         self._self_true_collections = name and parent_scope
@@ -1171,8 +1179,9 @@ class Scope(object):
         """
         return self._gen_collection(collection_name, *options)
 
+import wrapt
 
-class CBCollectionShared(CBCollectionBase, wrapt.ObjectProxy):
+class CBCollectionShared(wrapt.ObjectProxy):
     def __init__(self,  # type: CBCollectionShared
                  name = None,  # type: str
                  parent_scope = None,  # type: Scope
@@ -1202,7 +1211,7 @@ class CBCollectionShared(CBCollectionBase, wrapt.ObjectProxy):
         return self._self_scope.bucket
 
 
-class CBCollectionNonShared(CBCollectionBase, CoreClient):
+class CBCollectionNonShared(CBCollectionBase):
     def __init__(self,  # type: CBCollectionNonShared
                  *options,
                  name = None,  # type: str
@@ -1221,20 +1230,15 @@ class CBCollectionNonShared(CBCollectionBase, CoreClient):
         :param str name: name of collection
         :param CollectionOptions options: miscellaneous options
         """
-        options = list(options)
-        connstr = kwargs.pop('connection_string', kwargs.pop('connstr', None))
-        connstr = connstr or options.pop(0)
-        final_args = [connstr] + options
-        CoreClient.__init__(self, *final_args, **kwargs)
-        CBCollectionBase.__init__(self, *options, name=name, parent_scope=parent_scope, **kwargs)
+        super(CBCollectionNonShared,self).__init__(*options, name=name, parent_scope=parent_scope, **kwargs)
+        #CoreClient.__init__(self, *final_args, **kwargs)
     @property
     def bucket(self  # type: CBCollectionNonShared
                ):
         # type: (...) -> CoreClient
-        return super(CoreClient,self)
+        return super(CBCollectionBase,self)
 
-
-CBCollection=CBCollectionNonShared
+CBCollection=CBCollectionNonShared if (not os.getenv("PYCBC_COLL_SHARED")) else CBCollectionShared
 Collection = CBCollection
 
 
