@@ -255,7 +255,7 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
     @wraps(wrapped)
     def wrapper(target, keys, *options, **kwargs
                 ):
-        return get_multi_mutation_result(target, wrapped, keys, *options, **kwargs)
+        return get_multi_mutation_result(target.bucket, wrapped, keys, *options, **kwargs)
     return _inject_scope_and_collection(wrapper)
 
 
@@ -454,7 +454,6 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         :return: a dictionary of :class:`~.GetResult` objects by key
         :rtype: dict
         """
-        #raw_result = CoreClient.get_multi(self.bucket, keys, **forward_args(kwargs, *options))
         return get_multi_get_result(self.bucket, CoreClient.get_multi, keys, *options, **kwargs)
 
     @overload
@@ -1169,8 +1168,12 @@ class Scope(object):
         """
         return self._gen_collection(collection_name, *options)
 
-import wrapt
 
+class CoreClientDatastructureWrap(CoreClient):
+    def _wrap_dsop(self, sdres, has_value=False, **kwargs):
+        return getattr(CoreClient._wrap_dsop(self,sdres, has_value), 'value')
+
+import wrapt
 class CBCollectionShared(CBCollectionBase, wrapt.ObjectProxy):
     def __init__(self,  # type: CBCollectionShared
                  name = None,  # type: str
@@ -1190,10 +1193,9 @@ class CBCollectionShared(CBCollectionBase, wrapt.ObjectProxy):
         :param str name: name of collection
         :param CollectionOptions options: miscellaneous options
         """
-        assert issubclass(type(parent_scope.bucket), CoreClient)
+        assert issubclass(type(parent_scope.bucket), CoreClientDatastructureWrap)
         wrapt.ObjectProxy.__init__(self, parent_scope.bucket)
         CBCollectionBase.__init__(self, parent_scope=parent_scope, *options, **kwargs)
-
     @property
     def bucket(self  # type: CBCollectionShared
                ):
@@ -1236,7 +1238,7 @@ class CBCollectionNonShared(CBCollectionBase, CoreClient):
         return self
 
 
-CBCollection=CBCollectionNonShared if (not os.getenv("PYCBC_COLL_SHARED")) else CBCollectionShared
+CBCollection = CBCollectionShared if (os.getenv("PYCBC_COLL_SHARED", "").upper() != "OFF") else CBCollectionNonShared
 Collection = CBCollection
 
 

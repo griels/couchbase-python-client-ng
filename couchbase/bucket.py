@@ -3,7 +3,7 @@ from couchbase.management.admin import Admin
 from couchbase.management.views import DesignDocumentNamespace
 from couchbase_core.supportability import uncommitted, volatile
 from couchbase_core.client import Client as CoreClient
-from .collection import CBCollection, CollectionOptions
+from .collection import CBCollection, CollectionOptions, CoreClientDatastructureWrap
 from .options import OptionBlockTimeOut
 from .result import *
 from .collection import Scope
@@ -100,8 +100,7 @@ class PingOptions(OptionBlockTimeOut):
         super(PingOptions, self).__init__(**kwargs)
 
 
-class Bucket(CoreClient):
-
+class Bucket(CoreClientDatastructureWrap):
     def __init__(self,
                  connection_string = None,  # type: str
                  name=None,  # type: str
