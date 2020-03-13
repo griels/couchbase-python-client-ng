@@ -7,7 +7,10 @@ from .fixtures import parameterize_asyncio
 try:
     import acouchbase.tests.py34only
     @parameterize_asyncio
-    class CouchbaseBeerTestSpecific(acouchbase.tests.py34only.CouchbaseBeerTest):
+    class CouchbaseBeerCollectionTestSpecific(acouchbase.tests.py34only.CouchbaseBeerCollectionTest):
+        pass
+    @parameterize_asyncio
+    class CouchbaseBeerBucketTestSpecific(acouchbase.tests.py34only.CouchbaseBeerBucketTest):
         pass
 
     @parameterize_asyncio

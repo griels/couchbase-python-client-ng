@@ -174,7 +174,7 @@ class TxRawClientFactory(object):
 
             def _do_view_query(self, *args, **kwargs):
                 #super_obj = super(async_base, self)
-                #meth = getattr(super_obj, 'view_query', getattr(super_obj, 'query', None))
+                #0meth = getattr(super_obj, 'view_query', getattr(super_obj, 'query', None))
                 return super(async_base,self).view_query(*args, **kwargs)
 
             def registerDeferred(self, event, d):
