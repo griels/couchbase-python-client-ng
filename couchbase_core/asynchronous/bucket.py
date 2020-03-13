@@ -179,7 +179,10 @@ class AsyncClientFactory(type):
                     raise ArgumentError.pyexc("itercls must be defined "
                                               "and must be derived from AsyncViewBase")
 
-                return super(AsyncClientSpecialised, self).view_query(*args, **kwargs)
+                try:
+                    return super(AsyncClientSpecialised, self).view_query(*args, **kwargs)
+                except Exception as e:
+                    raise
 
             def endure(self, key, *args, **kwargs):
                 res = super(AsyncClientSpecialised, self).endure_multi([key], *args, **kwargs)

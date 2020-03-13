@@ -4,7 +4,7 @@ from couchbase.management.views import DesignDocumentNamespace
 from couchbase_core.supportability import uncommitted, volatile
 from couchbase_core.client import Client as CoreClient
 import couchbase_core._libcouchbase as _LCB
-from .collection import CBCollection, CollectionOptions
+from .collection import CBCollection, CollectionOptions, CoreClientDatastructureWrap
 from .options import OptionBlockTimeOut
 from .result import *
 from .collection import Scope
@@ -105,8 +105,7 @@ class PingOptions(OptionBlockTimeOut):
         super(PingOptions, self).__init__(**kwargs)
 
 
-class Bucket(CoreClient):
-
+class Bucket(CoreClientDatastructureWrap):
     def __init__(self,
                  connection_string = None,  # type: str
                  name=None,  # type: str
@@ -445,7 +444,6 @@ class Bucket(CoreClient):
                                val      # type: timedelta
                                ):
         self._cntl(op=_LCB.TRACING_THRESHOLD_VIEW, value=val.total_seconds(), value_type="timeout")
-
 
 
 AsyncBucket=AsyncClientFactory.gen_async_client(Bucket)
