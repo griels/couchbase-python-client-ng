@@ -195,10 +195,13 @@ class Client(_Base):
         self._connect()
 
     def __repr__(self):
-        return ('<{modname}.{cls} bucket={bucket}, nodes={nodes} at 0x{oid:x}>'
-                ).format(modname=__name__, cls=self.__class__.__name__,
-                         nodes=self.server_nodes, bucket=self.bucket,
-                         oid=id(self))
+        try:
+            return ('<{modname}.{cls} bucket={bucket}, nodes={nodes} at 0x{oid:x}>'
+                    ).format(modname=__name__, cls=self.__class__.__name__,
+                             nodes=self.server_nodes, bucket=self.bucket,
+                             oid=id(self))
+        except Exception as e:
+            return str(e)
 
     def _get_timeout_common(self, op):
         return self._cntl(op, value_type='timeout')
