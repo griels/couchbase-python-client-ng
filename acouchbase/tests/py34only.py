@@ -5,19 +5,15 @@ from .fixtures import asynct, AioTestCase
 from couchbase_core.n1ql import N1QLQuery
 from couchbase_core.exceptions import CouchbaseError
 from unittest import SkipTest
+from acouchbase.bucket import get_event_loop
 
 
 class CouchbaseBeerTest(AioTestCase):
-    def setUp(self, **kwargs):
+    def setUp(self):
         try:
-            return super(CouchbaseBeerTest,self).setUp(bucket='beer-sample', **kwargs)
+            return super(CouchbaseBeerTest,self).setUp(bucket='beer-sample')
         except CouchbaseError:
             raise SkipTest("Need 'beer-sample' bucket for this")
-
-
-class CouchbaseBeerKVTest(CouchbaseBeerTest):
-    def setUp(self):
-        super(CouchbaseBeerKVTest, self).setUp()
 
     @asynct
     @asyncio.coroutine
@@ -28,10 +24,6 @@ class CouchbaseBeerKVTest(CouchbaseBeerTest):
         data = yield from beer_bucket.get('21st_amendment_brewery_cafe')
         self.assertEqual("21st Amendment Brewery Cafe", self.details.get_value(data)["name"])
 
-
-class CouchbaseBeerViewTest(CouchbaseBeerTest):
-    def setUp(self):
-        super(CouchbaseBeerViewTest, self).setUp(type='Bucket')
     @asynct
     @asyncio.coroutine
     def test_query(self):
@@ -46,7 +38,8 @@ class CouchbaseBeerViewTest(CouchbaseBeerTest):
         self.assertEqual(count, 10)
 
 
-class CouchbaseDefaultTestKV(AioTestCase):
+class CouchbaseDefaultTest(AioTestCase):
+
     @asynct
     @asyncio.coroutine
     def test_upsert(self):
@@ -62,10 +55,6 @@ class CouchbaseDefaultTestKV(AioTestCase):
         obtained = yield from default_bucket.get('hello')
         self.assertEqual({"key": expected}, self.details.get_value(obtained))
 
-
-class CouchbaseDefaultTestN1QL(AioTestCase):
-    def setUp(self, **kwargs):
-        super(CouchbaseDefaultTestN1QL, self).setUp(type='Bucket',**kwargs)
 
     @asynct
     @asyncio.coroutine

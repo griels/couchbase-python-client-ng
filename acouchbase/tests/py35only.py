@@ -7,7 +7,7 @@ class CouchbasePy35Test(AioTestCase):
 
     def setUp(self):
         try:
-            super(CouchbasePy35Test,self).setUp(bucket='beer-sample', type="Bucket")
+            super(CouchbasePy35Test,self).setUp(bucket='beer-sample')
         except CouchbaseError as e:
             raise SkipTest("Need 'beer-sample' bucket for this")
 

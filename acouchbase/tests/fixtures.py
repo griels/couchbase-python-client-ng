@@ -2,10 +2,8 @@ from couchbase_tests.base import MockTestCase
 from functools import wraps
 from parameterized import parameterized_class
 from collections import namedtuple
-from acouchbase.bucket import Bucket
 
-
-Details = namedtuple('Details', ['factories', 'get_value'])
+Details = namedtuple('Details', ['factory', 'get_value'])
 
 try:
     from acouchbase.bucket import Bucket, get_event_loop
@@ -29,10 +27,9 @@ try:
         except Exception as e:
             raise
 
-
-    default = Details({'Collection': gen_collection, 'Bucket': Bucket}, lambda x: x.content)
-    target_dict = {'V3CoreClient': Details({'Collection': V3CoreClient, 'Bucket': V3CoreClient}, lambda x: x.value),
-                   'Collection':   default}
+    default=Details(gen_collection, lambda x: x.content)
+    target_dict = {'V3CoreClient': Details(V3CoreClient, lambda x: x.value),
+                   'Collection': default}
 
 except (ImportError, SyntaxError):
     target_dict = {}
@@ -47,13 +44,13 @@ def parameterize_asyncio(cls):
 class AioTestCase(MockTestCase):
     factory_name = None  # type: str
 
-    def setUp(self, type='Collection', **kwargs):
+    def setUp(self, **kwargs):
         asyncio.set_event_loop(get_event_loop())
-        self._factory = self.details.factories[type]
         super(AioTestCase, self).setUp(**kwargs)
 
     def __init__(self, *args, **kwargs):
         self.details = target_dict.get(self.factory_name,default)
+        self._factory = self.details.factory
         super(AioTestCase, self).__init__(*args, **kwargs)
 
     @property

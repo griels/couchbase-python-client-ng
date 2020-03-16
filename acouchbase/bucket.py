@@ -9,28 +9,21 @@ from acouchbase.asyncio_iops import IOPS
 from acouchbase.iterator import AView, AN1QLRequest
 from couchbase_core.experimental import enable; enable()
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
+from couchbase_core._pyport import with_metaclass
 from couchbase_core.asynchronous.bucket import AsyncClient as CoreAsyncClient
+from couchbase.bucket import Bucket as V3SyncBucket
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
-from couchbase_core.client import Client as CoreClient
-from couchbase.bucket import AsyncBucket as V3AsyncBucket
-from typing import *
-
-T = TypeVar('T', bound=CoreClient)
 
 
 class AsyncBucketFactory(type):
     @staticmethod
-    def gen_async_bucket(asyncbase  # type: Type[T]
-                         ):
-        # type: (...) -> Type[T]
+    def gen_async_bucket(asyncbase):
         n1ql_query = getattr(asyncbase, 'n1ql_query', getattr(asyncbase, 'query', None))
         view_query = getattr(asyncbase, 'view_query', getattr(asyncbase, 'query', None))
 
         class Bucket(asyncbase):
-            def __init__(self, connstr=None, *args, **kwargs):
+            def __init__(self, *args, **kwargs):
                 loop = asyncio.get_event_loop()
-                if connstr and 'connstr' not in kwargs:
-                    kwargs['connstr'] = connstr
                 super(Bucket, self).__init__(IOPS(loop), *args, **kwargs)
                 self._loop = loop
 
@@ -101,9 +94,10 @@ class AsyncCBCollection(AsyncBucketFactory.gen_async_bucket(BaseAsyncCBCollectio
 Collection = AsyncCBCollection
 
 
-class Bucket(AsyncBucketFactory.gen_async_bucket(V3AsyncBucket)):
+class Bucket(V3SyncBucket):
     def __init__(self, *args, **kwargs):
-        super(Bucket,self).__init__(collection_factory=AsyncCBCollection, *args, **kwargs)
+        kwargs['collection_factory'] = AsyncCBCollection
+        super(Bucket, self).__init__(*args, **kwargs)
 
 
 def get_event_loop(evloop=None  # type: AbstractEventLoop

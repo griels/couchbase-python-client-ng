@@ -4,24 +4,17 @@
 import logging, traceback
 from .fixtures import parameterize_asyncio
 
+try:
+    import acouchbase.tests.py34only
+    @parameterize_asyncio
+    class CouchbaseBeerTestSpecific(acouchbase.tests.py34only.CouchbaseBeerTest):
+        pass
 
-import acouchbase.tests.py34only
-@parameterize_asyncio
-class CouchbaseBeerKVTestSpecific(acouchbase.tests.py34only.CouchbaseBeerKVTest):
-    pass
-@parameterize_asyncio
-class CouchbaseBeerKVTestSpecific(acouchbase.tests.py34only.CouchbaseBeerViewTest):
-    pass
-
-@parameterize_asyncio
-class CouchbaseDefaultTestSpecificN1QL(acouchbase.tests.py34only.CouchbaseDefaultTestN1QL):
-    pass
-
-@parameterize_asyncio
-class CouchbaseDefaultTestSpecificKV(acouchbase.tests.py34only.CouchbaseDefaultTestKV):
-    pass
-
-logging.error("Got exception {}".format(traceback.format_exc()))
+    @parameterize_asyncio
+    class CouchbaseDefaultTestSpecific(acouchbase.tests.py34only.CouchbaseDefaultTest):
+        pass
+except (ImportError, SyntaxError) as e:
+    logging.error("Got exception {}".format(traceback.format_exc()))
 
 try:
     import acouchbase.tests.py35only
