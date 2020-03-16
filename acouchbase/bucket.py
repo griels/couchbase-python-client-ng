@@ -100,7 +100,7 @@ class Bucket(V3SyncBucket):
         super(Bucket, self).__init__(*args, **kwargs)
 
 
-def get_event_loop(evloop=asyncio.get_event_loop()  # type: AbstractEventLoop
+def get_event_loop(evloop=None  # type: AbstractEventLoop
                    ):
     """
     Get an event loop compatible with acouchbase.

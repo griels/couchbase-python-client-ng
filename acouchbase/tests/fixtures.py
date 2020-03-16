@@ -13,7 +13,6 @@ try:
     from acouchbase.bucket import V3CoreClient
     from acouchbase.bucket import asyncio
 
-
     def asynct(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -48,6 +47,10 @@ def parameterize_asyncio(cls):
 class AioTestCase(MockTestCase):
     factory_name = None  # type: str
 
+    def setUp(self, **kwargs):
+        asyncio.set_event_loop(get_event_loop())
+        super(AioTestCase, self).setUp(**kwargs)
+
     def __init__(self, *args, **kwargs):
         self.details = target_dict.get(self.factory_name,default)
         self._factory = self.details.factory
@@ -55,11 +58,6 @@ class AioTestCase(MockTestCase):
 
     @property
     def factory(self):
-        return self._factory
-
-    @factory.setter
-    def factory(self, item):
-        raise RuntimeError("This shouldn't happen, trying to override {} with {}".format(str(self._factory), str(item)))
-
+        return self.details.factory
 
     should_check_refcount = False
