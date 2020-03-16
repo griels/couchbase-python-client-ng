@@ -20,6 +20,7 @@ from datetime import timedelta
 from typing import *
 from unittest import SkipTest
 
+import fulltext
 from couchbase.fulltext import SearchResult, MetaData
 from couchbase_core import recursive_reload
 from couchbase_core._pyport import ANY_STR
@@ -493,7 +494,7 @@ class Scenarios(CollectionTestCase):
             raise SkipTest("F.T.S. not supported by mock")
         most_common_term_max = 10
         initial=time.time()
-        x = self.cluster.search_query("beer-search", FT.TermQuery("category"),
+        x = self.cluster.search_query("beer-search", fulltext.TermQuery("category"),
                                       facets={'fred': FT.TermFacet('category', most_common_term_max)})
         first_entry = x.hits()[0]
         self.assertEqual("brasserie_de_brunehaut-mont_st_aubert", first_entry.get('id'))
@@ -519,7 +520,7 @@ class Scenarios(CollectionTestCase):
         self.assertEqual(len(fred_facet['terms']), most_common_term_max)
 
         self.assertRaises(couchbase.exceptions.SearchException, self.cluster.search_query, "beer-search",
-                          FT.TermQuery("category"),
+                          fulltext.TermQuery("category"),
                           facets={'fred': None})
 
     @staticmethod

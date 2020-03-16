@@ -1,4 +1,7 @@
 from typing import *
+
+from fulltext import _SingleQuery, _genprop_str, _with_fields, _genprop, NoChildrenError, Query, _assign_kwargs, \
+    _location_conv, _RangeQuery, _CompoundQuery, _convert_gt0, _bprop_wrap
 from .options import OptionBlockTimeOut, timedelta, AcceptableUnsignedInt32, UnsignedInt32, UnsignedInt64
 from couchbase_core import abstractmethod, IterableWrapper, JSON
 from enum import Enum
@@ -66,8 +69,6 @@ class SearchFacetResult(NamedTuple):
     missing: UnsignedInt64
     other: UnsignedInt64
 
-
-x=SearchFacetResult("wqee","wewe",UnsignedInt64(233),UnsignedInt64(23),UnsignedInt64(23123))
 
 """Sample request/response payloads: https://github.com/couchbaselabs/sdk-testcases/tree/master/search"""
 
@@ -270,7 +271,6 @@ class SearchResult(SearchResultProtocol, IterableWrapper):
         return MetaData(IterableWrapper.metadata(self))
 
 from couchbase_core.fulltext import *
-MatchQuery()
 """
 SearchQuery implementations
 MatchQuery
@@ -319,3 +319,409 @@ SearchResult
 The SearchResult interface provides a means of mapping the results of a Search query into an object. The description and details on the fields can be found in the Couchbase Full Text Search Index Query (FTS) RFC (which will be merged into this RFC during markdown conversion).
 
 """
+
+
+class QueryStringQuery(_SingleQuery):
+    """
+    Query which allows users to describe a query in a query language.
+    The server will then execute the appropriate query based on the contents
+    of the query string:
+
+    .. seealso::
+
+        `Query Language <http://www.blevesearch.com/docs/Query-String-Query/>`_
+
+    Example::
+
+        QueryStringQuery('description:water and stuff')
+    """
+
+    _TERMPROP = 'query'
+    query = _genprop_str('query')
+
+    """
+    Actual query string
+    """
+
+
+@_with_fields('field')
+class WildcardQuery(_SingleQuery):
+    """
+    Query in which the characters `*` and `?` have special meaning, where
+    `?` matches 1 occurrence and `*` will match 0 or more occurrences of the
+    previous character
+    """
+    _TERMPROP = 'wildcard'
+    wildcard = _genprop_str(_TERMPROP, doc='Wildcard pattern to use')
+
+
+class DocIdQuery(_SingleQuery):
+    """
+    Matches document IDs. This is must useful in a compound query
+    (for example, :class:`BooleanQuery`). When used as a criteria, only
+    documents with the specified IDs will be searched.
+    """
+    _TERMPROP = 'ids'
+    ids = _genprop(list, 'ids', doc="""
+    List of document IDs to use
+    """)
+
+    def validate(self):
+        super(DocIdQuery, self).validate()
+        if not self.ids:
+            raise NoChildrenError('`ids` must contain at least one ID')
+
+
+@_with_fields('prefix_length', 'fuzziness', 'field', 'analyzer')
+class MatchQuery(_SingleQuery):
+    """
+    Query which checks one or more fields for a match
+    """
+    _TERMPROP = 'match'
+    match = _genprop_str(
+        'match', doc="""
+        String to search for
+        """)
+
+
+@_with_fields('fuzziness', 'prefix_length', 'field')
+class TermQuery(_SingleQuery):
+    """
+    Searches for a given term in documents. Unlike :class:`MatchQuery`,
+    the term is not analyzed.
+
+    Example::
+
+        TermQuery('lcb_cntl_string')
+    """
+    _TERMPROP = 'term'
+    term = _genprop_str('term', doc='Exact term to search for')
+
+
+@_with_fields('field', 'analyzer')
+class MatchPhraseQuery(_SingleQuery):
+    """
+    Search documents which match a given phrase. The phrase is composed
+    of one or more terms.
+
+    Example::
+
+        MatchPhraseQuery("Hello world!")
+    """
+    _TERMPROP = 'match_phrase'
+    match_phrase = _genprop_str(_TERMPROP, doc="Phrase to search for")
+
+
+@_with_fields('field')
+class PhraseQuery(_SingleQuery):
+    _TERMPROP = 'terms'
+    terms = _genprop(list, 'terms', doc='List of terms to search for')
+
+    def __init__(self, *phrases, **kwargs):
+        super(PhraseQuery, self).__init__(phrases, **kwargs)
+
+    def validate(self):
+        super(PhraseQuery, self).validate()
+        if not self.terms:
+            raise NoChildrenError('Missing terms')
+
+
+@_with_fields('field')
+class PrefixQuery(_SingleQuery):
+    """
+    Search documents for fields beginning with a certain prefix. This is
+    most useful for type-ahead or lookup queries.
+    """
+    _TERMPROP = 'prefix'
+    prefix = _genprop_str('prefix', doc='The prefix to match')
+
+
+@_with_fields('field')
+class RegexQuery(_SingleQuery):
+    """
+    Search documents for fields matching a given regular expression
+    """
+    _TERMPROP = 'regex'
+    regex = _genprop_str('regexp', doc="Regular expression to use")
+
+
+@_with_fields('field')
+class GeoDistanceQuery(Query):
+    def __init__(self, distance, location, **kwargs):
+        """
+        Search for items within a given radius
+        :param distance: The distance string specifying the radius
+        :param location: A tuple of `(lon, lat)` indicating point of origin
+        """
+        super(GeoDistanceQuery, self).__init__()
+        kwargs['distance'] = distance
+        kwargs['location'] = location
+        _assign_kwargs(self, kwargs)
+
+    location = _genprop(_location_conv, 'location', doc='Location')
+    distance = _genprop_str('distance')
+
+
+@_with_fields('field')
+class GeoBoundingBoxQuery(Query):
+    def __init__(self, top_left, bottom_right, **kwargs):
+        super(GeoBoundingBoxQuery, self).__init__()
+        kwargs['top_left'] = top_left
+        kwargs['bottom_right'] = bottom_right
+        _assign_kwargs(self, kwargs)
+
+    top_left = _genprop(
+        _location_conv, 'top_left',
+        doc='Tuple of `(lat, lon)` for the top left corner of bounding box')
+    bottom_right = _genprop(
+        _location_conv, 'bottom_right',
+        doc='Tuple of `(lat, lon`) for the bottom right corner of bounding box')
+
+
+@_with_fields('field')
+class NumericRangeQuery(_RangeQuery):
+    """
+    Search documents for fields containing a value within a given numerical
+    range.
+
+    At least one of `min` or `max` must be specified.
+    """
+    def __init__(self, min=None, max=None, **kwargs):
+        """
+        :param float min: See :attr:`min`
+        :param float max: See :attr:`max`
+        """
+        super(NumericRangeQuery, self).__init__(min, max, **kwargs)
+
+    min = _genprop(
+        float, 'min', doc='Lower bound of range. See :attr:`min_inclusive`')
+
+    min_inclusive = _genprop(
+        bool, 'inclusive_min',
+        doc='Whether matches are inclusive of lower bound')
+
+    max = _genprop(
+        float, 'max',
+        doc='Upper bound of range. See :attr:`max_inclusive`')
+
+    max_inclusive = _genprop(
+        bool, 'inclusive_max',
+        doc='Whether matches are inclusive of upper bound')
+
+    _MINMAX = 'min', 'max'
+
+
+@_with_fields('field')
+class DateRangeQuery(_RangeQuery):
+    """
+    Search documents for fields containing a value within a given date
+    range.
+
+    The date ranges are parsed according to a given :attr:`datetime_parser`.
+    If no parser is specified, the RFC 3339 parser is used. See
+    `Generating an RFC 3339 Timestamp <http://goo.gl/LIkV7G>_`.
+
+    The :attr:`start` and :attr:`end` parameters should be specified in the
+    constructor. Note that either `start` or `end` (but not both!) may be
+    omitted.
+
+    .. code-block:: python
+
+        DateRangeQuery(start='2014-12-25', end='2016-01-01')
+    """
+    def __init__(self, start=None, end=None, **kwargs):
+        """
+        :param str start: Start of date range
+        :param str end: End of date range
+        :param kwargs: Additional options: :attr:`field`, :attr:`boost`
+        """
+        super(DateRangeQuery, self).__init__(start, end, **kwargs)
+
+    start = _genprop_str('start', doc='Lower bound datetime')
+    end = _genprop_str('end', doc='Upper bound datetime')
+
+    start_inclusive = _genprop(
+        bool, 'inclusive_start', doc='If :attr:`start` is inclusive')
+
+    end_inclusive = _genprop(
+        bool, 'inclusive_end', doc='If :attr:`end` is inclusive')
+
+    datetime_parser = _genprop_str(
+        'datetime_parser',
+        doc="""
+        Parser to use when analyzing the :attr:`start` and :attr:`end` fields
+        on the server.
+
+        If not specified, the RFC 3339 parser is used.
+        Ensure to specify :attr:`start` and :attr:`end` in a format suitable
+        for the given parser.
+        """)
+
+    _MINMAX = 'start', 'end'
+
+
+@_with_fields('field')
+class TermRangeQuery(_RangeQuery):
+    """
+    Search documents for fields containing a value within a given
+    lexical range.
+    """
+    def __init__(self, start=None, end=None, **kwargs):
+        super(TermRangeQuery, self).__init__(start=start, end=end, **kwargs)
+
+    start = _genprop_str('start', doc='Lower range of term')
+
+    end = _genprop_str('end', doc='Upper range of term')
+
+    start_inclusive = _genprop(
+        bool, 'inclusive_start', doc='If :attr:`start` is inclusive')
+
+    end_inclusive = _genprop(
+        bool, 'inclusive_end', doc='If :attr:`end` is inclusive')
+
+    _MINMAX = 'start', 'end'
+
+
+class ConjunctionQuery(_CompoundQuery):
+    """
+    Compound query in which all sub-queries passed must be satisfied
+    """
+    _COMPOUND_FIELDS = ('conjuncts', 'conjuncts'),
+
+    def __init__(self, *queries):
+        super(ConjunctionQuery, self).__init__()
+        self.conjuncts = list(queries)
+
+    def validate(self):
+        super(ConjunctionQuery, self).validate()
+        if not self.conjuncts:
+            raise NoChildrenError('No sub-queries')
+
+
+class DisjunctionQuery(_CompoundQuery):
+    """
+    Compound query in which at least :attr:`min` or more queries must be
+    satisfied
+    """
+    _COMPOUND_FIELDS = ('disjuncts', 'disjuncts'),
+
+    def __init__(self, *queries, **kwargs):
+        super(DisjunctionQuery, self).__init__()
+        _assign_kwargs(self, kwargs)
+        self.disjuncts = list(queries)
+        if 'min' not in self._json_:
+            self.min = 1
+
+    min = _genprop(
+        _convert_gt0, 'min', doc='Number of queries which must be satisfied')
+
+    def validate(self):
+        super(DisjunctionQuery, self).validate()
+        if not self.disjuncts or len(self.disjuncts) < self.min:
+            raise NoChildrenError('No children specified, or min is too big')
+
+
+class BooleanQuery(Query):
+    def __init__(self, must=None, should=None, must_not=None):
+        super(BooleanQuery, self).__init__()
+        self._subqueries = {}
+        self.must = must
+        self.should = should
+        self.must_not = must_not
+
+    must = _bprop_wrap(
+        'must', ConjunctionQuery,
+        """
+        Queries which must be satisfied. When setting this attribute, the
+        SDK will convert value to a :class:`ConjunctionQuery` if the value
+        is a list of queries.
+        """)
+
+    must_not = _bprop_wrap(
+        'must_not', DisjunctionQuery,
+        """
+        Queries which must not be satisfied. Documents found which satisfy
+        the queries in this clause are not returned in the match.
+
+        When setting this attribute in the SDK, it will be converted to a
+        :class:`DisjunctionQuery` if the value is a list of queries.
+        """)
+
+    should = _bprop_wrap(
+        'should', DisjunctionQuery,
+        """
+        Specify additional queries which should be satisfied. As opposed to
+        :attr:`must`, you can specify the number of queries in this field
+        which must be satisfied.
+
+        The type of this attribute is :class:`DisjunctionQuery`, and you can
+        set the minimum number of queries to satisfy using::
+
+            boolquery.should.min = 1
+        """)
+
+    @property
+    def encodable(self):
+        # Overrides the default `encodable` implementation in order to
+        # serialize any sub-queries
+        for src, tgt in ((self.must, 'must'),
+                         (self.must_not, 'must_not'),
+                         (self.should, 'should')):
+            if src:
+                self._json_[tgt] = src.encodable
+        return super(BooleanQuery, self).encodable
+
+    def validate(self):
+        super(BooleanQuery, self).validate()
+        if not self.must and not self.must_not and not self.should:
+            raise ValueError('No sub-queries specified', self)
+
+
+class MatchAllQuery(Query):
+    """
+    Special query which matches all documents
+    """
+    def __init__(self, **kwargs):
+        super(MatchAllQuery, self).__init__()
+        self._json_['match_all'] = None
+        _assign_kwargs(self, kwargs)
+
+
+class MatchNoneQuery(Query):
+    """
+    Special query which matches no documents
+    """
+    def __init__(self, **kwargs):
+        super(MatchNoneQuery, self).__init__()
+        self._json_['match_none'] = None
+        _assign_kwargs(self, kwargs)
+
+
+@_with_fields('field')
+class BooleanFieldQuery(_SingleQuery):
+    _TERMPROP = 'bool'
+    bool = _genprop(bool, 'bool', doc='Boolean value to search for')
+
+
+def make_search_body(index, query, params=None):
+    """
+    Generates a dictionary suitable for encoding as the search body
+    :param index: The index name to query
+    :param query: The query itself
+    :param params: Modifiers for the query
+    :type params: :class:`couchbase_core.fulltext.Params`
+    :return: A dictionary suitable for serialization
+    """
+    dd = {}
+
+    if not isinstance(query, Query):
+        query = QueryStringQuery(query)
+
+    dd['query'] = query.encodable
+    if params:
+        dd.update(params.as_encodable(index))
+    dd['indexName'] = index
+    return dd
+
+
+RegexpQuery = RegexQuery

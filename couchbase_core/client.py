@@ -3,6 +3,7 @@ import json
 from couchbase_core._libcouchbase import Collection as _Base, FMT_JSON
 
 import couchbase_core.exceptions as E
+import fulltext
 from couchbase_core.analytics import AnalyticsQuery
 from couchbase_core.exceptions import NotImplementedInV3
 from couchbase_core.n1ql import N1QLQuery, N1QLRequest
@@ -974,7 +975,7 @@ class Client(_Base):
         itercls = kwargs.pop('itercls', _SEARCH.SearchRequest)
         iterargs = itercls.mk_kwargs(kwargs)
         params = kwargs.pop('params', _SEARCH.Params(**kwargs))
-        body = _SEARCH.make_search_body(index, query, params)
+        body = fulltext.make_search_body(index, query, params)
         return itercls(body, self, **iterargs)
 
     @overload

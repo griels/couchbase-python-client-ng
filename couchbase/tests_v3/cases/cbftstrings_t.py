@@ -1,14 +1,15 @@
 from __future__ import print_function
 
+import fulltext
 from couchbase_tests.base import CouchbaseTestCase
-import couchbase_core.fulltext as cbft
-from couchbase_v2.mutation_state import MutationState
+import couchbase.fulltext as cbft
+from couchbase_core.mutation_state import MutationState
 
 
 class SearchStringsTest(CouchbaseTestCase):
     def test_fuzzy(self):
-        q = cbft.TermQuery('someterm', field='field', boost=1.5,
-                           prefix_length=23, fuzziness=12)
+        q = fulltext.TermQuery('someterm', field='field', boost=1.5,
+                               prefix_length=23, fuzziness=12)
         p = cbft.Params(explain=True)
 
         exp_json = {
@@ -23,7 +24,7 @@ class SearchStringsTest(CouchbaseTestCase):
             'explain': True
         }
 
-        self.assertEqual(exp_json, cbft.make_search_body('someIndex', q, p))
+        self.assertEqual(exp_json, fulltext.make_search_body('someIndex', q, p))
 
     def test_match_phrase(self):
         exp_json = {
@@ -38,9 +39,9 @@ class SearchStringsTest(CouchbaseTestCase):
         }
 
         p = cbft.Params(limit=10)
-        q = cbft.MatchPhraseQuery('salty beers', boost=1.5, analyzer='analyzer',
-                                  field='field')
-        self.assertEqual(exp_json, cbft.make_search_body('ix', q, p))
+        q = fulltext.MatchPhraseQuery('salty beers', boost=1.5, analyzer='analyzer',
+                                      field='field')
+        self.assertEqual(exp_json, fulltext.make_search_body('ix', q, p))
 
     def test_match_query(self):
         exp_json = {
@@ -56,10 +57,10 @@ class SearchStringsTest(CouchbaseTestCase):
             'indexName': 'ix'
         }
 
-        q = cbft.MatchQuery('salty beers', boost=1.5, analyzer='analyzer',
-                            field='field', fuzziness=1234, prefix_length=4)
+        q = fulltext.MatchQuery('salty beers', boost=1.5, analyzer='analyzer',
+                                field='field', fuzziness=1234, prefix_length=4)
         p = cbft.Params(limit=10)
-        self.assertEqual(exp_json, cbft.make_search_body('ix', q, p))
+        self.assertEqual(exp_json, fulltext.make_search_body('ix', q, p))
 
     def test_string_query(self):
         exp_json = {
@@ -71,9 +72,9 @@ class SearchStringsTest(CouchbaseTestCase):
             'size': 10,
             'indexName': 'ix'
         }
-        q = cbft.QueryStringQuery('q*ry', boost=2.0)
+        q = fulltext.QueryStringQuery('q*ry', boost=2.0)
         p = cbft.Params(limit=10, explain=True)
-        self.assertEqual(exp_json, cbft.make_search_body('ix', q, p))
+        self.assertEqual(exp_json, fulltext.make_search_body('ix', q, p))
 
     def test_params(self):
         self.assertEqual({}, cbft.Params().as_encodable('ix'))
@@ -168,18 +169,18 @@ class SearchStringsTest(CouchbaseTestCase):
         self.assertEqual({'foo': 'bar'}, qq.encodable)
 
     def test_wildcard_query(self):
-        qq = cbft.WildcardQuery('f*o', field='wc')
+        qq = fulltext.WildcardQuery('f*o', field='wc')
         self.assertEqual({'wildcard': 'f*o', 'field': 'wc'}, qq.encodable)
 
     def test_docid_query(self):
-        qq = cbft.DocIdQuery([])
+        qq = fulltext.DocIdQuery([])
         self.assertRaises(cbft.NoChildrenError, getattr, qq, 'encodable')
         qq.ids = ['foo', 'bar', 'baz']
         self.assertEqual({'ids': ['foo', 'bar', 'baz']}, qq.encodable)
 
     def test_boolean_query(self):
-        prefix_q = cbft.PrefixQuery('someterm', boost=2)
-        bool_q = cbft.BooleanQuery(
+        prefix_q = fulltext.PrefixQuery('someterm', boost=2)
+        bool_q = fulltext.BooleanQuery(
             must=prefix_q, must_not=prefix_q, should=prefix_q)
         exp = {'prefix': 'someterm', 'boost': 2.0}
         self.assertEqual({'conjuncts': [exp]},
@@ -190,9 +191,9 @@ class SearchStringsTest(CouchbaseTestCase):
                          bool_q.must_not.encodable)
 
         # Test multiple criteria in must and must_not
-        pq_1 = cbft.PrefixQuery('someterm', boost=2)
-        pq_2 = cbft.PrefixQuery('otherterm')
-        bool_q = cbft.BooleanQuery(must=[pq_1, pq_2])
+        pq_1 = fulltext.PrefixQuery('someterm', boost=2)
+        pq_2 = fulltext.PrefixQuery('otherterm')
+        bool_q = fulltext.BooleanQuery(must=[pq_1, pq_2])
         exp = {
             'conjuncts': [
                 {'prefix': 'someterm', 'boost': 2.0},
@@ -202,33 +203,33 @@ class SearchStringsTest(CouchbaseTestCase):
         self.assertEqual({'must': exp}, bool_q.encodable)
 
     def test_daterange_query(self):
-        self.assertRaises(TypeError, cbft.DateRangeQuery)
-        dr = cbft.DateRangeQuery(end='theEnd')
+        self.assertRaises(TypeError, fulltext.DateRangeQuery)
+        dr = fulltext.DateRangeQuery(end='theEnd')
         self.assertEqual({'end': 'theEnd'}, dr.encodable)
-        dr = cbft.DateRangeQuery(start='theStart')
+        dr = fulltext.DateRangeQuery(start='theStart')
         self.assertEqual({'start': 'theStart'}, dr.encodable)
-        dr = cbft.DateRangeQuery(start='theStart', end='theEnd')
+        dr = fulltext.DateRangeQuery(start='theStart', end='theEnd')
         self.assertEqual({'start': 'theStart', 'end': 'theEnd'}, dr.encodable)
-        dr = cbft.DateRangeQuery('', '')  # Empty strings should be ok
+        dr = fulltext.DateRangeQuery('', '')  # Empty strings should be ok
         self.assertEqual({'start': '', 'end': ''}, dr.encodable)
 
     def test_numrange_query(self):
-        self.assertRaises(TypeError, cbft.NumericRangeQuery)
-        nr = cbft.NumericRangeQuery(0, 0)  # Should be OK
+        self.assertRaises(TypeError, fulltext.NumericRangeQuery)
+        nr = fulltext.NumericRangeQuery(0, 0)  # Should be OK
         self.assertEqual({'min': 0, 'max': 0}, nr.encodable)
-        nr = cbft.NumericRangeQuery(0.1, 0.9)
+        nr = fulltext.NumericRangeQuery(0.1, 0.9)
         self.assertEqual({'min': 0.1, 'max': 0.9}, nr.encodable)
-        nr = cbft.NumericRangeQuery(max=0.9)
+        nr = fulltext.NumericRangeQuery(max=0.9)
         self.assertEqual({'max': 0.9}, nr.encodable)
-        nr = cbft.NumericRangeQuery(min=0.1)
+        nr = fulltext.NumericRangeQuery(min=0.1)
         self.assertEqual({'min': 0.1}, nr.encodable)
 
     def test_disjunction_query(self):
-        dq = cbft.DisjunctionQuery()
+        dq = fulltext.DisjunctionQuery()
         self.assertEqual(1, dq.min)
         self.assertRaises(cbft.NoChildrenError, getattr, dq, 'encodable')
 
-        dq.disjuncts.append(cbft.PrefixQuery('somePrefix'))
+        dq.disjuncts.append(fulltext.PrefixQuery('somePrefix'))
         self.assertEqual({'min': 1, 'disjuncts': [{'prefix': 'somePrefix'}]},
                          dq.encodable)
         self.assertRaises(ValueError, setattr, dq, 'min', 0)
@@ -236,35 +237,35 @@ class SearchStringsTest(CouchbaseTestCase):
         self.assertRaises(cbft.NoChildrenError, getattr, dq, 'encodable')
 
     def test_conjunction_query(self):
-        cq = cbft.ConjunctionQuery()
+        cq = fulltext.ConjunctionQuery()
         self.assertRaises(cbft.NoChildrenError, getattr, cq, 'encodable')
-        cq.conjuncts.append(cbft.PrefixQuery('somePrefix'))
+        cq.conjuncts.append(fulltext.PrefixQuery('somePrefix'))
         self.assertEqual({'conjuncts': [{'prefix': 'somePrefix'}]},
                          cq.encodable)
 
     def test_match_all_none_queries(self):
-        self.assertEqual({'match_all': None}, cbft.MatchAllQuery().encodable)
-        self.assertEqual({'match_none': None}, cbft.MatchNoneQuery().encodable)
+        self.assertEqual({'match_all': None}, fulltext.MatchAllQuery().encodable)
+        self.assertEqual({'match_none': None}, fulltext.MatchNoneQuery().encodable)
 
     def test_phrase_query(self):
-        pq = cbft.PhraseQuery('salty', 'beers')
+        pq = fulltext.PhraseQuery('salty', 'beers')
         self.assertEqual({'terms': ['salty', 'beers']}, pq.encodable)
 
-        pq = cbft.PhraseQuery()
+        pq = fulltext.PhraseQuery()
         self.assertRaises(cbft.NoChildrenError, getattr, pq, 'encodable')
         pq.terms.append('salty')
         self.assertEqual({'terms': ['salty']}, pq.encodable)
 
     def test_prefix_query(self):
-        pq = cbft.PrefixQuery('someterm', boost=1.5)
+        pq = fulltext.PrefixQuery('someterm', boost=1.5)
         self.assertEqual({'prefix': 'someterm', 'boost': 1.5}, pq.encodable)
 
     def test_regexp_query(self):
-        pq = cbft.RegexQuery('some?regex')
+        pq = fulltext.RegexQuery('some?regex')
         self.assertEqual({'regexp': 'some?regex'}, pq.encodable)
 
     def test_booleanfield_query(self):
-        bq = cbft.BooleanFieldQuery(True)
+        bq = fulltext.BooleanFieldQuery(True)
         self.assertEqual({'bool': True}, bq.encodable)
 
     def test_consistency(self):
@@ -279,7 +280,7 @@ class SearchStringsTest(CouchbaseTestCase):
 
         params = cbft.Params()
         params.consistent_with(ms)
-        got = cbft.make_search_body('ix', cbft.MatchNoneQuery(), params)
+        got = fulltext.make_search_body('ix', fulltext.MatchNoneQuery(), params)
         exp = {
             'indexName': ixname,
             'query': {
