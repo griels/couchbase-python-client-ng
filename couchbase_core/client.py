@@ -3,6 +3,7 @@ import json
 from couchbase_core._libcouchbase import Bucket as _Base
 
 import couchbase_core.exceptions as E
+import couchbase.search as search
 from couchbase_core.analytics import AnalyticsQuery
 from couchbase_core.exceptions import NotImplementedInV3
 from couchbase_core.n1ql import N1QLQuery, N1QLRequest
@@ -11,7 +12,7 @@ from .views.params import make_options_string, make_dvpath
 import couchbase_core._libcouchbase as _LCB
 from couchbase_core._libcouchbase import FMT_JSON, FMT_BYTES
 
-from couchbase_core import priv_constants as _P, fulltext as _SEARCH, _depr, subdocument as SD, exceptions
+from couchbase_core import priv_constants as _P, _depr, subdocument as SD
 import couchbase_core.analytics
 from typing import *
 from .durability import Durability
@@ -658,37 +659,6 @@ class Client(_Base):
             query.update(*args, **kwargs)
 
         return couchbase_core.analytics.gen_request(query, None, self)
-
-    def search(self, index, query, **kwargs):
-        """
-        Perform full-text searches
-
-        .. versionadded:: 2.0.9
-
-        .. warning::
-
-            The full-text search API is experimental and subject to change
-
-        :param str index: Name of the index to query
-        :param couchbase_core.fulltext.SearchQuery query: Query to issue
-        :param couchbase_core.fulltext.Params params: Additional query options
-        :return: An iterator over query hits
-
-        .. note:: You can avoid instantiating an explicit `Params` object
-            and instead pass the parameters directly to the `search` method.
-
-        .. code-block:: python
-
-            it = cb.search('name', ft.MatchQuery('nosql'), limit=10)
-            for hit in it:
-                print(hit)
-
-        """
-        itercls = kwargs.pop('itercls', _SEARCH.SearchRequest)
-        iterargs = itercls.mk_kwargs(kwargs)
-        params = kwargs.pop('params', _SEARCH.Params(**kwargs))
-        body = _SEARCH.make_search_body(index, query, params)
-        return itercls(body, self, **iterargs)
 
     @overload
     def upsert_multi(self,  # type: Client

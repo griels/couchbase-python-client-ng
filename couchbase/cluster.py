@@ -4,6 +4,7 @@ except:
     pass
 from couchbase.management.admin import Admin
 
+import couchbase.search as search
 from couchbase_core.mutation_state import MutationState
 from couchbase_core.asynchronous import AsyncClientFactory
 from couchbase.management.queries import QueryIndexManager
@@ -12,8 +13,8 @@ from couchbase.management.analytics import AnalyticsIndexManager
 from couchbase.analytics import AnalyticsOptions
 from .management.users import UserManager
 from .management.buckets import BucketManager
-from couchbase.diagnostics import DiagnosticsResult
-from couchbase.fulltext import SearchResult, SearchOptions
+from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics
+from couchbase.search import SearchResult, SearchOptions
 from .analytics import AnalyticsResult
 from .n1ql import QueryResult
 from couchbase_core.n1ql import N1QLQuery
@@ -402,6 +403,37 @@ class Cluster(CoreClient):
                                                         AnalyticsException,
                                                         opt.to_analytics_query(statement, *opts, **kwargs)))
 
+    def _search(self, index, query, **kwargs):
+        """
+        Perform full-text searches
+
+        .. versionadded:: 2.0.9
+
+        .. warning::
+
+            The full-text search API is experimental and subject to change
+
+        :param str index: Name of the index to query
+        :param couchbase_core.fulltext.SearchQuery query: Query to issue
+        :param search.Params params: Additional query options
+        :return: An iterator over query hits
+
+        .. note:: You can avoid instantiating an explicit `Params` object
+            and instead pass the parameters directly to the `search` method.
+
+        .. code-block:: python
+
+            it = cb.search('name', ft.MatchQuery('nosql'), limit=10)
+            for hit in it:
+                print(hit)
+
+        """
+        itercls = kwargs.pop('itercls', search.SearchRequest)
+        iterargs = itercls.mk_kwargs(kwargs)
+        params = kwargs.pop('params', search.Params(**kwargs))
+        body = search.make_search_body(index, query, params)
+        return itercls(body, self, **iterargs)
+
     def search_query(self,
                      index,     # type: str
                      query,     # type: couchbase_core.Query
@@ -422,9 +454,7 @@ class Cluster(CoreClient):
 
         """
         self._check_for_shutdown()
-        final_args=forward_args(kwargs, *options)
-        final_args['itercls']=final_args.get('itercls',SearchResult)
-        return self._operate_on_cluster(CoreClient.search, SearchException, index, query, **final_args )
+        return SearchResult(self._operate_on_cluster(Cluster._search, SearchException, index, query, **forward_args(kwargs, *options)))
 
     _root_diag_data = {'id', 'version', 'sdk'}
 
