@@ -46,7 +46,7 @@ def gen_base(basecls,  # type: Type[T]
             if hasattr(obj, '_async_shutdown'):
                 self.addCleanup(obj._async_shutdown)
 
-        def make_connection(self,  # type: ConnectionTestCase
+        def make_connection(self,  # type: _TxTestCase
                             **kwargs):
             # type: (...) -> Factory
             ret = super(_TxTestCase, self).make_connection(**kwargs)
@@ -56,7 +56,7 @@ def gen_base(basecls,  # type: Type[T]
         def checkCbRefcount(self):
             pass
 
-        def gen_collection(self,  # type: ConnectionTestCase
+        def gen_collection(self,  # type: _TxTestCase
                            *args, **kwargs):
             try:
                 if args:

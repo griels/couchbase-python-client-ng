@@ -209,8 +209,6 @@ class QueryOptions(OptionBlockTimeOut):
 
 
 class Cluster(CoreClient):
-    clusterbucket = None  # type: CoreClient
-
     class ClusterOptions(OptionBlock):
         def __init__(self,
                      authenticator,  # type: CoreAuthenticator
@@ -223,6 +221,8 @@ class Cluster(CoreClient):
                  connection_string,  # type: str
                  *options,           # type: ClusterOptions
                  bucket_factory=Bucket,  # type: Any
+                 _flags=None,            # type: Any
+                 _iops=None,             # type: Any
                  **kwargs            # type: Any
                  ):
         """
@@ -241,13 +241,14 @@ class Cluster(CoreClient):
 
 
         def corecluster_bucket_factory(connstr, bname=None, **kwargs):
-            return bucket_factory(connstr, name=bname, admin=self._admin, **kwargs)
+            return bucket_factory(connection_string=connstr, name=bname, admin=self._admin, **kwargs)
         cluster_opts.update(
             bucket_factory=corecluster_bucket_factory)
-        self._cluster = CoreCluster(connection_string, **cluster_opts)  # type: CoreCluster
-        self._authenticate(authenticator)
-        super(Cluster,self).__init__(str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
-        self._clusterclient = None#super(Cluster,self)
+
+        #self._cluster = CoreCluster(connection_string, **cluster_opts)  # type: CoreCluster
+        #self._authenticate(authenticator)
+        super(Cluster,self).__init__(connection_string=str(self.connstr), _flags=_flags, _iops=_iops,_conntype=_LCB.LCB_TYPE_CLUSTER)#, **self._clusteropts)
+        #self._clusterclient = None#super(Cluster,self)
 
     @staticmethod
     def connect(connection_string,  # type: str
@@ -276,8 +277,11 @@ class Cluster(CoreClient):
         credentials = authenticator.get_credentials()
         self._clusteropts = credentials.get('options', {})
         self._clusteropts['bucket'] = "default"
-        auth = credentials.get('options')
-        self._admin = Admin(auth.get('username'), auth.get('password'), connstr=str(self.connstr))
+        #auth = credentials.get('options')
+        #self._admin = Admin(auth.get('username'), auth.get('password'), connstr=str(self.connstr))
+    @property
+    def _admin(self):
+        return self
 
     # TODO: There should be no reason for these kwargs.  However, our tests against the mock
     # will all fail with auth errors without it...  So keeping it just for now, but lets fix it
