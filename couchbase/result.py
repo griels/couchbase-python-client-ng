@@ -6,7 +6,8 @@ from couchbase_core._libcouchbase import Result as CoreResult
 from couchbase_core.result import MultiResult, SubdocResult
 from typing import *
 from boltons.funcutils import wraps
-from couchbase_core import abstractmethod, IterableWrapper
+from couchbase_core import abstractmethod
+from couchbase.iterables import IterableWrapper
 from couchbase_core.result import AsyncResult
 from couchbase_core._pyport import Protocol
 from couchbase_core.views.iterator import View as CoreView, View

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from couchbase_core import IterableWrapper
+from couchbase.iterables import IterableWrapper
 
 try:
     from abc import abstractmethod

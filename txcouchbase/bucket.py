@@ -21,17 +21,15 @@ This file contains the twisted-specific bits for the Couchbase client.
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
-from couchbase_core.asynchronous.rowsbase import AsyncRowsBase
 from couchbase_v2.asynchronous.bucket import AsyncBucket as V2AsyncBucket
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
-from couchbase_core.asynchronous.fulltext import AsyncSearchRequest
+from couchbase.asynchronous.search import AsyncSearchRequest
 from couchbase_core.asynchronous.events import EventQueue
 from couchbase_core.exceptions import CouchbaseError
 from txcouchbase.iops import v0Iops
-from couchbase.bucket import Bucket as V3SyncBucket, ViewResult
+from couchbase.bucket import ViewResult
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
-from couchbase_core.views.iterator import View
 from couchbase_core.client import Client as CoreClient
 from couchbase.cluster import Cluster as V3SyncCluster
 from typing import *
@@ -556,7 +554,7 @@ class TxClientFactory(object):
 V2Bucket = TxClientFactory.gen_client(RawV2Bucket)
 TxCollection = TxClientFactory.gen_client(RawCollection)
 
-from couchbase.bucket import AsyncBucket as V3AsyncBucket, ViewResult, ViewResult
+from couchbase.bucket import AsyncBucket as V3AsyncBucket, ViewResult
 
 RawTxBucket = TxRawClientFactory.gen_raw(V3AsyncBucket)
 

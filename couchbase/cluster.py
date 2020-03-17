@@ -1,5 +1,7 @@
 import asyncio
 from typing import *
+
+import couchbase.search as search
 from couchbase_core.mutation_state import MutationState
 
 from couchbase.management.queries import QueryIndexManager
@@ -11,7 +13,7 @@ from .management.users import UserManager
 from .management.buckets import BucketManager
 from couchbase.management.admin import Admin
 from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics
-from couchbase.fulltext import SearchResult, SearchOptions
+from couchbase.search import SearchResult, SearchOptions
 from .analytics import AnalyticsResult
 from .n1ql import QueryResult
 from couchbase_core.n1ql import N1QLQuery
@@ -402,6 +404,37 @@ class Cluster(object):
                                                         AnalyticsException,
                                                         opt.to_analytics_query(statement, *opts, **kwargs)))
 
+    def _search(self, index, query, **kwargs):
+        """
+        Perform full-text searches
+
+        .. versionadded:: 2.0.9
+
+        .. warning::
+
+            The full-text search API is experimental and subject to change
+
+        :param str index: Name of the index to query
+        :param couchbase_core.fulltext.SearchQuery query: Query to issue
+        :param search.Params params: Additional query options
+        :return: An iterator over query hits
+
+        .. note:: You can avoid instantiating an explicit `Params` object
+            and instead pass the parameters directly to the `search` method.
+
+        .. code-block:: python
+
+            it = cb.search('name', ft.MatchQuery('nosql'), limit=10)
+            for hit in it:
+                print(hit)
+
+        """
+        itercls = kwargs.pop('itercls', search.SearchRequest)
+        iterargs = itercls.mk_kwargs(kwargs)
+        params = kwargs.pop('params', search.Params(**kwargs))
+        body = search.make_search_body(index, query, params)
+        return itercls(body, self, **iterargs)
+
     def search_query(self,
                      index,     # type: str
                      query,     # type: couchbase_core.Query
@@ -422,7 +455,7 @@ class Cluster(object):
 
         """
         self._check_for_shutdown()
-        return SearchResult(self._operate_on_cluster(CoreClient.search, SearchException, index, query, **forward_args(kwargs, *options)))
+        return SearchResult(self._operate_on_cluster(Cluster._search, SearchException, index, query, **forward_args(kwargs, *options)))
 
     _root_diag_data = {'id', 'version', 'sdk'}
 
