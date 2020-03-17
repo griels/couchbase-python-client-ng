@@ -235,8 +235,8 @@ class Cluster(CoreClient):
         """
         self.connstr = connection_string
         cluster_opts = forward_args(kwargs, *options)  # type: Dict[str,Any]
-        authenticator = cluster_opts.pop('authenticator', None)
-        if not authenticator:
+        self._authenticator = cluster_opts.pop('authenticator', None)
+        if not self._authenticator:
             raise ArgumentError("Authenticator is mandatory")
 
 
@@ -245,10 +245,14 @@ class Cluster(CoreClient):
         cluster_opts.update(
             bucket_factory=corecluster_bucket_factory)
 
-        #self._cluster = CoreCluster(connection_string, **cluster_opts)  # type: CoreCluster
-        #self._authenticate(authenticator)
+        self.__cluster=None
         super(Cluster,self).__init__(connection_string=str(self.connstr), _flags=_flags, _iops=_iops,_conntype=_LCB.LCB_TYPE_CLUSTER)#, **self._clusteropts)
         #self._clusterclient = None#super(Cluster,self)
+
+    @property
+    def _cluster(self):
+        self.__cluster = CoreCluster(connection_string=self.connstr, **self._clusteropts)  # type: CoreCluster
+        self._authenticate(self._authenticator)
 
     @staticmethod
     def connect(connection_string,  # type: str
