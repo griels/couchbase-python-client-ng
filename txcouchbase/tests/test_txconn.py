@@ -36,14 +36,14 @@ class BasicConnectionTest(Base):
 
     def testConnectionSuccess(self):
         cb = self.make_connection()
-        d = cb.connect()
+        d = cb.on_connect()
         d.addCallback(lambda x: self.assertTrue(cb.connected))
         return d
 
     def testConnectionFailure(self  # type: Base
                               ):
         cb = self.make_connection(bucket='blahblah')
-        d = cb.connect()
+        d = cb.on_connect()
         d.addCallback(lambda x: x, cb)
         return self.assertFailure(d, BucketNotFoundError)
 
@@ -66,7 +66,7 @@ class BasicConnectionTest(Base):
         cs = ConnectionString.parse(self.make_connargs()['connection_string'])
         cs.hosts = [ info.host + ':' + '10', info.host + ':' + str(info.port) ]
         cb = self.make_connection(connection_string=cs.encode())
-        d = cb.connect()
+        d = cb.on_connect()
         d.addCallback(lambda x: self.assertTrue(cb.connected))
         return d
 
@@ -74,12 +74,12 @@ class BasicConnectionTest(Base):
         info = self.cluster_info
         s = self.make_connargs()['connection_string']
         cb = TxBucket(s)
-        d = cb.connect().addCallback(lambda x: self.assertTrue(cb.connected))
+        d = cb.on_connect().addCallback(lambda x: self.assertTrue(cb.connected))
         self.register_cleanup(cb)
         return d
 
     def testConnectionDestroyed(self):
         cb = self.make_connection()
-        d = cb.connect()
+        d = cb.on_connect()
         self.assertFailure(d, ObjectDestroyedError)
         return d

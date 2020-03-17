@@ -1,7 +1,7 @@
 import asyncio
 from typing import *
 from couchbase_core.mutation_state import MutationState
-
+from couchbase_core.asynchronous import AsyncClientFactory
 from couchbase.management.queries import QueryIndexManager
 from couchbase.management.search import SearchIndexManager
 from couchbase.management.analytics import AnalyticsIndexManager
@@ -24,6 +24,7 @@ from couchbase_core._pyport import raise_from
 from couchbase.options import OptionBlockTimeOut
 from datetime import timedelta
 from couchbase.exceptions import AlreadyShutdownException
+from couchbase_core.cluster import *
 
 T = TypeVar('T')
 
@@ -207,9 +208,7 @@ class QueryOptions(OptionBlockTimeOut):
         return self
 
 
-class Cluster(object):
-    clusterbucket = None  # type: CoreClient
-
+class Cluster(CoreClient):
     class ClusterOptions(OptionBlock):
         def __init__(self,
                      authenticator,  # type: CoreAuthenticator
@@ -222,6 +221,8 @@ class Cluster(object):
                  connection_string,  # type: str
                  *options,           # type: ClusterOptions
                  bucket_factory=Bucket,  # type: Any
+                 _flags=None,            # type: Any
+                 _iops=None,             # type: Any
                  **kwargs            # type: Any
                  ):
         """
@@ -234,17 +235,24 @@ class Cluster(object):
         """
         self.connstr = connection_string
         cluster_opts = forward_args(kwargs, *options)  # type: Dict[str,Any]
-        authenticator = cluster_opts.pop('authenticator', None)
-        if not authenticator:
+        self._authenticator = cluster_opts.pop('authenticator', None)
+        if not self._authenticator:
             raise ArgumentError("Authenticator is mandatory")
-        bucket_factory = cluster_opts.pop('bucket_factory', Bucket)  # type: Bucket
+
 
         def corecluster_bucket_factory(connstr, bname=None, **kwargs):
-            return bucket_factory(connstr, name=bname, admin=self._admin, **kwargs)
-        cluster_opts.update(
-            bucket_factory=corecluster_bucket_factory)
-        self._cluster = CoreCluster(connection_string, **cluster_opts)  # type: CoreCluster
-        self._authenticate(authenticator)
+            return bucket_factory(connection_string=connstr, name=bname, admin=None, **kwargs)
+        self.__admin = None
+
+        self._cluster = CoreCluster(connection_string, bucket_factory=corecluster_bucket_factory)  # type: CoreCluster
+        self._authenticate(self._authenticator)
+        super(Cluster,self).__init__(connection_string=str(self.connstr), _flags=_flags, _iops=_iops,_conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
+
+    def _do_ctor_connect(self, *args, **kwargs):
+        """This should be overidden by subclasses which want to use a
+        different sort of connection behavior
+        """
+        self._connect()
 
     @staticmethod
     def connect(connection_string,  # type: str
@@ -273,9 +281,13 @@ class Cluster(object):
         credentials = authenticator.get_credentials()
         self._clusteropts = credentials.get('options', {})
         self._clusteropts['bucket'] = "default"
-        self._clusterclient = None
-        auth = credentials.get('options')
-        self._admin = Admin(auth.get('username'), auth.get('password'), connstr=str(self.connstr))
+        self._admin_auth = credentials.get('options')
+
+    @property
+    def _admin(self):
+        if not self.__admin:
+            self.__admin = Admin(self._admin_auth.get('username'), self._admin_auth.get('password'), connstr=str(self.connstr))
+        return self._admin
 
     # TODO: There should be no reason for these kwargs.  However, our tests against the mock
     # will all fail with auth errors without it...  So keeping it just for now, but lets fix it
@@ -323,8 +335,9 @@ class Cluster(object):
 
     def _get_clusterclient(self):
         if not self._clusterclient:
-            self._clusterclient = CoreClient(str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
-        return self._clusterclient
+            CoreClient._connect(self)
+            self._clusterclient = True
+        return self
 
     def _operate_on_cluster(self,
                             verb,
@@ -759,5 +772,8 @@ class Cluster(object):
         """
         mode = self._get_clusterclient()._cntl(op=_LCB.LCB_CNTL_SSL_MODE, value_type='int')
         return mode & _LCB.LCB_SSL_ENABLED != 0
+
+
+AsyncCluster = AsyncClientFactory.gen_async_client(Cluster)
 
 ClusterOptions = Cluster.ClusterOptions
