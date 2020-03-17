@@ -241,14 +241,12 @@ class Cluster(CoreClient):
 
 
         def corecluster_bucket_factory(connstr, bname=None, **kwargs):
-            return bucket_factory(connection_string=connstr, name=bname, admin=self._admin, **kwargs)
-        cluster_opts.update(
-            bucket_factory=corecluster_bucket_factory)
-        self._cluster = CoreCluster(connection_string, **cluster_opts)  # type: CoreCluster
+            return bucket_factory(connection_string=connstr, name=bname, admin=None, **kwargs)
+        self.__admin = None
+
+        self._cluster = CoreCluster(connection_string, bucket_factory=corecluster_bucket_factory)  # type: CoreCluster
         self._authenticate(self._authenticator)
-        self._cluster =None
         super(Cluster,self).__init__(connection_string=str(self.connstr), _flags=_flags, _iops=_iops,_conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
-        self._clusterclient = None#super(Cluster,self)
 
     def _do_ctor_connect(self, *args, **kwargs):
         """This should be overidden by subclasses which want to use a
@@ -283,11 +281,13 @@ class Cluster(CoreClient):
         credentials = authenticator.get_credentials()
         self._clusteropts = credentials.get('options', {})
         self._clusteropts['bucket'] = "default"
-        auth = credentials.get('options')
+        self._admin_auth = credentials.get('options')
 
     @property
     def _admin(self):
-        return self#self._admin = Admin(auth.get('username'), auth.get('password'), connstr=str(self.connstr))
+        if not self.__admin:
+            self.__admin = Admin(self._admin_auth.get('username'), self._admin_auth.get('password'), connstr=str(self.connstr))
+        return self._admin
 
     # TODO: There should be no reason for these kwargs.  However, our tests against the mock
     # will all fail with auth errors without it...  So keeping it just for now, but lets fix it
