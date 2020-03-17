@@ -840,8 +840,6 @@ class ClusterTestCase(CouchbaseTestCase):
         return "durableWritd" in info['bucketCapabilities']
 
 
-ParamClusterTestCase = parameterized_class(('cluster_factory',), [(Cluster,), (Cluster.connect,)])(ClusterTestCase)
-
 
 def skip_if_no_collections(func):
     @wraps(func)
