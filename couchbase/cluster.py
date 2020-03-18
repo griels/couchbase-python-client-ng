@@ -7,7 +7,6 @@ from couchbase.management.analytics import AnalyticsIndexManager
 from couchbase.analytics import AnalyticsOptions
 from .management.users import UserManager
 from .management.buckets import BucketManager
-from couchbase.management.admin import Admin
 from couchbase.diagnostics import DiagnosticsResult
 from couchbase.fulltext import SearchResult, SearchOptions
 from .analytics import AnalyticsResult
@@ -284,7 +283,7 @@ class Cluster(CoreClient):
         # type: (...) -> Bucket
         self._check_for_shutdown()
         kwargs['bucket'] = name
-        kwargs['admin'] = self._admin
+        #kwargs['admin'] = self._admin
         return self._cluster.open_bucket(name, **kwargs)
 
     def query(self,
