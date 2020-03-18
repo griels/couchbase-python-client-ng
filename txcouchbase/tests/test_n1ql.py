@@ -17,6 +17,7 @@
 from twisted.internet import defer
 
 from txcouchbase.bucket import BatchedN1QLRequest, TxCluster
+from couchbase.cluster import ClusterOptions, PasswordAuthenticator, ClassicAuthenticator, ConnectionString
 from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
 
 from couchbase_tests.base import MockTestCase
@@ -46,26 +47,25 @@ class RowsHandler(AsyncN1QLRequest):
         self.deferred.errback(ex)
 
 
-Base = gen_base(MockTestCase)
-
-from couchbase_core.cluster import ClassicAuthenticator
-from couchbase.cluster import ClusterOptions
-from couchbase_core.connstr import ConnectionString
-
+Base = gen_base(MockTestCase)  # type: MockTestCase
 class TxN1QLTests(Base):
-    @property
-    def factory(self):
-        return self.gen_cluster
 
-    def gen_cluster(self,  # type: MockTestCase
-                    *args, **kwargs):
-        args=list(args)
-        connstr = args.pop(0) if args else kwargs.pop('connection_string')
-        connstr_nobucket=ConnectionString.parse(connstr)
-        bucket=connstr_nobucket.bucket
-        connstr_nobucket.bucket=None
-        base_cluster= TxCluster(str(connstr_nobucket), ClusterOptions(ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password)), **kwargs)
-        return base_cluster.bucket(bucket)
+    def gen_collection(self,  # type: MockTestCase
+                       *args, **kwargs):
+        try:
+            if args:
+                connstr=args[0]
+            else:
+                connstr=kwargs.pop('connection_string')
+
+            connstr_nohost=ConnectionString(connstr)
+            connstr_nohost.bucket = None
+            base_cluster = TxCluster(connection_string=str(connstr_nohost),authenticator=ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password))
+            return TxBucket(*args, connection_string = connstr, **kwargs)
+
+        except Exception as e:
+            raise
+
     def testIncremental(self):
         cb = self.make_connection()
         d = defer.Deferred()
