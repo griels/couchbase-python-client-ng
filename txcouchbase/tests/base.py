@@ -13,38 +13,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+import twisted.internet.base
 from twisted.internet import defer
 from twisted.trial.unittest import TestCase
 
-from couchbase_tests.base import CouchbaseTestCase
 from couchbase_core.client import Client
-import twisted.internet.base
+from couchbase_tests.base import ConnectionTestCase, ClusterTestCase
+
 twisted.internet.base.DelayedCall.debug = True
 from typing import *
-T = TypeVar('T', bound=CouchbaseTestCase)
+
+from txcouchbase.bucket import TxCluster
+from couchbase_core.cluster import ClassicAuthenticator
+from couchbase_core.connstr import ConnectionString
+
+T = TypeVar('T', bound=ConnectionTestCase)
 Factory = Callable[[Any],Client]
 
-from txcouchbase.bucket import TxBucket
 
 
-def gen_collection(*args, **kwargs):
-    try:
-        if args:
-            connstr=args[0]
-        else:
-            connstr=kwargs.pop('connection_string')
-        base_bucket = TxBucket(*args, connection_string = connstr, **kwargs)
-        return base_bucket.default_collection()
-    except Exception as e:
-        raise
 
 
 def gen_base(basecls,  # type: Type[T]
              timeout=5,
-             factory=gen_collection  # type: Factory
+             factory=None  # type: Factory
              ):
-    # type: (...) -> Type[Union[T,CouchbaseTestCase]]
+    # type: (...) -> Union[Type[_TxTestCase],Type[T]]
     class _TxTestCase(basecls, TestCase):
         def register_cleanup(self, obj):
             d = defer.Deferred()
@@ -56,7 +50,8 @@ def gen_base(basecls,  # type: Type[T]
             if hasattr(obj, '_async_shutdown'):
                 self.addCleanup(obj._async_shutdown)
 
-        def make_connection(self, **kwargs):
+        def make_connection(self,  # type: _TxTestCase
+                            **kwargs):
             # type: (...) -> Factory
             ret = super(_TxTestCase, self).make_connection(**kwargs)
             self.register_cleanup(ret)
@@ -65,9 +60,41 @@ def gen_base(basecls,  # type: Type[T]
         def checkCbRefcount(self):
             pass
 
+        def gen_cluster(self,  # type: _TxTestCase
+                        *args,
+                        **kwargs):
+            # type: (...) -> TxCluster
+            args=list(args)
+            connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
+            return self.gen_cluster_raw(connstr_nobucket, **kwargs)
+
+        def gen_cluster_raw(self, connstr_nobucket, **kwargs):
+            return TxCluster(connection_string=str(connstr_nobucket),
+                             authenticator=ClassicAuthenticator(self.cluster_info.admin_username,
+                                                                self.cluster_info.admin_password), **kwargs)
+
+        def _get_connstr_and_bucket_name(self,
+                                         args,  # type: List[Any]
+                                         kwargs):
+            connstr = args.pop(0) if args else kwargs.pop('connection_string')
+            connstr_nobucket = ConnectionString.parse(connstr)
+            bucket=connstr_nobucket.bucket
+            connstr_nobucket.bucket = None
+            return connstr_nobucket, bucket
+
+        def gen_collection(self,
+                           *args, **kwargs):
+            bucket_result = self.gen_bucket(*args, **kwargs)
+            return bucket_result.default_collection()
+
+        def gen_bucket(self, *args, **kwargs):
+            args = list(args)
+            connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
+            return self.gen_cluster_raw(connstr_nobucket, **kwargs).bucket(bucket)
+
         @property
         def factory(self):
-            return factory
+            return factory or self.gen_collection
 
         def setUp(self):
             super(_TxTestCase, self).setUp()

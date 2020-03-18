@@ -46,10 +46,13 @@ class RowsHandler(AsyncN1QLRequest):
         self.deferred.errback(ex)
 
 
-class TxN1QLTests(gen_base(MockTestCase)):
+Base = gen_base(MockTestCase)
+
+
+class TxN1QLTests(Base):
     @property
     def factory(self):
-        return TxBucket
+        return self.gen_cluster
 
     def testIncremental(self):
         cb = self.make_connection()
