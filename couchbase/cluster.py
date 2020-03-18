@@ -1,4 +1,7 @@
 import asyncio
+
+from couchbase.management.admin import Admin
+
 from couchbase_core.mutation_state import MutationState
 from couchbase_core.asynchronous import AsyncClientFactory
 from couchbase.management.queries import QueryIndexManager
@@ -7,7 +10,6 @@ from couchbase.management.analytics import AnalyticsIndexManager
 from couchbase.analytics import AnalyticsOptions
 from .management.users import UserManager
 from .management.buckets import BucketManager
-from couchbase.management.admin import Admin
 from couchbase.diagnostics import DiagnosticsResult
 from couchbase.fulltext import SearchResult, SearchOptions
 from .analytics import AnalyticsResult
@@ -244,7 +246,7 @@ class Cluster(CoreClient):
         self._clusteropts['bucket'] = "default"
         self._clusteropts.update(cluster_opts)
         self._clusteropts.update(async_items)
-        super(Cluster,self).__init__(connection_string=str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
+        super(Cluster, self).__init__(connection_string=str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
 
     @staticmethod
     def connect(connection_string,  # type: str
@@ -310,6 +312,7 @@ class Cluster(CoreClient):
         # a QueryOptions.  Note if multiple QueryOptions are passed in for some strange reason,
         # all but the last are ignored.
         self._check_for_shutdown()
+        itercls = kwargs.pop('itercls', QueryResult)
         opt = QueryOptions()
         opts = list(options)
         for o in opts:
@@ -317,7 +320,7 @@ class Cluster(CoreClient):
             opt = o
             opts.remove(o)
 
-        return QueryResult(self._operate_on_cluster(CoreClient.query, QueryException, opt.to_n1ql_query(statement, *opts, **kwargs)))
+        return self._operate_on_cluster(CoreClient.query, QueryException, opt.to_n1ql_query(statement, *opts, **kwargs), itercls=itercls)
 
     def _operate_on_cluster(self,
                             verb,

@@ -16,14 +16,14 @@
 
 from twisted.internet import defer
 
-from txcouchbase.bucket import BatchedN1QLRequest, TxCluster
-from couchbase.cluster import ClusterOptions, PasswordAuthenticator, ClassicAuthenticator, ConnectionString
+from txcouchbase.bucket import TxCluster, BatchedQueryResult
 from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
 from couchbase.n1ql import QueryResult
+
 from couchbase_tests.base import MockTestCase
 from txcouchbase.tests.base import gen_base
 import logging
-from txcouchbase.bucket import TxBucket
+from txcouchbase.bucket import TxBucket, TxSyncCluster
 
 
 class RowsHandler(AsyncN1QLRequest):
@@ -47,30 +47,30 @@ class RowsHandler(AsyncN1QLRequest):
         self.deferred.errback(ex)
 
 
-Base = gen_base(MockTestCase)  # type: MockTestCase
+Base = gen_base(MockTestCase)
+
+from couchbase_core.cluster import ClassicAuthenticator
+from couchbase.cluster import ClusterOptions
+from couchbase_core.connstr import ConnectionString
+
 class TxN1QLTests(Base):
+    @property
+    def factory(self):
+        return self.gen_cluster
 
-    def gen_collection(self,  # type: MockTestCase
-                       *args, **kwargs):
-        try:
-            if args:
-                connstr=args[0]
-            else:
-                connstr=kwargs.pop('connection_string')
-
-            connstr_nohost=ConnectionString(connstr)
-            connstr_nohost.bucket = None
-            base_cluster = TxCluster(connection_string=str(connstr_nohost),authenticator=ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password))
-            return base_cluster#TxBucket(*args, connection_string = connstr, **kwargs)
-
-        except Exception as e:
-            raise
+    def gen_cluster(self,  # type: MockTestCase
+                    *args, **kwargs):
+        args=list(args)
+        connstr = args.pop(0) if args else kwargs.pop('connection_string')
+        connstr_nobucket=ConnectionString.parse(connstr)
+        connstr_nobucket.bucket=None
+        return TxCluster(connection_string=str(connstr_nobucket), authenticator=ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password), **kwargs)
 
     def testIncremental(self):
         cb = self.make_connection()
         d = defer.Deferred()
         o = cb.query_ex(RowsHandler, 'SELECT mockrow')
-        self.assertIsInstance(o, QueryResult)
+        self.assertIsInstance(o, RowsHandler)
 
         def verify(*args):
             self.assertEqual(len(o.rows), 1)
@@ -88,7 +88,7 @@ class TxN1QLTests(Base):
         def verify(o):
             logging.error("Called back")
 
-            self.assertIsInstance(o, BatchedN1QLRequest)
+            self.assertIsInstance(o, BatchedQueryResult)
             rows = [r for r in o]
             self.assertEqual(1, len(rows))
             logging.error("End of callback")
@@ -103,7 +103,7 @@ class TxN1QLTests(Base):
         d = cb.query('SELECT emptyrow')
 
         def verify(o):
-            self.assertIsInstance(o, BatchedN1QLRequest)
+            self.assertIsInstance(o, BatchedQueryResult)
             rows = [r for r in o]
             self.assertEqual(0, len(rows))
         return d.addCallback(verify)

@@ -23,6 +23,7 @@ from typing import *
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
+from couchbase.n1ql import QueryResult
 from couchbase.bucket import ViewResult
 from couchbase.cluster import Cluster as V3SyncCluster
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
@@ -104,6 +105,19 @@ class AsyncViewResultBase(AsyncViewBase, ViewResult):
         """
         ViewResult.__init__(self, *args, **kwargs)
 
+class AsyncQueryResultBase(AsyncN1QLRequest, QueryResult):
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize a new AsyncViewBase object. This is intended to be
+        subclassed in order to implement the require methods to be
+        invoked on error, data, and row events.
+
+        Usage of this class is not as a standalone, but rather as
+        an ``itercls`` parameter to the
+        :meth:`~couchbase_core.connection.Connection.query` method of the
+        connection object.
+        """
+        QueryResult.__init__(self, *args, **kwargs)
 
 class BatchedView(BatchedRowMixin, AsyncViewBase):
     def __init__(self, *args, **kwargs):
@@ -120,6 +134,12 @@ class BatchedViewResult(BatchedRowMixin, AsyncViewResultBase):
 class BatchedN1QLRequest(BatchedRowMixin, AsyncN1QLRequest):
     def __init__(self, *args, **kwargs):
         AsyncN1QLRequest.__init__(self, *args, **kwargs)
+        BatchedRowMixin.__init__(self, *args, **kwargs)
+
+
+class BatchedQueryResult(BatchedRowMixin, AsyncQueryResultBase):
+    def __init__(self, *args, **kwargs):
+        AsyncQueryResultBase.__init__(self, *args, **kwargs)
         BatchedRowMixin.__init__(self, *args, **kwargs)
 
 
@@ -390,9 +410,10 @@ class TxRawClientFactory(object):
                     cb = lambda x: self.query(*args, **kwargs)
                     return self.on_connect().addCallback(cb)
 
-                kwargs['itercls'] = BatchedN1QLRequest
+                kwargs['itercls'] = BatchedQueryResult
                 o = self._do_n1ql_query(*args, **kwargs)
                 o.start()
+
                 return o._getDeferred()
 
             def search(self, cls, *args, **kwargs):
@@ -567,6 +588,6 @@ class TxBucket(TxClientFactory.gen_client(RawTxBucket)):
 from couchbase.cluster import AsyncCluster as V3AsyncCluster
 RawTxCluster=TxRawClientFactory.gen_raw(V3AsyncCluster)
 TxCluster=TxClientFactory.gen_client(RawTxCluster, bucket_factory=TxBucket)
-#class TxCluster(V3SyncCluster):
-#    def __init__(self, *args, **kwargs):
-#        super(TxCluster, self).__init__(*args, bucket_factory=TxBucket, **kwargs)
+class TxSyncCluster(V3SyncCluster):
+    def __init__(self, *args, **kwargs):
+        super(TxSyncCluster, self).__init__(*args, bucket_factory=TxBucket, **kwargs)

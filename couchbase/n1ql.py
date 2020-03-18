@@ -26,12 +26,13 @@ from couchbase_core.n1ql import N1QLRequest
 from typing import *
 
 
-class QueryResult(IterableWrapper):
+class QueryResult(IterableWrapper, N1QLRequest):
     def __init__(self,
-                 parent  # type: N1QLRequest
+                 *args, **kwargs
                  ):
         # type (...)->None
-        IterableWrapper.__init__(self, parent)
+        N1QLRequest.__init__(self, *args, **kwargs)
+        IterableWrapper.__init__(self, self)
 
     def rows(self):
         return list(x for x in self)
