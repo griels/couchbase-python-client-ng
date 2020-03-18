@@ -237,13 +237,13 @@ class Cluster(object):
         authenticator = cluster_opts.pop('authenticator', None)
         if not authenticator:
             raise ArgumentError("Authenticator is mandatory")
-        bucket_factory = cluster_opts.pop('bucket_factory', Bucket)  # type: Bucket
+        bucket_factory = cluster_opts.pop('bucket_factory', bucket_factory)  # type: Bucket
 
         def corecluster_bucket_factory(connstr, bname=None, **kwargs):
             return bucket_factory(connstr, name=bname, admin=self._admin, **kwargs)
         cluster_opts.update(
             bucket_factory=corecluster_bucket_factory)
-        self._cluster = CoreCluster(connection_string, **cluster_opts)  # type: CoreCluster
+        self._cluster = CoreCluster(connection_string,bucket_factory=corecluster_bucket_factory)#, **cluster_opts)  # type: CoreCluster
         self._authenticate(authenticator)
 
     @staticmethod

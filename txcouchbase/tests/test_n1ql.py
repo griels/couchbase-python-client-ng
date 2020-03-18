@@ -16,7 +16,7 @@
 
 from twisted.internet import defer
 
-from txcouchbase.bucket import BatchedN1QLRequest
+from txcouchbase.bucket import BatchedN1QLRequest, TxCluster
 from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
 
 from couchbase_tests.base import MockTestCase
@@ -46,11 +46,26 @@ class RowsHandler(AsyncN1QLRequest):
         self.deferred.errback(ex)
 
 
-class TxN1QLTests(gen_base(MockTestCase)):
+Base = gen_base(MockTestCase)
+
+from couchbase_core.cluster import ClassicAuthenticator
+from couchbase.cluster import ClusterOptions
+from couchbase_core.connstr import ConnectionString
+
+class TxN1QLTests(Base):
     @property
     def factory(self):
-        return TxBucket
+        return self.gen_cluster
 
+    def gen_cluster(self,  # type: MockTestCase
+                    *args, **kwargs):
+        args=list(args)
+        connstr = args.pop(0) if args else kwargs.pop('connection_string')
+        connstr_nobucket=ConnectionString.parse(connstr)
+        bucket=connstr_nobucket.bucket
+        connstr_nobucket.bucket=None
+        base_cluster= TxCluster(str(connstr_nobucket), ClusterOptions(ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password)), **kwargs)
+        return base_cluster.bucket(bucket)
     def testIncremental(self):
         cb = self.make_connection()
         d = defer.Deferred()
