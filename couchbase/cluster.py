@@ -1,24 +1,22 @@
 import asyncio
-from typing import *
 from couchbase_core.mutation_state import MutationState
 from couchbase_core.asynchronous import AsyncClientFactory
 from couchbase.management.queries import QueryIndexManager
 from couchbase.management.search import SearchIndexManager
 from couchbase.management.analytics import AnalyticsIndexManager
 from couchbase.analytics import AnalyticsOptions
-from couchbase_core.exceptions import CouchbaseError
 from .management.users import UserManager
 from .management.buckets import BucketManager
 from couchbase.management.admin import Admin
-from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics
+from couchbase.diagnostics import DiagnosticsResult
 from couchbase.fulltext import SearchResult, SearchOptions
 from .analytics import AnalyticsResult
 from .n1ql import QueryResult
 from couchbase_core.n1ql import N1QLQuery
-from .options import OptionBlock, OptionBlockTimeOut, forward_args, OptionBlockDeriv
+from .options import OptionBlock, forward_args, OptionBlockDeriv
 from .bucket import Bucket, CoreClient
 from couchbase_core.cluster import Cluster as CoreCluster, Authenticator as CoreAuthenticator
-from .exceptions import InvalidArgumentsException, SearchException, DiagnosticsException, QueryException, ArgumentError, AnalyticsException
+from .exceptions import InvalidArgumentsException, SearchException, QueryException, ArgumentError, AnalyticsException
 import couchbase_core._libcouchbase as _LCB
 from couchbase_core._pyport import raise_from
 from couchbase.options import OptionBlockTimeOut
@@ -232,21 +230,19 @@ class Cluster(CoreClient):
         :param Any kwargs: Override corresponding value in options.
         """
         self.connstr = connection_string
-        async_items={k:v for k,v in kwargs.items() if k in {'_iops','_flags'}}
+        async_items = {k: v for k, v in kwargs.items() if k in {'_iops', '_flags'}}
         cluster_opts = forward_args(kwargs, *options)  # type: Dict[str,Any]
-        self._authenticator = cluster_opts.pop('authenticator', None)
+        self._authenticator = cluster_opts.pop('authenticator', None)  # type: Authenticator
         if not self._authenticator:
             raise ArgumentError("Authenticator is mandatory")
 
-
-        def corecluster_bucket_factory(connstr, bname=None, **kwargs):
-            return bucket_factory(connection_string=connstr, name=bname, **kwargs)
-
         self.__admin = None
-        self._cluster = CoreCluster(connection_string, bucket_factory=corecluster_bucket_factory)  # type: CoreCluster
-        self._authenticate(self._authenticator)
+        self._cluster = CoreCluster(connection_string, bucket_factory=bucket_factory)  # type: CoreCluster
+        self._cluster.authenticate(self._authenticator, None, None)
+        credentials = self._authenticator.get_credentials()
+        self._clusteropts = dict(**credentials.get('options', {}))
+        self._clusteropts['bucket'] = "default"
         self._clusteropts.update(async_items)
-        self._clusterclient = None
         super(Cluster,self).__init__(connection_string=str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
 
     @staticmethod
@@ -265,27 +261,16 @@ class Cluster(CoreClient):
 
     def _do_ctor_connect(self, *args, **kwargs):
         super(Cluster,self)._do_ctor_connect(*args,**kwargs)
-        self._clusterclient = True
 
     def _check_for_shutdown(self):
-        if not self._cluster or not self._admin:
+        if not self._cluster:
             raise AlreadyShutdownException("This cluster has already been shutdown")
-
-    def _authenticate(self,
-                      authenticator=None,  # type: CoreAuthenticator
-                      username=None,  # type: str
-                      password=None  # type: str
-                      ):
-        self._cluster.authenticate(authenticator, username, password)
-        credentials = authenticator.get_credentials()
-        self._clusteropts = credentials.get('options', {})
-        self._clusteropts['bucket'] = "default"
-        self._admin_auth = credentials.get('options')
 
     @property
     def _admin(self):
+        self._check_for_shutdown()
         if not self.__admin:
-            self.__admin = Admin(self._admin_auth.get('username'), self._admin_auth.get('password'), connstr=str(self.connstr))
+            self.__admin = Admin(connstr=str(self.connstr), **self._clusteropts)
         return self.__admin
 
     # TODO: There should be no reason for these kwargs.  However, our tests against the mock
@@ -297,7 +282,7 @@ class Cluster(CoreClient):
                ):
         # type: (...) -> Bucket
         self._check_for_shutdown()
-        kwargs['bname'] = name
+        kwargs['bucket'] = name
         kwargs['admin'] = self._admin
         return self._cluster.open_bucket(name, **kwargs)
 
@@ -333,12 +318,6 @@ class Cluster(CoreClient):
 
         return QueryResult(self._operate_on_cluster(CoreClient.query, QueryException, opt.to_n1ql_query(statement, *opts, **kwargs)))
 
-    def _get_clusterclient(self):
-        if not self._clusterclient:
-            CoreClient._connect(self)
-            self._clusterclient = True
-        return self
-
     def _operate_on_cluster(self,
                             verb,
                             failtype,  # type: Type[CouchbaseError]
@@ -346,7 +325,7 @@ class Cluster(CoreClient):
                             **kwargs):
 
         try:
-            return verb(self._get_clusterclient(), *args, **kwargs)
+            return verb(self, *args, **kwargs)
         except Exception as e:
             raise_from(failtype(params=CouchbaseError.ParamType(message="Cluster operation failed", inner_cause=e)), e)
 
@@ -357,7 +336,7 @@ class Cluster(CoreClient):
                                         **kwargs):
         clients = [v() for k, v in self._cluster._buckets.items()]
         clients = [v for v in clients if v]
-        clients.append(self._get_clusterclient())
+        clients.append(self)
         results = []
         for c in clients:
             results.append(verb(c, *args, **kwargs))
@@ -371,14 +350,14 @@ class Cluster(CoreClient):
                                    **kwargs):
         # if you don't have a cluster client yet, then you don't have any other buckets open either, so
         # this is the same as operate_on_cluster
-        if not self._clusterclient:
+        if not self._cluster._buckets:
             return self._operate_on_cluster(verb, failtype, *args, **kwargs)
 
         async def coroutine(client, verb, *args, **kwargs):
             return verb(client, *args, **kwargs)
         # ok, lets loop over all the buckets, and the clusterclient.  And lets do it async so it isn't miserably
         # slow.  So we will create a list of tasks and execute them together...
-        tasks = [asyncio.ensure_future(coroutine(self._clusterclient, verb, *args, **kwargs))]
+        tasks = [asyncio.ensure_future(coroutine(self, verb, *args, **kwargs))]
         for name, c in self._cluster._buckets.items():
             client = c()
             if client:
@@ -492,8 +471,7 @@ class Cluster(CoreClient):
         # all the buckets we've opened, unless they are stored elswhere and are actively
         # being used.
         self._cluster = None
-        self._admin = None
-        self._clusterclient = None
+        self.__admin = None
 
     def _is_dev_preview(self):
         self._check_for_shutdown()
@@ -512,7 +490,7 @@ class Cluster(CoreClient):
         whichever is lower.
         """
         self._check_for_shutdown()
-        return timedelta(seconds=self._get_clusterclient()._get_timeout_common(_LCB.LCB_CNTL_QUERY_TIMEOUT))
+        return timedelta(seconds=self._get_timeout_common(_LCB.LCB_CNTL_QUERY_TIMEOUT))
 
     @n1ql_timeout.setter
     def n1ql_timeout(self,
@@ -520,7 +498,7 @@ class Cluster(CoreClient):
                      ):
         # type: (...) -> None
         self._check_for_shutdown()
-        self._get_clusterclient()._set_timeout_common(_LCB.LCB_CNTL_QUERY_TIMEOUT, value.total_seconds())
+        self._set_timeout_common(_LCB.LCB_CNTL_QUERY_TIMEOUT, value.total_seconds())
 
     @property
     def tracing_threshold_n1ql(self):
@@ -533,13 +511,13 @@ class Cluster(CoreClient):
 
         """
 
-        return timedelta(seconds=self._get_clusterclient()._cntl(op=_LCB.TRACING_THRESHOLD_QUERY, value_type="timeout"))
+        return timedelta(seconds=self._cntl(op=_LCB.TRACING_THRESHOLD_QUERY, value_type="timeout"))
 
     @tracing_threshold_n1ql.setter
     def tracing_threshold_n1ql(self,
                                val  # type: timedelta
                                ):
-        self._get_clusterclient()._cntl(op=_LCB.TRACING_THRESHOLD_QUERY, value=val.total_seconds(), value_type="timeout")
+        self._cntl(op=_LCB.TRACING_THRESHOLD_QUERY, value=val.total_seconds(), value_type="timeout")
 
 
     @property
@@ -552,14 +530,14 @@ class Cluster(CoreClient):
 
         """
 
-        return timedelta(seconds=self._get_clusterclient()._cntl(op=_LCB.TRACING_THRESHOLD_SEARCH,
+        return timedelta(seconds=self._cntl(op=_LCB.TRACING_THRESHOLD_SEARCH,
                                                                  value_type="timeout"))
 
     @tracing_threshold_fts.setter
     def tracing_threshold_fts(self,
                               val   # type: timedelta
                               ):
-        self._get_clusterclient()._cntl(op=_LCB.TRACING_THRESHOLD_SEARCH,
+        self._cntl(op=_LCB.TRACING_THRESHOLD_SEARCH,
                                         value=val.total_seconds(),
                                         value_type="timeout")
 
@@ -574,14 +552,14 @@ class Cluster(CoreClient):
 
         """
 
-        return timedelta(seconds=self._get_clusterclient()._cntl(op=_LCB.TRACING_THRESHOLD_ANALYTICS,
-                                                                 value_type="timeout"))
+        return timedelta(seconds=self._cntl(op=_LCB.TRACING_THRESHOLD_ANALYTICS,
+                                            value_type="timeout"))
 
     @tracing_threshold_analytics.setter
     def tracing_threshold_analytics(self,
                                     val     # type: timedelta
                                     ):
-        self._get_clusterclient()._cntl(op=_LCB.TRACING_THRESHOLD_ANALYTICS,
+        self._cntl(op=_LCB.TRACING_THRESHOLD_ANALYTICS,
                                         value=val.total_seconds(),
                                         value_type="timeout")
     @property
@@ -595,7 +573,7 @@ class Cluster(CoreClient):
 
         """
 
-        return timedelta(seconds=self._get_clusterclient()._cntl(op=_LCB.TRACING_ORPHANED_QUEUE_FLUSH_INTERVAL,
+        return timedelta(seconds=self._cntl(op=_LCB.TRACING_ORPHANED_QUEUE_FLUSH_INTERVAL,
                                                     value_type="timeout"))
 
     @tracing_orphaned_queue_flush_interval.setter
@@ -618,7 +596,7 @@ class Cluster(CoreClient):
 
         """
 
-        return self._get_clusterclient()._cntl(op=_LCB.TRACING_ORPHANED_QUEUE_SIZE, value_type="uint32_t")
+        return self._cntl(op=_LCB.TRACING_ORPHANED_QUEUE_SIZE, value_type="uint32_t")
 
     @tracing_orphaned_queue_size.setter
     def tracing_orphaned_queue_size(self,
@@ -640,8 +618,8 @@ class Cluster(CoreClient):
 
         """
 
-        return timedelta(seconds=self._get_clusterclient()._cntl(op=_LCB.TRACING_THRESHOLD_QUEUE_FLUSH_INTERVAL,
-                                                    value_type="timeout"))
+        return timedelta(seconds=self._cntl(op=_LCB.TRACING_THRESHOLD_QUEUE_FLUSH_INTERVAL,
+                                            value_type="timeout"))
 
     @tracing_threshold_queue_flush_interval.setter
     def tracing_threshold_queue_flush_interval(self,
@@ -663,7 +641,7 @@ class Cluster(CoreClient):
 
         """
 
-        return self._get_clusterclient()._cntl(op=_LCB.TRACING_THRESHOLD_QUEUE_SIZE, value_type="uint32_t")
+        return self._cntl(op=_LCB.TRACING_THRESHOLD_QUEUE_SIZE, value_type="uint32_t")
 
     @tracing_threshold_queue_size.setter
     def tracing_threshold_queue_size(self, val):
@@ -674,7 +652,7 @@ class Cluster(CoreClient):
 
     @property
     def redaction(self):
-        return bool(self._get_clusterclient()._cntl(_LCB.LCB_CNTL_LOG_REDACTION,  value_type='int'))
+        return bool(self._cntl(_LCB.LCB_CNTL_LOG_REDACTION, value_type='int'))
 
     @redaction.setter
     def redaction(self,
@@ -716,7 +694,7 @@ class Cluster(CoreClient):
         support compression despite a HELLO not having been initially negotiated.
         """
 
-        return self._get_clusterclient()._cntl(_LCB.LCB_CNTL_COMPRESSION_OPTS, value_type='int')
+        return self._cntl(_LCB.LCB_CNTL_COMPRESSION_OPTS, value_type='int')
 
     @compression.setter
     def compression(self, value):
@@ -732,7 +710,7 @@ class Cluster(CoreClient):
 
         :type: int
         """
-        return self._get_clusterclient()._cntl(_LCB.LCB_CNTL_COMPRESSION_MIN_SIZE, value_type='uint32_t')
+        return self._cntl(_LCB.LCB_CNTL_COMPRESSION_MIN_SIZE, value_type='uint32_t')
 
     @compression_min_size.setter
     def compression_min_size(self,
@@ -750,7 +728,7 @@ class Cluster(CoreClient):
 
         :type: float
         """
-        return self._get_clusterclient()._cntl(_LCB.LCB_CNTL_COMPRESSION_MIN_RATIO, value_type='float')
+        return self._cntl(_LCB.LCB_CNTL_COMPRESSION_MIN_RATIO, value_type='float')
 
     @compression_min_ratio.setter
     def compression_min_ratio(self, value):
@@ -770,7 +748,7 @@ class Cluster(CoreClient):
 
         See :meth:`__init__` for more information on connection options.
         """
-        mode = self._get_clusterclient()._cntl(op=_LCB.LCB_CNTL_SSL_MODE, value_type='int')
+        mode = self._cntl(op=_LCB.LCB_CNTL_SSL_MODE, value_type='int')
         return mode & _LCB.LCB_SSL_ENABLED != 0
 
 
