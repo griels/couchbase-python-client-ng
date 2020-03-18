@@ -73,7 +73,7 @@ class BasicConnectionTest(Base):
     def testConnstrFirstArg(self):
         info = self.cluster_info
         s = self.make_connargs()['connection_string']
-        cb = TxBucket(s)
+        cb = TxBucket(connection_string=s,password=self.cluster_info.bucket_password)
         d = cb.connect().addCallback(lambda x: self.assertTrue(cb.connected))
         self.register_cleanup(cb)
         return d
