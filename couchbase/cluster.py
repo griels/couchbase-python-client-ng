@@ -238,10 +238,11 @@ class Cluster(CoreClient):
 
         self.__admin = None
         self._cluster = CoreCluster(connection_string, bucket_factory=bucket_factory)  # type: CoreCluster
-        self._cluster.authenticate(self._authenticator, None, None)
+        self._cluster.authenticate(self._authenticator)
         credentials = self._authenticator.get_credentials()
         self._clusteropts = dict(**credentials.get('options', {}))
         self._clusteropts['bucket'] = "default"
+        self._clusteropts.update(cluster_opts)
         self._clusteropts.update(async_items)
         super(Cluster,self).__init__(connection_string=str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
 

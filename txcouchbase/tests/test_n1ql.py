@@ -19,7 +19,7 @@ from twisted.internet import defer
 from txcouchbase.bucket import BatchedN1QLRequest, TxCluster
 from couchbase.cluster import ClusterOptions, PasswordAuthenticator, ClassicAuthenticator, ConnectionString
 from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
-
+from couchbase.n1ql import QueryResult
 from couchbase_tests.base import MockTestCase
 from txcouchbase.tests.base import gen_base
 import logging
@@ -61,7 +61,7 @@ class TxN1QLTests(Base):
             connstr_nohost=ConnectionString(connstr)
             connstr_nohost.bucket = None
             base_cluster = TxCluster(connection_string=str(connstr_nohost),authenticator=ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password))
-            return TxBucket(*args, connection_string = connstr, **kwargs)
+            return base_cluster#TxBucket(*args, connection_string = connstr, **kwargs)
 
         except Exception as e:
             raise
@@ -70,7 +70,7 @@ class TxN1QLTests(Base):
         cb = self.make_connection()
         d = defer.Deferred()
         o = cb.query_ex(RowsHandler, 'SELECT mockrow')
-        self.assertIsInstance(o, RowsHandler)
+        self.assertIsInstance(o, QueryResult)
 
         def verify(*args):
             self.assertEqual(len(o.rows), 1)
@@ -80,7 +80,8 @@ class TxN1QLTests(Base):
         d.addCallback(verify)
         return d
 
-    def testBatched(self):
+    def testBatched(self  # type: Base
+                    ):
         cb = self.make_connection()
         d = cb.query('SELECT mockrow')
 
