@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from couchbase_tests.base import ConnectionTestCase
+from couchbase_tests.base import ConnectionTestCase, CollectionTestCase
 
 from txcouchbase.tests.base import gen_base
 from couchbase_core.exceptions import NotFoundError
