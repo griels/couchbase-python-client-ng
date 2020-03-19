@@ -47,7 +47,7 @@ class RowsHandler(AsyncViewBase):
 class TxViewsTests(gen_base(ViewTestCase)):
     @property
     def factory(self):
-        return self.gen_bucket
+        return self.gen_bucket# TxBucket#self.gen_bucket
     def make_connection(self, **kwargs):
         return super(TxViewsTests, self).make_connection(bucket='beer-sample')
 
@@ -69,7 +69,12 @@ class TxViewsTests(gen_base(ViewTestCase)):
     def testBadView(self):
         cb = self.make_connection()
         d = cb.view_query('blah', 'blah_blah')
-        self.assertFailure(d, HTTPError)
+        def errback(err):
+            self.assertTrue(cb.connected)
+            self.assertIsInstance(err.value,HTTPError)
+            return True
+        d.addErrback(errback)
+        #self.assertFailure(d, HTTPError)
         return d
 
     def testIncrementalRows(self):
