@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from couchbase_core import IterableWrapper
 
 try:
     from abc import abstractmethod
@@ -23,25 +22,25 @@ except:
 
 
 from couchbase_core.n1ql import N1QLRequest
+from couchbase_core import iterable_wrapper
 from typing import *
 
 
-class QueryResult(IterableWrapper, N1QLRequest):
+class QueryResult(iterable_wrapper(N1QLRequest)):
     def __init__(self,
                  *args, **kwargs
                  ):
         # type (...)->None
-        N1QLRequest.__init__(self, *args, **kwargs)
-        IterableWrapper.__init__(self, self)
+        super(QueryResult,self).__init__(*args, **kwargs)
 
     def rows(self):
-        return list(x for x in self)
+        return list(x for x in super(QueryResult,self).__iter__())
 
     def metrics(self):  # type: (...) -> QueryMetrics
-        return self.parent.metrics
+        return self.metrics
 
     def profile(self):
-      return self.parent.profile
+        return self.profile
 
     def request_id(self):
         raise NotImplementedError("To be implemented")
@@ -54,5 +53,4 @@ class QueryResult(IterableWrapper, N1QLRequest):
 
     def warnings(self):
         raise NotImplementedError("To be implemented")
-
 

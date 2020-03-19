@@ -18,7 +18,7 @@ from twisted.internet import defer
 from twisted.trial.unittest import TestCase
 
 from couchbase_core.client import Client
-from couchbase_tests.base import ConnectionTestCase
+from couchbase_tests.base import ConnectionTestCase, ClusterTestCase
 
 twisted.internet.base.DelayedCall.debug = True
 from typing import *
@@ -31,7 +31,7 @@ T = TypeVar('T', bound=ConnectionTestCase)
 Factory = Callable[[Any],Client]
 
 
-class _TxTestCase(TestCase):
+class _TxTestCase(TestCase, ClusterTestCase):
     def register_cleanup(self, obj):
         d = defer.Deferred()
         obj.registerDeferred('_dtor', d)
@@ -76,10 +76,10 @@ class _TxTestCase(TestCase):
 
     def gen_collection(self,
                        *args, **kwargs):
-        bucket_result = self.gen_bucket(args, kwargs)
+        bucket_result = self.gen_bucket(*args, **kwargs)
         return bucket_result.default_collection()
 
-    def gen_bucket(self, args, kwargs):
+    def gen_bucket(self, *args, **kwargs):
         args = list(args)
         connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
         return self.gen_cluster_raw(connstr_nobucket, **kwargs).bucket(bucket)

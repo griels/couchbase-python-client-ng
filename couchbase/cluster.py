@@ -418,7 +418,9 @@ class Cluster(CoreClient):
 
         """
         self._check_for_shutdown()
-        return SearchResult(self._operate_on_cluster(CoreClient.search, SearchException, index, query, **forward_args(kwargs, *options)))
+        final_args=forward_args(kwargs, *options)
+        final_args['itercls']=final_args.get('itercls',SearchResult)
+        return self._operate_on_cluster(CoreClient.search, SearchException, index, query, **final_args )
 
     _root_diag_data = {'id', 'version', 'sdk'}
 
