@@ -232,7 +232,7 @@ class Cluster(CoreClient):
         :param Any kwargs: Override corresponding value in options.
         """
         self.connstr = connection_string
-        async_items = {k: v for k, v in kwargs.items() if k in {'_iops', '_flags'}}
+        async_items = {k: kwargs.pop(k) for k in list(kwargs.keys()) if k in {'_iops', '_flags'}}
         cluster_opts = forward_args(kwargs, *options)  # type: Dict[str,Any]
         self._authenticator = cluster_opts.pop('authenticator', None)  # type: Authenticator
         if not self._authenticator:
@@ -245,6 +245,7 @@ class Cluster(CoreClient):
         self._clusteropts = dict(**credentials.get('options', {}))
         self._clusteropts['bucket'] = "default"
         self._clusteropts.update(cluster_opts)
+        self._adminopts=dict(**self._clusteropts)
         self._clusteropts.update(async_items)
         super(Cluster, self).__init__(connection_string=str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
 
@@ -273,7 +274,7 @@ class Cluster(CoreClient):
     def _admin(self):
         self._check_for_shutdown()
         if not self.__admin:
-            self.__admin = Admin(connstr=str(self.connstr), **self._clusteropts)
+            self.__admin = Admin(connstr=str(self.connstr), **self._adminopts)
         return self.__admin
 
     # TODO: There should be no reason for these kwargs.  However, our tests against the mock

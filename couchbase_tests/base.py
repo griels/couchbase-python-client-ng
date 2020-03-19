@@ -766,7 +766,8 @@ class SkipUnsupported(SkipTest):
 class ClusterTestCase(CouchbaseTestCase):
     def __init__(self, *args, **kwargs):
         super(ClusterTestCase, self).__init__(*args, **kwargs)
-        self.cluster_factory = getattr(self, 'cluster_factory', Cluster.connect)
+        if not hasattr(self, 'cluster_factory'):
+            self.cluster_factory = Cluster.connect
         self.validator = ClusterTestCase.ItemValidator(self)
 
     class ItemValidator(object):
@@ -824,8 +825,8 @@ class ClusterTestCase(CouchbaseTestCase):
         connstr_abstract.set_option('enable_collections', 'true')
         # FIXME: we should not be using classic here!  But, somewhere in the tests, we need
         # this for hitting the mock, it seems
-        self.cluster = self.cluster_factory(connstr_abstract, ClusterOptions(
-            ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password)))
+        self.cluster = self.cluster_factory(connection_string=str(connstr_abstract),
+            authenticator=ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password))
         # TODO: why do we need the connargs?  '
         self.bucket = self.cluster.bucket(bucket_name, **connargs)
         self.bucket_name = bucket_name
