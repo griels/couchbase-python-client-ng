@@ -70,7 +70,12 @@ class TxViewsTests(gen_base(ViewTestCase)):
     def testBadView(self):
         cb = self.make_connection()
         d = cb.view_query('blah', 'blah_blah')
-        self.assertFailure(d, HTTPError)
+        def errback(err):
+            self.assertTrue(cb.connected)
+            self.assertIsInstance(err.value,HTTPError)
+            return True
+        d.addErrback(errback)
+        #self.assertFailure(d, HTTPError)
         return d
 
     def testIncrementalRows(self):
