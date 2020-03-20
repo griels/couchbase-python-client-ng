@@ -16,13 +16,14 @@
 
 from twisted.internet import defer
 
-from txcouchbase.bucket import BatchedN1QLRequest
+from txcouchbase.bucket import TxCluster, BatchedQueryResult
 from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
+from couchbase.n1ql import QueryResult
 
 from couchbase_tests.base import MockTestCase
 from txcouchbase.tests.base import gen_base
 import logging
-from txcouchbase.bucket import TxBucket
+from txcouchbase.bucket import TxBucket, TxSyncCluster
 
 
 class RowsHandler(AsyncN1QLRequest):
@@ -68,14 +69,15 @@ class TxN1QLTests(Base):
         d.addCallback(verify)
         return d
 
-    def testBatched(self):
+    def testBatched(self  # type: Base
+                    ):
         cb = self.make_connection()
         d = cb.query('SELECT mockrow')
 
         def verify(o):
             logging.error("Called back")
 
-            self.assertIsInstance(o, BatchedN1QLRequest)
+            self.assertIsInstance(o, BatchedQueryResult)
             rows = [r for r in o]
             self.assertEqual(1, len(rows))
             logging.error("End of callback")
@@ -90,7 +92,7 @@ class TxN1QLTests(Base):
         d = cb.query('SELECT emptyrow')
 
         def verify(o):
-            self.assertIsInstance(o, BatchedN1QLRequest)
+            self.assertIsInstance(o, BatchedQueryResult)
             rows = [r for r in o]
             self.assertEqual(0, len(rows))
         return d.addCallback(verify)
