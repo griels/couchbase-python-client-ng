@@ -54,6 +54,7 @@ from utilspie.collectionsutils import frozendict
 from couchbase.management.collections import CollectionSpec
 from couchbase.bucket import Bucket as V3Bucket
 from flaky import flaky
+from deepdiff import DeepDiff
 
 
 class FlakyCounter(object):
@@ -123,8 +124,14 @@ class ResourcedTestCase(ResourcedTestCaseReal):
         super(ResourcedTestCase,self).__init__(*args,**kwargs)
         self.maxDiff = None
 
-    def assertSanitizedEqual(self, actual, expected, ignored={}):
-        from deepdiff import DeepDiff
+    def deepDiffComparator(self, expected, actual):
+        self.assertEqual({}, DeepDiff(expected, actual, ignore_order=True, significant_digits=5,
+                                      ignore_numeric_type_changes=True, ignore_type_subclasses=True,
+                                      ignore_string_type_changes=True))
+
+    def assertSanitizedEqual(self, actual, expected, ignored=None, comparator=None):
+        comparator = comparator or self.assertEqual
+        ignored = ignored or {}
         actual_json_sanitized = sanitize_json(actual, ignored)
         expected_json_sanitized = sanitize_json(expected, ignored)
         logging.warning(("\n"
@@ -132,7 +139,7 @@ class ResourcedTestCase(ResourcedTestCaseReal):
                        "{}\n"
                        "sanitized actual:{} and\n"
                        "sanitized expected:{}").format(actual, expected, actual_json_sanitized, expected_json_sanitized))
-        self.assertEqual({},DeepDiff(expected_json_sanitized,actual_json_sanitized,ignore_order=True, significant_digits=5,ignore_numeric_type_changes=True,ignore_type_subclasses=True, ignore_string_type_changes=True))
+        comparator(expected_json_sanitized, actual_json_sanitized)
 
     def assertLogs(self, *args, **kwargs):
         try:
@@ -849,8 +856,6 @@ class ClusterTestCase(CouchbaseTestCase):
         info = self.get_bucket_info()
         return "durableWrite" in info['bucketCapabilities']
 
-
-ParamClusterTestCase = parameterized_class(('cluster_factory',), [(Cluster,), (Cluster.connect,)])(ClusterTestCase)
 
 
 def skip_if_no_collections(func):
