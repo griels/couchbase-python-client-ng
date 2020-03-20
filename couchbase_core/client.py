@@ -3,7 +3,7 @@ import json
 from couchbase_core._libcouchbase import Bucket as _Base
 
 import couchbase_core.exceptions as E
-from couchbase_core.analytics import AnalyticsQuery
+from couchbase_core.analytics import AnalyticsQuery, DeferredAnalyticsQuery, DeferredAnalyticsRequest, AnalyticsRequest
 from couchbase_core.exceptions import NotImplementedInV3
 from couchbase_core.n1ql import N1QLQuery, N1QLRequest
 from couchbase_core.views.iterator import View
@@ -621,6 +621,13 @@ class Client(_Base):
               }
         """
         return json.loads(self._diagnostics(*options, **kwargs)['health_json'])
+    @staticmethod
+    def gen_request(query, *args, **kwargs):
+        if isinstance(query, couchbase_core.DeferredAnalyticsQuery):
+            return couchbase_core.DeferredAnalyticsRequest(query, *args, **kwargs)
+        elif isinstance(query,AnalyticsQuery):
+            return couchbase_core.AnalyticsRequest(query, *args, **kwargs)
+
 
     def analytics_query(self, query, *args, **kwargs):
         """
@@ -657,7 +664,7 @@ class Client(_Base):
         else:
             query.update(*args, **kwargs)
 
-        return couchbase_core.analytics.gen_request(query, None, self)
+        return couchbase_core.analytics.gen_request(query, None, self, **kwargs)
 
     def search(self, index, query, **kwargs):
         """

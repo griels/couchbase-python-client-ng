@@ -68,10 +68,9 @@ class AnalyticsResult(QueryResult):
         return super(AnalyticsResult, self).request_id()
 
     def __init__(self,
-                 parent  # type: N1QLRequest
+                 *args, **kwargs
                  ):
-        super(AnalyticsResult, self).__init__(parent)
-        self._params=parent._params
+        super(AnalyticsResult, self).__init__(*args, **kwargs)
 
 
 class AnalyticsOptions(OptionBlockTimeOut):
