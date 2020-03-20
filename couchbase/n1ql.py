@@ -22,7 +22,7 @@ except:
 
 
 from couchbase_core.n1ql import N1QLRequest
-from couchbase_core import iterable_wrapper
+from iterables import iterable_wrapper
 from typing import *
 
 

@@ -33,7 +33,6 @@ from copy import deepcopy
 # know about potential upcoming breaking changes in their code.
 # Here we add a warning filter for any deprecation warning thrown
 # by Couchbase
-from enum import Enum
 
 warnings.filterwarnings(action='default',
                         category=DeprecationWarning,
@@ -270,45 +269,6 @@ def recursive_reload(module, paths=None, mdict=None):
                         mdict[module].append(attribute)
                         recursive_reload(attribute, paths, mdict)
     reload(module)
-
-
-from couchbase_core.fulltext import SearchRequest
-from couchbase_core.n1ql import N1QLRequest
-from couchbase_core.views.iterator import View
-
-IterableQuery = Union[SearchRequest, N1QLRequest, View]
-
-WrappedIterable = TypeVar('T', bound=IterableQuery)
-
-
-def iterable_wrapper(basecls  # type: Type[WrappedIterable]
-                     ):
-    # type: (...) -> Type['IterableWrapper']
-    class IterableWrapper(basecls):
-        def __init__(self,
-                     *args, **kwargs  # type: IterableQuery
-                     ):
-            super(IterableWrapper, self).__init__(*args, **kwargs)
-            self.done = False
-            self.buffered_rows = []
-
-        def metadata(self):
-            # type: (...) -> JSON
-            return self.meta
-
-        def __iter__(self):
-            for row in self.buffered_rows:
-                yield row
-            parent_iter = super(IterableWrapper, self).__iter__()
-            while not self.done:
-                try:
-                    next_item = next(parent_iter)
-                    self.buffered_rows.append(next_item)
-                    yield next_item
-                except (StopAsyncIteration, StopIteration) as e:
-                    self.done = True
-                    break
-    return IterableWrapper
 
 
 def _depr(fn, usage, stacklevel=3):

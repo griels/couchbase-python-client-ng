@@ -1,6 +1,7 @@
 from typing import *
 from .options import OptionBlockTimeOut, timedelta
-from couchbase_core import abstractmethod, JSON, iterable_wrapper
+from couchbase_core import abstractmethod, JSON
+from iterables import iterable_wrapper
 from enum import Enum
 from couchbase_core.fulltext import SearchRequest
 from datetime import timedelta

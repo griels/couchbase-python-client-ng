@@ -3,7 +3,6 @@ import json
 from couchbase_core._libcouchbase import Bucket as _Base
 
 import couchbase_core.exceptions as E
-import couchbase.search as search
 from couchbase_core.analytics import AnalyticsQuery
 from couchbase_core.exceptions import NotImplementedInV3
 from couchbase_core.n1ql import N1QLQuery, N1QLRequest
