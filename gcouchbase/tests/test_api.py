@@ -12,17 +12,16 @@ class GEventImplMixin(ApiImplementationMixin):
     factory = Bucket
     viewfactory = GView
     should_check_refcount = True
+
     def _implDtorHook(self):
         import gc
-        if not getattr(self.cb,'closed',True):
-            waiter = getattr(self.cb,'_get_close_future',None)
-            cb_desc=str(self.cb)
+        if not self.cb.closed:
+            waiter = self.cb._get_close_future()
             del self.cb
             gc.collect()
-            if not waiter:
-                raise Exception("no _get_close_future for {}".format(cb_desc))
-            if not waiter().wait(7):
+            if not waiter.wait(7):
                 raise Exception("Not properly cleaned up!")
+
 
 skiplist = ('IopsTest', 'LockmodeTest', 'PipelineTest')
 

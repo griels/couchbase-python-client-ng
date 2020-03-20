@@ -38,7 +38,7 @@ class GEventIOEvent(IOEvent):
 class GEventTimer(TimerEvent):
     def __init__(self):
         super(GEventTimer, self).__init__()
-        self.ev = None#get_hub().loop.timer(0)
+        self.ev = get_hub().loop.timer(0)
 
     def ready_proxy(self, *args):
         self.ready(0)
@@ -47,15 +47,7 @@ class GEventTimer(TimerEvent):
         seconds = usecs / 1000000.0
         # This isn't the "clean" way, but it's much quicker.. and
         # since we're already using undocumented APIs, why not..
-        if self.ev:
-            cancel=getattr(self.ev,'cancel', None)
-            if cancel:
-                cancel()
-            else:
-                print(self.ev)
-            self.ev.close()
-            del self.ev
-        self.ev = get_hub().loop.timer(seconds)
+        _PyxTimer.__init__(self.ev, get_hub().loop, seconds)
         self.ev.start(self.ready_proxy, 0)
 
 
