@@ -130,7 +130,7 @@ class DeferredAnalyticsQuery(AnalyticsQuery):
 
 
 class AnalyticsRequest(N.N1QLRequest):
-    def __init__(self, params, host, parent):
+    def __init__(self, params, host, parent, **kwargs):
         """
         Object representing the execution of the request on the
         server.
@@ -149,7 +149,7 @@ class AnalyticsRequest(N.N1QLRequest):
         object.
         """
         self._host = host
-        super(AnalyticsRequest, self).__init__(params, parent)
+        super(AnalyticsRequest, self).__init__(params, parent, **kwargs)
 
     def _submit_query(self):
         return self._parent._cbas_query(self._params.encoded,
@@ -157,7 +157,7 @@ class AnalyticsRequest(N.N1QLRequest):
 
 
 class DeferredAnalyticsRequest(AnalyticsRequest):
-    def __init__(self, params, host, parent, timeout = None, interval = None):
+    def __init__(self, params, host, parent, timeout = None, interval = None, **kwargs):
         # type: (DeferredAnalyticsQuery, str, couchbase_core.client.Client, Optional[float], Optional[float]) -> None
         """
         Object representing the execution of a deferred request on the
@@ -192,7 +192,7 @@ class DeferredAnalyticsRequest(AnalyticsRequest):
         self.finish_time = time.time() + (timeout if timeout else params._timeout)
         self.handle_host=urlparse.urlparse(handle)
         self.interval = interval or 10
-        super(DeferredAnalyticsRequest,self).__init__(params,host,parent)
+        super(DeferredAnalyticsRequest,self).__init__(params,host,parent, **kwargs)
 
     def _submit_query(self):
         return {None:self.final_response()}
@@ -280,11 +280,5 @@ class DeferredAnalyticsRequest(AnalyticsRequest):
     def raw(self):
         return self.final_response()
 
-
-def gen_request(query, *args, **kwargs):
-    if isinstance(query, DeferredAnalyticsQuery):
-        return DeferredAnalyticsRequest(query,*args,**kwargs)
-    elif isinstance(query,AnalyticsQuery):
-        return AnalyticsRequest(query,*args,**kwargs)
 
 
