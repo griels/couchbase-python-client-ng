@@ -3,20 +3,20 @@ import json
 from couchbase_core._libcouchbase import Bucket as _Base
 
 import couchbase_core.exceptions as E
-from couchbase_core.analytics import AnalyticsQuery
 from couchbase_core.exceptions import NotImplementedInV3
 from couchbase_core.n1ql import N1QLQuery, N1QLRequest
 from couchbase_core.views.iterator import View
 from .views.params import make_options_string, make_dvpath
 import couchbase_core._libcouchbase as _LCB
-from couchbase_core._libcouchbase import FMT_JSON, FMT_BYTES
+from couchbase_core._libcouchbase import FMT_JSON
 
-from couchbase_core import priv_constants as _P, fulltext as _SEARCH, _depr, subdocument as SD, exceptions
+from couchbase_core import priv_constants as _P, fulltext as _SEARCH, _depr, subdocument as SD
 import couchbase_core.analytics
 from typing import *
 from .durability import Durability
 from .result import Result
-from boltons.funcutils import wraps
+from couchbase_core.analytics import AnalyticsQuery
+
 
 def _dsop(create_type=None, wrap_missing_path=True):
     import functools
@@ -195,10 +195,13 @@ class Client(_Base):
         self._connect()
 
     def __repr__(self):
-        return ('<{modname}.{cls} bucket={bucket}, nodes={nodes} at 0x{oid:x}>'
-                ).format(modname=__name__, cls=self.__class__.__name__,
-                         nodes=self.server_nodes, bucket=self.bucket,
-                         oid=id(self))
+        try:
+            return ('<{modname}.{cls} bucket={bucket}, nodes={nodes} at 0x{oid:x}>'
+                    ).format(modname=__name__, cls=self.__class__.__name__,
+                             nodes=self.server_nodes, bucket=self.bucket,
+                             oid=id(self))
+        except Exception as e:
+            return str(e)
 
     def _get_timeout_common(self, op):
         return self._cntl(op, value_type='timeout')
@@ -510,8 +513,8 @@ class Client(_Base):
         if not isinstance(query, N1QLQuery):
             query = N1QLQuery(query)
 
-        itercls = kwargs.pop('itercls', N1QLRequest)
-        return itercls(query, self, *args, **kwargs)
+
+        return query.gen_iter(self, **kwargs)
 
     @staticmethod
     def _mk_devmode(n, use_devmode):
@@ -619,7 +622,7 @@ class Client(_Base):
         """
         return json.loads(self._diagnostics(*options, **kwargs)['health_json'])
 
-    def analytics_query(self, query, *args, **kwargs):
+    def analytics_query(self, query, *args, itercls=None, **kwargs):
         """
         Execute an Analytics query.
 
@@ -654,7 +657,7 @@ class Client(_Base):
         else:
             query.update(*args, **kwargs)
 
-        return couchbase_core.analytics.gen_request(query, None, self)
+        return query.gen_iter(self, itercls)
 
     def search(self, index, query, **kwargs):
         """

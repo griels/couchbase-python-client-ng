@@ -55,7 +55,7 @@ class AsyncBucketFactory(type):
                     kwargs["itercls"] = AN1QLRequest
                 return n1ql_query(self, *args, **kwargs)
 
-            def connect(self):
+            def on_connect(self):
                 if not self.connected:
                     self._connect()
                     return self._cft
