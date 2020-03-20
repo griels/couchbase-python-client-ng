@@ -394,9 +394,10 @@ class Cluster(CoreClient):
             if isinstance(o, AnalyticsOptions):
                 opt = o
                 opts.remove(o)
-        return AnalyticsResult(self._operate_on_cluster(CoreClient.analytics_query,
+        itercls=kwargs.get('itercls', AnalyticsResult)
+        return self._operate_on_cluster(CoreClient.analytics_query,
                                                         AnalyticsException,
-                                                        opt.to_analytics_query(statement, *opts, **kwargs)))
+                                                        opt.to_analytics_query(statement, *opts, **kwargs), itercls=itercls)
 
     def search_query(self,
                      index,     # type: str
