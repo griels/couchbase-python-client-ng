@@ -3,7 +3,6 @@ import json
 from couchbase_core._libcouchbase import Bucket as _Base
 
 import couchbase_core.exceptions as E
-from couchbase_core.analytics import AnalyticsQuery
 from couchbase_core.exceptions import NotImplementedInV3
 from couchbase_core.n1ql import N1QLQuery, N1QLRequest
 from couchbase_core.views.iterator import View
@@ -16,7 +15,7 @@ import couchbase_core.analytics
 from typing import *
 from .durability import Durability
 from .result import Result
-from couchbase_core.analytics import DeferredAnalyticsRequest, DeferredAnalyticsQuery, AnalyticsRequest, AnalyticsQuery
+from couchbase_core.analytics import AnalyticsQuery
 
 
 def _dsop(create_type=None, wrap_missing_path=True):
@@ -623,18 +622,6 @@ class Client(_Base):
         """
         return json.loads(self._diagnostics(*options, **kwargs)['health_json'])
 
-    @staticmethod
-    def gen_request(query, parent, itercls=None):
-        try:
-            if isinstance(query, DeferredAnalyticsQuery):
-                return (itercls or DeferredAnalyticsRequest)(query,parent)
-            elif isinstance(query,AnalyticsQuery):
-                return (itercls or AnalyticsRequest)(query,parent)
-        except Exception as e:
-            raise
-
-
-
     def analytics_query(self, query, *args, **kwargs):
         """
         Execute an Analytics query.
@@ -671,7 +658,7 @@ class Client(_Base):
         else:
             query.update(*args, **kwargs)
 
-        return Client.gen_request(query, self, itercls=itercls)
+        return query.gen_iter(self, itercls)
 
     def search(self, index, query, **kwargs):
         """
