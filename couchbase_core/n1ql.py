@@ -372,6 +372,10 @@ class N1QLQuery(object):
             stmt=repr(self._body),
             oid=id(self)))
 
+    def gen_iter(self, parent, itercls=None, **kwargs):
+        itercls = itercls or N1QLRequest
+        return itercls(self, parent, **kwargs)
+
 
 class N1QLRequest(object):
     def __init__(self, params, parent, row_factory=lambda x: x, meta_lookahead = True, **kwargs):

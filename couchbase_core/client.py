@@ -513,8 +513,8 @@ class Client(_Base):
         if not isinstance(query, N1QLQuery):
             query = N1QLQuery(query)
 
-        itercls = kwargs.pop('itercls', N1QLRequest)
-        return itercls(query, self, *args, **kwargs)
+
+        return query.gen_iter(self, **kwargs)
 
     @staticmethod
     def _mk_devmode(n, use_devmode):
@@ -623,7 +623,7 @@ class Client(_Base):
         return json.loads(self._diagnostics(*options, **kwargs)['health_json'])
     @staticmethod
     def gen_request(query, *args, **kwargs):
-        if isinstance(query, couchbase_core.DeferredAnalyticsQuery):
+        if isinstance(query, couchbase_core.analytics.DeferredAnalyticsQuery):
             return couchbase_core.DeferredAnalyticsRequest(query, *args, **kwargs)
         elif isinstance(query,AnalyticsQuery):
             return couchbase_core.AnalyticsRequest(query, *args, **kwargs)
@@ -664,7 +664,7 @@ class Client(_Base):
         else:
             query.update(*args, **kwargs)
 
-        return couchbase_core.analytics.gen_request(query, None, self, **kwargs)
+        return query.itercls()(query, None, self, **kwargs)
 
     def search(self, index, query, **kwargs):
         """
