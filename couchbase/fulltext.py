@@ -28,7 +28,7 @@ class SearchOptions(OptionBlockTimeOut):
                  fields=None,            # type: List[str]
                  highlight_style=None,   # type: HighlightStyle
                  highlight_fields=None,  # type: List[str]
-                 scan_consistency=None,  # type: cluster.QueryScanConsistency
+                 scan_consistency=None,  # type: couchbase.cluster.QueryScanConsistency
                  consistent_with=None,   # type: couchbase_core.MutationState
                  facets=None             # type: Dict[str, couchbase_core.fulltext.Facet]
                  ):
