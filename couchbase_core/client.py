@@ -3,20 +3,20 @@ import json
 from couchbase_core._libcouchbase import Bucket as _Base
 
 import couchbase_core.exceptions as E
-from couchbase_core.analytics import AnalyticsQuery, DeferredAnalyticsQuery, DeferredAnalyticsRequest, AnalyticsRequest
+from couchbase_core.analytics import AnalyticsQuery
 from couchbase_core.exceptions import NotImplementedInV3
 from couchbase_core.n1ql import N1QLQuery, N1QLRequest
 from couchbase_core.views.iterator import View
 from .views.params import make_options_string, make_dvpath
 import couchbase_core._libcouchbase as _LCB
-from couchbase_core._libcouchbase import FMT_JSON, FMT_BYTES
+from couchbase_core._libcouchbase import FMT_JSON
 
-from couchbase_core import priv_constants as _P, fulltext as _SEARCH, _depr, subdocument as SD, exceptions
+from couchbase_core import priv_constants as _P, fulltext as _SEARCH, _depr, subdocument as SD
 import couchbase_core.analytics
 from typing import *
 from .durability import Durability
 from .result import Result
-from boltons.funcutils import wraps
+
 
 def _dsop(create_type=None, wrap_missing_path=True):
     import functools
@@ -623,7 +623,7 @@ class Client(_Base):
         return json.loads(self._diagnostics(*options, **kwargs)['health_json'])
 
 
-    def analytics_query(self, query, *args, **kwargs):
+    def analytics_query(self, query, *args, itercls=None, **kwargs):
         """
         Execute an Analytics query.
 
@@ -658,7 +658,7 @@ class Client(_Base):
         else:
             query.update(*args, **kwargs)
 
-        return query.gen_iter(self, **kwargs)
+        return query.gen_iter(self, itercls=itercls, **kwargs)
 
     def search(self, index, query, **kwargs):
         """

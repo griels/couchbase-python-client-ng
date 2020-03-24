@@ -290,7 +290,6 @@ class DeferredAnalyticsTest(CBASTestQueriesBase):
         x = couchbase_core.analytics.DeferredAnalyticsQuery(
             "SELECT VALUE bw FROM breweries bw WHERE bw.name = 'Kona Brewing'")
         creator = lambda query, timeout: couchbase_core.analytics.DeferredAnalyticsRequest(query,
-                                                                                           self.cluster_info.analytics_host,
                                                                                            self.get_fixture(),
                                                                                            timeout=timeout)
         self._check_finish_time_in_bounds(x, creator, 500)
