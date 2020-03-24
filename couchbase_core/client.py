@@ -513,8 +513,8 @@ class Client(_Base):
         if not isinstance(query, N1QLQuery):
             query = N1QLQuery(query)
 
-        itercls = kwargs.pop('itercls', N1QLRequest)
-        return itercls(query, self, *args, **kwargs)
+
+        return query.gen_iter(self, **kwargs)
 
     @staticmethod
     def _mk_devmode(n, use_devmode):
@@ -622,7 +622,7 @@ class Client(_Base):
         """
         return json.loads(self._diagnostics(*options, **kwargs)['health_json'])
 
-    def analytics_query(self, query, *args, **kwargs):
+    def analytics_query(self, query, *args, itercls=None, **kwargs):
         """
         Execute an Analytics query.
 
@@ -652,7 +652,6 @@ class Client(_Base):
         :return: An iterator which yields rows. Each row is a dictionary
             representing a single result
         """
-        itercls=kwargs.pop('itercls', None)
         if not isinstance(query, AnalyticsQuery):
             query = AnalyticsQuery(query, *args, **kwargs)
         else:
