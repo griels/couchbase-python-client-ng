@@ -92,10 +92,10 @@ class SearchResult(iterable_wrapper(SearchRequest)):
 
     def facets(self):
         # type: (...) -> Dict[str, SearchResult.Facet]
-        return self.parent.facets
+        return super(SearchResult, self).facets
 
     def metadata(self):  # type: (...) -> MetaData
-        return MetaData(super(SearchResult,self).meta)
+        return MetaData(super(SearchResult, self).meta)
 
     @classmethod
     def mk_kwargs(cls, kwargs):
