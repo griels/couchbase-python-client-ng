@@ -283,7 +283,7 @@ WrappedIterable = TypeVar('T', bound=IterableQuery)
 
 def iterable_wrapper(basecls  # type: Type[WrappedIterable]
                      ):
-    # type: (...) -> Type['IterableWrapper']
+    # type: (...) -> Union[Type['IterableWrapper'], Type[WrappedIterable]]
     class IterableWrapper(basecls):
         def __init__(self,
                      *args, **kwargs  # type: IterableQuery
