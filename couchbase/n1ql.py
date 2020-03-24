@@ -34,8 +34,6 @@ class QueryResult(iterable_wrapper(N1QLRequest)):
         # type (...)->None
         super(QueryResult,self).__init__(*args, **kwargs)
 
-
-
     def metrics(self):  # type: (...) -> QueryMetrics
         return self.metrics
 

@@ -71,7 +71,6 @@ class AnalyticsResult(iterable_wrapper(AnalyticsRequest)):
                  *args, **kwargs  # type: N1QLRequest
                  ):
         super(AnalyticsResult, self).__init__(*args, **kwargs)
-        #self._params=parent._params
 
 
 class AnalyticsOptions(OptionBlockTimeOut):
