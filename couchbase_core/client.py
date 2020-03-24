@@ -621,12 +621,6 @@ class Client(_Base):
               }
         """
         return json.loads(self._diagnostics(*options, **kwargs)['health_json'])
-    @staticmethod
-    def gen_request(query, *args, **kwargs):
-        if isinstance(query, couchbase_core.analytics.DeferredAnalyticsQuery):
-            return couchbase_core.DeferredAnalyticsRequest(query, *args, **kwargs)
-        elif isinstance(query,AnalyticsQuery):
-            return couchbase_core.AnalyticsRequest(query, *args, **kwargs)
 
 
     def analytics_query(self, query, *args, **kwargs):
@@ -664,7 +658,7 @@ class Client(_Base):
         else:
             query.update(*args, **kwargs)
 
-        return query.itercls()(query, None, self, **kwargs)
+        return query.gen_iter(self, **kwargs)
 
     def search(self, index, query, **kwargs):
         """
