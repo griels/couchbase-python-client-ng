@@ -95,7 +95,7 @@ class SearchResult(iterable_wrapper(SearchRequest)):
         return super(SearchResult, self).facets
 
     def metadata(self):  # type: (...) -> MetaData
-        return MetaData(super(SearchResult,self).meta)
+        return MetaData(super(SearchResult, self).meta)
 
     @classmethod
     def mk_kwargs(cls, kwargs):
