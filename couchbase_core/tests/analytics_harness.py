@@ -192,7 +192,10 @@ class CBASTestQueriesBase(CBASTestBase):
             expected_query['statement'] += ';'
         expected_query = get_expected_query(expected_query)
         expected = (responsedict[query_file]['response'])
-        self.assertSanitizedEqual(result, expected, {u'meta': 'cas', 'Dataverse': 'Timestamp'})
+        try:
+            self.assertSanitizedEqual(result, expected, {u'meta': 'cas', 'Dataverse': 'Timestamp'})
+        except Exception as e:
+            raise
 
 
 class CBASTestQueries(CBASTestQueriesBase):
@@ -233,6 +236,8 @@ class DeferredAnalyticsTest(CBASTestQueriesBase):
             for query_file in cbas_response.keys():
                 if 'setup-dataset' in query_file or 'initiate-shadow' in query_file:
                     continue
+                if '26' in query_file:
+                    pass
                 args, kwargs, statement, options = self.gen_query_params(query_file, cbas_response)
                 real_statement = couchbase_core.analytics.DeferredAnalyticsQuery(statement, *args, **kwargs)
                 real_statement.timeout = 100
