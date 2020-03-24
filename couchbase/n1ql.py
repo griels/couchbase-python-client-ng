@@ -35,10 +35,10 @@ class QueryResult(iterable_wrapper(N1QLRequest)):
         super(QueryResult,self).__init__(*args, **kwargs)
 
     def metrics(self):  # type: (...) -> QueryMetrics
-        return self.metrics
+        return super(QueryResult, self).metrics
 
     def profile(self):
-        return self.profile
+        return super(QueryResult, self).profile
 
     def request_id(self):
         raise NotImplementedError("To be implemented")
