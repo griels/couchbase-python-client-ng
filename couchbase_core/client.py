@@ -665,7 +665,7 @@ class Client(_Base):
         :return: An iterator which yields rows. Each row is a dictionary
             representing a single result
         """
-        itercls=kwargs.pop('itercls', AnalyticsRequest)
+        itercls=kwargs.pop('itercls', None)
         if not isinstance(query, AnalyticsQuery):
             query = AnalyticsQuery(query, *args, **kwargs)
         else:

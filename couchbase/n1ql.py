@@ -26,7 +26,6 @@ from couchbase_core import iterable_wrapper
 from typing import *
 
 
-
 class QueryResult(iterable_wrapper(N1QLRequest)):
     def __init__(self,
                  *args, **kwargs
