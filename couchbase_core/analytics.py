@@ -97,9 +97,8 @@ class AnalyticsQuery(N.N1QLQuery):
             else:
                 self._set_named_args(**kwargs)
 
-    def gen_iter(self, parent, host=None, itercls=None, **kwargs):
-        return (itercls or AnalyticsRequest)(self,host,parent,**kwargs)
-
+    def gen_iter(self, parent, itercls=None, **kwargs):
+        return (itercls or AnalyticsRequest)(self,parent,**kwargs)
 
 
 class DeferredAnalyticsQuery(AnalyticsQuery):
@@ -132,8 +131,9 @@ class DeferredAnalyticsQuery(AnalyticsQuery):
     def timeout(self, value):
         self._timeout = value
 
-    def gen_iter(self, parent, host=None, itercls=None, **kwargs):
-        return (itercls or DeferredAnalyticsRequest)(self,host,parent,**kwargs)
+    def gen_iter(self, parent, itercls=None, **kwargs):
+        return (itercls or DeferredAnalyticsRequest)(self,parent,**kwargs)
+
 
 class AnalyticsRequest(N.N1QLRequest):
     def __init__(self, params, parent):

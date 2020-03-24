@@ -375,11 +375,13 @@ class Cluster(CoreClient):
     def analytics_query(self,       # type: Cluster
                         statement,  # type: str,
                         *options,   # type: AnalyticsOptions
-                        **kwargs
+                        itercls=AnalyticsResult,  # type: Type[AnalyticsResult]
+                        **kwargs  # type: Any
                         ):
         # type: (...) -> AnalyticsResult
         """
         Executes an Analytics query against the remote cluster and returns a AnalyticsResult with the results of the query.
+        :param itercls: Iterator class
         :param statement: the analytics statement to execute
         :param options: the optional parameters that the Analytics service takes based on the Analytics RFC.
         :return: An AnalyticsResult object with the results of the query or error message if the query failed on the server.
