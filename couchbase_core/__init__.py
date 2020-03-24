@@ -292,7 +292,11 @@ def iterable_wrapper(basecls  # type: Type[WrappedIterable]
             self.done = False
             self.buffered_rows = []
 
+        def rows(self):
+            return list(x for x in self)
+
         def metadata(self):
+
             # type: (...) -> JSON
             return self.meta
 

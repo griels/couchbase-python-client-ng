@@ -399,24 +399,17 @@ PyObject *pycbc_Bucket__cbas_query(pycbc_Bucket *self,
                                    PyObject *args,
                                    PyObject *kwargs)
 {
-    PyObject *pyhost = Py_None;
     const char *params = NULL;
     pycbc_strlen_t nparams = 0;
-    static char *kwlist[] = {"params", "host", NULL};
+    static char *kwlist[] = {"params", NULL};
     PyObject *result = NULL;
     if (!PyArg_ParseTupleAndKeywords(
-                args, kwargs, "s#O", kwlist, &params, &nparams, &pyhost)) {
+                args, kwargs, "s#", kwlist, &params, &nparams)) {
         PYCBC_EXCTHROW_ARGS();
         return NULL;
     }
     {
-        const char *host = NULL;
-        if (PyObject_IsTrue(pyhost)) {
-            host = pycbc_cstr(pyhost);
-            if (!host) {
-                PYCBC_EXCTHROW_ARGS();
-            }
-        }
+
         PYCBC_TRACE_WRAP_TOPLEVEL(result,
                                   LCBTRACE_OP_REQUEST_ENCODING,
                                   query_common,
@@ -424,7 +417,7 @@ PyObject *pycbc_Bucket__cbas_query(pycbc_Bucket *self,
                                   self,
                                   params,
                                   nparams,
-                                  host,
+                                  NULL,
                                   0,
                                   0,
                                   1);

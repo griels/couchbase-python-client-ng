@@ -26,6 +26,7 @@ from couchbase_core import iterable_wrapper
 from typing import *
 
 
+
 class QueryResult(iterable_wrapper(N1QLRequest)):
     def __init__(self,
                  *args, **kwargs
@@ -33,8 +34,7 @@ class QueryResult(iterable_wrapper(N1QLRequest)):
         # type (...)->None
         super(QueryResult,self).__init__(*args, **kwargs)
 
-    def rows(self):
-        return list(x for x in super(QueryResult,self).__iter__())
+
 
     def metrics(self):  # type: (...) -> QueryMetrics
         return self.metrics

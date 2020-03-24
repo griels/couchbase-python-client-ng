@@ -9,14 +9,15 @@ from couchbase_core.n1ql import N1QLQuery, N1QLRequest
 from couchbase_core.views.iterator import View
 from .views.params import make_options_string, make_dvpath
 import couchbase_core._libcouchbase as _LCB
-from couchbase_core._libcouchbase import FMT_JSON, FMT_BYTES
+from couchbase_core._libcouchbase import FMT_JSON
 
-from couchbase_core import priv_constants as _P, fulltext as _SEARCH, _depr, subdocument as SD, exceptions
+from couchbase_core import priv_constants as _P, fulltext as _SEARCH, _depr, subdocument as SD
 import couchbase_core.analytics
 from typing import *
 from .durability import Durability
 from .result import Result
-from boltons.funcutils import wraps
+from couchbase_core.analytics import DeferredAnalyticsRequest, DeferredAnalyticsQuery, AnalyticsRequest, AnalyticsQuery
+
 
 def _dsop(create_type=None, wrap_missing_path=True):
     import functools
@@ -622,6 +623,18 @@ class Client(_Base):
         """
         return json.loads(self._diagnostics(*options, **kwargs)['health_json'])
 
+    @staticmethod
+    def gen_request(query, parent, itercls=None):
+        try:
+            if isinstance(query, DeferredAnalyticsQuery):
+                return (itercls or DeferredAnalyticsRequest)(query,parent)
+            elif isinstance(query,AnalyticsQuery):
+                return (itercls or AnalyticsRequest)(query,parent)
+        except Exception as e:
+            raise
+
+
+
     def analytics_query(self, query, *args, **kwargs):
         """
         Execute an Analytics query.
@@ -652,12 +665,13 @@ class Client(_Base):
         :return: An iterator which yields rows. Each row is a dictionary
             representing a single result
         """
+        itercls=kwargs.pop('itercls', AnalyticsRequest)
         if not isinstance(query, AnalyticsQuery):
             query = AnalyticsQuery(query, *args, **kwargs)
         else:
             query.update(*args, **kwargs)
 
-        return couchbase_core.analytics.gen_request(query, None, self)
+        return Client.gen_request(query, self, itercls=itercls)
 
     def search(self, index, query, **kwargs):
         """

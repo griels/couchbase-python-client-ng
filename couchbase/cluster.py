@@ -388,15 +388,16 @@ class Cluster(CoreClient):
         """
         # following the query implementation, but this seems worth revisiting soon
         self._check_for_shutdown()
+        itercls = kwargs.pop('itercls', AnalyticsResult)
         opt = AnalyticsOptions()
         opts = list(options)
         for o in opts:
             if isinstance(o, AnalyticsOptions):
                 opt = o
                 opts.remove(o)
-        return AnalyticsResult(self._operate_on_cluster(CoreClient.analytics_query,
+        return self._operate_on_cluster(CoreClient.analytics_query,
                                                         AnalyticsException,
-                                                        opt.to_analytics_query(statement, *opts, **kwargs)))
+                                                        opt.to_analytics_query(statement, *opts, **kwargs), itercls=itercls)
 
     def search_query(self,
                      index,     # type: str
