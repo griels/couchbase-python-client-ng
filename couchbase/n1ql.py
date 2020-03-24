@@ -23,6 +23,7 @@ except:
 
 from couchbase_core.n1ql import N1QLRequest
 from couchbase_core import iterable_wrapper
+
 from typing import *
 
 
@@ -36,11 +37,12 @@ class QueryResult(iterable_wrapper(N1QLRequest)):
     def rows(self):
         return list(x for x in super(QueryResult,self).__iter__())
 
-    def metrics(self):  # type: (...) -> QueryMetrics
-        return self.metrics
+    def metrics(self  # type: QueryResult
+                ):
+        return super(QueryResult, self).metrics
 
     def profile(self):
-        return self.profile
+        return super(QueryResult, self).profile
 
     def request_id(self):
         raise NotImplementedError("To be implemented")

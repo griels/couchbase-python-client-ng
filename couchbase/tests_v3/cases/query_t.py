@@ -14,9 +14,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 from couchbase_tests.base import CollectionTestCase
-from couchbase.cluster import QueryOptions, QueryProfile, DiagnosticsOptions
+from couchbase.cluster import QueryOptions, QueryProfile, DiagnosticsOptions, QueryResult
 from couchbase.diagnostics import ServiceType, EndpointState, ClusterState
 
 from unittest import SkipTest
@@ -36,13 +35,15 @@ class QueryTests(CollectionTestCase):
         # index to exist, we can make this more isolated
         self.query_bucket = 'beer-sample'
 
-    def assertRows(self, result, expected_count):
+    def assertRows(self,
+                   result,  # type: QueryResult
+                   expected_count):
         count = 0
         self.assertIsNotNone(result)
         for row in result.rows():
             self.assertIsNotNone(row)
             count += 1
-        print(result.parent.errors)
+        print(result.errors)
         self.assertEquals(count, expected_count)
 
     def test_simple_query(self):
