@@ -286,7 +286,10 @@ class AnalyticsIndexManager(object):
                                                                       where_clause,
                                                                       )
         print("create_dataset n1ql: {}".format(n1ql))
-        self._cluster.analytics_query(n1ql, AnalyticsIndexManager._to_analytics_options(options)).rows()
+        query_result=self._cluster.analytics_query(n1ql, AnalyticsIndexManager._to_analytics_options(options))
+        async def async_wrapper():
+            return await query_result
+        .rows()
 
     def drop_dataset(self,
                      dataset_name,  # type: str
