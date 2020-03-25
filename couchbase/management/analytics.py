@@ -215,10 +215,10 @@ class CreateDatasetOptions(BaseAnalyticsIndexManagerOptions):
         # type: (...) -> str
         return self.get('dataverse_name', 'Default')
 
-
+import couchbase.cluster
 class AnalyticsIndexManager(object):
     def __init__(self,
-                 cluster,   # type: Cluster
+                 cluster,   # type: couchbase.cluster.Cluster
                  ):
         self._cluster = cluster
 

@@ -94,4 +94,9 @@ class AsyncRowsBase(object):
         self._mres.errback = self._errback
 
     def start(self):
-        return self._start()
+        try:
+            import logging
+            logging.error("Starting {} type {}".format(self, type(self)))
+            return self._start()
+        except Exception as e:
+            pass
