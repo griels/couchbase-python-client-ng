@@ -90,3 +90,57 @@ class BasicClusterTest(Base):
         d = cb.on_connect()
         self.assertFailure(d, ObjectDestroyedError)
         return d
+
+
+
+import couchbase.tests_v3.cases.cluster_t
+import couchbase.tests_v3.cases.analytics_t
+from couchbase_v2.bucket import Bucket as V2Bucket
+
+import asyncio
+
+class RewrappedCluster(TxCluster):
+    def __init__(self, *args, **kwargs):
+
+    async def wrapper(self, meth, *args, **kwargs):
+        result=meth(super(RewrappedCluster,self), *args, **kwargs)
+        return await result
+    def _wrap(self,  # type: TxDeferredClient
+              meth, *args, **kwargs):
+        """
+        Wraps a Twisted Cluster back into a synchronous cluster,
+        for testing purposes
+        """
+        #if not self.connected:
+        #    return self._connectSchedule(self._wrap, meth, *args, **kwargs)
+
+
+        result= asyncio.get_event_loop().run_until_complete(self.wrapper(meth, *args, **kwargs))
+        return result
+
+    ### Generate the methods
+    def _meth_factory(meth, name):
+        def ret(self, *args, **kwargs):
+            return self._wrap(meth, *args, **kwargs)
+        return ret
+
+    locals().update(TxCluster._gen_memd_wrappers(_meth_factory))
+    for x in TxCluster._MEMCACHED_OPERATIONS:
+        if locals().get(x+'_multi', None):
+            locals().update({x+"Multi": locals()[x+"_multi"]})
+
+import os
+if False or os.getenv("PYCBC_TXCLUSTER_TESTS"):
+    class TxClusterTests(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase):
+        #@property
+        #def factory(self):
+        #    return self._factory
+        @property
+        def cluster_factory(self):
+            return RewrappedCluster
+        def realSetUp(self):
+            #self._factory=V2Bucket
+            super(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase, self).setUp()
+            #self._factory=Base.gen_cluster
+            #self.cluster=self.make_connection()
+
