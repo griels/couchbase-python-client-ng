@@ -207,11 +207,11 @@ class ClusterInformation(object):
         bucket = self.bucket_name
         if 'bucket' in overrides:
             bucket = overrides.pop('bucket')
-
+        host = overrides.pop('host', self.host)
         if self.protocol.startswith('couchbase'):
-            protocol_format = '{0}/{1}'.format(self.host, bucket)
+            protocol_format = '{0}/{1}'.format(host, bucket)
         elif self.protocol.startswith('http'):
-            protocol_format = '{0}:{1}/{2}'.format(self.host, self.port, bucket)
+            protocol_format = '{0}:{1}/{2}'.format(host, self.port, bucket)
         else:
             raise CouchbaseError('Unrecognised protocol')
         connstr = self.protocol + '://' + protocol_format
