@@ -23,7 +23,7 @@ from couchbase.analytics import AnalyticsOptions
 class AnalyticsTestCase(CollectionTestCase):
 
     def setUp(self):
-        super(AnalyticsTestCase, self).setUp()
+        self.realSetUp()
         if self.is_mock:
             raise SkipTest("analytics not mocked")
         if int(self.get_cluster_version().split('.')[0]) < 6:
@@ -39,6 +39,9 @@ class AnalyticsTestCase(CollectionTestCase):
         # connect it...
 
         self.mgr.connect_link()
+
+    def realSetUp(self):
+        super(AnalyticsTestCase, self).setUp()
 
     def tearDown(self):
         self.try_n_times(10, 3, self.mgr.disconnect_link)
