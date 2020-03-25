@@ -15,6 +15,8 @@
 #
 from couchbase.exceptions import UnknownHostError
 from twisted.internet import defer
+
+from couchbase.management.analytics import CreateDatasetOptions
 from couchbase_core.exceptions import (
     BucketNotFoundError,
     ObjectDestroyedError)
@@ -101,7 +103,10 @@ import asyncio
 
 class RewrappedCluster(TxCluster):
     def __init__(self, *args, **kwargs):
-
+        async def wrapper():
+            return super(RewrappedCluster, self).__init__(*args,**kwargs)
+        self.evloop = asyncio.get_event_loop()
+        self.evloop.run_until_complete(wrapper())
     async def wrapper(self, meth, *args, **kwargs):
         result=meth(super(RewrappedCluster,self), *args, **kwargs)
         return await result
@@ -115,7 +120,7 @@ class RewrappedCluster(TxCluster):
         #    return self._connectSchedule(self._wrap, meth, *args, **kwargs)
 
 
-        result= asyncio.get_event_loop().run_until_complete(self.wrapper(meth, *args, **kwargs))
+        result=self.evloop.run_until_complete(self.wrapper(meth, *args, **kwargs))
         return result
 
     ### Generate the methods
@@ -144,3 +149,32 @@ if False or os.getenv("PYCBC_TXCLUSTER_TESTS"):
             #self._factory=Base.gen_cluster
             #self.cluster=self.make_connection()
 
+class TxAnalyticsTest(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase):
+    def setUp(self):
+        self.realSetUp()
+        if self.is_mock:
+            raise SkipTest("analytics not mocked")
+        if int(self.get_cluster_version().split('.')[0]) < 6:
+            raise SkipTest("no analytics in {}".format(self.get_cluster_version()))
+        self.mgr = self.cluster.analytics_indexes()
+        self.dataset_name = 'test_beer_dataset'
+        # create a dataset to query
+        self.mgr.create_dataset(self.dataset_name, 'beer-sample', CreateDatasetOptions(ignore_if_exists=True))
+        def has_dataset(name):
+            datasets = self.mgr.get_all_datasets()
+            return [d for d in datasets if d.dataset_name == name][0]
+        self.try_n_times(10, 3, has_dataset, self.dataset_name)
+        # connect it...
+
+        self.mgr.connect_link()
+    #@property
+    #def factory(self):
+    #    return self._factory
+    @property
+    def cluster_factory(self):
+        return TxCluster
+    def realSetUp(self):
+        #self._factory=V2Bucket
+        super(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase, self).setUp()
+        #self._factory=Base.gen_cluster
+        #self.cluster=self.make_connection()
