@@ -586,6 +586,7 @@ class TxBucket(TxClientFactory.gen_client(RawTxBucket)):
 
 
 from couchbase.cluster import AsyncCluster as V3AsyncCluster
+
 RawTxCluster=TxRawClientFactory.gen_raw(V3AsyncCluster)
 TxCluster=TxClientFactory.gen_client(RawTxCluster, bucket_factory=TxBucket)
 class TxSyncCluster(V3SyncCluster):
