@@ -835,8 +835,8 @@ class ClusterTestCase(CouchbaseTestCase):
         # this for hitting the mock, it seems
         from couchbase_core.cluster import PasswordAuthenticator
         auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
-        self.cluster = self.cluster_factory(connstr_abstract, ClusterOptions(
-            auth_type(self.cluster_info.admin_username, self.cluster_info.admin_password)))
+        self.cluster = self.cluster_factory(connection_string=connstr_abstract, authenticator=
+            auth_type(self.cluster_info.admin_username, self.cluster_info.admin_password))
         self.bucket = self.cluster.bucket(bucket_name)
         self.bucket_name = bucket_name
 
