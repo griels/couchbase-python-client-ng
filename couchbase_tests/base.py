@@ -835,9 +835,10 @@ class ClusterTestCase(CouchbaseTestCase):
         # this for hitting the mock, it seems
         from couchbase_core.cluster import PasswordAuthenticator
         auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
-        self.cluster = self.cluster_factory(connstr_abstract, ClusterOptions(
-            auth_type(self.cluster_info.admin_username, self.cluster_info.admin_password)))
-        self.bucket = self.cluster.bucket(bucket_name)
+        self.cluster = self.cluster_factory(connection_string=connstr_abstract, authenticator=
+            auth_type(self.cluster_info.admin_username, self.cluster_info.admin_password))
+        # TODO: why do we need the connargs?  '
+        self.bucket = self.cluster.bucket(bucket_name, **connargs)
         self.bucket_name = bucket_name
 
     # NOTE: this really is only something you can trust in homogeneous clusters, but then again

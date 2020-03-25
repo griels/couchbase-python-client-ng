@@ -73,9 +73,13 @@ def gen_base(basecls,  # type: Type[T]
             # it seems the mock requires ClassicAuthenticator to work (hence its use in the ClusterTestCase)
             # TODO: resolve this
             auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
-            return TxCluster(connection_string=str(connstr_nobucket),
-                             authenticator=auth_type(self.cluster_info.admin_username,
+            return self.cluster_class(connection_string=str(connstr_nobucket),
+                                        authenticator=auth_type(self.cluster_info.admin_username,
                                                      self.cluster_info.admin_password))
+
+        @property
+        def cluster_class(self):
+            return TxCluster
 
         def _get_connstr_and_bucket_name(self,
                                          args,  # type: List[Any]
