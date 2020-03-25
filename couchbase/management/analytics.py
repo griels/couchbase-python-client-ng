@@ -215,10 +215,10 @@ class CreateDatasetOptions(BaseAnalyticsIndexManagerOptions):
         # type: (...) -> str
         return self.get('dataverse_name', 'Default')
 
-
+import couchbase.cluster
 class AnalyticsIndexManager(object):
     def __init__(self,
-                 cluster,   # type: Cluster
+                 cluster,   # type: couchbase.cluster.Cluster
                  ):
         self._cluster = cluster
 
@@ -286,10 +286,7 @@ class AnalyticsIndexManager(object):
                                                                       where_clause,
                                                                       )
         print("create_dataset n1ql: {}".format(n1ql))
-        query_result=self._cluster.analytics_query(n1ql, AnalyticsIndexManager._to_analytics_options(options))
-        async def async_wrapper():
-            return await query_result
-        .rows()
+        self._cluster.analytics_query(n1ql, AnalyticsIndexManager._to_analytics_options(options)).rows()
 
     def drop_dataset(self,
                      dataset_name,  # type: str
