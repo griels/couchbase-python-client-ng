@@ -406,15 +406,19 @@ class TxRawClientFactory(object):
 
                 .. seealso:: :meth:`~couchbase_v2.bucket.Bucket.n1ql_query`
                 """
+                return self.deferred_verb(BatchedQueryResult, self._do_n1ql_query, self.query, *args, **kwargs)
+
+            def deferred_verb(self, itercls, raw_verb, cooked_verb, *args, **kwargs):
                 if not self.connected:
-                    cb = lambda x: self.query(*args, **kwargs)
+                    cb = lambda x: cooked_verb(*args, **kwargs)
                     return self.on_connect().addCallback(cb)
-
-                kwargs['itercls'] = BatchedQueryResult
-                o = self._do_n1ql_query(*args, **kwargs)
+                kwargs['itercls'] = itercls
+                o = raw_verb(*args, **kwargs)
                 o.start()
-
                 return o._getDeferred()
+
+            def analytics_query(self, *args, **kwargs):
+                return self.deferred_verb(BatchedQueryResult, super(TxRawClient, self).analytics_query, self.analytics_query, *args, **kwargs)
 
             def search(self, cls, *args, **kwargs):
                 """
@@ -475,6 +479,9 @@ class TxRawClientFactory(object):
                 o = super(async_base, self).search(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
+            _ADDITIONAL_OPS=("_http_request","analytics_query")
+            _MEMCACHED_OPERATIONS=async_base._MEMCACHED_OPERATIONS+_ADDITIONAL_OPS
+            _MEMCACHED_NOMULTI=async_base._MEMCACHED_NOMULTI+_ADDITIONAL_OPS
         return TxRawClient
 
 
