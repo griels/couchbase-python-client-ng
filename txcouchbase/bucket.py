@@ -20,6 +20,7 @@ This file contains the twisted-specific bits for the Couchbase client.
 
 from typing import *
 
+from six import raise_from
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
@@ -595,7 +596,22 @@ class TxBucket(TxClientFactory.gen_client(RawTxBucket)):
 from couchbase.cluster import AsyncCluster as V3AsyncCluster
 
 RawTxCluster=TxRawClientFactory.gen_raw(V3AsyncCluster)
-TxCluster=TxClientFactory.gen_client(RawTxCluster, bucket_factory=TxBucket)
+class TxCluster(TxClientFactory.gen_client(RawTxCluster, bucket_factory=TxBucket)):
+    async def async_wrapper(self, verb):
+        return await verb
+    def _sync_operate_on_cluster(self,
+                            verb,
+                            failtype,  # type: Type[CouchbaseError]
+                            *args,
+                            **kwargs):
+
+        try:
+            import asyncio
+            return asyncio.get_event_loop().run_until_complete(self.async_wrapper(verb(self, *args, **kwargs)))
+        except Exception as e:
+            raise_from(failtype(params=CouchbaseError.ParamType(message="Cluster operation failed", inner_cause=e)), e)
+
+
 class TxSyncCluster(V3SyncCluster):
     def __init__(self, *args, **kwargs):
         super(TxSyncCluster, self).__init__(*args, bucket_factory=TxBucket, **kwargs)
