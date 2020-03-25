@@ -60,15 +60,19 @@ class AnalyticsTestCase(CollectionTestCase):
                 return
         self.fail("No rows in result!")
 
+    def checkResult(self, result, callback):
+        return callback(result)
+
     def test_simple_query(self):
-        self.try_n_times(10, 3, self.assertQueryReturnsRows, "SELECT * FROM `{}` LIMIT 1".format(self.dataset_name))
+        return self.try_n_times(10, 3, self.assertQueryReturnsRows, "SELECT * FROM `{}` LIMIT 1".format(self.dataset_name))
 
     def test_query_positional_params(self):
         rows = self.try_n_times(10, 3, self.assertQueryReturnsRows,
                                 'SELECT * FROM `{}` WHERE `type` = $1 LIMIT 1'.format(self.dataset_name),
                                 AnalyticsOptions(positional_parameters=["brewery"]))
         print(rows)
-        self.assertEqual("brewery", rows[0][self.dataset_name]['type'])
+        return self.checkResult(rows, lambda result:  self.assertEqual("brewery", result[0][self.dataset_name]['type']))
+
 
     def test_query_positional_params_no_option(self):
         rows = self.try_n_times(10, 3, self.assertQueryReturnsRows,
