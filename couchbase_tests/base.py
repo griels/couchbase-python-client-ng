@@ -767,7 +767,7 @@ class ClusterTestCase(CouchbaseTestCase):
     def __init__(self, *args, **kwargs):
         super(ClusterTestCase, self).__init__(*args, **kwargs)
         if not hasattr(self, 'cluster_factory'):
-            self.cluster_factory=Cluster.connect
+            self.cluster_factory = Cluster.connect
         self.validator = ClusterTestCase.ItemValidator(self)
 
     class ItemValidator(object):
