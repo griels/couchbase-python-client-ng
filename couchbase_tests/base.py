@@ -207,11 +207,11 @@ class ClusterInformation(object):
         bucket = self.bucket_name
         if 'bucket' in overrides:
             bucket = overrides.pop('bucket')
-
+        host = overrides.pop('host', self.host)
         if self.protocol.startswith('couchbase'):
-            protocol_format = '{0}/{1}'.format(self.host, bucket)
+            protocol_format = '{0}/{1}'.format(host, bucket)
         elif self.protocol.startswith('http'):
-            protocol_format = '{0}:{1}/{2}'.format(self.host, self.port, bucket)
+            protocol_format = '{0}:{1}/{2}'.format(host, self.port, bucket)
         else:
             raise CouchbaseError('Unrecognised protocol')
         connstr = self.protocol + '://' + protocol_format
@@ -810,11 +810,16 @@ class ClusterTestCase(CouchbaseTestCase):
                 return
         self.fail("successful {} after {} times waiting {} seconds between calls".format(func, num_times, seconds_between))
 
-    def try_n_times(self, num_times, seconds_between, func, *args, **kwargs):
+    @staticmethod
+    def _passthru(result, *args, **kwargs):
+        return result
+
+    def try_n_times(self, num_times, seconds_between, func, *args, on_success=None, **kwargs):
+        on_success = on_success or self._passthru
         for _ in range(num_times):
             try:
                 ret = func(*args, **kwargs)
-                return ret
+                return on_success(ret)
             except Exception as e:
                 # helpful to have this print statement when tests fail
                 print("got exception {}, sleeping...".format(e))
@@ -835,8 +840,8 @@ class ClusterTestCase(CouchbaseTestCase):
         # this for hitting the mock, it seems
         from couchbase_core.cluster import PasswordAuthenticator
         auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
-        self.cluster = self.cluster_factory(connstr_abstract, ClusterOptions(
-            auth_type(self.cluster_info.admin_username, self.cluster_info.admin_password)))
+        self.cluster = self.cluster_factory(connection_string=connstr_abstract, authenticator=
+            auth_type(self.cluster_info.admin_username, self.cluster_info.admin_password))
         self.bucket = self.cluster.bucket(bucket_name)
         self.bucket_name = bucket_name
 

@@ -19,7 +19,7 @@ class CouchbasePy35Test(AioTestCase):
         viewiter = beer_bucket.view_query("beer", "brewery_beers", limit=10)
 
         count = 0
-        async for row in viewiter:
+        async for _ in viewiter:
             count += 1
 
         self.assertEqual(count, 10)
