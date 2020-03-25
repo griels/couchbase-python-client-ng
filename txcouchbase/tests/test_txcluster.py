@@ -33,9 +33,9 @@ Base = gen_base(ConnectionTestCase)
 # TODO: once TxCluster is fully async, retarget to TxCluster and rename to BasicClusterTest
 
 
-class BasicConnectionTest(Base):
+class BasicClusterTest(Base):
     def __init__(self, *args, **kwargs):
-        super(BasicConnectionTest,self).__init__(*args,**kwargs)
+        super(BasicClusterTest, self).__init__(*args, **kwargs)
 
     @property
     def factory(self):
