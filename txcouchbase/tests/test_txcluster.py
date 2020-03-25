@@ -28,7 +28,7 @@ from txcouchbase.bucket import TxBucket, TxCluster
 from nose.tools import timed
 import sys
 from unittest import SkipTest
-
+from couchbase.cluster import Cluster as SyncCluster
 
 Base = gen_base(ConnectionTestCase)
 
@@ -148,33 +148,51 @@ if False or os.getenv("PYCBC_TXCLUSTER_TESTS"):
             super(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase, self).setUp()
             #self._factory=Base.gen_cluster
             #self.cluster=self.make_connection()
+if False;
+    class TxAnalyticsTest(gen_base(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase)):
+        def setUp(self):
+            self._factory=SyncCluster
+            super(TxAnalyticsTest, self).setUp()
+            # if self.is_mock:
+            #     raise SkipTest("analytics not mocked")
+            # if int(self.get_cluster_version().split('.')[0]) < 6:
+            #     raise SkipTest("no analytics in {}".format(self.get_cluster_version()))
+            # self.mgr = self.cluster.analytics_indexes()
+            # self.dataset_name = 'test_beer_dataset'
+            # # create a dataset to query
+            # self.mgr.create_dataset(self.dataset_name, 'beer-sample', CreateDatasetOptions(ignore_if_exists=True))
+            # def has_dataset(name):
+            #     datasets = self.mgr.get_all_datasets()
+            #     return [d for d in datasets if d.dataset_name == name][0]
+            # self.try_n_times(10, 3, has_dataset, self.dataset_name)
+            # # connect it...
+            #
+            # self.mgr.connect_link()
+            self._factory=self.gen_cluster
+            self.cluster=self.make_connection()
 
-class TxAnalyticsTest(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase):
-    def setUp(self):
-        self.realSetUp()
-        if self.is_mock:
-            raise SkipTest("analytics not mocked")
-        if int(self.get_cluster_version().split('.')[0]) < 6:
-            raise SkipTest("no analytics in {}".format(self.get_cluster_version()))
-        self.mgr = self.cluster.analytics_indexes()
-        self.dataset_name = 'test_beer_dataset'
-        # create a dataset to query
-        self.mgr.create_dataset(self.dataset_name, 'beer-sample', CreateDatasetOptions(ignore_if_exists=True))
-        def has_dataset(name):
-            datasets = self.mgr.get_all_datasets()
-            return [d for d in datasets if d.dataset_name == name][0]
-        self.try_n_times(10, 3, has_dataset, self.dataset_name)
-        # connect it...
+        def try_n_times(self, num_times, seconds_between, func, *args, **kwargs):
+            for _ in range(num_times):
+                try:
+                    ret = func(*args, **kwargs)
+                    return ret
+                except:
+                    import time
+                    time.sleep(seconds_between)
+            self.fail("unsuccessful {} after {} times, waiting {} seconds between calls".format(func, num_times, seconds_between))
 
-        self.mgr.connect_link()
-    #@property
-    #def factory(self):
-    #    return self._factory
-    @property
-    def cluster_factory(self):
-        return TxCluster
-    def realSetUp(self):
-        #self._factory=V2Bucket
-        super(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase, self).setUp()
-        #self._factory=Base.gen_cluster
-        #self.cluster=self.make_connection()
+        def assertQueryReturnsRows(self, query, *options, **kwargs):
+            d = self.cluster.analytics_query(query, *options, **kwargs)
+            rows=None
+            def query_callback(result):
+                rows = result.rows()
+                if len(rows) > 0:
+                    return rows
+                raise Exception("no rows in result")
+            d.addCallback(query_callback)
+            return d
+
+        locals().update()
+        @property
+        def factory(self):
+            return self._factory
