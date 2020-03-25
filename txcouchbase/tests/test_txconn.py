@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from couchbase.exceptions import UnknownHostError
 from twisted.internet import defer
 from couchbase_core.exceptions import (
     BucketNotFoundError,
@@ -21,7 +22,7 @@ from couchbase_core.exceptions import (
 from couchbase_tests.base import ConnectionTestCase
 from couchbase_core.connstr import ConnectionString
 from txcouchbase.tests.base import gen_base
-from txcouchbase.bucket import TxBucket
+from txcouchbase.bucket import TxBucket, TxCluster
 from nose.tools import timed
 import sys
 from unittest import SkipTest
@@ -38,7 +39,7 @@ class BasicConnectionTest(Base):
 
     @property
     def factory(self):
-        return self.gen_bucket
+        return self.gen_cluster
 
     def testConnectionSuccess(self):
         cb = self.make_connection()
@@ -48,10 +49,10 @@ class BasicConnectionTest(Base):
 
     def testConnectionFailure(self  # type: Base
                               ):
-        cb = self.make_connection(bucket='blahblah')
+        cb = self.make_connection(host="qweqwe")
         d = cb.on_connect()
         d.addCallback(lambda x: x, cb)
-        return self.assertFailure(d, BucketNotFoundError)
+        return self.assertFailure(d, UnknownHostError)
 
     @timed(10)
     def testBadEvent(self):
