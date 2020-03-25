@@ -53,7 +53,7 @@ Base = gen_base(MockTestCase)
 class TxN1QLTests(Base):
     @property
     def factory(self):
-        return self.gen_bucket
+        return self.gen_cluster
 
     def testIncremental(self):
         cb = self.make_connection()
