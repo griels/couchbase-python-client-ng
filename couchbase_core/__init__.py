@@ -26,6 +26,8 @@ except:
     import abstractmethod
 
 from copy import deepcopy
+import logging
+import traceback
 
 
 # Pythons > (2.7||3.2) silence deprecation warnings by default.
@@ -313,6 +315,12 @@ def iterable_wrapper(basecls  # type: Type[WrappedIterable]
                     break
     return IterableWrapper
 
+
+def log_result(o, raw_verb, *args, **kwargs):
+    try:
+        logging.error("Got {} from {}, {} {} at {}".format(o, raw_verb, args, kwargs, traceback.format_stack()))
+    except Exception as e:
+        pass
 
 def _depr(fn, usage, stacklevel=3):
     """Internal convenience function for deprecation warnings"""
