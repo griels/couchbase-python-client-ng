@@ -58,8 +58,8 @@ class TxN1QLTests(Base):
         return self.gen_cluster
 
     def mock_fallback(self, err):
-        #if not self.is_mock:
-        #    self.assertIsInstance(err.value.objextra, ViewResult)
+        if not self.is_mock:
+            self.assertIsInstance(err.value.objextra, ViewResult)
         return True
 
     def testIncremental(self):
@@ -96,7 +96,23 @@ class TxN1QLTests(Base):
         d.addErrback(self.mock_fallback)
         logging.error("ready to return")
         return result
+    def testBatchedAnalytics(self  # type: Base
+                    ):
+        cb = self.make_connection()
+        d = cb.analytics_query('SELECT mockrow')
 
+        def verify(o):
+            logging.error("Called back")
+
+            self.assertIsInstance(o, BatchedQueryResult)
+            rows = [r for r in o]
+            self.assertEqual(1, len(rows))
+            logging.error("End of callback")
+
+        result= d.addCallback(verify)
+        d.addErrback(self.mock_fallback)
+        logging.error("ready to return")
+        return result
     def testEmpty(self):
         cb = self.make_connection()
         d = cb.query('SELECT emptyrow')
