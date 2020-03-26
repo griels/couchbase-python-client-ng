@@ -418,7 +418,7 @@ class N1QLRequest(object):
                                         cross_bucket=self._params.cross_bucket)
         import traceback
         print("Got result {} on {} at {}".format(result,    self._parent,     traceback.format_stack()))
-
+        return result
     def _start(self):
         if self._mres:
             return
