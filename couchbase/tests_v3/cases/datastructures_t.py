@@ -15,14 +15,11 @@
 # limitations under the License.
 #
 from couchbase.collection import CBCollection
-from couchbase_tests.base import ConnectionTestCase, CollectionTestCase
-import couchbase_v2.exceptions as E
+from couchbase_tests.base import CollectionTestCase
+import couchbase.exceptions as E
+
 
 class DatastructureTest(CollectionTestCase):
-
-
-
-
     def test_map(self  # type: DatastructureTest
                  ):
         key = self.gen_key('dsmap')
@@ -50,7 +47,9 @@ class DatastructureTest(CollectionTestCase):
 
         cb = self.cb
 
-        self.assertRaises(E.NotFoundError, cb.list_append, key, 'hello')
+        def append_key():
+            cb.list_append(key, 'hello')
+        self.assertRaises(E.NotFoundError, append_key)
         rv = self.cb.list_append(key, 'hello', create=True)
         self.assertSuccess(rv)
         self.assertCas(rv)
