@@ -231,7 +231,14 @@ class TxRawClientFactory(object):
                 super_obj = super(async_base, self)
                 meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
                 return meth(*args, **kwargs)
-
+            def _do_analytics_query(self,  # type: TxRawClient
+                               *args,  # type: Any
+                               **kwargs  # type: Any
+                               ):
+                # type: (...) -> Any
+                super_obj = super(async_base, self)
+                meth = getattr(super_obj, 'analytics_query')
+                return meth(*args, **kwargs)
             def _do_view_query(self, *args, **kwargs):
                 #super_obj = super(async_base, self)
                 #0meth = getattr(super_obj, 'view_query', getattr(super_obj, 'query', None))
@@ -440,7 +447,7 @@ class TxRawClientFactory(object):
                 return o._getDeferred()
 
             def analytics_query(self, *args, **kwargs):
-                return self.deferred_verb(BatchedAnalyticsResult, super(TxRawClient, self).analytics_query, self.analytics_query, *args, **kwargs)
+                return self.deferred_verb(BatchedAnalyticsResult, self._do_analytics_query, self.analytics_query, *args, **kwargs)
 
             def search(self, cls, *args, **kwargs):
                 """
