@@ -25,12 +25,14 @@ from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
 from couchbase.n1ql import QueryResult
+from couchbase.analytics import AnalyticsResult
 from couchbase.bucket import ViewResult
 from couchbase.cluster import Cluster as V3SyncCluster
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
 from couchbase_core.asynchronous.events import EventQueue
 from couchbase_core.asynchronous.fulltext import AsyncSearchRequest
 from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
+from couchbase_core.asynchronous.analytics import AsyncAnalyticsRequest
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.client import Client as CoreClient
 from couchbase_core.exceptions import CouchbaseError
@@ -120,6 +122,21 @@ class AsyncQueryResultBase(AsyncN1QLRequest, QueryResult):
         """
         QueryResult.__init__(self, *args, **kwargs)
 
+
+class AsyncAnalyticsResultBase(AsyncAnalyticsRequest, AnalyticsResult):
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize a new AsyncViewBase object. This is intended to be
+        subclassed in order to implement the require methods to be
+        invoked on error, data, and row events.
+
+        Usage of this class is not as a standalone, but rather as
+        an ``itercls`` parameter to the
+        :meth:`~couchbase_core.connection.Connection.query` method of the
+        connection object.
+        """
+        AnalyticsResult.__init__(self, *args, **kwargs)
+
 class BatchedView(BatchedRowMixin, AsyncViewBase):
     def __init__(self, *args, **kwargs):
         AsyncViewBase.__init__(self, *args, **kwargs)
@@ -143,6 +160,10 @@ class BatchedQueryResult(BatchedRowMixin, AsyncQueryResultBase):
         AsyncQueryResultBase.__init__(self, *args, **kwargs)
         BatchedRowMixin.__init__(self, *args, **kwargs)
 
+class BatchedAnalyticsResult(BatchedRowMixin, AsyncAnalyticsResultBase):
+    def __init__(self, *args, **kwargs):
+        AsyncAnalyticsResultBase.__init__(self, *args, **kwargs)
+        BatchedRowMixin.__init__(self, *args, **kwargs)
 
 class BatchedSearchRequest(BatchedRowMixin, AsyncSearchRequest):
     def __init__(self, *args, **kwargs):
@@ -419,7 +440,7 @@ class TxRawClientFactory(object):
                 return o._getDeferred()
 
             def analytics_query(self, *args, **kwargs):
-                return self.deferred_verb(BatchedQueryResult, super(TxRawClient, self).analytics_query, self.analytics_query, *args, **kwargs)
+                return self.deferred_verb(BatchedAnalyticsResult, super(TxRawClient, self).analytics_query, self.analytics_query, *args, **kwargs)
 
             def search(self, cls, *args, **kwargs):
                 """
@@ -480,7 +501,7 @@ class TxRawClientFactory(object):
                 o = super(async_base, self).search(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
-            _ADDITIONAL_OPS=("_http_request","analytics_query")
+            _ADDITIONAL_OPS=tuple()#"_http_request")#,"analytics_query")
             _MEMCACHED_OPERATIONS=async_base._MEMCACHED_OPERATIONS+_ADDITIONAL_OPS
             _MEMCACHED_NOMULTI=async_base._MEMCACHED_NOMULTI+_ADDITIONAL_OPS
         return TxRawClient
