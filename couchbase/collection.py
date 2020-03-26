@@ -1,7 +1,9 @@
+import logging
+
 from couchbase_core.supportability import volatile
 from couchbase_core import JSON
 
-from boltons.funcutils import wraps
+from functools import wraps
 from mypy_extensions import VarArg, KwArg, Arg
 
 from .subdocument import LookupInSpec, MutateInSpec, MutateInOptions, \
@@ -14,6 +16,7 @@ from .options import OptionBlock, AcceptableInts
 import couchbase.exceptions
 from couchbase_core.exceptions import NotSupportedError
 from couchbase_core.client import Client as CoreClient
+from couchbase_core._libcouchbase import Bucket as _Base
 import copy
 
 from typing import *
@@ -29,6 +32,7 @@ except:
 import os
 from couchbase_core import abstractmethod, ABCMeta, with_metaclass
 import wrapt
+import inspect
 
 
 class DeltaValue(ConstrainedInt):
@@ -237,18 +241,12 @@ def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
                 **kwargs  # type:  Any
                 ):
         # type: (...)->Any
-        # NOTE: BinaryCollection, for instance, contains a collection and has an interface
-        # which uses this annotation.  So -- anything this depends on must be supported by
-        # that interface.  If we add/remove something that depends on self from here, we need
-        # to do same in BinaryCollection (and any other object that does likewise).
-        if self.true_collections:
-            if self._self_name and not self._self_scope:
-                raise couchbase.exceptions.CollectionMissingException
-            if self._self_scope and self._self_name:
-                kwargs['scope'] = self._self_scope.name
-                kwargs['collection'] = self._self_name
-
+        try:
+            self._inject_scope_collection_kwargs(kwargs)
+        except Exception as e:
+            raise
         return func(self, *args, **kwargs)
+
 
     return wrapped
 
@@ -291,9 +289,65 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
     return _inject_scope_and_collection(wrapper)
 
 
+class Wrapper(object):
+    def __init__(self,
+                 meth,
+                 coll  # type: CBCollectionBase
+                 ):
+        self._meth=meth
+        self._coll=coll
+    def __call__(self, *args, **kwargs):
+        self._coll._inject_scope_collection_kwargs(kwargs)
+        return self._meth(*args, **kwargs)
+
+class UnboundWrapper(object):
+    def __init__(self,
+                 meth,
+                 ):
+        self._meth=meth
+    def proxy(self):
+        def wrap(coll, *args, **kwargs):
+            coll._inject_scope_collection_kwargs(kwargs)
+            return self._meth(coll.bucket, *args, **kwargs)
+        return wrap
+def _wrap_collections(self):
+    methods = inspect.getmembers(self, inspect.ismethod)
+    for name, meth in methods:
+        if not name.startswith('_'):
+            logging.error("Wrapping {}".format(name))
+            setattr(self, name, Wrapper(meth, self))
+
+def _wrap_collections_class(cls):
+    methods = {name: meth for name, meth in inspect.getmembers(cls, inspect.isfunction)}
+    coreclient_methods = {name: meth for name, meth in inspect.getmembers(CoreClient, inspect.isfunction) if name not in methods.keys()}
+    for name, meth in coreclient_methods.items():
+        if not name.startswith('_'):
+            setattr(cls, name, UnboundWrapper(meth).proxy())
+    for name, meth in methods.items():
+        if not name.startswith('_'):
+            logging.error("Wrapping {}".format(name))
+            setattr(cls, name, _inject_scope_and_collection(meth))
+
+
 class CBCollectionBase(with_metaclass(ABCMeta)):
+    def __new__(cls, *args, **kwargs):
+        _wrap_collections_class(cls)
+        return super(CBCollectionBase,cls).__new__(cls, *args,**kwargs)
+
+    def _inject_scope_collection_kwargs(self, kwargs):
+        # NOTE: BinaryCollection, for instance, contains a collection and has an interface
+        # which uses this annotation.  So -- anything this depends on must be supported by
+        # that interface.  If we add/remove something that depends on self from here, we need
+        # to do same in BinaryCollection (and any other object that does likewise).
+        if self.true_collections:
+            if self._self_name and not self._self_scope:
+                raise couchbase.exceptions.CollectionMissingException
+            if self._self_scope and self._self_name:
+                kwargs['scope'] = self._self_scope.name
+                kwargs['collection'] = self._self_name
+
     def __init__(self,  # type: CBCollectionBase
-                 name = None,  # type: str
+             name = None,  # type: str
                  parent_scope = None,  # type: Scope
                  *options,
                  **kwargs
@@ -511,7 +565,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         :return: a dictionary of :class:`~.GetResult` objects by key
         :rtype: dict
         """
-        return get_multi_get_result(self.bucket, CoreClient.get_multi, keys, *options, **kwargs)
+        return get_multi_get_result(self.bucket, _Base.get_multi, keys, *options, **kwargs)
 
     @overload
     def upsert_multi(self,  # type: CBCollectionBase
@@ -589,7 +643,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
 
         .. seealso:: :meth:`upsert_multi` - for other optional arguments
         """
-        return get_multi_mutation_result(self.bucket, CoreClient.insert_multi, keys, *options, **kwargs)
+        return get_multi_mutation_result(self.bucket, _Base.insert_multi, keys, *options, **kwargs)
 
     @_inject_scope_and_collection
     @volatile
@@ -616,14 +670,15 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
             raise NotSupportedError("Client durability not supported yet for remove")
         return get_multi_mutation_result(self.bucket, CoreClient.remove_multi, keys, *options, **kwargs)
 
-    replace_multi = _wrap_multi_mutation_result(CoreClient.replace_multi)
-    touch_multi = _wrap_multi_mutation_result(CoreClient.touch_multi)
-    lock_multi = _wrap_multi_mutation_result(CoreClient.lock_multi)
-    unlock_multi = _wrap_multi_mutation_result(CoreClient.unlock_multi)
-    append_multi = _wrap_multi_mutation_result(CoreClient.unlock_multi)
-    prepend_multi = _wrap_multi_mutation_result(CoreClient.prepend_multi)
-    counter_multi = _wrap_multi_mutation_result(CoreClient.counter_multi)
+    replace_multi = _wrap_multi_mutation_result(_Base.replace_multi)
+    touch_multi = _wrap_multi_mutation_result(_Base.touch_multi)
+    lock_multi = _wrap_multi_mutation_result(_Base.lock_multi)
+    unlock_multi = _wrap_multi_mutation_result(_Base.unlock_multi)
+    append_multi = _wrap_multi_mutation_result(_Base.append_multi)
+    prepend_multi = _wrap_multi_mutation_result(_Base.prepend_multi)
+    counter_multi = _wrap_multi_mutation_result(_Base.counter_multi)
 
+    @_inject_scope_and_collection
     def touch(self,
               key,          # type: str
               expiry,       # type: timedelta
@@ -649,7 +704,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         kwargs['expiry'] = expiry
         return CoreClient.touch(self.bucket, key, **forward_args(kwargs, *options))
 
-    @_wrap_in_mutation_result
+    @_mutate_result_and_inject
     def unlock(self,
                key,         # type: str
                cas,         # type: int
@@ -678,6 +733,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         kwargs['cas'] = cas
         return CoreClient.unlock(self.bucket, key, **forward_args(kwargs, *options))
 
+    @_inject_scope_and_collection
     def exists(self,      # type: CBCollection
                key,       # type: str
                *options,  # type: ExistsOptions
@@ -765,7 +821,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         final_options = forward_args(kwargs, *options)
         return ResultPrecursor(CoreClient.upsert(self.bucket, key, value, **final_options), final_options)
 
-    @_wrap_in_mutation_result
+    @_mutate_result_and_inject
     def insert(self,
                key,         # type: str
                value,       # type: Any
@@ -948,6 +1004,8 @@ class BinaryCollection(object):
         self._self_scope = self._collection._self_scope
         self.true_collections = self._collection.true_collections
 
+    _MEMCACHED_OPERATIONS = ('append', 'prepend', 'increment', 'decrement')
+    _MEMCACHED_NOMULTI = _MEMCACHED_OPERATIONS
 
     @_mutate_result_and_inject
     def append(self,
@@ -1048,7 +1106,6 @@ class BinaryCollection(object):
 
         """
         final_opts = self._check_delta_initial(kwargs, *options)
-
         x = CoreClient.counter(self._collection.bucket, key, **final_opts)
         return ResultPrecursor(x, final_opts)
 
@@ -1212,7 +1269,7 @@ class CBCollectionShared(CBCollectionBase, wrapt.ObjectProxy):
         """
         assert issubclass(type(parent_scope.bucket), CoreClientDatastructureWrap)
         wrapt.ObjectProxy.__init__(self, parent_scope.bucket)
-        CBCollectionBase.__init__(self, parent_scope=parent_scope, *options, **kwargs)
+        CBCollectionBase.__init__(self, name=name,  parent_scope=parent_scope, *options, **kwargs)
 
     @property
     def bucket(self  # type: CBCollectionShared
