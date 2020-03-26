@@ -50,7 +50,7 @@ ViewSubType = TypeVar('ViewSubType', bound=Type[ViewInstance])
 
 class Client(_Base):
     _MEMCACHED_NOMULTI = ('stats', 'lookup_in', 'mutate_in')
-    _MEMCACHED_OPERATIONS = ('upsert', 'get', 'insert', 'append', 'prepend',
+    _MEMCACHED_OPERATIONS = ('upsert', 'get', 'insert',
                              'replace', 'remove', 'touch',
                              'unlock', 'stats',
                              'lookup_in', 'mutate_in')
@@ -361,7 +361,6 @@ class Client(_Base):
     def closed(self):
         """Returns True if the object has been closed with :meth:`_close`"""
         return self._privflags & _LCB.PYCBC_CONN_F_CLOSED
-
 
     def mutate_in(self, key, specs, **kwargs):
         """Perform multiple atomic modifications within a document.
@@ -973,7 +972,8 @@ class Client(_Base):
     def remove_multi(self,
                      kvs,
                      quiet=None,
-                     durability_level=Durability.NONE):
+                     durability_level=Durability.NONE,
+                     **kwargs):
         """Remove multiple items from the cluster
 
         :param kvs: Iterable of keys to delete from the cluster. If you wish
@@ -985,7 +985,7 @@ class Client(_Base):
             values.
         :param Durability durability_level: Sync replication durability level.
         """
-        return _Base.remove_multi(self, kvs, quiet=quiet, durability_level=durability_level.value)
+        return _Base.remove_multi(self, kvs, quiet=quiet, durability_level=durability_level.value, **kwargs)
 
     def counter_multi(self,
                       kvs,
@@ -1098,11 +1098,11 @@ class Client(_Base):
 
         """
         op = SD.upsert(mapkey, value)
-        sdres = Client.mutate_in(self, key, (op,), **kwargs)
+        sdres = self.mutate_in(key, (op,), **kwargs)
         return self._wrap_dsop(sdres, **kwargs)
 
     @_dsop()
-    def map_get(self, key, mapkey):
+    def map_get(self, key, mapkey, **kwargs):
         """
         Retrieve a value from a map.
 
@@ -1115,7 +1115,7 @@ class Client(_Base):
         .. seealso:: :meth:`map_add` for an example
         """
         op = SD.get(mapkey)
-        sdres = Client.lookup_in(self, key, (op,))
+        sdres = Client.lookup_in(self, key, (op,), **kwargs)
         return self._wrap_dsop(sdres, True)
 
     @_dsop()
@@ -1140,7 +1140,7 @@ class Client(_Base):
         return self._wrap_dsop(sdres, **kwargs)
 
     @_dsop()
-    def map_size(self, key):
+    def map_size(self, key, **kwargs):
         """
         Get the number of items in the map.
 
@@ -1151,7 +1151,7 @@ class Client(_Base):
         .. seealso:: :meth:`map_add`
         """
 
-        return Client.lookup_in(self, key, (SD.get_count(''),))[0]
+        return Client.lookup_in(self, key, (SD.get_count(''),), **kwargs)[0]
 
     @_dsop(create_type=list)
     def list_append(self, key, value, create=False, **kwargs):
@@ -1263,7 +1263,7 @@ class Client(_Base):
         .. seealso:: :meth:`set_add`, :meth:`map_add`
         """
         while True:
-            rv = Client.get(self, key)
+            rv = Client.get(self, key, **kwargs)
             try:
                 ix = rv.value.index(value)
                 kwargs['cas'] = rv.cas
@@ -1273,7 +1273,7 @@ class Client(_Base):
             except ValueError:
                 return
 
-    def set_size(self, key):
+    def set_size(self, key, **kwargs):
         """
         Get the length of a set.
 
@@ -1282,9 +1282,9 @@ class Client(_Base):
         :raise: :cb_exc:`NotFoundError` if the set does not exist.
 
         """
-        return Client.list_size(self, key)
+        return self.list_size(key, **kwargs)
 
-    def set_contains(self, key, value):
+    def set_contains(self, key, value, **kwargs):
         """
         Determine if an item exists in a set
         :param key: The document ID of the set
@@ -1292,11 +1292,11 @@ class Client(_Base):
         :return: True if `value` exists in the set
         :raise: :cb_exc:`NotFoundError` if the document does not exist
         """
-        rv = Client.get(self, key)
+        rv = self.get(key, **kwargs)
         return value in rv.value
 
     @_dsop()
-    def list_get(self, key, index):
+    def list_get(self, key, index, **kwargs):
         """
         Get a specific element within a list.
 
@@ -1306,7 +1306,7 @@ class Client(_Base):
         :raise: :exc:`IndexError` if the index does not exist
         :raise: :cb_exc:`NotFoundError` if the list does not exist
         """
-        return Client.map_get(self, key, '[{0}]'.format(index))
+        return self.map_get(key, '[{0}]'.format(index), **kwargs)
 
     @_dsop()
     def list_remove(self, key, index, **kwargs):
@@ -1320,10 +1320,10 @@ class Client(_Base):
         :raise: :exc:`IndexError` if the index does not exist
         :raise: :cb_exc:`NotFoundError` if the list does not exist
         """
-        return Client.map_remove(self, key, '[{0}]'.format(index), **kwargs)
+        return self.map_remove(key, '[{0}]'.format(index), **kwargs)
 
     @_dsop()
-    def list_size(self, key):
+    def list_size(self, key, **kwargs):
         """
         Retrieve the number of elements in the list.
 
@@ -1331,7 +1331,7 @@ class Client(_Base):
         :return: The number of elements within the list
         :raise: :cb_exc:`NotFoundError` if the list does not exist
         """
-        return Client.map_size(self, key)
+        return self.map_size(key, **kwargs)
 
     @_dsop(create_type=list)
     def queue_push(self, key, value, create=False, **kwargs):
@@ -1354,7 +1354,7 @@ class Client(_Base):
             cb.queue_push('a_queue', 'job9999', create=True)
             cb.queue_pop('a_queue').value  # => job9999
         """
-        return Client.list_prepend(self, key, value, **kwargs)
+        return self.list_prepend(key, value, **kwargs)
 
     @_dsop()
     def queue_pop(self, key, **kwargs):
@@ -1369,13 +1369,13 @@ class Client(_Base):
         """
         while True:
             try:
-                itm = Client.list_get(self, key, -1)
+                itm = self.list_get(key, -1, **kwargs)
             except IndexError:
                 raise E.QueueEmpty
 
             kwargs.update({k:v for k,v in getattr(itm,'__dict__',{}).items() if k in {'cas'}})
             try:
-                Client.list_remove(self, key, -1, **kwargs)
+                self.list_remove(key, -1, **kwargs)
                 return itm
             except E.KeyExistsError:
                 pass
