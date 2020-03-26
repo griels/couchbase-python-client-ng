@@ -24,7 +24,7 @@ from couchbase_core.exceptions import (
 from couchbase_tests.base import ConnectionTestCase
 from couchbase_core.connstr import ConnectionString
 from txcouchbase.tests.base import gen_base
-from txcouchbase.bucket import TxBucket, TxCluster
+from txcouchbase.bucket import TxBucket, TxCluster, BatchedAnalyticsResult
 from nose.tools import timed
 import sys
 from unittest import SkipTest
@@ -148,7 +148,10 @@ if False or os.getenv("PYCBC_TXCLUSTER_TESTS"):
             super(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase, self).setUp()
             #self._factory=Base.gen_cluster
             #self.cluster=self.make_connection()
-if False;
+from twisted.internet.task import deferLater
+from twisted.internet import reactor
+from twisted.internet.defer import inlineCallbacks
+if True:
     class TxAnalyticsTest(gen_base(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase)):
         def setUp(self):
             self._factory=SyncCluster
@@ -171,26 +174,62 @@ if False;
             self._factory=self.gen_cluster
             self.cluster=self.make_connection()
 
+
+        def sleep(self, secs):
+            return deferLater(reactor, secs, lambda: None)
+
         def try_n_times(self, num_times, seconds_between, func, *args, **kwargs):
-            for _ in range(num_times):
-                try:
+            if not isinstance(self.cluster, TxCluster):
+                return super(TxAnalyticsTest, self).try_n_times(num_times, seconds_between, func, *args, **kwargs)
+            class ResultHandler(object):
+                def __init__(self, parent):
+                    self.remaining=num_times
+                    self._parent=parent
+                def start(self):
                     ret = func(*args, **kwargs)
-                    return ret
-                except:
-                    import time
-                    time.sleep(seconds_between)
-            self.fail("unsuccessful {} after {} times, waiting {} seconds between calls".format(func, num_times, seconds_between))
+                    result = ret.addCallback(self.success)
+                    ret.addErrback(self.on_fail)
+                    return result
+                def success(self, result):
+                    return result
+                def on_fail(self, deferred_exception):
+                    deferred_exception.catch(Exception)
+                    return None
+                    #if self.remaining:
+                    #    self.remaining-=1
+                    #    self.sleep(seconds_between).addCallback()
+                    #else:
+                    #self._parent.fail("unsuccessful {} after {} times, waiting {} seconds between calls".format(func, num_times, seconds_between))
+            return ResultHandler(self).start()
+
+        def checkResult(self, result, callback):
+            return result#result.addCallback(callback)
+
+        def _verify(self, d  # type: Base
+                        ):
+            import logging
+            def verify(o):
+                logging.error("in callback with {}".format(o))
+                self.assertIsInstance(o, BatchedAnalyticsResult)
+                rows = [r for r in o]
+                logging.error("End of callback")
+
+            result= d.addCallback(verify)
+            d.addErrback(self.mock_fallback)
+            logging.error("ready to return")
+            return result
 
         def assertQueryReturnsRows(self, query, *options, **kwargs):
             d = self.cluster.analytics_query(query, *options, **kwargs)
-            rows=None
+
             def query_callback(result):
+                self.assertIsInstance(result, BatchedAnalyticsResult)
+
                 rows = result.rows()
                 if len(rows) > 0:
                     return rows
                 raise Exception("no rows in result")
-            d.addCallback(query_callback)
-            return d
+            return d.addCallback(query_callback)
 
         locals().update()
         @property
