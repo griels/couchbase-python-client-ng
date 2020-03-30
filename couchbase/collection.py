@@ -323,10 +323,10 @@ def _wrap_collections_class(cls):
     for name, meth in coreclient_methods.items():
         if not name.startswith('_'):
             setattr(cls, name, UnboundWrapper(meth).proxy())
-    for name, meth in methods.items():
-        if not name.startswith('_'):
-            logging.error("Wrapping {}".format(name))
-            setattr(cls, name, _inject_scope_and_collection(meth))
+    #for name, meth in methods.items():
+    #    if not name.startswith('_'):
+    #        logging.error("Wrapping {}".format(name))
+    #        setattr(cls, name, _inject_scope_and_collection(meth))
 
 
 class CBCollectionBase(with_metaclass(ABCMeta)):
@@ -995,7 +995,9 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
 
 
 class BinaryCollection(object):
-    def __init__(self, collection):
+    def __init__(self,
+                 collection  # type: CBCollection
+                 ):
         self._collection = collection
         # The following are needed for the @_mutate_result_and_inject annotation.
         # If that implementation is changed, we must maintain that here.  That could be
@@ -1003,6 +1005,7 @@ class BinaryCollection(object):
         self._self_name = self._collection._self_name
         self._self_scope = self._collection._self_scope
         self.true_collections = self._collection.true_collections
+        self._inject_scope_collection_kwargs=self._collection._inject_scope_collection_kwargs
 
     _MEMCACHED_OPERATIONS = ('append', 'prepend', 'increment', 'decrement')
     _MEMCACHED_NOMULTI = _MEMCACHED_OPERATIONS
