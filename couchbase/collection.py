@@ -323,10 +323,10 @@ def _wrap_collections_class(cls):
     for name, meth in coreclient_methods.items():
         if not name.startswith('_'):
             setattr(cls, name, UnboundWrapper(meth).proxy())
-    for name, meth in methods.items():
-        if not name.startswith('_'):
-            logging.error("Wrapping {}".format(name))
-            setattr(cls, name, _inject_scope_and_collection(meth))
+    #for name, meth in methods.items():
+    #    if not name.startswith('_'):
+    #        logging.error("Wrapping {}".format(name))
+    #        setattr(cls, name, _inject_scope_and_collection(meth))
 
 
 class CBCollectionBase(with_metaclass(ABCMeta)):
