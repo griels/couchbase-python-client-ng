@@ -1098,7 +1098,7 @@ class Client(_Base):
 
         """
         op = SD.upsert(mapkey, value)
-        sdres = self.mutate_in(key, (op,), **kwargs)
+        sdres = self.mutate_in(key, (op,), upsert_doc=create, **kwargs)
         return self._wrap_dsop(sdres, **kwargs)
 
     @_dsop()
@@ -1175,7 +1175,7 @@ class Client(_Base):
         .. seealso:: :meth:`map_add`
         """
         op = SD.array_append('', value)
-        sdres = Client.mutate_in(self, key, (op,), **kwargs)
+        sdres = self.mutate_in(key, (op,), upsert_doc=create, **kwargs)
         return self._wrap_dsop(sdres, **kwargs)
 
     @_dsop(create_type=list)
@@ -1354,7 +1354,7 @@ class Client(_Base):
             cb.queue_push('a_queue', 'job9999', create=True)
             cb.queue_pop('a_queue').value  # => job9999
         """
-        return self.list_prepend(key, value, **kwargs)
+        return self.list_prepend(key, value, create=create, **kwargs)
 
     @_dsop()
     def queue_pop(self, key, **kwargs):
