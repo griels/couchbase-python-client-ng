@@ -1202,7 +1202,7 @@ class Client(_Base):
         .. seealso:: :meth:`list_append`, :meth:`map_add`
         """
         op = SD.array_prepend('', value)
-        sdres = self.mutate_in(key, (op,), **kwargs)
+        sdres = self.mutate_in(key, (op,), upsert_doc=create, **kwargs)
         return self._wrap_dsop(sdres, **kwargs)
 
     @_dsop()
@@ -1247,7 +1247,7 @@ class Client(_Base):
         """
         op = SD.array_addunique('', value)
         try:
-            sdres = self.mutate_in(key, (op,), **kwargs)
+            sdres = self.mutate_in(key, (op,), upsert_doc=create, **kwargs)
             return self._wrap_dsop(sdres, **kwargs)
         except E.SubdocPathExistsError:
             pass
