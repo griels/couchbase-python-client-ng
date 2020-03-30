@@ -1119,7 +1119,7 @@ class Client(_Base):
         .. seealso:: :meth:`map_add` for an example
         """
         op = SD.get(mapkey)
-        sdres = Client.lookup_in(self, key, (op,), **kwargs)
+        sdres = self.lookup_in(key, (op,), **kwargs)
         return self._wrap_dsop(sdres, True)
 
     @_dsop()
@@ -1140,7 +1140,7 @@ class Client(_Base):
         .. seealso:: :meth:`map_add`
         """
         op = SD.remove(mapkey)
-        sdres = Client.mutate_in(self, key, (op,), **kwargs)
+        sdres = self.mutate_in(key, (op,), **kwargs)
         return self._wrap_dsop(sdres, **kwargs)
 
     @_dsop()
@@ -1155,7 +1155,7 @@ class Client(_Base):
         .. seealso:: :meth:`map_add`
         """
 
-        return Client.lookup_in(self, key, (SD.get_count(''),), **kwargs)[0]
+        return self.lookup_in(key, (SD.get_count(''),), **kwargs)[0]
 
     @_dsop(create_type=list)
     def list_append(self, key, value, create=False, **kwargs):
@@ -1202,7 +1202,7 @@ class Client(_Base):
         .. seealso:: :meth:`list_append`, :meth:`map_add`
         """
         op = SD.array_prepend('', value)
-        sdres = Client.mutate_in(self, key, (op,), **kwargs)
+        sdres = self.mutate_in(key, (op,), **kwargs)
         return self._wrap_dsop(sdres, **kwargs)
 
     @_dsop()
@@ -1227,7 +1227,7 @@ class Client(_Base):
         .. seealso:: :meth:`map_add`, :meth:`list_append`
         """
         op = SD.replace('[{0}]'.format(index), value)
-        sdres = Client.mutate_in(self, key, (op,), **kwargs)
+        sdres = self.mutate_in(key, (op,), **kwargs)
         return self._wrap_dsop(sdres, **kwargs)
 
     @_dsop(create_type=list)
@@ -1247,7 +1247,7 @@ class Client(_Base):
         """
         op = SD.array_addunique('', value)
         try:
-            sdres = Client.mutate_in(self, key, (op,), **kwargs)
+            sdres = self.mutate_in(key, (op,), **kwargs)
             return self._wrap_dsop(sdres, **kwargs)
         except E.SubdocPathExistsError:
             pass
@@ -1267,11 +1267,11 @@ class Client(_Base):
         .. seealso:: :meth:`set_add`, :meth:`map_add`
         """
         while True:
-            rv = Client.get(self, key, **kwargs)
+            rv = self.get(key, **kwargs)
             try:
                 ix = rv.value.index(value)
                 kwargs['cas'] = rv.cas
-                return Client.list_remove(self, key, ix, **kwargs)
+                return self.list_remove(key, ix, **kwargs)
             except E.KeyExistsError:
                 pass
             except ValueError:
@@ -1395,7 +1395,7 @@ class Client(_Base):
         :return: The length of the queue
         :raise: :cb_exc:`NotFoundError` if the queue does not exist.
         """
-        return Client.list_size(self, key)
+        return self.list_size(key)
 
     dsops = (map_get,
              map_add,
