@@ -29,7 +29,7 @@ def _dsop(create_type=None, wrap_missing_path=True):
             except E.NotFoundError:
                 if kwargs.get('create'):
                     try:
-                        self.insert(key, create_type())
+                        self._do_insert(key, create_type())
                     except E.KeyExistsError:
                         pass
                     return fn(self, key, *args, **kwargs)
@@ -1041,6 +1041,10 @@ class Client(_Base):
     @classmethod
     def _gen_memd_wrappers(cls, factory):
         return Client._gen_memd_wrappers_retarget(cls, factory)
+
+    def _do_insert(self, key, value):
+        self.insert(key, value)
+
     @staticmethod
     def _gen_memd_wrappers_retarget(cls, factory):
         """Generates wrappers for all the memcached operations.

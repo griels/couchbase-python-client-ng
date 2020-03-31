@@ -308,7 +308,7 @@ class UnboundWrapper(object):
     def proxy(self):
         def wrap(coll, *args, **kwargs):
             coll._inject_scope_collection_kwargs(kwargs)
-            return self._meth(coll.bucket, *args, **kwargs)
+            return self._meth(coll, *args, **kwargs)
         return wrap
 def _wrap_collections(self):
     methods = inspect.getmembers(self, inspect.ismethod)
