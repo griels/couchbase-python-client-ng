@@ -10,7 +10,7 @@ from txcouchbase.tests.base import gen_base
 
 class TxAnalyticsTest(gen_base(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase)):
     def setUp(self):
-        raise SkipTest()
+        #raise SkipTest()
         self._factory=SyncCluster
         super(TxAnalyticsTest, self).setUp()
         # if self.is_mock:
@@ -32,7 +32,8 @@ class TxAnalyticsTest(gen_base(couchbase.tests_v3.cases.analytics_t.AnalyticsTes
         self.cluster=self.make_connection()
 
 
-    def sleep(self, secs):
+    @staticmethod
+    def sleep(secs):
         return deferLater(reactor, secs, lambda: None)
 
     def try_n_times(self, num_times, seconds_between, func, *args, **kwargs):
@@ -54,7 +55,7 @@ class TxAnalyticsTest(gen_base(couchbase.tests_v3.cases.analytics_t.AnalyticsTes
                 #return None
                 if self.remaining:
                     self.remaining-=1
-                    return self.sleep(seconds_between).addCallback(self.start)
+                    return TxAnalyticsTest.sleep(seconds_between).addCallback(self.start)
                 else:
                     self._parent.fail("unsuccessful {} after {} times, waiting {} seconds between calls".format(func, num_times, seconds_between))
         return ResultHandler(self).start()

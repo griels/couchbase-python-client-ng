@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 from couchbase_core._libcouchbase import ViewResult
+from twisted.trial._synctest import SkipTest
 
 from couchbase_tests.base import ConnectionTestCase
 from twisted.internet import defer
@@ -96,8 +97,11 @@ class TxN1QLTests(Base):
         d.addErrback(self.mock_fallback)
         logging.error("ready to return")
         return result
+
     def testBatchedAnalytics(self  # type: Base
                     ):
+        if self.is_mock:
+            raise SkipTest("No analytics on mock")
         cb = self.make_connection()
         d = cb.analytics_query('SELECT mockrow')
 
@@ -109,10 +113,11 @@ class TxN1QLTests(Base):
             self.assertEqual(1, len(rows))
             logging.error("End of callback")
 
-        result= d.addCallback(verify)
+        result = d.addCallback(verify)
         d.addErrback(self.mock_fallback)
         logging.error("ready to return")
         return result
+
     def testEmpty(self):
         cb = self.make_connection()
         d = cb.query('SELECT emptyrow')
