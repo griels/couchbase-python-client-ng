@@ -1297,7 +1297,6 @@ class ErrorMapper(object):
                                     pass
                                 if matches:
                                     raise exc.pyexc(e.message, extra, e)
-
                 raise
 
         return wrapped
