@@ -16,7 +16,7 @@ from .options import OptionBlock, AcceptableInts
 import couchbase.exceptions
 from couchbase_core.exceptions import NotSupportedError
 from couchbase_core.client import Client as CoreClient
-from couchbase_core._libcouchbase import Bucket as _Base
+from couchbase_core._libcouchbase import Bucket as _Base, Collection as _Collection
 import copy
 
 from typing import *
@@ -1271,14 +1271,16 @@ class CBCollectionShared(CBCollectionBase, wrapt.ObjectProxy):
         :param CollectionOptions options: miscellaneous options
         """
         assert issubclass(type(parent_scope.bucket), CoreClientDatastructureWrap)
-        wrapt.ObjectProxy.__init__(self, parent_scope.bucket)
+        coll_kwargs={k:v for k,v in dict(collection=name, scope=parent_scope.name).items() if v}
+        wrapped_c_coll=_Collection(parent_scope.bucket, **coll_kwargs)
+        wrapt.ObjectProxy.__init__(self, wrapped_c_coll)
         CBCollectionBase.__init__(self, name=name,  parent_scope=parent_scope, *options, **kwargs)
 
     @property
     def bucket(self  # type: CBCollectionShared
                ):
         # type: (...) -> CoreClient
-        return self._self_scope.bucket
+        return self.__wrapped__.bucket
 
 
 class CBCollectionNonShared(CBCollectionBase, CoreClient):

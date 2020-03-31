@@ -919,12 +919,19 @@ int pycbc_collection_init_from_fn_args(pycbc_Collection_t *self,
         if (rv) {
             PYCBC_DEBUG_LOG("Failed to delete from %S", kwargs);
             PYCBC_EXCEPTION_LOG_NOCLEAR;
+            goto FAIL;
         }
     }
     if (collection) {
-        PyDict_DelItemString(kwargs, "collection");
+        rv = PyDict_DelItemString(kwargs, "collection");
+        if (rv) {
+            PYCBC_DEBUG_LOG("Failed to delete from %S", kwargs);
+            PYCBC_EXCEPTION_LOG_NOCLEAR;
+            goto FAIL;
+        }
     }
     PYCBC_DEBUG_PYFORMAT("Kwargs are now %S", kwargs);
+    FAIL:
     if (PyErr_Occurred()) {
         PYCBC_DEBUG_LOG("Problems")
         rv = LCB_ERR_COLLECTION_NOT_FOUND;
@@ -954,7 +961,7 @@ static int Collection__init__(pycbc_Collection_t *self,
     rv = pycbc_collection_init_from_fn_args(
             self, (pycbc_Bucket *)maybe_bucket, kwargs);
 
-    if (!rv) {
+    if (rv) {
         PYCBC_EXCTHROW_ARGS();
         return -1;
     }
@@ -966,11 +973,16 @@ static PyMethodDef Collection_TABLE_methods[] = {{NULL, NULL, 0, NULL}};
 static PyGetSetDef Collection_TABLE_getset[] = {
         {NULL}};
 
-static struct PyMemberDef Collection_TABLE_members[] = {{NULL}};
+static struct PyMemberDef Collection_TABLE_members[] = {        { "bucket", T_OBJECT_EX, offsetof(pycbc_Collection_t, bucket),
+                                                                        READONLY,
+                                                                        PyDoc_STR("The Bucket object this object is connected to")
+                                                                },
+
+                                                                {NULL}};
 
 int pycbc_CollectionType_init(PyObject **ptr)
 {
-    PyTypeObject *p = &BucketType;
+    PyTypeObject *p = &pycbc_CollectionType;
     *ptr = (PyObject *)p;
 
     if (p->tp_name) {
@@ -1044,7 +1056,7 @@ Bucket__init__(pycbc_Bucket *self,
     self->unlock_gil = 1;
     self->lockmode = PYCBC_LOCKMODE_EXC;
     {
-        PYCBC_KWLIST(XCTOR_ARGS, opts)
+         PYCBC_KWLIST(XCTOR_ARGS, opts)
 
         if (opts.unlock_gil && PyObject_IsTrue(opts.unlock_gil) == 0) {
             self->unlock_gil = 0;

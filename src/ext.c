@@ -326,7 +326,7 @@ init_libcouchbase(void)
  */
 #define PYCBC_CRYPTO_TYPES_ADAPTER(NAME, DOC, ...) \
     X(NAME, pycbc_##NAME##Type_init)
-#    define X_PYTYPES_NOTRACING(X)                         \
+#    define X_PYTYPES(X)                         \
         X(Bucket, pycbc_BucketType_init)                   \
         /** Remember to keep base classes in order */      \
         X(Result, pycbc_ResultType_init)                   \
@@ -344,12 +344,15 @@ init_libcouchbase(void)
         X(AsyncResult, pycbc_AsyncResultType_init)         \
         X(_IOPSWrapper, pycbc_IOPSWrapperType_init)        \
         X(_SDResult, pycbc_SDResultType_init)              \
-        PYCBC_CRYPTO_TYPES(PYCBC_CRYPTO_TYPES_ADAPTER)
+        PYCBC_AUTODEF_TYPES(PYCBC_CRYPTO_TYPES_ADAPTER)
+
+/*        PYCBC_CRYPTO_TYPES(PYCBC_CRYPTO_TYPES_ADAPTER)
 
 #define X_PYTYPES_NOCOLLECTIONS(X)     \
         X_PYTYPES_NOTRACING(X)         \
         X(Tracer, pycbc_TracerType_init)
 
+# define PYCBC_COLLECTIONS_PROPER
 #    ifdef PYCBC_COLLECTIONS_PROPER
 #        define X_PYTYPES(X)           \
             X_PYTYPES_NOCOLLECTIONS(X) \
@@ -357,7 +360,7 @@ init_libcouchbase(void)
 #    else
 #        define X_PYTYPES(X) X_PYTYPES_NOCOLLECTIONS(X)
 #    endif
-
+*/
 #    define X(name, inf) PyObject *cls_##name;
     X_PYTYPES(X)
 #undef X
