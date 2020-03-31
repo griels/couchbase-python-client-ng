@@ -172,11 +172,13 @@ class TxRawClientFactory(object):
                     kwargs['connstr'] = connstr
                 iops = v0Iops(reactor)
                 super(TxRawClient, self).__init__(iops=iops, **kwargs)
-
-                self._evq = {
-                    'connect': ConnectionEventQueue(),
-                    '_dtor': TxEventQueue()
-                }
+                try:
+                    self._evq = {
+                        'connect': ConnectionEventQueue(),
+                        '_dtor': TxEventQueue()
+                    }
+                except Exception as e:
+                    raise
 
                 self._conncb = self._evq['connect']
                 self._dtorcb = self._evq['_dtor']
