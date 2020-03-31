@@ -1142,7 +1142,8 @@ class Client(_Base):
         op = SD.remove(mapkey)
         sdres = self.mutate_in(key, (op,), **kwargs)
         return self._wrap_dsop(sdres, **kwargs)
-
+    def _get_content(self, result):
+        return getattr(result, 'value', getattr(result, '_original', result))
     @_dsop()
     def map_size(self, key, **kwargs):
         """
@@ -1155,7 +1156,7 @@ class Client(_Base):
         .. seealso:: :meth:`map_add`
         """
 
-        return self.lookup_in(key, (SD.get_count(''),), **kwargs)[0]
+        return self._get_content(self.lookup_in(key, (SD.get_count(''),), **kwargs))[0]
 
     @_dsop(create_type=list)
     def list_append(self, key, value, create=False, **kwargs):
@@ -1297,7 +1298,10 @@ class Client(_Base):
         :raise: :cb_exc:`NotFoundError` if the document does not exist
         """
         rv = self.get(key, **kwargs)
-        return value in rv.value
+        try:
+            return value in self._get_content(rv)
+        except Exception as e:
+            raise
 
     @_dsop()
     def list_get(self, key, index, **kwargs):
