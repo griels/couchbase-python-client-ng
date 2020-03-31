@@ -47,9 +47,7 @@ class DatastructureTest(CollectionTestCase):
 
         cb = self.cb
 
-        def append_key():
-            cb.list_append(key, 'hello')
-        self.assertRaises(E.NotFoundError, append_key)
+        self.assertRaises(E.NotFoundError, cb.list_append, key, 'hello')
         rv = self.cb.list_append(key, 'hello', create=True)
         self.assertSuccess(rv)
         self.assertCas(rv)
