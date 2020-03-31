@@ -16,8 +16,8 @@
 from couchbase.exceptions import UnknownHostError
 from twisted.internet import defer
 
-from couchbase_core.exceptions import (
-    ObjectDestroyedError)
+from couchbase.exceptions import (
+    ObjectDestroyedException)
 
 from couchbase_tests.base import ConnectionTestCase
 from couchbase_core.connstr import ConnectionString
@@ -85,5 +85,5 @@ class BasicClusterTest(Base):
     def testConnectionDestroyed(self):
         cb = self.make_connection()
         d = cb.on_connect()
-        self.assertFailure(d, ObjectDestroyedError)
+        self.assertFailure(d, ObjectDestroyedException)
         return d
