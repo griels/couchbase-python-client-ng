@@ -390,8 +390,19 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
     def true_collections(self):
         return self._self_true_collections
 
-    def _wrap_dsop(self, sdres, has_value=False, **kwargs):
-        return getattr(CoreClient._wrap_dsop(self.bucket,sdres, has_value), 'value')
+    def _get_content(self, result):
+        return getattr(result, '_original', result)
+
+    def _wrap_dsop(self,
+                   sdres,  # type: SubdocResult
+                   has_value=False, **kwargs):
+        from couchbase_core.items import Item
+        sdres=self._get_content(sdres)
+        it = Item(sdres.key)
+        it.cas = sdres.cas
+        if has_value:
+            it.value = sdres[0]
+        return getattr(it, 'value', it)
 
     @classmethod
     def _cast(cls,
