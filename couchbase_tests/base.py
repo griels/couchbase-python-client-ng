@@ -28,7 +28,7 @@ from testfixtures import LogCapture
 
 from testresources import ResourcedTestCase as ResourcedTestCaseReal, TestResourceManager
 
-from couchbase.exceptions import CollectionAlreadyExistsException, ScopeAlreadyExistsException, NotSupportedError
+from couchbase.exceptions import CollectionAlreadyExistsException, ScopeAlreadyExistsException, NotSupportedException
 import couchbase_core
 from couchbase import Cluster, ClusterOptions, CBCollection, JSONDocument, CoreClient
 from couchbase.cluster import ClassicAuthenticator
@@ -48,13 +48,12 @@ import couchbase_core._libcouchbase
 import traceback
 
 from typing import *
-from couchbase_v2.bucket import Bucket as V2Bucket
 if os.environ.get("PYCBC_TRACE_GC") in ['FULL', 'STATS_LEAK_ONLY']:
     gc.set_debug(gc.DEBUG_STATS | gc.DEBUG_LEAK)
 
 from utilspie.collectionsutils import frozendict
 from couchbase.management.collections import CollectionSpec
-from couchbase.bucket import Bucket as V3Bucket
+from couchbase.bucket import Bucket
 from flaky import flaky
 from deepdiff import DeepDiff
 
@@ -174,7 +173,7 @@ except ImportError:
     # Python <3.0 fallback
     from fallback import configparser
 
-from couchbase_v2.exceptions import CouchbaseError
+from couchbase_v2.exceptions import CouchbaseException
 from couchbase.management.admin import Admin
 from couchbase_core.mockserver import CouchbaseMock, BucketSpec, MockControlClient
 from couchbase_core.result import (
@@ -218,7 +217,7 @@ class ClusterInformation(object):
         elif self.protocol.startswith('http'):
             protocol_format = '{0}:{1}/{2}'.format(host, self.port, bucket)
         else:
-            raise CouchbaseError('Unrecognised protocol')
+            raise CouchbaseException('Unrecognised protocol')
         connstr = self.protocol + '://' + protocol_format
         final_options = ClusterInformation.filter_opts(self.__dict__)
         override_options = ClusterInformation.filter_opts(overrides)
@@ -455,11 +454,11 @@ class CouchbaseTestCase(ResourcedTestCase):
         self._key_counter = 0
 
         if not hasattr(self, 'factory'):
-            from couchbase_v2.views.iterator import View
+            from couchbase_core.views.iterator import View
             from couchbase_core.result import (
                 MultiResult, Result, OperationResult, ValueResult,
                 ObserveInfo)
-            self.factory = V2Bucket
+            self.factory = Bucket
             self.viewfactory = View
             self.cls_Result = Result
             self.cls_MultiResult = MultiResult
@@ -842,7 +841,7 @@ class ClusterTestCase(CouchbaseTestCase):
         return self._fail("unsuccessful {} after {} times, waiting {} seconds between calls".format(func, num_times, seconds_between))
 
     def factory(self, *args, **kwargs):
-        return V3Bucket(*args, username="default", **kwargs).default_collection()
+        return Bucket(*args, username="default", **kwargs).default_collection()
 
     def setUp(self, **kwargs):
         super(ClusterTestCase, self).setUp()
@@ -902,7 +901,7 @@ class CollectionTestCase(ClusterTestCase):
         try:
             cm.get_all_scopes()
             return True
-        except NotSupportedError:
+        except NotSupportedException:
             return False
 
     def setUp(self, default_collections=None, real_collections=None):

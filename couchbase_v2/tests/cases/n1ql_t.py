@@ -18,7 +18,7 @@
 from __future__ import print_function
 
 from couchbase.exceptions import QueryException
-from couchbase_core.exceptions import HTTPError, CouchbaseQueryError
+from couchbase.exceptions import HTTPException
 
 from couchbase_tests.base import MockTestCase
 from couchbase_v2.n1ql import N1QLQuery
