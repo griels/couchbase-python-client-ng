@@ -23,7 +23,8 @@ from typing import *
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
-from couchbase.asychronous import AsyncViewResultBase, AsyncQueryResultBase, AsyncAnalyticsResultBase, AsyncSearchResult
+from couchbase_core.asynchronous.analytics import AsyncAnalyticsRequest
+from couchbase.asynchronous import AsyncViewResultBase, AsyncQueryResultBase, AsyncAnalyticsResultBase, AsyncSearchResult
 from couchbase.cluster import Cluster as V3SyncCluster
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
 from couchbase_core.asynchronous.events import EventQueue
@@ -112,6 +113,11 @@ class BatchedN1QLRequest(BatchedRowMixin, AsyncN1QLRequest):
 class BatchedQueryResult(BatchedRowMixin, AsyncQueryResultBase):
     def __init__(self, *args, **kwargs):
         AsyncQueryResultBase.__init__(self, *args, **kwargs)
+        BatchedRowMixin.__init__(self, *args, **kwargs)
+
+class BatchedAnalyticsRequest(BatchedRowMixin, AsyncAnalyticsRequest):
+    def __init__(self, *args, **kwargs):
+        AsyncAnalyticsRequest.__init__(self, *args, **kwargs)
         BatchedRowMixin.__init__(self, *args, **kwargs)
 
 class BatchedAnalyticsResult(BatchedRowMixin, AsyncAnalyticsResultBase):

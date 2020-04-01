@@ -810,11 +810,11 @@ class ClusterTestCase(CouchbaseTestCase):
                 return
         self.fail("successful {} after {} times waiting {} seconds between calls".format(func, num_times, seconds_between))
 
-    def try_n_times(self, num_times, seconds_between, func, *args, **kwargs):
+    def try_n_times(self, num_times, seconds_between, func, on_success, *args, **kwargs):
         for _ in range(num_times):
             try:
                 ret = func(*args, **kwargs)
-                return ret
+                return on_success(ret)
             except Exception as e:
                 # helpful to have this print statement when tests fail
                 print("got exception {}, sleeping...".format(e))

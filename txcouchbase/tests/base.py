@@ -30,7 +30,11 @@ from couchbase_core.connstr import ConnectionString
 T = TypeVar('T', bound=ConnectionTestCase)
 Factory = Callable[[Any], Client]
 twisted.internet.base.DelayedCall.debug = True
-
+import twisted.python.util
+import sys
+import os
+if os.getenv("PYCBC_DEBUG_SPEWER"):
+    sys.settrace(twisted.python.util.spewer)
 
 def gen_base(basecls,  # type: Type[T]
              timeout=5,
@@ -44,7 +48,9 @@ def gen_base(basecls,  # type: Type[T]
                 obj.registerDeferred('_dtor', d)
             except Exception as e:
                 raise
-            self.addCleanup(lambda x: d, None)
+            def cleanup(*args, **kwargs):
+                return d, None
+            self.addCleanup(cleanup)
 
             # Add another callback (invoked _outside_ of C) to ensure
             # the instance's destroy function is properly triggered
