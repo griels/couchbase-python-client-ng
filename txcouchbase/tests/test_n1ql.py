@@ -13,7 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from couchbase_core._libcouchbase import ViewResult
+from twisted.trial._synctest import SkipTest
 
+from couchbase_tests.base import ConnectionTestCase
 from twisted.internet import defer
 
 from txcouchbase.bucket import BatchedQueryResult
@@ -45,13 +48,18 @@ class RowsHandler(AsyncN1QLRequest):
         self.deferred.errback(ex)
 
 
-Base = gen_base(MockTestCase)
+Base = gen_base(ConnectionTestCase)
 
 
 class TxN1QLTests(Base):
     @property
     def factory(self):
-        return self.gen_bucket
+        return self.gen_cluster
+
+    def mock_fallback(self, err):
+        if not self.is_mock:
+            self.assertIsInstance(err.value.objextra, ViewResult)
+        return True
 
     def testIncremental(self):
         cb = self.make_connection()
@@ -65,6 +73,7 @@ class TxN1QLTests(Base):
 
         o.deferred = d
         d.addCallback(verify)
+        d.addErrback(self.mock_fallback)
         return d
 
     def testBatched(self  # type: Base
@@ -80,8 +89,28 @@ class TxN1QLTests(Base):
             self.assertEqual(1, len(rows))
             logging.error("End of callback")
 
-
         result= d.addCallback(verify)
+        d.addErrback(self.mock_fallback)
+        logging.error("ready to return")
+        return result
+
+    def testBatchedAnalytics(self  # type: Base
+                    ):
+        if self.is_mock:
+            raise SkipTest("No analytics on mock")
+        cb = self.make_connection()
+        d = cb.analytics_query('SELECT mockrow')
+
+        def verify(o):
+            logging.error("Called back")
+
+            self.assertIsInstance(o, BatchedQueryResult)
+            rows = [r for r in o]
+            self.assertEqual(1, len(rows))
+            logging.error("End of callback")
+
+        result = d.addCallback(verify)
+        d.addErrback(self.mock_fallback)
         logging.error("ready to return")
         return result
 
@@ -93,4 +122,6 @@ class TxN1QLTests(Base):
             self.assertIsInstance(o, BatchedQueryResult)
             rows = [r for r in o]
             self.assertEqual(0, len(rows))
-        return d.addCallback(verify)
+        d.addCallback(verify)
+        d.addErrback(self.mock_fallback)
+        return d

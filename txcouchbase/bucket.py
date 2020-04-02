@@ -23,9 +23,9 @@ from typing import *
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
-from couchbase.n1ql import QueryResult
-from couchbase.bucket import ViewResult
-from couchbase.cluster import Cluster as V3SyncCluster
+from couchbase_core.asynchronous.analytics import AsyncAnalyticsRequest
+from couchbase.asynchronous import AsyncViewResultBase, AsyncQueryResultBase, AsyncAnalyticsResultBase, AsyncSearchResult
+from couchbase.cluster import Cluster as V3SyncCluster, AsyncCluster as V3AsyncCluster
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
 from couchbase_core.asynchronous.events import EventQueue
 from couchbase_core.asynchronous.fulltext import AsyncSearchRequest
@@ -34,6 +34,7 @@ from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.client import Client as CoreClient
 from couchbase_core.exceptions import CouchbaseError
 from txcouchbase.iops import v0Iops
+from couchbase.bucket import AsyncBucket as V3AsyncBucket
 
 
 class BatchedRowMixin(object):
@@ -91,38 +92,6 @@ class BatchedRowMixin(object):
         return iter(self.__rows)
 
 
-class AsyncViewResultBase(AsyncViewBase, ViewResult):
-    def __init__(self, *args, **kwargs):
-        """
-        Initialize a new AsyncViewBase object. This is intended to be
-        subclassed in order to implement the require methods to be
-        invoked on error, data, and row events.
-
-        Usage of this class is not as a standalone, but rather as
-        an ``itercls`` parameter to the
-        :meth:`~couchbase_core.connection.Connection.query` method of the
-        connection object.
-        """
-        ViewResult.__init__(self, *args, **kwargs)
-
-
-from couchbase.cluster import AsyncCluster as V3AsyncCluster
-
-
-class AsyncQueryResultBase(AsyncN1QLRequest, QueryResult):
-    def __init__(self, *args, **kwargs):
-        """
-        Initialize a new AsyncViewBase object. This is intended to be
-        subclassed in order to implement the require methods to be
-        invoked on error, data, and row events.
-
-        Usage of this class is not as a standalone, but rather as
-        an ``itercls`` parameter to the
-        :meth:`~couchbase_core.connection.Connection.query` method of the
-        connection object.
-        """
-        QueryResult.__init__(self, *args, **kwargs)
-
 class BatchedView(BatchedRowMixin, AsyncViewBase):
     def __init__(self, *args, **kwargs):
         AsyncViewBase.__init__(self, *args, **kwargs)
@@ -146,10 +115,26 @@ class BatchedQueryResult(BatchedRowMixin, AsyncQueryResultBase):
         AsyncQueryResultBase.__init__(self, *args, **kwargs)
         BatchedRowMixin.__init__(self, *args, **kwargs)
 
+class BatchedAnalyticsRequest(BatchedRowMixin, AsyncAnalyticsRequest):
+    def __init__(self, *args, **kwargs):
+        AsyncAnalyticsRequest.__init__(self, *args, **kwargs)
+        BatchedRowMixin.__init__(self, *args, **kwargs)
+
+class BatchedAnalyticsResult(BatchedRowMixin, AsyncAnalyticsResultBase):
+    def __init__(self, *args, **kwargs):
+        AsyncAnalyticsResultBase.__init__(self, *args, **kwargs)
+        BatchedRowMixin.__init__(self, *args, **kwargs)
+
 
 class BatchedSearchRequest(BatchedRowMixin, AsyncSearchRequest):
     def __init__(self, *args, **kwargs):
         AsyncSearchRequest.__init__(self, *args, **kwargs)
+        BatchedRowMixin.__init__(self, *args, **kwargs)
+
+
+class BatchedSearchResult(BatchedRowMixin, AsyncSearchResult):
+    def __init__(self, *args, **kwargs):
+        AsyncSearchResult.__init__(self, *args, **kwargs)
         BatchedRowMixin.__init__(self, *args, **kwargs)
 
 
@@ -212,6 +197,15 @@ class TxRawClientFactory(object):
                 # type: (...) -> Any
                 super_obj = super(async_base, self)
                 meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
+                return meth(*args, **kwargs)
+
+            def _do_analytics_query(self,  # type: TxRawClient
+                               *args,  # type: Any
+                               **kwargs  # type: Any
+                               ):
+                # type: (...) -> Any
+                super_obj = super(async_base, self)
+                meth = getattr(super_obj, 'analytics_query')
                 return meth(*args, **kwargs)
 
             def _do_view_query(self, *args, **kwargs):
@@ -410,15 +404,20 @@ class TxRawClientFactory(object):
 
                 .. seealso:: :meth:`~couchbase_v2.bucket.Bucket.n1ql_query`
                 """
+                return self.deferred_verb(BatchedQueryResult, self._do_n1ql_query, self.query, *args, **kwargs)
+
+            def deferred_verb(self, itercls, raw_verb, cooked_verb, *args, **kwargs):
                 if not self.connected:
-                    cb = lambda x: self.query(*args, **kwargs)
+                    cb = lambda x: cooked_verb(*args, **kwargs)
                     return self.on_connect().addCallback(cb)
-
-                kwargs['itercls'] = BatchedQueryResult
-                o = self._do_n1ql_query(*args, **kwargs)
+                kwargs['itercls'] = itercls
+                o = raw_verb(*args, **kwargs)
+                log_result(o, raw_verb, *args, **kwargs)
                 o.start()
-
                 return o._getDeferred()
+
+            def analytics_query(self, *args, **kwargs):
+                return self.deferred_verb(BatchedAnalyticsResult, self._do_analytics_query, self.analytics_query, *args, **kwargs)
 
             def search(self, cls, *args, **kwargs):
                 """
@@ -437,14 +436,14 @@ class TxRawClientFactory(object):
                 .. seealso:: :meth:`search`, around which this method wraps
                 """
                 kwargs['itercls'] = cls
-                o = super(async_base, self).search(*args, **kwargs)
+                o = super(TxRawClient, self).search_query(*args, **kwargs)
                 if not self.connected:
                     self.on_connect().addCallback(lambda x: o.start())
                 else:
                     o.start()
                 return o
 
-            def search_all(self, *args, **kwargs):
+            def search_query(self, *args, **kwargs):
                 """
                 Experimental Method
 
@@ -472,13 +471,14 @@ class TxRawClientFactory(object):
                 """
 
                 if not self.connected:
-                    cb = lambda x: self.search_all(*args, **kwargs)
+                    cb = lambda x: self.search_query(*args, **kwargs)
                     return self.on_connect().addCallback(cb)
 
-                kwargs['itercls'] = BatchedSearchRequest
-                o = super(async_base, self).search(*args, **kwargs)
+                kwargs['itercls'] = BatchedSearchResult
+                o = super(TxRawClient, self).search_query(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
+
         return TxRawClient
 
 
@@ -578,8 +578,6 @@ class TxClientFactory(object):
 
 
 TxCollection = TxClientFactory.gen_client(RawCollection)
-
-from couchbase.bucket import AsyncBucket as V3AsyncBucket, ViewResult
 
 RawTxBucket = TxRawClientFactory.gen_raw(V3AsyncBucket)
 

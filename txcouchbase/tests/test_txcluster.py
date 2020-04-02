@@ -13,9 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from couchbase.exceptions import UnknownHostError
 from twisted.internet import defer
+
 from couchbase_core.exceptions import (
-    BucketNotFoundError,
     ObjectDestroyedError)
 
 from couchbase_tests.base import ConnectionTestCase
@@ -26,19 +27,18 @@ from nose.tools import timed
 import sys
 from unittest import SkipTest
 
-
 Base = gen_base(ConnectionTestCase)
 
 # TODO: once TxCluster is fully async, retarget to TxCluster and rename to BasicClusterTest
 
 
-class BasicConnectionTest(Base):
+class BasicClusterTest(Base):
     def __init__(self, *args, **kwargs):
-        super(BasicConnectionTest,self).__init__(*args,**kwargs)
+        super(BasicClusterTest, self).__init__(*args, **kwargs)
 
     @property
     def factory(self):
-        return self.gen_bucket
+        return self.gen_cluster
 
     def testConnectionSuccess(self):
         cb = self.make_connection()
@@ -48,10 +48,10 @@ class BasicConnectionTest(Base):
 
     def testConnectionFailure(self  # type: Base
                               ):
-        cb = self.make_connection(bucket='blahblah')
+        cb = self.make_connection(host="qweqwe")
         d = cb.on_connect()
         d.addCallback(lambda x: x, cb)
-        return self.assertFailure(d, BucketNotFoundError)
+        return self.assertFailure(d, UnknownHostError)
 
     @timed(10)
     def testBadEvent(self):
