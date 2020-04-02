@@ -75,7 +75,6 @@ class TxViewsTests(gen_base(ViewTestCase)):
             self.assertIsInstance(err.value,HTTPError)
             return True
         d.addErrback(errback)
-        #self.assertFailure(d, HTTPError)
         return d
 
     def testIncrementalRows(self):

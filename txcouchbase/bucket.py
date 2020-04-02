@@ -35,6 +35,8 @@ from couchbase_core.client import Client as CoreClient
 from couchbase_core.exceptions import CouchbaseError
 from txcouchbase.iops import v0Iops
 from couchbase_core import log_result
+from couchbase.cluster import AsyncCluster as V3AsyncCluster
+from couchbase.bucket import AsyncBucket as V3AsyncBucket
 
 
 class BatchedRowMixin(object):
@@ -115,10 +117,12 @@ class BatchedQueryResult(BatchedRowMixin, AsyncQueryResultBase):
         AsyncQueryResultBase.__init__(self, *args, **kwargs)
         BatchedRowMixin.__init__(self, *args, **kwargs)
 
+
 class BatchedAnalyticsRequest(BatchedRowMixin, AsyncAnalyticsRequest):
     def __init__(self, *args, **kwargs):
         AsyncAnalyticsRequest.__init__(self, *args, **kwargs)
         BatchedRowMixin.__init__(self, *args, **kwargs)
+
 
 class BatchedAnalyticsResult(BatchedRowMixin, AsyncAnalyticsResultBase):
     def __init__(self, *args, **kwargs):
@@ -195,7 +199,7 @@ class TxRawClientFactory(object):
                                **kwargs  # type: Any
                                ):
                 # type: (...) -> Any
-                super_obj = super(async_base, self)
+                super_obj = super(TxRawClient, self)
                 meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
                 return meth(*args, **kwargs)
 
@@ -204,13 +208,11 @@ class TxRawClientFactory(object):
                                **kwargs  # type: Any
                                ):
                 # type: (...) -> Any
-                super_obj = super(async_base, self)
+                super_obj = super(TxRawClient, self)
                 meth = getattr(super_obj, 'analytics_query')
                 return meth(*args, **kwargs)
 
             def _do_view_query(self, *args, **kwargs):
-                #super_obj = super(async_base, self)
-                #0meth = getattr(super_obj, 'view_query', getattr(super_obj, 'query', None))
                 return super(async_base,self).view_query(*args, **kwargs)
 
             def registerDeferred(self, event, d):
@@ -478,7 +480,6 @@ class TxRawClientFactory(object):
                 o = super(TxRawClient, self).search_query(*args, **kwargs)
                 o.start()
                 return o._getDeferred()
-
         return TxRawClient
 
 
@@ -579,8 +580,6 @@ class TxClientFactory(object):
 
 TxCollection = TxClientFactory.gen_client(RawCollection)
 
-from couchbase.bucket import AsyncBucket as V3AsyncBucket
-
 RawTxBucket = TxRawClientFactory.gen_raw(V3AsyncBucket)
 
 
@@ -589,11 +588,10 @@ class TxBucket(TxClientFactory.gen_client(RawTxBucket)):
         super(TxBucket,self).__init__(collection_factory=TxCollection, *args, **kwargs)
 
 
-from couchbase.cluster import AsyncCluster as V3AsyncCluster
-
-RawTxCluster=TxRawClientFactory.gen_raw(V3AsyncCluster)
+RawTxCluster = TxRawClientFactory.gen_raw(V3AsyncCluster)
 class TxCluster(TxClientFactory.gen_client(RawTxCluster, bucket_factory=TxBucket)):
     pass
+
 
 class TxSyncCluster(V3SyncCluster):
     def __init__(self, *args, **kwargs):

@@ -23,7 +23,7 @@ from couchbase.analytics import AnalyticsOptions
 class AnalyticsTestCase(CollectionTestCase):
 
     def setUp(self):
-        self.realSetUp()
+        super(AnalyticsTestCase, self).setUp()
         if self.is_mock:
             raise SkipTest("analytics not mocked")
         if int(self.get_cluster_version().split('.')[0]) < 6:
@@ -38,14 +38,11 @@ class AnalyticsTestCase(CollectionTestCase):
         def on_dataset(*args, **kwargs):
             return self.mgr.connect_link()
 
-        self.try_n_times(10, 3, has_dataset, on_dataset, self.dataset_name)
+        self.try_n_times(10, 3, has_dataset, self.dataset_name, on_success=on_dataset)
         # connect it...
 
-
-    def realSetUp(self):
-        super(AnalyticsTestCase, self).setUp()
-
     def tearDown(self):
+
         self.try_n_times(10, 3, self.mgr.disconnect_link)
         self.mgr.drop_dataset(self.dataset_name, DropDatasetOptions(ignore_if_not_exists=True))
 
@@ -75,21 +72,21 @@ class AnalyticsTestCase(CollectionTestCase):
                                 'SELECT * FROM `{}` WHERE `type` = $1 LIMIT 1'.format(self.dataset_name),
                                 AnalyticsOptions(positional_parameters=["brewery"]))
         print(rows)
-        return self.checkResult(rows, lambda result:  self.assertEqual("brewery", result[0][self.dataset_name]['type']))
+        return self.checkResult(rows, lambda result, *args, **kwargs:  self.assertEqual("brewery", result[0][self.dataset_name]['type']))
 
 
     def test_query_positional_params_no_option(self):
         rows = self.try_n_times(10, 3, self.assertQueryReturnsRows,
                                 'SELECT * FROM `{}` WHERE `type` = $1 LIMIT 1'.format(self.dataset_name),
                                 "brewery")
-        return self.checkResult(rows, lambda result: self.assertEqual("brewery", result[0][self.dataset_name]['type']))
+        return self.checkResult(rows, lambda result, *args, **kwargs: self.assertEqual("brewery", result[0][self.dataset_name]['type']))
 
     def test_query_positional_params_override(self):
         rows = self.try_n_times(10, 3, self.assertQueryReturnsRows,
                                 'SELECT * FROM `{}` WHERE `type` = $1 LIMIT 1'.format(self.dataset_name),
                                 AnalyticsOptions(positional_parameters=["jfjfjfjfjfj"]),
                                 "brewery")
-        return self.checkResult(rows, lambda result: self.assertEqual("brewery", result[0][self.dataset_name]['type']))
+        return self.checkResult(rows, lambda result, *args, **kwargs: self.assertEqual("brewery", result[0][self.dataset_name]['type']))
 
     @staticmethod
     def _on_success(result, *args, **kwargs):
@@ -105,23 +102,25 @@ class AnalyticsTestCase(CollectionTestCase):
                 return self._success()
             except Exception as e:
                 return self._fail(str(e))
-        rows = self.try_n_times(10, 3, self.assertQueryReturnsRows, AnalyticsTestCase._on_success,
+        rows = self.try_n_times(10, 3, self.assertQueryReturnsRows,
                                 "SELECT * FROM `{}` WHERE `type` = $btype LIMIT 1".format(self.dataset_name),
-                                AnalyticsOptions(named_parameters={"btype": "brewery"}))
+                                AnalyticsOptions(named_parameters={"btype": "brewery"}), on_success=AnalyticsTestCase._on_success)
         return self.checkResult(rows, verify)
 
     def test_query_named_parameters_no_options(self):
         rows = self.try_n_times(10, 3, self.assertQueryReturnsRows,
                                 "SELECT * FROM `{}` WHERE `type` = $btype LIMIT 1".format(self.dataset_name),
                                 btype="brewery")
-        return self.checkResult(rows, lambda result: self.assertEqual("brewery", rows[0][self.dataset_name]['type']))
+        def verify(result, *args, **kwargs):
+             self.assertEqual("brewery", result[0][self.dataset_name]['type'])
+        return self.checkResult(rows, verify)
 
     def test_query_named_parameters_override(self):
         rows = self.try_n_times(10, 3, self.assertQueryReturnsRows,
                                 "SELECT * FROM `{}` WHERE `type` = $btype LIMIT 1".format(self.dataset_name),
                                 AnalyticsOptions(named_parameters={"btype": "jfjfjfjf"}),
                                 btype="brewery")
-        return self.checkResult(rows, lambda result: self.assertEqual("brewery", result[0][self.dataset_name]['type']))
+        return self.checkResult(rows, lambda result, *args, **kwargs: self.assertEqual("brewery", result[0][self.dataset_name]['type']))
 
 
 

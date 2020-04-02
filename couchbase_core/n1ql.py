@@ -413,12 +413,10 @@ class N1QLRequest(object):
         self.meta_lookahead = meta_lookahead
 
     def _submit_query(self):
-        result= self._parent._n1ql_query(self._params.encoded,
+        return self._parent._n1ql_query(self._params.encoded,
                                         not self._params.adhoc,
                                         cross_bucket=self._params.cross_bucket)
-        import traceback
-        print("Got result {} on {} at {}".format(result,    self._parent,     traceback.format_stack()))
-        return result
+
     def _start(self):
         if self._mres:
             return

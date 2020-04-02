@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from couchbase.exceptions import UnknownHostError
 from twisted.internet import defer
-
+from couchbase.exceptions import UnknownHostError
 from couchbase_core.exceptions import (
     ObjectDestroyedError)
 
@@ -89,6 +88,3 @@ class BasicClusterTest(Base):
         d = cb.on_connect()
         self.assertFailure(d, ObjectDestroyedError)
         return d
-
-
-

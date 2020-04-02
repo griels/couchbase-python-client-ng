@@ -156,18 +156,8 @@ class AnalyticsRequest(N.N1QLRequest):
         super(AnalyticsRequest, self).__init__(params, parent)
 
     def _submit_query(self):
+        return self._parent._cbas_query(self._params.encoded)
 
-        if 'TxCluster' in str(self._parent):
-            pass
-        else:
-            pass
-        result=self._parent._cbas_query(self._params.encoded)
-        import logging
-        import traceback
-        print("Got result {} on {} at {}".format(result,    self._parent,     traceback.format_stack()))
-        #result=self._parent._n1ql_query(self._params.encoded)
-
-        return result
 
 class DeferredAnalyticsRequest(AnalyticsRequest):
     def __init__(self,   # type: DeferredAnalyticsRequest

@@ -21,6 +21,7 @@ from typing import *
 from couchbase.analytics import AnalyticsOptions, AnalyticsResult, AnalyticsDataset, AnalyticsIndex
 import couchbase_core._libcouchbase as _LCB
 from couchbase.exceptions import CouchbaseError, NotSupportedError
+import couchbase.cluster
 
 
 class BaseAnalyticsIndexManagerOptions(OptionBlockTimeOut):
@@ -215,7 +216,7 @@ class CreateDatasetOptions(BaseAnalyticsIndexManagerOptions):
         # type: (...) -> str
         return self.get('dataverse_name', 'Default')
 
-import couchbase.cluster
+
 class AnalyticsIndexManager(object):
     def __init__(self,
                  cluster,   # type: couchbase.cluster.Cluster

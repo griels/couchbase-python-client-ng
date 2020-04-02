@@ -810,7 +810,10 @@ class ClusterTestCase(CouchbaseTestCase):
                 return
         self.fail("successful {} after {} times waiting {} seconds between calls".format(func, num_times, seconds_between))
 
-    def try_n_times(self, num_times, seconds_between, func, on_success, *args, **kwargs):
+    def _passthrough(self, result, *args, **kwargs):
+        return result
+
+    def try_n_times(self, num_times, seconds_between, func, *args, on_success=_passthrough, **kwargs):
         for _ in range(num_times):
             try:
                 ret = func(*args, **kwargs)
