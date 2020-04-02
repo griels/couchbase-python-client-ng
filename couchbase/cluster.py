@@ -1,5 +1,5 @@
 import asyncio
-
+from typing import *
 from couchbase.management.admin import Admin
 
 from couchbase_core.mutation_state import MutationState
