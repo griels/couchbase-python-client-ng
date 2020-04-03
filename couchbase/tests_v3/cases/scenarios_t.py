@@ -52,7 +52,6 @@ import couchbase.subdocument as SD
 import couchbase.management
 import couchbase_core._bootstrap
 import couchbase_core._libcouchbase as _LCB
-import couchbase_core.cluster
 import couchbase_core.tests.analytics_harness
 from couchbase.diagnostics import ServiceType
 from couchbase.exceptions import KeyNotFoundException, KeyExistsException, NotSupportedError
