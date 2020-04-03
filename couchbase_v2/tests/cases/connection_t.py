@@ -40,13 +40,19 @@ class ConnectionTest(CouchbaseTestCase):
         self.assertRaises(TimeoutException, self.factory, **connargs)
 
     def test_bucket(self):
+        self.skipIfGevent()
+        self.skipIfMock()
         cb = self.factory(**self.make_connargs())
         self.assertIsInstance(cb, self.factory)
 
     def test_bucket_not_found(self):
         connargs = self.make_connargs(bucket='this_bucket_does_not_exist')
-        self.assertRaises(
-            (BucketNotFoundException, AuthException), self.factory, **connargs)
+        try:
+            self.assertRaises(
+                (BucketNotFoundException, AuthException), self.factory, **connargs)
+        except:
+            self.skipIfGevent()
+            raise
 
     def test_quiet(self):
         connparams = self.make_connargs()

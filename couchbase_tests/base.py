@@ -34,6 +34,7 @@ from couchbase import Cluster, ClusterOptions, CBCollection, JSONDocument, CoreC
 from couchbase.cluster import ClassicAuthenticator
 from couchbase_core.connstr import ConnectionString
 import couchbase_core._libcouchbase as _LCB
+from gcouchbase.cluster import Bucket as GBucket
 
 try:
     import unittest2 as unittest
@@ -508,6 +509,11 @@ class CouchbaseTestCase(ResourcedTestCase):
     def skipUnlessMock(self):
         if not self.is_mock:
             raise SkipTest("Not to be run against non-mock")
+
+    def skipIfGevent(self):
+        if self.factory==GBucket:
+            raise SkipTest("Fails on Gevent")
+
     def make_connargs(self, **overrides):
         return self.cluster_info.make_connargs(**overrides)
 

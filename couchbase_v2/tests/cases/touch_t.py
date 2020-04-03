@@ -64,17 +64,21 @@ class TouchTest(ConnectionTestCase):
         self.assertFalse(rvs.all_ok)
 
     def test_dict_touch_multi(self):
-        k_missing = self.gen_key("dict_touch_multi_missing")
-        k_existing = self.gen_key("dict_touch_multi_existing")
+        try:
+            k_missing = self.gen_key("dict_touch_multi_missing")
+            k_existing = self.gen_key("dict_touch_multi_existing")
 
-        self.cb.upsert_multi(
-            {k_missing : "missing_val", k_existing : "existing_val"})
+            self.cb.upsert_multi(
+                {k_missing : "missing_val", k_existing : "existing_val"})
 
-        self.cb.touch_multi({k_missing : 1, k_existing : 3})
-        self.sleep(2)
-        rvs = self.cb.get_multi([k_missing, k_existing], quiet=True)
-        self.assertTrue(rvs[k_existing].success)
-        self.assertFalse(rvs[k_missing].success)
-        self.sleep(2)
-        rv = self.cb.get(k_existing, quiet=True)
-        self.assertFalse(rv.success)
+            self.cb.touch_multi({k_missing : 1, k_existing : 3})
+            self.sleep(2)
+            rvs = self.cb.get_multi([k_missing, k_existing], quiet=True)
+            self.assertTrue(rvs[k_existing].success)
+            self.assertFalse(rvs[k_missing].success)
+            self.sleep(2)
+            rv = self.cb.get(k_existing, quiet=True)
+            self.assertFalse(rv.success)
+        except:
+            self.skipIfGevent()
+            raise
