@@ -5,10 +5,8 @@ from couchbase_v2.asynchronous.bucket import AsyncBucket
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
 from couchbase_core.views.iterator import AlreadyQueriedException
-try:
-    from gcouchbase.iops_gevent0x import IOPS
-except ImportError:
-    from gcouchbase.iops_gevent10 import IOPS
+
+from gcouchbase.iops_gevent10 import IOPS
 
 
 class GRowsHandler(object):
@@ -39,7 +37,7 @@ class GRowsHandler(object):
         self.__raw_rows.append(self.raw.rows)
         if self.raw.done:
             self._clear()
-        self.__waiter.switch()
+        self.__waiter.switch(self.raw.rows)
 
     def _errback(self, mres, *args):
         self._clear()
