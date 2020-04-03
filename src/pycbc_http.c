@@ -220,15 +220,21 @@ void pycbc_httpresult_complete(pycbc_HttpResult *htres,
         if (!bucket->nremaining) {
             lcb_breakout(bucket->instance);
         }
+        PYCBC_TRACE_POP_CONTEXT(htres->tracing_context);
+        PYCBC_XDECREF(mres);
         PYCBC_CONN_THR_BEGIN(bucket);
     } else {
         pycbc_AsyncResult *ares = (pycbc_AsyncResult *)mres;
         ares->nops--;
         Py_INCREF(ares);
         pycbc_asyncresult_invoke(ares, NULL);
+        PYCBC_TRACE_POP_CONTEXT(htres->tracing_context);
+        if (!ares->nops) {
+            PYCBC_XDECREF(mres);
+        }
         /* We don't handle the GIL in async mode */
     }
-    PYCBC_TRACE_POP_CONTEXT(htres->tracing_context);
+
 }
 
 static void complete_callback(lcb_t instance,
@@ -388,6 +394,7 @@ GT_ERR:
         PYCBC_EXCTHROW_SCHED(err);
         goto GT_DONE;
     }
+    PYCBC_XINCREF(mres);
 
     if (!(self->flags & PYCBC_CONN_F_ASYNC)) {
         PYCBC_TRACE_WRAP_VOID(
