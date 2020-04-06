@@ -1436,10 +1436,10 @@ class MetaData(object):
         return self._raw_data.get('max_score')
 
 
-class SearchResult(iterable_wrapper(SearchRequest)):
+class SearchResultBase(couchbase_core.IterableWrapper):
     @internal
     def __init__(self,
-                 *args, **kwargs  # type: SearchRequest
+                 *args, row_factory=None, **kwargs  # type: SearchRequest
                  ):
         """
         The SearchResult interface provides a means of mapping the results of a Search query into an object.
@@ -1447,9 +1447,10 @@ class SearchResult(iterable_wrapper(SearchRequest)):
 
 
         """
-        super(SearchResult, self).__init__(*args, **kwargs)
 
-    def _converter(self,
+        super(SearchResultBase, self).__init__(*args, row_factory=(row_factory or self.row_factory), **kwargs)
+
+    def row_factory(self,
                    orig_value  # type: JSON
                    ):
         # type: (...) -> SearchRow
@@ -1457,11 +1458,16 @@ class SearchResult(iterable_wrapper(SearchRequest)):
 
     def facets(self):
         # type: (...) -> Dict[str, SearchFacetResult]
-        return {k: cattr.structure(dict(name=k, **v), SearchFacetResult) for k, v in super(SearchResult, self).facets.items()}
+        return {k: cattr.structure(dict(name=k, **v), SearchFacetResult) for k, v in
+                super(SearchResultBase, self).facets.items()}
 
     def metadata(self):  # type: (...) -> MetaData
-        return MetaData(super(SearchResult, self).meta)
+        return MetaData(super(SearchResultBase, self).meta)
 
     @classmethod
     def mk_kwargs(cls, kwargs):
         return SearchRequest.mk_kwargs(kwargs)
+
+
+class SearchResult(SearchResultBase, iterable_wrapper(SearchRequest)):
+    pass

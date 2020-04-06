@@ -253,6 +253,7 @@ class Mapped(with_metaclass(ABCMeta)):
     def defaults():
         return None
 
+
 def recursive_reload(module, paths=None, mdict=None):
     """Recursively reload modules."""
     if paths is None:
@@ -279,14 +280,15 @@ WrappedIterable = TypeVar('T', bound=Iterable[Any])
 
 class IterableWrapper(object):
     def __init__(self,
-                 *args, **kwargs
+                 basecls, *args, **kwargs
                  ):
-        super(IterableWrapper, self).__init__(*args, **kwargs)
         self.done = False
         self.buffered_rows = []
+        self.basecls = basecls
+        basecls.__init__(self, *args, **kwargs)
 
     def rows(self):
-        return list(x for x in self)
+        return list(x for x in IterableWrapper.__iter__(self))
 
     def _converter(self, orig_value):
         return orig_value
@@ -298,7 +300,7 @@ class IterableWrapper(object):
     def __iter__(self):
         for row in self.buffered_rows:
             yield row
-        parent_iter = super(IterableWrapper, self).__iter__()
+        parent_iter = self.basecls.__iter__(self)
         while not self.done:
             try:
                 next_item = self._converter(next(parent_iter))
@@ -313,7 +315,8 @@ def iterable_wrapper(basecls  # type: Type[WrappedIterable]
                      ):
     # type: (...) -> Type[IterableWrapper]
     class IterableWrapperSpecific(IterableWrapper, basecls):
-        pass
+        def __init__(self, *args, **kwargs):
+            IterableWrapper.__init__(self, basecls,  *args, **kwargs)
 
     return IterableWrapperSpecific
 

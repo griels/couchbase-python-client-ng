@@ -33,12 +33,34 @@ import time
 
 import couchbase.exceptions
 
-from couchbase import timedelta
+from couchbase import timedelta, iterable_wrapper
 
 from couchbase_tests.base import ClusterTestCase, CollectionTestCase
 import couchbase.management
 
 """Sample request/response payloads: https://github.com/couchbaselabs/sdk-testcases/tree/master/search"""
+
+class JSONWrapper(dict):
+    def __init__(self, *args, **kwargs):
+        super(JSONWrapper, self).__init__(*args, **kwargs)
+class SearchRequestMock(search.SearchRequest):
+    def __init__(self, **orig_json):
+        wrapped_json = JSONWrapper(orig_json)
+        wrapped_json.value=wrapped_json.pop('metadata')
+        data=wrapped_json.pop('data')
+        wrapped_json.fetch=iter(data.pop('results'))
+        self._orig_json=wrapped_json
+
+
+    def _start(self):
+        if self._mres:
+            return
+
+        self.__raw = self._orig_json
+
+
+class SearchResultMock(search.SearchResultBase, iterable_wrapper(SearchRequestMock)):
+    pass
 
 
 class SearchTest(CollectionTestCase):
@@ -76,6 +98,14 @@ class SearchTest(CollectionTestCase):
         #   "-_score"
         # ],
         # "includeLocations": false}
+
+
+    def test_parsing_locations(self):
+        with open("../sdk-testcases/search/good-response-61.json") as good_response_f:
+            import json
+            good_response = SearchResultMock(**json.load(good_response_f))
+            self.assertIsInstance(search.SearchRow, good_response.rows()[0])
+
     def test_cluster_search(self  # type: SearchTest
                             ):
         if self.is_mock:
