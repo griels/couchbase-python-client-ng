@@ -20,7 +20,7 @@ from unittest import SkipTest
 
 import couchbase.search as search
 from couchbase.management.search import SearchIndex
-from couchbase.search import SearchResult, MetaData
+from couchbase.search import SearchResult
 from couchbase_core.mutation_state import MutationState
 from couchbase_tests.base import CouchbaseTestCase
 
@@ -37,13 +37,11 @@ from couchbase import timedelta, iterable_wrapper
 
 from couchbase_tests.base import ClusterTestCase
 import couchbase.management
-
-"""Sample request/response payloads: https://github.com/couchbaselabs/sdk-testcases/tree/master/search"""
+import json
 
 
 class MRESWrapper(object):
-    def __init__(self, orig_json):
-        self.value=orig_json.pop('metadata')
+    def __init__(self, **orig_json):
         self._orig_json=orig_json
         self._hits=self._orig_json['data'].pop('hits')
         self.done=False
@@ -51,6 +49,9 @@ class MRESWrapper(object):
             self._iterhits=iter(self._hits)
         except Exception as e:
             raise
+    @property
+    def value(self):
+        return self._orig_json['data']
     def fetch(self, _):
         yield from self._iterhits
         self.done=True
@@ -65,7 +66,7 @@ class SearchRequestMock(search.SearchRequest):
         if self._mres:
             return
 
-        self._mres = {None: MRESWrapper(self._orig_json)}
+        self._mres = {None: MRESWrapper(**self._orig_json)}
         self.__raw = self._mres[None]
     @property
     def raw(self):
@@ -74,13 +75,14 @@ class SearchRequestMock(search.SearchRequest):
         except Exception as e:
             raise
 
+
 class SearchResultMock(search.SearchResultBase, iterable_wrapper(SearchRequestMock)):
     pass
 
 
 class SearchTest(ClusterTestCase):
     def setUp(self, *args, **kwargs):
-        super(SearchTest, self).setUp(*args, **kwargs)
+        super(SearchTest, self).setUp(**kwargs)
         if self.is_mock:
             raise SkipTest("Search not available on Mock")
         self.cluster.search_indexes().upsert_index(
@@ -95,7 +97,6 @@ class SearchTest(ClusterTestCase):
 
     def test_parsing_locations(self):
         with open("../sdk-testcases/search/good-response-61.json") as good_response_f:
-            import json
             input=good_response_f.read()
             raw_json=json.loads(input)
             good_response = SearchResultMock(None, None, raw_json)
@@ -107,6 +108,13 @@ class SearchTest(ClusterTestCase):
             self.assertEqual([search.SearchRowLocation(field='airlineid', term='airline_137', position=1, start=0, end=11, array_positions=None)], locations.get_all())
             self.assertSetEqual({'airline_137'}, locations.terms())
             self.assertEqual(['airline_137'], locations.terms_for("airlineid"))
+            metadata=good_response.metadata()
+            self.assertIsInstance(metadata, search.SearchMetaData)
+            self.assertIsInstance(metadata.metrics, search.SearchMetrics)
+
+            for key, err in metadata.errors.items():
+                self.assertIsInstance(err, str)
+
 
     def test_cluster_search(self  # type: SearchTest
                             ):
@@ -142,11 +150,13 @@ class SearchTest(ClusterTestCase):
             for location in entry.fields:
                 self.assertIsInstance(location)
         metadata = x.metadata()
-        self.assertIsInstance(metadata, MetaData)
-        self.assertIsInstance(metadata.error_count(), int)
-        self.assertIsInstance(metadata.max_score(), float)
-        self.assertIsInstance(metadata.success_count(), int)
-        took = metadata.took()
+        self.assertIsInstance(metadata, search.SearchMetaData)
+        metrics=metadata.metrics
+        self.assertIsInstance(metrics.error_partition_count, int)
+        self.assertIsInstance(metrics.max_score, float)
+        self.assertIsInstance(metrics.success_partition_count, int)
+        self.assertEqual(metrics.error_partition_count+metrics.success_partition_count, metrics.total_partition_count)
+        took = metrics.took()
         self.assertIsInstance(took, timedelta)
         # TODO: lets revisit why we chose this 0.1.  I often find the difference is greater,
         # running the tests locally.  Commenting out for now...

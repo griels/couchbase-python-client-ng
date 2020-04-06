@@ -1288,19 +1288,21 @@ class SearchRowFields(Dict[str, Any]):
             pass
         super(SearchRowFields, self).__init__(*args, **kwargs)
 
+
 cattr.register_structure_hook(SearchRowFields, lambda x, t: t(x))
 
 
 class SearchRowLocations(object):
-    def __init__(self, orig_data):
-        self._real_data=orig_data
+    def __init__(self, **orig_data):
+        self._real_data = orig_data
+
     def get_all(self):
         # type: (...) -> List[SearchRowLocation]
         """list all locations (any field, any term)"""
-        results=[]
+        results = []
         for field, terms in self._real_data.items():
             for term, entries in terms.items():
-                results.extend(self.get(field,term))
+                results.extend(self.get(field, term))
         return results
 
     # list all locations for a given field (any term)
@@ -1310,8 +1312,9 @@ class SearchRowLocations(object):
             ):
         # type: (...) -> List[SearchRowLocation]
         """List all locations for a given field and term"""
-        entries_for_field=self._real_data.get(field,dict())
-        return [SearchRowLocation(field, term, v['pos'], v['start'],v['end'],v['array_positions']) for v in self._real_data[field][term]]
+        entries_for_field = self._real_data.get(field, dict())
+        return [SearchRowLocation(field, term, v['pos'], v['start'], v['end'], v['array_positions']) for v in
+                self._real_data[field][term]]
 
     def fields(self):
         # type: (...) -> List[str]
@@ -1326,7 +1329,7 @@ class SearchRowLocations(object):
         List all terms in this locations,
         considering all fields (so a set):
         """
-        result=set()
+        result = set()
         for field in self._real_data.values():
             result.update(field.keys())
         return result
@@ -1339,14 +1342,14 @@ class SearchRowLocations(object):
         return list(self._real_data[field].keys())
 
 def searchRowLocations(x, t):
-    return t(x)
+    return t(**x)
 
 cattr.register_structure_hook(SearchRowLocations, searchRowLocations)
 
 @attr.s
 class SearchRow(object):
-    def __init__(self, *args, **kwargs):
-        super(SearchRow, self).__init__(*args, **kwargs)
+    #def __init__(self, *args, **kwargs):
+    #    super(SearchRow, self).__init__(*args, **kwargs)
     """A single entry of search results. The server calls them "hits", and represents as a JSON object. The following interface describes the contents of the result row."""
     index=attr.ib(type=str)
     id=attr.ib(type=str)
@@ -1368,20 +1371,42 @@ class SearchFacetResult(object):
 
 """ If top-level "error" property exists, then SDK should build and throw CouchbaseException with its content."""
 
-
-@attr.attrs
 class SearchMetrics(object):
-    took = attr.attr(type=timedelta)
-    total_rows = attr.attr(type=UnsignedInt64)
-    max_score = attr.attr(type=float)
-    success_partition_count = attr.attr(type=UnsignedInt64)
-    error_partition_count = attr.attr(type=UnsignedInt64)
+    def __init__(self,
+                 raw_data  # type: JSON
+                 ):
+        self._raw_data = raw_data
 
     @property
-    def total_partition_count(self  # type: SearchMetrics
-                              ):
-        # type: (...) -> UnsignedInt64
-        return self.success_partition_count + self.error_partition_count
+    def _status(self):
+        # type: (...) -> Dict[str,int]
+        return self._raw_data.get('status')
+
+    @property
+    def success_partition_count(self):
+        # type: (...) -> int
+        return self._status.get('successful')
+
+    @property
+    def error_partition_count(self):
+        # type: (...) -> int
+        return self._status.get('failed')
+
+    @property
+    def took(self):
+        # type: (...) -> timedelta
+        return timedelta(microseconds=self._raw_data.get('took'))
+
+    @property
+    def total_partition_count(self):
+        # type: (...) -> int
+        return self._raw_data.get('total')
+
+    @property
+    def max_score(self):
+        # type: (...) -> float
+        return self._raw_data.get('max_score')
+
 
 
 class HighlightStyle(Enum):
@@ -1418,43 +1443,21 @@ class SearchOptions(OptionBlockTimeOut):
         super(SearchOptions, self).__init__(**kwargs)
 
 
-@attr.s
+#@attr.s
 class SearchMetaData(object):
+    def __init__(self, **raw_json):
+        try:
+            self.errors=raw_json.pop('status')
+        except Exception as e:
+            raise
+        #list(map(raw_json.pop,['request','hits']))
+        self.metrics=SearchMetrics(raw_json)
     """Represents the meta-data returned along with a search query result."""
-    metrics = attr.ib(type=SearchMetrics)
-    errors =attr.ib(type=Mapping[str, Exception])
+    #pass
+    #metrics = attr.ib(type=SearchMetrics)  # type: SearchMetrics
+    #errors =attr.ib(type=Mapping[str, str])  # type: Mapping[str, str]
 
 
-class MetaData(object):
-    def __init__(self,
-                 raw_data  # type: JSON
-                 ):
-        self._raw_data = raw_data
-
-    @property
-    def _status(self):
-        # type: (...) -> Dict[str,int]
-        return self._raw_data.get('status',{})
-
-    def success_count(self):
-        # type: (...) -> int
-        return self._status.get('successful')
-
-    def error_count(self):
-        # type: (...) -> int
-        return self._status.get('failed')
-
-    def took(self):
-        # type: (...) -> timedelta
-        return timedelta(microseconds=self._raw_data.get('took'))
-
-    def total_hits(self):
-        # type: (...) -> int
-        return self._raw_data.get('total_hits')
-
-    def max_score(self):
-        # type: (...) -> float
-        return self._raw_data.get('max_score')
 
 
 class SearchResultBase(object):
@@ -1486,8 +1489,8 @@ class SearchResultBase(object):
         return {k: cattr.structure(dict(name=k, **v), SearchFacetResult) for k, v in
                 super(SearchResultBase, self).facets.items()}
 
-    def metadata(self):  # type: (...) -> MetaData
-        return MetaData(super(SearchResultBase, self).meta)
+    def metadata(self):  # type: (...) -> SearchMetaData
+        return SearchMetaData(**super(SearchResultBase, self).meta)
 
     @classmethod
     def mk_kwargs(cls, kwargs):
