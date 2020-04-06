@@ -109,11 +109,7 @@ class SearchTest(ClusterTestCase):
             self.assertSetEqual({'airline_137'}, locations.terms())
             self.assertEqual(['airline_137'], locations.terms_for("airlineid"))
             metadata=good_response.metadata()
-            self.assertIsInstance(metadata, search.SearchMetaData)
-            self.assertIsInstance(metadata.metrics, search.SearchMetrics)
-
-            for key, err in metadata.errors.items():
-                self.assertIsInstance(err, str)
+            self._check_search_results_min_hits(1, good_response)
 
 
     def test_cluster_search(self  # type: SearchTest
@@ -138,6 +134,13 @@ class SearchTest(ClusterTestCase):
 
     def _check_search_result(self, initial, min_hits, x):
         duration = time.time() - initial
+        took=x.metadata().metrics.took
+        self.assertIsInstance(took, timedelta)
+        self.assertAlmostEqual(took.total_seconds(), duration, delta=0.1)
+
+        self._check_search_results_min_hits(min_hits, x)
+
+    def _check_search_results_min_hits(self, min_hits, x):
         self.assertGreaterEqual(len(x.rows()), min_hits)
         for entry in x.rows():
             self.assertIsInstance(entry, search.SearchRow)
@@ -148,23 +151,21 @@ class SearchTest(ClusterTestCase):
             self.assertIsInstance(entry.locations, search.SearchRowLocations)
             print(entry)
             for location in entry.fields:
-                self.assertIsInstance(location)
+                self.assertIsInstance(location, str)
         metadata = x.metadata()
         self.assertIsInstance(metadata, search.SearchMetaData)
-        metrics=metadata.metrics
+        metrics = metadata.metrics
         self.assertIsInstance(metrics.error_partition_count, int)
         self.assertIsInstance(metrics.max_score, float)
         self.assertIsInstance(metrics.success_partition_count, int)
-        self.assertEqual(metrics.error_partition_count+metrics.success_partition_count, metrics.total_partition_count)
-        took = metrics.took()
-        self.assertIsInstance(took, timedelta)
+        self.assertEqual(metrics.error_partition_count + metrics.success_partition_count, metrics.total_partition_count)
+        took = metrics.took
         # TODO: lets revisit why we chose this 0.1.  I often find the difference is greater,
         # running the tests locally.  Commenting out for now...
-        # self.assertAlmostEqual(took.total_seconds(), duration, delta=0.1)
         self.assertGreater(took.total_seconds(), 0)
-        self.assertIsInstance(metadata.total_hits(), int)
-        self.assertGreaterEqual(metadata.success_count(), min_hits)
-        self.assertGreaterEqual(metadata.total_hits(), min_hits)
+        self.assertIsInstance(metadata.metrics.total_partition_count, int)
+        self.assertGreaterEqual(metadata.metrics.success_partition_count, min_hits)
+        self.assertGreaterEqual(metadata.metrics.total_rows, min_hits)
 
 
 class SearchStringsTest(CouchbaseTestCase):

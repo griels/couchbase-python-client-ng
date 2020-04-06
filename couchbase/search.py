@@ -1400,14 +1400,16 @@ class SearchMetrics(object):
     @property
     def total_partition_count(self):
         # type: (...) -> int
-        return self._raw_data.get('total')
+        return self._status.get('total')
 
     @property
     def max_score(self):
         # type: (...) -> float
         return self._raw_data.get('max_score')
 
-
+    @property
+    def total_rows(self):
+        return self._raw_data.get('total_hits')
 
 class HighlightStyle(Enum):
     Ansi = 'ansi'
@@ -1446,12 +1448,13 @@ class SearchOptions(OptionBlockTimeOut):
 #@attr.s
 class SearchMetaData(object):
     def __init__(self, **raw_json):
-        try:
-            self.errors=raw_json.pop('status')
-        except Exception as e:
-            raise
+        #try:
+            #self.errors=raw_json.pop('status')
+        #except Exception as e:
+        #    raise
         #list(map(raw_json.pop,['request','hits']))
         self.metrics=SearchMetrics(raw_json)
+        self.errors=raw_json
     """Represents the meta-data returned along with a search query result."""
     #pass
     #metrics = attr.ib(type=SearchMetrics)  # type: SearchMetrics
