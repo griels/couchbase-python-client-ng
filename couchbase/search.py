@@ -1156,7 +1156,10 @@ class SearchRequest(object):
 
     @property
     def raw(self):
-        return self.__raw
+        try:
+            return self.__raw
+        except Exception as e:
+            raise
 
     def execute(self):
         """
@@ -1254,8 +1257,12 @@ class SearchRequest(object):
 
         self._start()
         while self._do_iter:
-            raw_rows = self.raw.fetch(self._mres)
-            for row in self._process_payload(raw_rows):
+            try:
+                raw_rows = self.raw.fetch(self._mres)
+            except Exception as e:
+                raise
+            actual_rows=list(raw_rows)
+            for row in self._process_payload(actual_rows):
                 yield row
 
     def __repr__(self):
@@ -1275,17 +1282,26 @@ class SearchRowLocation(object):
     array_positions = attr.attr(factory=list, type=List[UnsignedInt32])
 
 
-class SearchRowFields(List[Any]):
-    def __init__(self, *args):
-        super(SearchRowFields, self).__init__(*args)
+class SearchRowFields(Dict[str, Any]):
+    def __init__(self, *args, **kwargs):
+        if kwargs:
+            pass
+        super(SearchRowFields, self).__init__(*args, **kwargs)
+
+cattr.register_structure_hook(SearchRowFields, lambda x, t: t(x))
 
 
-@attr.attrs
 class SearchRowLocations(object):
+    def __init__(self, orig_data):
+        self._real_data=orig_data
     def get_all(self):
         # type: (...) -> List[SearchRowLocation]
         """list all locations (any field, any term)"""
-        pass
+        results=[]
+        for field, terms in self._real_data.items():
+            for term, entries in terms.items():
+                results.extend(self.get(field,term))
+        return results
 
     # list all locations for a given field (any term)
     def get(self,
@@ -1294,14 +1310,15 @@ class SearchRowLocations(object):
             ):
         # type: (...) -> List[SearchRowLocation]
         """List all locations for a given field and term"""
-        pass
+        entries_for_field=self._real_data.get(field,dict())
+        return [SearchRowLocation(field, term, v['pos'], v['start'],v['end'],v['array_positions']) for v in self._real_data[field][term]]
 
     def fields(self):
         # type: (...) -> List[str]
         """
         :return: the fields in this location
         """
-        pass
+        return self._real_data.keys()
 
     def terms(self):
         # type: (...) -> Set[str]
@@ -1309,15 +1326,22 @@ class SearchRowLocations(object):
         List all terms in this locations,
         considering all fields (so a set):
         """
-        pass
+        result=set()
+        for field in self._real_data.values():
+            result.update(field.keys())
+        return result
 
     def terms_for(self,
                   field  # type:str
                   ):
         # type: (...) -> list[str]
         """ list the terms for a given field """
-        pass
+        return list(self._real_data[field].keys())
 
+def searchRowLocations(x, t):
+    return t(x)
+
+cattr.register_structure_hook(SearchRowLocations, searchRowLocations)
 
 @attr.s
 class SearchRow(object):
@@ -1330,7 +1354,7 @@ class SearchRow(object):
     explanation=attr.ib(factory=dict, type=JSON)
     locations=attr.ib(factory=SearchRowLocations, type=SearchRowLocations)  # type: SearchRowLocations
     fragments=attr.ib(factory=dict, type=Optional[Mapping[str, str]])
-    fields=attr.ib(factory=SearchRowFields, type=SearchRowFields)
+    fields=attr.ib(default=attr.Factory(SearchRowFields), type=SearchRowFields)
 
 @attr.s
 class SearchFacetResult(object):
@@ -1433,10 +1457,10 @@ class MetaData(object):
         return self._raw_data.get('max_score')
 
 
-class SearchResult(iterable_wrapper(SearchRequest)):
+class SearchResultBase(object):
     @internal
     def __init__(self,
-                 *args, **kwargs  # type: SearchRequest
+                 *args, row_factory=None, **kwargs  # type: SearchRequest
                  ):
         """
         The SearchResult interface provides a means of mapping the results of a Search query into an object.
@@ -1444,19 +1468,30 @@ class SearchResult(iterable_wrapper(SearchRequest)):
 
 
         """
-        super(SearchResult, self).__init__(*args, **kwargs)
 
-    def rows(self):
-        # type: (...) -> List[SearchRow]
-        return cattr.structure(super(SearchResult, self).rows(), List[SearchRow])
+        super(SearchResultBase, self).__init__(*args, row_factory=(row_factory or self._row_factory), **kwargs)
+
+    def _row_factory(self,
+                   orig_value  # type: JSON
+                   ):
+        # type: (...) -> SearchRow
+        try:
+            result= cattr.structure(orig_value, SearchRow)
+            return result
+        except Exception as e:
+            raise
 
     def facets(self):
         # type: (...) -> Dict[str, SearchFacetResult]
-        return {k: cattr.structure(dict(name=k, **v), SearchFacetResult) for k, v in super(SearchResult, self).facets.items()}
+        return {k: cattr.structure(dict(name=k, **v), SearchFacetResult) for k, v in
+                super(SearchResultBase, self).facets.items()}
 
     def metadata(self):  # type: (...) -> MetaData
-        return MetaData(super(SearchResult, self).meta)
+        return MetaData(super(SearchResultBase, self).meta)
 
     @classmethod
     def mk_kwargs(cls, kwargs):
         return SearchRequest.mk_kwargs(kwargs)
+
+class SearchResult(SearchResultBase, iterable_wrapper(SearchRequest)):
+    pass

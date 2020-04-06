@@ -812,7 +812,8 @@ class ClusterTestCase(CouchbaseTestCase):
                 time.sleep(seconds_between)
             except Exception as e:
                 # helpful to have this print statement when tests fail
-                print("got exception {}, returning".format(e))
+                logging.error("Got exception, returning: {}".format(traceback.print_exc()))
+                #print("got exception {}, returning".format(e))
                 return
         self.fail("successful {} after {} times waiting {} seconds between calls".format(func, num_times, seconds_between))
 
@@ -843,7 +844,7 @@ class ClusterTestCase(CouchbaseTestCase):
                 return on_success(ret)
             except Exception as e:
                 # helpful to have this print statement when tests fail
-                print("got exception {}, sleeping...".format(e))
+                logging.error("Got exception, sleeping: {}".format(traceback.print_exc()))
                 time.sleep(seconds_between)
         return self._fail("unsuccessful {} after {} times, waiting {} seconds between calls".format(func, num_times, seconds_between))
 

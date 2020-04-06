@@ -33,22 +33,60 @@ import time
 
 import couchbase.exceptions
 
-from couchbase import timedelta
+from couchbase import timedelta, iterable_wrapper
 
-from couchbase_tests.base import ClusterTestCase, CollectionTestCase
+from couchbase_tests.base import ClusterTestCase
 import couchbase.management
 
 """Sample request/response payloads: https://github.com/couchbaselabs/sdk-testcases/tree/master/search"""
 
 
-class SearchTest(CollectionTestCase):
+class MRESWrapper(object):
+    def __init__(self, orig_json):
+        self.value=orig_json.pop('metadata')
+        self._orig_json=orig_json
+        self._hits=self._orig_json['data'].pop('hits')
+        self.done=False
+        try:
+            self._iterhits=iter(self._hits)
+        except Exception as e:
+            raise
+    def fetch(self, _):
+        yield from self._iterhits
+        self.done=True
+
+
+class SearchRequestMock(search.SearchRequest):
+    def __init__(self, body, parent, orig_json, **kwargs):
+        self._orig_json=orig_json
+        super(SearchRequestMock, self).__init__(body, parent, **kwargs)
+
+    def _start(self):
+        if self._mres:
+            return
+
+        self._mres = {None: MRESWrapper(self._orig_json)}
+        self.__raw = self._mres[None]
+    @property
+    def raw(self):
+        try:
+            return self._mres[None]
+        except Exception as e:
+            raise
+
+class SearchResultMock(search.SearchResultBase, iterable_wrapper(SearchRequestMock)):
+    pass
+
+
+class SearchTest(ClusterTestCase):
     def setUp(self, *args, **kwargs):
         super(SearchTest, self).setUp(*args, **kwargs)
         if self.is_mock:
             raise SkipTest("Search not available on Mock")
         self.cluster.search_indexes().upsert_index(
             SearchIndex(name="beer-search", idx_type="fulltext-index", source_type="couchbase", source_name="beer-sample"))
-    def test_airport(self):
+
+    def test_locations(self):
         initial = time.time()
         x = self.try_n_times_decorator(self.cluster.search_query, 10, 10)("beer-search", search.MatchQuery("Budweiser", prefix_length=0, fuzziness=0),
                                                                           search.SearchOptions(fields=["*"],limit=10, sort=["-_score"])
@@ -75,7 +113,24 @@ class SearchTest(CollectionTestCase):
         #   "-_score"
         # ],
         # "includeLocations": false}
-    def test_cluster_search(self  # type: ClusterTestCase
+
+
+    def test_parsing_locations(self):
+        with open("../sdk-testcases/search/good-response-61.json") as good_response_f:
+            import json
+            input=good_response_f.read()
+            raw_json=json.loads(input)
+            good_response = SearchResultMock(None, None, raw_json)
+            first_row=good_response.rows()[0]
+            self.assertIsInstance(first_row,search.SearchRow)
+            locations=first_row.locations
+            self.assertEqual(
+                [search.SearchRowLocation(field='airlineid', term='airline_137', position=1, start=0, end=11, array_positions=None)], locations.get("airlineid", "airline_137"))
+            self.assertEqual([search.SearchRowLocation(field='airlineid', term='airline_137', position=1, start=0, end=11, array_positions=None)], locations.get_all())
+            self.assertSetEqual({'airline_137'}, locations.terms())
+            self.assertEqual(['airline_137'], locations.terms_for("airlineid"))
+
+    def test_cluster_search(self  # type: SearchTest
                             ):
         if self.is_mock:
             raise SkipTest("F.T.S. not supported by mock")
