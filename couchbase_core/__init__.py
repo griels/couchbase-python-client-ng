@@ -291,6 +291,9 @@ def iterable_wrapper(basecls  # type: Type[WrappedIterable]
         def rows(self):
             return list(x for x in self)
 
+        def _converter(self, orig_value):
+            return orig_value
+
         def metadata(self):
             # type: (...) -> JSON
             return self.meta
@@ -301,7 +304,7 @@ def iterable_wrapper(basecls  # type: Type[WrappedIterable]
             parent_iter = super(IterableWrapper, self).__iter__()
             while not self.done:
                 try:
-                    next_item = next(parent_iter)
+                    next_item = self._converter(next(parent_iter))
                     self.buffered_rows.append(next_item)
                     yield next_item
                 except (StopAsyncIteration, StopIteration) as e:

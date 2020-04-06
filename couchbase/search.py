@@ -1446,9 +1446,11 @@ class SearchResult(iterable_wrapper(SearchRequest)):
         """
         super(SearchResult, self).__init__(*args, **kwargs)
 
-    def rows(self):
-        # type: (...) -> List[SearchRow]
-        return cattr.structure(super(SearchResult, self).rows(), List[SearchRow])
+    def _converter(self,
+                   orig_value  # type: JSON
+                   ):
+        # type: (...) -> SearchRow
+        return cattr.structure(orig_value, SearchRow)
 
     def facets(self):
         # type: (...) -> Dict[str, SearchFacetResult]
