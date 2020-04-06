@@ -277,40 +277,45 @@ def recursive_reload(module, paths=None, mdict=None):
 WrappedIterable = TypeVar('T', bound=Iterable[Any])
 
 
+class IterableWrapper(object):
+    def __init__(self,
+                 *args, **kwargs
+                 ):
+        super(IterableWrapper, self).__init__(*args, **kwargs)
+        self.done = False
+        self.buffered_rows = []
+
+    def rows(self):
+        return list(x for x in self)
+
+    def _converter(self, orig_value):
+        return orig_value
+
+    def metadata(self):
+        # type: (...) -> JSON
+        return self.meta
+
+    def __iter__(self):
+        for row in self.buffered_rows:
+            yield row
+        parent_iter = super(IterableWrapper, self).__iter__()
+        while not self.done:
+            try:
+                next_item = self._converter(next(parent_iter))
+                self.buffered_rows.append(next_item)
+                yield next_item
+            except (StopAsyncIteration, StopIteration) as e:
+                self.done = True
+                break
+
+
 def iterable_wrapper(basecls  # type: Type[WrappedIterable]
                      ):
-    # type: (...) -> Type[WrappedIterable]
-    class IterableWrapper(basecls):
-        def __init__(self,
-                     *args, **kwargs
-                     ):
-            super(IterableWrapper, self).__init__(*args, **kwargs)
-            self.done = False
-            self.buffered_rows = []
+    # type: (...) -> Type[IterableWrapper]
+    class IterableWrapperSpecific(IterableWrapper, basecls):
+        pass
 
-        def rows(self):
-            return list(x for x in self)
-
-        def _converter(self, orig_value):
-            return orig_value
-
-        def metadata(self):
-            # type: (...) -> JSON
-            return self.meta
-
-        def __iter__(self):
-            for row in self.buffered_rows:
-                yield row
-            parent_iter = super(IterableWrapper, self).__iter__()
-            while not self.done:
-                try:
-                    next_item = self._converter(next(parent_iter))
-                    self.buffered_rows.append(next_item)
-                    yield next_item
-                except (StopAsyncIteration, StopIteration) as e:
-                    self.done = True
-                    break
-    return IterableWrapper
+    return IterableWrapperSpecific
 
 
 def _depr(fn, usage, stacklevel=3):

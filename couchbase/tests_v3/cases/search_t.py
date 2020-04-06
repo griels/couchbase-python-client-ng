@@ -48,7 +48,8 @@ class SearchTest(CollectionTestCase):
             raise SkipTest("Search not available on Mock")
         self.cluster.search_indexes().upsert_index(
             SearchIndex(name="beer-search", idx_type="fulltext-index", source_type="couchbase", source_name="beer-sample"))
-    def test_airport(self):
+
+    def test_locations(self):
         initial = time.time()
         x = self.try_n_times_decorator(self.cluster.search_query, 10, 10)("beer-search", search.MatchQuery("Budweiser", prefix_length=0, fuzziness=0),
                                                                           search.SearchOptions(fields=["*"],limit=10, sort=["-_score"])
@@ -75,7 +76,7 @@ class SearchTest(CollectionTestCase):
         #   "-_score"
         # ],
         # "includeLocations": false}
-    def test_cluster_search(self  # type: ClusterTestCase
+    def test_cluster_search(self  # type: SearchTest
                             ):
         if self.is_mock:
             raise SkipTest("F.T.S. not supported by mock")

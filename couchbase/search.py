@@ -1282,6 +1282,9 @@ class SearchRowFields(List[Any]):
 
 @attr.attrs
 class SearchRowLocations(object):
+    def __init__(self, *args, **kwargs):
+        self._args=args
+        self._kwargs=kwargs
     def get_all(self):
         # type: (...) -> List[SearchRowLocation]
         """list all locations (any field, any term)"""
