@@ -48,12 +48,13 @@ import couchbase_core._libcouchbase
 import traceback
 
 from typing import *
+from couchbase_v2.bucket import Bucket as V2Bucket
 if os.environ.get("PYCBC_TRACE_GC") in ['FULL', 'STATS_LEAK_ONLY']:
     gc.set_debug(gc.DEBUG_STATS | gc.DEBUG_LEAK)
 
 from utilspie.collectionsutils import frozendict
 from couchbase.management.collections import CollectionSpec
-from couchbase.bucket import Bucket
+from couchbase.bucket import Bucket as V3Bucket
 from flaky import flaky
 from deepdiff import DeepDiff
 
@@ -458,7 +459,7 @@ class CouchbaseTestCase(ResourcedTestCase):
             from couchbase_core.result import (
                 MultiResult, Result, OperationResult, ValueResult,
                 ObserveInfo)
-            self.factory = Bucket
+            self.factory = V2Bucket
             self.viewfactory = View
             self.cls_Result = Result
             self.cls_MultiResult = MultiResult
@@ -841,7 +842,7 @@ class ClusterTestCase(CouchbaseTestCase):
         return self._fail("unsuccessful {} after {} times, waiting {} seconds between calls".format(func, num_times, seconds_between))
 
     def factory(self, *args, **kwargs):
-        return Bucket(*args, username="default", **kwargs).default_collection()
+        return V3Bucket(*args, username="default", **kwargs).default_collection()
 
     def setUp(self, **kwargs):
         super(ClusterTestCase, self).setUp()

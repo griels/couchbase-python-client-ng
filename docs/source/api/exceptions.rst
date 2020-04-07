@@ -22,12 +22,12 @@ for example:
 
     try:
         cb.get("foo")
-    except NotFoundException:
+    except DocumentNotFoundException:
         print("Item does not exist")
     except CouchbaseTransientException:
         print("Transient error received. Handling and backing off")
 
-Where `NotFoundException` is a specific error detail code indicating the item has
+Where `DocumentNotFoundException` is a specific error detail code indicating the item has
 not been found, and `CouchbaseTransientException` is an error category indicating
 the specific cause is likely transient.
 
@@ -47,7 +47,7 @@ You may also employ a different use model, for example:
     try:
         cb.get("foo")
     except CouchbaseException as e:
-        if e.is_data and isinstance(e, NotFoundException):
+        if e.is_data and isinstance(e, DocumentNotFoundException):
             # handle not found
             pass
         elif e.is_network:
@@ -152,7 +152,7 @@ be inherited from multiple exception categories.
    :show-inheritance:
 .. autoexception:: HTTPException
    :show-inheritance:
-.. autoexception:: SubdocPathNotFoundException
+.. autoexception:: PathNotFoundException
    :show-inheritance:
-.. autoexception:: SubdocPathExistsException
+.. autoexception:: PathExistsException
    :show-inheritance:

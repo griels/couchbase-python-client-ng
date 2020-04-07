@@ -1037,14 +1037,6 @@ class SubdocPathInvalidException(CouchbaseException):
     """Subdocument path is invalid"""
 
 
-class SubdocPathNotFoundException(CouchbaseException):
-    """Subdocument path not found"""
-
-
-class SubdocPathExistsException(CouchbaseException):
-    """Subdocument path already exists"""
-
-
 class DocumentNotJsonException(CouchbaseException):
     """Document is not JSON and cannot be used for subdoc operations"""
 
