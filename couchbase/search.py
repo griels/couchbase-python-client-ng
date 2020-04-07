@@ -1086,7 +1086,7 @@ class NoChildrenError(CouchbaseError):
         super(NoChildrenError, self).__init__({'message': msg})
 
 
-def make_search_body(index, query, params=None):
+def _make_search_body(index, query, params=None):
     """
     Generates a dictionary suitable for encoding as the search body
     :param index: The index name to query
@@ -1416,44 +1416,6 @@ class HighlightStyle(Enum):
     Html = 'html'
 
 
-class SearchOptions(OptionBlockTimeOut):
-    @overload
-    def __init__(self,
-                 timeout=None,           # type: timedelta
-                 limit=None,             # type: int
-                 skip=None,              # type: int
-                 explain=None,           # type: bool
-                 fields=None,            # type: List[str]
-                 highlight_style=None,   # type: HighlightStyle
-                 highlight_fields=None,  # type: List[str]
-                 scan_consistency=None,  # type: cluster.QueryScanConsistency
-                 consistent_with=None,   # type: MutationState
-                 facets=None,            # type: Dict[str, Facet]
-                 raw=None,               # type: JSON
-                 sort=None               # type: List[str]
-                 ):
-        pass
-
-    def __init__(self,
-                 **kwargs   # type: Any
-                 ):
-        # convert highlight_style to str if it is present...
-        style = kwargs.get('highlight_style', None)
-        if(style) :
-            kwargs['highlight_style'] = style.value
-
-        super(SearchOptions, self).__init__(**kwargs)
-
-    @classmethod
-    def gen_search_params(cls, index, query, *options, **kwargs):
-        itercls = kwargs.pop('itercls', SearchResult)
-        final_args = forward_args(kwargs, *options)
-        iterargs = itercls.mk_kwargs(final_args)
-        params = kwargs.pop('params', _Params(**final_args))
-        body = make_search_body(index, query, params)
-        return body, iterargs, itercls
-
-
 class SearchMetaData(object):
     """Represents the meta-data returned along with a search query result."""
     def __init__(self, **raw_json):
@@ -1496,3 +1458,53 @@ class SearchResultBase(object):
 
 class SearchResult(SearchResultBase, iterable_wrapper(SearchRequest)):
     pass
+
+
+SearchParams = NamedTuple('SearchParams',
+                          [('body', JSON), ('iterargs', Dict[str, Any]), ('itercls', Type[SearchResult])])
+
+
+class SearchOptions(OptionBlockTimeOut):
+    @overload
+    def __init__(self,
+                 timeout=None,           # type: timedelta
+                 limit=None,             # type: int
+                 skip=None,              # type: int
+                 explain=None,           # type: bool
+                 fields=None,            # type: List[str]
+                 highlight_style=None,   # type: HighlightStyle
+                 highlight_fields=None,  # type: List[str]
+                 scan_consistency=None,  # type: cluster.QueryScanConsistency
+                 consistent_with=None,   # type: MutationState
+                 facets=None,            # type: Dict[str, Facet]
+                 raw=None,               # type: JSON
+                 sort=None               # type: List[str]
+                 ):
+        pass
+
+    def __init__(self,
+                 **kwargs   # type: Any
+                 ):
+        # convert highlight_style to str if it is present...
+        style = kwargs.get('highlight_style', None)
+        if(style) :
+            kwargs['highlight_style'] = style.value
+
+        super(SearchOptions, self).__init__(**kwargs)
+
+    @classmethod
+    def gen_search_params_cls(cls, index, query, *options, **kwargs):
+        # type: (...) -> SearchParams
+        itercls = kwargs.pop('itercls', SearchResult)
+        final_args = forward_args(kwargs, *options)
+        iterargs = itercls.mk_kwargs(final_args)
+        consistent_with = final_args.pop('consistent_with', None)
+        params = kwargs.pop('params', _Params(**final_args))
+        if consistent_with:
+            params.consistent_with(consistent_with)
+        body = _make_search_body(index, query, params)
+        return SearchParams(body, iterargs, itercls)
+
+    def gen_search_params(self, index, query, **kwargs):
+        return self.gen_search_params_cls(index, query, self, **kwargs)
+

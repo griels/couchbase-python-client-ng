@@ -178,7 +178,7 @@ class SearchStringsTest(CouchbaseTestCase):
     def test_fuzzy(self):
         q = search.TermQuery('someterm', field='field', boost=1.5,
                                prefix_length=23, fuzziness=12)
-        p = search._Params(explain=True)
+        p = search.SearchOptions(explain=True)
 
         exp_json = {
             'query': {
@@ -192,7 +192,7 @@ class SearchStringsTest(CouchbaseTestCase):
             'explain': True
         }
 
-        self.assertEqual(exp_json, search.make_search_body('someIndex', q, p))
+        self.assertEqual(exp_json, p.gen_search_params('someIndex', q).body)
 
     def test_match_phrase(self):
         exp_json = {
@@ -206,10 +206,10 @@ class SearchStringsTest(CouchbaseTestCase):
             'indexName': 'ix'
         }
 
-        p = search._Params(limit=10)
+        p = search.SearchOptions(limit=10)
         q = search.MatchPhraseQuery('salty beers', boost=1.5, analyzer='analyzer',
                                       field='field')
-        self.assertEqual(exp_json, search.make_search_body('ix', q, p))
+        self.assertEqual(exp_json, p.gen_search_params('ix', q).body)
 
     def test_match_query(self):
         exp_json = {
@@ -227,8 +227,8 @@ class SearchStringsTest(CouchbaseTestCase):
 
         q = search.MatchQuery('salty beers', boost=1.5, analyzer='analyzer',
                                 field='field', fuzziness=1234, prefix_length=4)
-        p = search._Params(limit=10)
-        self.assertEqual(exp_json, search.make_search_body('ix', q, p))
+        p = search.SearchOptions(limit=10)
+        self.assertEqual(exp_json, p.gen_search_params('ix', q).body)
 
     def test_string_query(self):
         exp_json = {
@@ -241,8 +241,8 @@ class SearchStringsTest(CouchbaseTestCase):
             'indexName': 'ix'
         }
         q = search.QueryStringQuery('q*ry', boost=2.0)
-        p = search._Params(limit=10, explain=True)
-        self.assertEqual(exp_json, search.make_search_body('ix', q, p))
+        p = search.SearchOptions(limit=10, explain=True)
+        self.assertEqual(exp_json, p.gen_search_params('ix', q).body)
 
     def test_params(self):
         self.assertEqual({}, search._Params().as_encodable('ix'))
@@ -446,9 +446,8 @@ class SearchStringsTest(CouchbaseTestCase):
         ms = MutationState()
         ms._add_scanvec(mutinfo)
 
-        params = search._Params()
-        params.consistent_with(ms)
-        got = search.make_search_body('ix', search.MatchNoneQuery(), params)
+        params = search.SearchOptions(consistent_with=ms)
+        got = params.gen_search_params('ix', search.MatchNoneQuery()).body
         exp = {
             'indexName': ixname,
             'query': {
