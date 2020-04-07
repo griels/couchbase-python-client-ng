@@ -178,7 +178,7 @@ class SearchStringsTest(CouchbaseTestCase):
     def test_fuzzy(self):
         q = search.TermQuery('someterm', field='field', boost=1.5,
                                prefix_length=23, fuzziness=12)
-        p = search.Params(explain=True)
+        p = search._Params(explain=True)
 
         exp_json = {
             'query': {
@@ -206,7 +206,7 @@ class SearchStringsTest(CouchbaseTestCase):
             'indexName': 'ix'
         }
 
-        p = search.Params(limit=10)
+        p = search._Params(limit=10)
         q = search.MatchPhraseQuery('salty beers', boost=1.5, analyzer='analyzer',
                                       field='field')
         self.assertEqual(exp_json, search.make_search_body('ix', q, p))
@@ -227,7 +227,7 @@ class SearchStringsTest(CouchbaseTestCase):
 
         q = search.MatchQuery('salty beers', boost=1.5, analyzer='analyzer',
                                 field='field', fuzziness=1234, prefix_length=4)
-        p = search.Params(limit=10)
+        p = search._Params(limit=10)
         self.assertEqual(exp_json, search.make_search_body('ix', q, p))
 
     def test_string_query(self):
@@ -241,40 +241,40 @@ class SearchStringsTest(CouchbaseTestCase):
             'indexName': 'ix'
         }
         q = search.QueryStringQuery('q*ry', boost=2.0)
-        p = search.Params(limit=10, explain=True)
+        p = search._Params(limit=10, explain=True)
         self.assertEqual(exp_json, search.make_search_body('ix', q, p))
 
     def test_params(self):
-        self.assertEqual({}, search.Params().as_encodable('ix'))
-        self.assertEqual({'size': 10}, search.Params(limit=10).as_encodable('ix'))
+        self.assertEqual({}, search._Params().as_encodable('ix'))
+        self.assertEqual({'size': 10}, search._Params(limit=10).as_encodable('ix'))
         self.assertEqual({'from': 100},
-                         search.Params(skip=100).as_encodable('ix'))
+                         search._Params(skip=100).as_encodable('ix'))
 
         self.assertEqual({'explain': True},
-                         search.Params(explain=True).as_encodable('ix'))
+                         search._Params(explain=True).as_encodable('ix'))
 
         self.assertEqual({'highlight': {'style': 'html'}},
-                         search.Params(highlight_style='html').as_encodable('ix'))
+                         search._Params(highlight_style='html').as_encodable('ix'))
 
         self.assertEqual({'highlight': {'style': 'ansi',
                                         'fields': ['foo', 'bar', 'baz']}},
-                         search.Params(highlight_style='ansi',
-                                       highlight_fields=['foo', 'bar', 'baz'])
+                         search._Params(highlight_style='ansi',
+                                        highlight_fields=['foo', 'bar', 'baz'])
                          .as_encodable('ix'))
 
         self.assertEqual({'fields': ['foo', 'bar', 'baz']},
-                         search.Params(fields=['foo', 'bar', 'baz']
-                                       ).as_encodable('ix'))
+                         search._Params(fields=['foo', 'bar', 'baz']
+                                        ).as_encodable('ix'))
 
         self.assertEqual({'sort': ['f1', 'f2', '-_score']},
-                         search.Params(sort=['f1', 'f2', '-_score']
-                                       ).as_encodable('ix'))
+                         search._Params(sort=['f1', 'f2', '-_score']
+                                        ).as_encodable('ix'))
 
         self.assertEqual({'sort': ['f1', 'f2', '-_score']},
-                         search.Params(sort=search.SortString(
+                         search._Params(sort=search.SortString(
                              'f1', 'f2', '-_score')).as_encodable('ix'))
 
-        p = search.Params(facets={
+        p = search._Params(facets={
             'term': search.TermFacet('somefield', limit=10),
             'dr': search.DateFacet('datefield').add_range('name', 'start', 'end'),
             'nr': search.NumericFacet('numfield').add_range('name2', 0.0, 99.99)
@@ -306,7 +306,7 @@ class SearchStringsTest(CouchbaseTestCase):
         self.assertEqual(exp, p.as_encodable('ix'))
 
     def test_facets(self):
-        p = search.Params()
+        p = search._Params()
         f = search.NumericFacet('numfield')
         self.assertRaises(ValueError, p.facets.__setitem__, 'facetName', f)
         self.assertRaises(TypeError, f.add_range, 'range1')
@@ -446,7 +446,7 @@ class SearchStringsTest(CouchbaseTestCase):
         ms = MutationState()
         ms._add_scanvec(mutinfo)
 
-        params = search.Params()
+        params = search._Params()
         params.consistent_with(ms)
         got = search.make_search_body('ix', search.MatchNoneQuery(), params)
         exp = {

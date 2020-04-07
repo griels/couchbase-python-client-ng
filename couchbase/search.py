@@ -10,7 +10,7 @@ from couchbase_core._pyport import unicode
 from couchbase.exceptions import CouchbaseError
 from couchbase_core.views.iterator import AlreadyQueriedError
 from couchbase_core.supportability import internal
-from .options import OptionBlockTimeOut, UnsignedInt32, UnsignedInt64
+from .options import OptionBlockTimeOut, UnsignedInt32, UnsignedInt64, forward_args
 import abc
 import cattr
 import couchbase_core.mutation_state as MutationState
@@ -358,7 +358,7 @@ def _convert_sort(s):
 # that logic over into SearchOptions itself
 
 
-class Params(object):
+class _Params(object):
     """
     Generic parameters and query modifiers. Keyword arguments may be used
     to initialize instance attributes. See individual attributes for
@@ -1092,7 +1092,7 @@ def make_search_body(index, query, params=None):
     :param index: The index name to query
     :param query: The query itself
     :param params: Modifiers for the query
-    :type params: :class:`couchbase.search.Params`
+    :type params: :class:`couchbase.search._Params`
     :return: A dictionary suitable for serialization
     """
     dd = {}
@@ -1443,6 +1443,16 @@ class SearchOptions(OptionBlockTimeOut):
             kwargs['highlight_style'] = style.value
 
         super(SearchOptions, self).__init__(**kwargs)
+
+    @classmethod
+    def gen_search_params(cls, index, query, *options, **kwargs):
+        itercls = kwargs.pop('itercls', SearchResult)
+        final_args = forward_args(kwargs, *options)
+        iterargs = itercls.mk_kwargs(final_args)
+        params = kwargs.pop('params', _Params(**final_args))
+        body = make_search_body(index, query, params)
+        return body, iterargs, itercls
+
 
 class SearchMetaData(object):
     """Represents the meta-data returned along with a search query result."""

@@ -432,11 +432,7 @@ class Cluster(CoreClient):
         self._check_for_shutdown()
 
         def do_search(dest):
-            itercls = kwargs.pop('itercls', SearchResult)
-            final_args = forward_args(kwargs, *options)
-            iterargs = itercls.mk_kwargs(final_args)
-            params = kwargs.pop('params', SEARCH.Params(**final_args))
-            body = SEARCH.make_search_body(index, query, params)
+            body, iterargs, itercls = SearchOptions.gen_search_params(index, query, *options, **kwargs)
             return itercls(body, dest, **iterargs)
 
         return self._operate_on_cluster(do_search, SearchException)
