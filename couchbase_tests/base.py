@@ -908,15 +908,15 @@ class ClusterTestCase(CouchbaseTestCase):
 
 
 class AsyncClusterTestCase(object):
-    def _instantiate_asynccluster(self, connstr_nobucket, cluster_factory):
-        # FIXME: we should not be using classic here!  But, somewhere in the tests, we need
-        # this for hitting the mock, it seems
-        auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
-        # hack because the Mock seems to want a bucket name for cluster connections, odd
-        mock_hack = {'bucket': self.cluster_info.bucket_name} if self.is_mock else {}
-        return cluster_factory(connection_string=str(connstr_nobucket),
-                                    authenticator=auth_type(self.cluster_info.admin_username,
-                                                 self.cluster_info.admin_password), **mock_hack)
+    # def _instantiate_asynccluster(self, connstr_nobucket, cluster_factory):
+    #     # FIXME: we should not be using classic here!  But, somewhere in the tests, we need
+    #     # this for hitting the mock, it seems
+    #     auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
+    #     # hack because the Mock seems to want a bucket name for cluster connections, odd
+    #     mock_hack = {'bucket': self.cluster_info.bucket_name} if self.is_mock else {}
+    #     return cluster_factory(connection_string=str(connstr_nobucket),
+    #                                 authenticator=auth_type(self.cluster_info.admin_username,
+    #                                              self.cluster_info.admin_password), **mock_hack)
 
     def _get_connstr_and_bucket_name(self,
                                      args,  # type: List[Any]
@@ -933,13 +933,13 @@ class AsyncClusterTestCase(object):
         # type: (...) -> Cluster
         args = list(args)
         connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
-        return self._instantiate_asynccluster(connstr_nobucket, self.cluster_class)
+        return self._instantiate_cluster(connstr_nobucket, self.cluster_class)
 
     def gen_bucket(self, *args, override_bucket=None, **kwargs):
         args = list(args)
         connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
         bucket = override_bucket or bucket
-        return self._instantiate_asynccluster(connstr_nobucket, self.cluster_class).bucket(bucket)
+        return self._instantiate_cluster(connstr_nobucket, self.cluster_class).bucket(bucket)
 
     def gen_collection(self,
                        *args, **kwargs):
