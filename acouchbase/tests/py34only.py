@@ -23,11 +23,11 @@ class CouchbaseBeerKVTest(CouchbaseBeerTest):
     @asyncio.coroutine
     def test_get_data(self):
         connargs=self.make_connargs()
-        beer_bucket = self.gen_collection(**connargs)
+        beer_default_collection = self.gen_collection(**connargs)
 
-        yield from (beer_bucket.on_connect() or asyncio.sleep(0.01))
+        yield from (beer_default_collection.on_connect() or asyncio.sleep(0.01))
 
-        data = yield from beer_bucket.get('21st_amendment_brewery_cafe')
+        data = yield from beer_default_collection.get('21st_amendment_brewery_cafe')
         self.assertEqual("21st Amendment Brewery Cafe", self.details.get_value(data)["name"])
 
 
@@ -57,12 +57,12 @@ class CouchbaseDefaultTestKV(AioTestCase):
 
         expected = str(uuid.uuid4())
 
-        default_bucket = self.gen_collection(**self.make_connargs())
-        yield from (default_bucket.on_connect() or asyncio.sleep(0.01))
+        default_collection = self.gen_collection(**self.make_connargs())
+        yield from (default_collection.on_connect() or asyncio.sleep(0.01))
 
-        yield from default_bucket.upsert('hello', {"key": expected})
+        yield from default_collection.upsert('hello', {"key": expected})
 
-        obtained = yield from default_bucket.get('hello')
+        obtained = yield from default_collection.get('hello')
         self.assertEqual({"key": expected}, self.details.get_value(obtained))
 
 
@@ -74,10 +74,10 @@ class CouchbaseDefaultTestN1QL(AioTestCase):
     @asyncio.coroutine
     def test_n1ql(self):
 
-        default_bucket = self.gen_cluster(**self.make_connargs())
-        yield from (default_bucket.on_connect() or asyncio.sleep(0.01))
+        cluster = self.gen_cluster(**self.make_connargs())
+        yield from (cluster.on_connect() or asyncio.sleep(0.01))
 
-        it = default_bucket.query("SELECT mockrow")
+        it = cluster.query("SELECT mockrow")
         yield from it.future
 
         data = list(it)
