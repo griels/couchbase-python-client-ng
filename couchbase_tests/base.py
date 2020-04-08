@@ -874,12 +874,18 @@ class ClusterTestCase(CouchbaseTestCase):
         self.bucket = self.cluster.bucket(bucket_name)
         self.bucket_name = bucket_name
 
+    def _get_connstr_and_bucket_name(self,
+                                     args,  # type: List[Any]
+                                     kwargs):
+        connstr = args.pop(0) if args else kwargs.pop('connection_string')
+        connstr_nobucket = ConnectionString.parse(connstr)
+        bucket = connstr_nobucket.bucket
+        connstr_nobucket.bucket = None
+        return connstr_nobucket, bucket
+
     def init_cluster_and_bucket(self):
         connargs = self.cluster_info.make_connargs()
-        connstr_abstract = ConnectionString.parse(connargs.pop('connection_string'))
-        bucket_name = connstr_abstract.bucket
-        connstr_abstract.bucket = None
-        connstr_abstract.set_option('enable_collections', 'true')
+        connstr_abstract, bucket_name = self._get_connstr_and_bucket_name([], connargs)
         self.cluster = self._instantiate_cluster(connstr_abstract, self.cluster_factory)
         return bucket_name
 
@@ -908,24 +914,6 @@ class ClusterTestCase(CouchbaseTestCase):
 
 
 class AsyncClusterTestCase(object):
-    # def _instantiate_asynccluster(self, connstr_nobucket, cluster_factory):
-    #     # FIXME: we should not be using classic here!  But, somewhere in the tests, we need
-    #     # this for hitting the mock, it seems
-    #     auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
-    #     # hack because the Mock seems to want a bucket name for cluster connections, odd
-    #     mock_hack = {'bucket': self.cluster_info.bucket_name} if self.is_mock else {}
-    #     return cluster_factory(connection_string=str(connstr_nobucket),
-    #                                 authenticator=auth_type(self.cluster_info.admin_username,
-    #                                              self.cluster_info.admin_password), **mock_hack)
-
-    def _get_connstr_and_bucket_name(self,
-                                     args,  # type: List[Any]
-                                     kwargs):
-        connstr = args.pop(0) if args else kwargs.pop('connection_string')
-        connstr_nobucket = ConnectionString.parse(connstr)
-        bucket=connstr_nobucket.bucket
-        connstr_nobucket.bucket = None
-        return connstr_nobucket, bucket
 
     def gen_cluster(self,  # type: AsyncClusterTestCase
                     *args,
