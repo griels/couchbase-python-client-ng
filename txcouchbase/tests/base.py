@@ -44,54 +44,55 @@ if os.getenv("PYCBC_DEBUG_SPEWER"):
     sys.settrace(twisted.python.util.spewer)
 
 
+class AsyncClusterTestCase(object):
+    def _instantiate_txcluster(self, connstr_nobucket, **kwargs):
+        # it seems the mock requires ClassicAuthenticator to work (hence its use in the ClusterTestCase)
+        # TODO: resolve this
+
+        auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
+        mock_hack = {'bucket':self.cluster_info.bucket_name} if self.is_mock else {}
+        return self.cluster_class(connection_string=str(connstr_nobucket),
+                                    authenticator=auth_type(self.cluster_info.admin_username,
+                                                 self.cluster_info.admin_password), **mock_hack)
+
+    def _get_connstr_and_bucket_name(self,
+                                     args,  # type: List[Any]
+                                     kwargs):
+        connstr = args.pop(0) if args else kwargs.pop('connection_string')
+        connstr_nobucket = ConnectionString.parse(connstr)
+        bucket=connstr_nobucket.bucket
+        connstr_nobucket.bucket = None
+        return connstr_nobucket, bucket
+
+    def gen_cluster(self,  # type: AsyncClusterTestCase
+                    *args,
+                    **kwargs):
+        # type: (...) -> TxCluster
+        args = list(args)
+        connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
+        return self._instantiate_txcluster(connstr_nobucket, **kwargs)
+
+    def gen_bucket(self, *args, override_bucket=None, **kwargs):
+        args = list(args)
+        connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
+        bucket = override_bucket or bucket
+        return self._instantiate_txcluster(connstr_nobucket, **kwargs).bucket(bucket)
+
+    def gen_collection(self,
+                       *args, **kwargs):
+        bucket_result = self.gen_bucket(*args, **kwargs)
+        return bucket_result.default_collection()
+    @property
+    @abstractmethod
+    def cluster_class(self):
+        # type: (...) -> Cluster
+        pass
+
 def gen_base(basecls,  # type: Type[T]
              timeout=5,
              factory=None  # type: Factory
              ):
     # type: (...) -> Union[Type[_TxTestCase],Type[T]]
-    class AsyncClusterTestCase(object):
-        def _instantiate_txcluster(self, connstr_nobucket, **kwargs):
-            # it seems the mock requires ClassicAuthenticator to work (hence its use in the ClusterTestCase)
-            # TODO: resolve this
-
-            auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
-            mock_hack = {'bucket':self.cluster_info.bucket_name} if self.is_mock else {}
-            return self.cluster_class(connection_string=str(connstr_nobucket),
-                                        authenticator=auth_type(self.cluster_info.admin_username,
-                                                     self.cluster_info.admin_password), **mock_hack)
-
-        def _get_connstr_and_bucket_name(self,
-                                         args,  # type: List[Any]
-                                         kwargs):
-            connstr = args.pop(0) if args else kwargs.pop('connection_string')
-            connstr_nobucket = ConnectionString.parse(connstr)
-            bucket=connstr_nobucket.bucket
-            connstr_nobucket.bucket = None
-            return connstr_nobucket, bucket
-
-        def gen_cluster(self,  # type: _TxTestCase
-                        *args,
-                        **kwargs):
-            # type: (...) -> TxCluster
-            args = list(args)
-            connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
-            return self._instantiate_txcluster(connstr_nobucket, **kwargs)
-
-        def gen_bucket(self, *args, override_bucket=None, **kwargs):
-            args = list(args)
-            connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
-            bucket = override_bucket or bucket
-            return self._instantiate_txcluster(connstr_nobucket, **kwargs).bucket(bucket)
-
-        def gen_collection(self,
-                           *args, **kwargs):
-            bucket_result = self.gen_bucket(*args, **kwargs)
-            return bucket_result.default_collection()
-        @property
-        @abstractmethod
-        def cluster_class(self):
-            # type: (...) -> couchbase.cluster.Cluster
-            pass
 
 
     class _TxTestCase(basecls, AsyncClusterTestCase, TestCase):
