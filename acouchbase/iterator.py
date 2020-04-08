@@ -63,14 +63,12 @@ class AioBase:
 
 
 class AView(AioBase, AsyncViewBase):
-
     def __init__(self, *args, **kwargs):
         AsyncViewBase.__init__(self, *args, **kwargs)
         AioBase.__init__(self)
 
 
 class AN1QLRequest(AioBase, AsyncN1QLRequest):
-
     def __init__(self, *args, **kwargs):
         AsyncN1QLRequest.__init__(self, *args, **kwargs)
         AioBase.__init__(self)
@@ -91,6 +89,7 @@ class AQueryResult(AioBase, AsyncQueryResult):
     def __init__(self, *args, **kwargs):
         AsyncQueryResult.__init__(self, *args, **kwargs)
         AioBase.__init__(self)
+
 
 class ASearchResult(AioBase, AsyncSearchResult):
     def __init__(self, *args, **kwargs):

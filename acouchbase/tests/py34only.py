@@ -93,7 +93,7 @@ class AIOClusterTest(AioTestCase):
         yield from (cluster.on_connect() or asyncio.sleep(0.01))
         it = cluster.search_query("beer-search", SEARCH.TermQuery("category"),
                                       facets={'fred': SEARCH.TermFacet('category', 10)})
-
+        yield from it.future
         data = list(it)
-        self.assertIsInstance(o, AsyncSearchResult)
+        self.assertIsInstance(it, AsyncSearchResult)
         self.assertEqual(10, len(data))
