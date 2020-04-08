@@ -19,7 +19,7 @@ from twisted.internet import defer
 from couchbase.exceptions import (
     ObjectDestroyedException)
 
-from couchbase_tests.base import ConnectionTestCase, ClusterTestCase
+from couchbase_tests.base import ConnectionTestCase, ClusterTestCase, AsyncClusterTestCase
 from couchbase_core.connstr import ConnectionString
 from txcouchbase.tests.base import gen_base
 from txcouchbase.cluster import TxBucket
@@ -27,7 +27,7 @@ from nose.tools import timed
 import sys
 from unittest import SkipTest
 
-Base = gen_base(ClusterTestCase)
+Base = gen_base(AsyncClusterTestCase)
 
 
 class BasicClusterTest(Base):

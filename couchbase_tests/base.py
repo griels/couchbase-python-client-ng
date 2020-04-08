@@ -913,33 +913,6 @@ class ClusterTestCase(CouchbaseTestCase):
         return "durableWrite" in info['bucketCapabilities']
 
 
-class AsyncClusterTestCase(object):
-
-    def gen_cluster(self,  # type: AsyncClusterTestCase
-                    *args,
-                    **kwargs):
-        # type: (...) -> Cluster
-        args = list(args)
-        connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
-        return self._instantiate_cluster(connstr_nobucket, self.cluster_class)
-
-    def gen_bucket(self, *args, override_bucket=None, **kwargs):
-        args = list(args)
-        connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
-        bucket = override_bucket or bucket
-        return self._instantiate_cluster(connstr_nobucket, self.cluster_class).bucket(bucket)
-
-    def gen_collection(self,
-                       *args, **kwargs):
-        bucket_result = self.gen_bucket(*args, **kwargs)
-        return bucket_result.default_collection()
-
-    @property
-    @abstractmethod
-    def cluster_class(self):
-        # type: (...) -> Cluster
-        pass
-
 
 def skip_if_no_collections(func):
     @wraps(func)
@@ -1010,6 +983,33 @@ class CollectionTestCase(ClusterTestCase):
             warnings.warn(e.message)
             pass
 
+
+class AsyncClusterTestCase(ClusterTestCase):
+
+    def gen_cluster(self,  # type: AsyncClusterTestCase
+                    *args,
+                    **kwargs):
+        # type: (...) -> Cluster
+        args = list(args)
+        connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
+        return self._instantiate_cluster(connstr_nobucket, self.cluster_class)
+
+    def gen_bucket(self, *args, override_bucket=None, **kwargs):
+        args = list(args)
+        connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
+        bucket = override_bucket or bucket
+        return self._instantiate_cluster(connstr_nobucket, self.cluster_class).bucket(bucket)
+
+    def gen_collection(self,
+                       *args, **kwargs):
+        bucket_result = self.gen_bucket(*args, **kwargs)
+        return bucket_result.default_collection()
+
+    @property
+    @abstractmethod
+    def cluster_class(self):
+        # type: (...) -> Cluster
+        pass
 
 class DDocTestCase(RealServerTestCase):
     pass

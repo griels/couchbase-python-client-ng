@@ -35,7 +35,7 @@ class CouchbaseBeerViewTest(CouchbaseBeerTest):
     @asynct
     @asyncio.coroutine
     def test_query(self):
-        beer_bucket = self.cb
+        beer_bucket = self.cluster
 
         yield from (beer_bucket.on_connect() or asyncio.sleep(0.01))
         viewiter = beer_bucket.view_query("beer", "brewery_beers", limit=10)

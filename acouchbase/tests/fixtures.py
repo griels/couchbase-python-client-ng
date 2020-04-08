@@ -1,4 +1,4 @@
-from couchbase_tests.base import MockTestCase
+from couchbase_tests.base import MockTestCase, AsyncClusterTestCase, ClusterTestCase
 from functools import wraps
 from parameterized import parameterized_class
 from collections import namedtuple
@@ -32,7 +32,7 @@ try:
 
 
     default = Details({'Collection': gen_collection, 'Bucket': Bucket}, lambda x: x.content)
-    target_dict = {'V3CoreClient': Details({'Collection': V3CoreClient, 'Bucket': V3CoreClient}, lambda x: x.value),
+    target_dict = {
                    'Collection':   default}
 
 except (ImportError, SyntaxError):
@@ -45,20 +45,21 @@ def parameterize_asyncio(cls):
     return parameterized_class(('factory_name',), targets)(cls)
 
 
-class AioTestCase(MockTestCase):
+class AioTestCase(AsyncClusterTestCase, ClusterTestCase, MockTestCase):
     factory_name = None  # type: str
 
     def setUp(self, type='Collection', **kwargs):
         asyncio.set_event_loop(get_event_loop())
-        self._factory = self.details.factories[type]
+        #self._factory = self.details.factories[type]
         super(AioTestCase, self).setUp(**kwargs)
 
     def __init__(self, *args, **kwargs):
         self.details = target_dict.get(self.factory_name,default)
         super(AioTestCase, self).__init__(*args, **kwargs)
 
+
     @property
-    def factory(self):
-        return self._factory
+    def cluster_class(self):  # type: (...) -> Cluster
+        return Cluster
 
     should_check_refcount = False

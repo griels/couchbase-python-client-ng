@@ -21,7 +21,7 @@ from twisted.trial._synctest import SkipTest
 
 import couchbase.search as SEARCH
 from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
-from couchbase_tests.base import ConnectionTestCase, AnalyticsTestCaseBase, ClusterTestCase
+from couchbase_tests.base import ConnectionTestCase, AnalyticsTestCaseBase, ClusterTestCase, AsyncClusterTestCase
 from txcouchbase.cluster import BatchedQueryResult, BatchedSearchResult, BatchedAnalyticsResult
 from txcouchbase.tests.base import gen_base
 
@@ -47,7 +47,7 @@ class RowsHandler(AsyncN1QLRequest):
         self.deferred.errback(ex)
 
 
-Base = gen_base(ClusterTestCase)
+Base = gen_base(AsyncClusterTestCase)
 
 
 QueryParams = NamedTuple('QueryParams', [('statement', str), ('rowcount', int)])
@@ -127,8 +127,9 @@ class TxN1QLTests(Base):
         d.addCallback(verify)
         return d
 
-
-class AnalyticsTest(gen_base(AnalyticsTestCaseBase)):
+class AnalyticsTestBase(AsyncClusterTestCase, AnalyticsTestCaseBase):
+    pass
+class AnalyticsTest(gen_base(AnalyticsTestBase)):
     @property
     def factory(self):
         return self.gen_cluster

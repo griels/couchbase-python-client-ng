@@ -47,7 +47,7 @@ def gen_base(basecls,  # type: Type[T]
     # type: (...) -> Union[Type[_TxTestCase],Type[T]]
 
 
-    class _TxTestCase(basecls, AsyncClusterTestCase, TestCase):
+    class _TxTestCase(basecls, TestCase):
         def make_connection(self,  # type: _TxTestCase
                             **kwargs):
             # type: (...) -> Factory
