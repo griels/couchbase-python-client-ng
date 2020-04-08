@@ -277,8 +277,39 @@ def recursive_reload(module, paths=None, mdict=None):
 
 WrappedIterable = TypeVar('T', bound=Iterable[Any])
 
+def iterable_wrapper(basecls  # type: Type[WrappedIterable]
+                     ):
+    # type: (...) -> Union[Type['IterableWrapper'], Type[WrappedIterable]]
+    class IterableWrapper(basecls):
+        def __init__(self,
+                     *args, **kwargs  # type: IterableQuery
+                     ):
+            super(IterableWrapper, self).__init__(*args, **kwargs)
+            self.done = False
+            self.buffered_rows = []
 
-class IterableWrapper(object):
+        def rows(self):
+            return list(x for x in self)
+
+        def metadata(self):
+            # type: (...) -> JSON
+            return self.meta
+
+        def __iter__(self):
+            for row in self.buffered_rows:
+                yield row
+            parent_iter = super(IterableWrapper, self).__iter__()
+            while not self.done:
+                try:
+                    next_item = next(parent_iter)
+                    self.buffered_rows.append(next_item)
+                    yield next_item
+                except (StopAsyncIteration, StopIteration) as e:
+                    self.done = True
+                    break
+    return IterableWrapper
+
+class IterableWrapperSearch(object):
     def __init__(self,
                  basecls, *args, **kwargs
                  ):
@@ -291,7 +322,7 @@ class IterableWrapper(object):
             raise
 
     def rows(self):
-        return list(x for x in IterableWrapper.__iter__(self))
+        return list(x for x in IterableWrapperSearch.__iter__(self))
 
     def metadata(self):
         # type: (...) -> JSON
@@ -311,12 +342,12 @@ class IterableWrapper(object):
                 break
 
 
-def iterable_wrapper(basecls  # type: Type[WrappedIterable]
+def iterable_wrapper_search(basecls  # type: Type[WrappedIterable]
                      ):
-    # type: (...) -> Type[IterableWrapper]
-    class IterableWrapperSpecific(IterableWrapper, basecls):
+    # type: (...) -> Type[IterableWrapperSearch]
+    class IterableWrapperSpecific(IterableWrapperSearch, basecls):
         def __init__(self, *args, **kwargs):
-            IterableWrapper.__init__(self, basecls,  *args, **kwargs)
+            IterableWrapperSearch.__init__(self, basecls,  *args, **kwargs)
 
     return IterableWrapperSpecific
 

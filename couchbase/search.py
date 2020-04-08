@@ -7,7 +7,7 @@ import couchbase_core
 
 from couchbase.exceptions import CouchbaseException
 from couchbase_core.views.iterator import AlreadyQueriedException
-from couchbase_core import abstractmethod, JSON, _to_json, iterable_wrapper
+from couchbase_core import abstractmethod, JSON, _to_json, iterable_wrapper_search as iterable_wrapper
 from couchbase_core._pyport import unicode
 from couchbase_core.supportability import internal
 from .options import OptionBlockTimeOut, UnsignedInt32, UnsignedInt64, forward_args
