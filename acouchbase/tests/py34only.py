@@ -22,7 +22,8 @@ class CouchbaseBeerKVTest(CouchbaseBeerTest):
     @asynct
     @asyncio.coroutine
     def test_get_data(self):
-        beer_bucket = self.cb
+        connargs=self.make_connargs()
+        beer_bucket = self.gen_collection(**connargs)
         yield from (beer_bucket.on_connect() or asyncio.sleep(0.01))
 
         data = yield from beer_bucket.get('21st_amendment_brewery_cafe')
@@ -35,7 +36,8 @@ class CouchbaseBeerViewTest(CouchbaseBeerTest):
     @asynct
     @asyncio.coroutine
     def test_query(self):
-        beer_bucket = self.cluster
+
+        beer_bucket = self.gen_cluster(**self.make_connargs())
 
         yield from (beer_bucket.on_connect() or asyncio.sleep(0.01))
         viewiter = beer_bucket.view_query("beer", "brewery_beers", limit=10)

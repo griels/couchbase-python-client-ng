@@ -2,8 +2,7 @@ from couchbase_tests.base import MockTestCase, AsyncClusterTestCase, ClusterTest
 from functools import wraps
 from parameterized import parameterized_class
 from collections import namedtuple
-from acouchbase.cluster import Bucket
-
+from acouchbase.cluster import Bucket, ACluster
 
 Details = namedtuple('Details', ['factories', 'get_value'])
 
@@ -60,6 +59,10 @@ class AioTestCase(AsyncClusterTestCase, ClusterTestCase, MockTestCase):
 
     @property
     def cluster_class(self):  # type: (...) -> Cluster
-        return Cluster
+        return ACluster
+
+    @property
+    def cluster_factory(self):
+        return ACluster
 
     should_check_refcount = False
