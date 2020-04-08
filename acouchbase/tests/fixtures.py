@@ -40,7 +40,7 @@ targets = list(map(lambda x: (x,), target_dict.keys()))
 
 
 
-class AioTestCase(AsyncClusterTestCase, ClusterTestCase, MockTestCase):
+class AioTestCase(AsyncClusterTestCase, ClusterTestCase):
     factory_name = None  # type: str
 
     def setUp(self, **kwargs):

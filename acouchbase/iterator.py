@@ -2,7 +2,7 @@ import asyncio
 
 from couchbase import QueryResult, AnalyticsResult
 from couchbase_core.asynchronous.view import AsyncViewBase
-from couchbase.asynchronous import AsyncViewResult
+from couchbase.asynchronous import AsyncViewResult, AsyncQueryResult, AsyncSearchResult
 from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
 from couchbase_core.asynchronous.rowsbase import AsyncRowsBase
 
@@ -82,11 +82,6 @@ class AViewResult(AioBase, AsyncViewResult):
         AioBase.__init__(self)
 
 
-class AsyncQueryResult(AsyncRowsBase, QueryResult):
-    def __init__(self, *args, **kwargs):
-        QueryResult.__init__(self, *args, **kwargs)
-
-
 class AsyncAnalyticsResult(AsyncRowsBase, AnalyticsResult):
     def __init__(self, *args, **kwargs):
         AnalyticsResult.__init__(self, *args, **kwargs)
@@ -95,6 +90,11 @@ class AsyncAnalyticsResult(AsyncRowsBase, AnalyticsResult):
 class AQueryResult(AioBase, AsyncQueryResult):
     def __init__(self, *args, **kwargs):
         AsyncQueryResult.__init__(self, *args, **kwargs)
+        AioBase.__init__(self)
+
+class ASearchResult(AioBase, AsyncSearchResult):
+    def __init__(self, *args, **kwargs):
+        AsyncSearchResult.__init__(self, *args, **kwargs)
         AioBase.__init__(self)
 
 

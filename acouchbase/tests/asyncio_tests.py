@@ -8,7 +8,7 @@ import acouchbase.tests.py34only
 class CouchbaseBeerKVTestSpecific(acouchbase.tests.py34only.CouchbaseBeerKVTest):
     pass
 
-class CouchbaseDefaultTestSpecificN1QL(acouchbase.tests.py34only.CouchbaseDefaultTestN1QL):
+class AIOClusterTest(acouchbase.tests.py34only.AIOClusterTest):
     pass
 
 

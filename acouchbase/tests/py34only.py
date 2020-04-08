@@ -1,11 +1,11 @@
 import asyncio
 
+from couchbase.asynchronous import AsyncSearchResult
 from couchbase_core.experimental import enable; enable()
 from .fixtures import asynct, AioTestCase
-from couchbase_core.n1ql import N1QLQuery
 from couchbase.exceptions import CouchbaseException
 from unittest import SkipTest
-
+import couchbase.search as SEARCH
 
 class CouchbaseBeerTest(AioTestCase):
     def setUp(self, **kwargs):
@@ -66,9 +66,9 @@ class CouchbaseDefaultTestKV(AioTestCase):
         self.assertEqual({"key": expected}, obtained.content)
 
 
-class CouchbaseDefaultTestN1QL(AioTestCase):
+class AIOClusterTest(AioTestCase):
     def setUp(self, **kwargs):
-        super(CouchbaseDefaultTestN1QL, self).setUp(type='Bucket',**kwargs)
+        super(AIOClusterTest, self).setUp(**kwargs)
 
     @asynct
     @asyncio.coroutine
@@ -77,9 +77,23 @@ class CouchbaseDefaultTestN1QL(AioTestCase):
         cluster = self.gen_cluster(**self.make_connargs())
         yield from (cluster.on_connect() or asyncio.sleep(0.01))
 
-        it = cluster.query("SELECT mockrow")
+        it = cluster.query(self.query_props.statement)
         yield from it.future
 
         data = list(it)
-        self.assertEqual('value', data[0]['row'])
+        self.assertEqual(self.query_props.rowcount, len(data))
 
+    @asynct
+    @asyncio.coroutine
+    def test_search(self  # type: Base
+                    ):
+        if self.is_mock:
+            raise SkipTest("No search on mock")
+        cluster = self.gen_cluster(**self.make_connargs())
+        yield from (cluster.on_connect() or asyncio.sleep(0.01))
+        it = cluster.search_query("beer-search", SEARCH.TermQuery("category"),
+                                      facets={'fred': SEARCH.TermFacet('category', 10)})
+
+        data = list(it)
+        self.assertIsInstance(o, AsyncSearchResult)
+        self.assertEqual(10, len(data))

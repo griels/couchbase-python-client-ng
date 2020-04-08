@@ -6,7 +6,7 @@ except ImportError:
     import trollius as asyncio
 
 from acouchbase.asyncio_iops import IOPS
-from acouchbase.iterator import AView, AN1QLRequest
+from acouchbase.iterator import AView, AN1QLRequest, AQueryResult, ASearchResult
 from couchbase_core.experimental import enable; enable()
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
 from couchbase_core.asynchronous.bucket import AsyncClient as CoreAsyncClient
@@ -26,6 +26,7 @@ class AsyncBucketFactory(type):
         # type: (...) -> Type[T]
         n1ql_query = getattr(asyncbase, 'n1ql_query', getattr(asyncbase, 'query', None))
         view_query = getattr(asyncbase, 'view_query', getattr(asyncbase, 'query', None))
+        search_query = getattr(asyncbase, 'search_query', None)
 
         class Bucket(asyncbase):
             def __init__(self, connstr=None, *args, **kwargs):
@@ -57,12 +58,21 @@ class AsyncBucketFactory(type):
 
             @property
             def query_itercls(self):
-                return AN1QLRequest
+                return AQueryResult
 
             def query(self, *args, **kwargs):
                 if "itercls" not in kwargs:
                     kwargs["itercls"] = self.query_itercls
                 return n1ql_query(self, *args, **kwargs)
+
+            @property
+            def search_itercls(self):
+                return ASearchResult
+
+            def search_query(self, *args, **kwargs):
+                if "itercls" not in kwargs:
+                    kwargs["itercls"] = self.search_itercls
+                return search_query(self, *args, **kwargs)
 
             def on_connect(self):
                 if not self.connected:

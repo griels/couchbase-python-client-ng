@@ -772,6 +772,9 @@ class SkipUnsupported(SkipTest):
         super(SkipUnsupported, self).__init__(traceback.format_exc())
 
 
+QueryParams = NamedTuple('QueryParams', [('statement', str), ('rowcount', int)])
+
+
 class ClusterTestCase(CouchbaseTestCase):
     def __init__(self, *args, **kwargs):
         super(ClusterTestCase, self).__init__(*args, **kwargs)
@@ -873,6 +876,10 @@ class ClusterTestCase(CouchbaseTestCase):
         bucket_name = self.init_cluster_and_bucket()
         self.bucket = self.cluster.bucket(bucket_name)
         self.bucket_name = bucket_name
+        self.query_props = QueryParams('SELECT mockrow', 1) if self.is_mock else \
+            QueryParams("SELECT * FROM `beer-sample` LIMIT 2", 2)  # type: QueryParams
+        self.empty_query_props = QueryParams('SELECT emptyrow', 0) if self.is_mock else \
+            QueryParams("SELECT * FROM `beer-sample` LIMIT 0", 0)
 
     def _get_connstr_and_bucket_name(self,
                                      args,  # type: List[Any]

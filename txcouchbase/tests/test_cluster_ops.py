@@ -50,16 +50,10 @@ class RowsHandler(AsyncN1QLRequest):
 Base = gen_base(AsyncClusterTestCase)
 
 
-QueryParams = NamedTuple('QueryParams', [('statement', str), ('rowcount', int)])
-
 
 class TxN1QLTests(Base):
     def setUp(self, *args, **kwargs):
         super(TxN1QLTests, self).setUp(*args, **kwargs)
-        self.query_props = QueryParams('SELECT mockrow', 1) if self.is_mock else \
-            QueryParams("SELECT * FROM `beer-sample` LIMIT 2", 2)  # type: QueryParams
-        self.empty_query_props = QueryParams('SELECT emptyrow', 0) if self.is_mock else \
-            QueryParams("SELECT * FROM `beer-sample` LIMIT 0", 0)
 
     @property
     def factory(self):
@@ -127,8 +121,11 @@ class TxN1QLTests(Base):
         d.addCallback(verify)
         return d
 
+
 class AnalyticsTestBase(AsyncClusterTestCase, AnalyticsTestCaseBase):
     pass
+
+
 class AnalyticsTest(gen_base(AnalyticsTestBase)):
     @property
     def factory(self):
