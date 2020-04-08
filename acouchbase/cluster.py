@@ -14,6 +14,7 @@ from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
 from couchbase_core.client import Client as CoreClient
 from couchbase.bucket import AsyncBucket as V3AsyncBucket
 from typing import *
+from couchbase.cluster import AsyncCluster as V3AsyncCluster
 
 T = TypeVar('T', bound=CoreClient)
 
@@ -112,6 +113,11 @@ Collection = AsyncCBCollection
 class Bucket(AsyncBucketFactory.gen_async_bucket(V3AsyncBucket)):
     def __init__(self, *args, **kwargs):
         super(Bucket,self).__init__(collection_factory=AsyncCBCollection, *args, **kwargs)
+
+
+class Cluster(AsyncBucketFactory.gen_async_bucket(V3AsyncCluster)):
+    def __init__(self, connection_string, *options, **kwargs):
+        super(Cluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
 
 
 def get_event_loop(evloop=None  # type: AbstractEventLoop

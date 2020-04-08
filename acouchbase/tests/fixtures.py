@@ -8,7 +8,7 @@ from acouchbase.cluster import Bucket
 Details = namedtuple('Details', ['factories', 'get_value'])
 
 try:
-    from acouchbase.cluster import Bucket, get_event_loop
+    from acouchbase.cluster import Bucket, Cluster, get_event_loop
     from acouchbase.cluster import V3CoreClient
     from acouchbase.cluster import asyncio
 
@@ -22,9 +22,10 @@ try:
         return wrapper
 
 
-    def gen_collection(*args, **kwargs):
+    def gen_collection(connection_string, *args, **kwargs):
         try:
-            base_bucket = Bucket(*args, **kwargs)
+            base_cluster = Cluster(connection_string, *args, **kwargs)
+            base_bucket = base_cluster.bucket(*args, **kwargs)
             return base_bucket.default_collection()
         except Exception as e:
             raise
