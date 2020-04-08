@@ -22,13 +22,13 @@ class CouchbaseBeerKVTest(CouchbaseBeerTest):
     @asynct
     @asyncio.coroutine
     def test_get_data(self):
-        connargs=self.make_connargs()
+        connargs=self.make_connargs(bucket='beer-sample')
         beer_default_collection = self.gen_collection(**connargs)
 
         yield from (beer_default_collection.on_connect() or asyncio.sleep(0.01))
 
         data = yield from beer_default_collection.get('21st_amendment_brewery_cafe')
-        self.assertEqual("21st Amendment Brewery Cafe", self.details.get_value(data)["name"])
+        self.assertEqual("21st Amendment Brewery Cafe", data.content["name"])
 
 
 class CouchbaseBeerViewTest(CouchbaseBeerTest):
@@ -63,7 +63,7 @@ class CouchbaseDefaultTestKV(AioTestCase):
         yield from default_collection.upsert('hello', {"key": expected})
 
         obtained = yield from default_collection.get('hello')
-        self.assertEqual({"key": expected}, self.details.get_value(obtained))
+        self.assertEqual({"key": expected}, obtained.content)
 
 
 class CouchbaseDefaultTestN1QL(AioTestCase):
