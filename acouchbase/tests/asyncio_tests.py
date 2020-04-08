@@ -11,6 +11,8 @@ class CouchbaseBeerKVTestSpecific(acouchbase.tests.py34only.CouchbaseBeerKVTest)
 class AIOClusterTest(acouchbase.tests.py34only.AIOClusterTest):
     pass
 
+class AIOAnalyticsClusterTest(acouchbase.tests.py34only.AnalyticsTest):
+    pass
 
 logging.error("Got exception {}".format(traceback.format_exc()))
 
@@ -20,3 +22,4 @@ try:
         pass
 except (ImportError, SyntaxError) as e:
     logging.error("Got exception {}".format(traceback.format_exc()))
+

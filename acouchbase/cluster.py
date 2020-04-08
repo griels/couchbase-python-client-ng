@@ -6,7 +6,7 @@ except ImportError:
     import trollius as asyncio
 
 from acouchbase.asyncio_iops import IOPS
-from acouchbase.iterator import AView, AN1QLRequest, AQueryResult, ASearchResult
+from acouchbase.iterator import AView, AN1QLRequest, AQueryResult, ASearchResult, AAnalyticsResult
 from couchbase_core.experimental import enable; enable()
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
 from couchbase_core.asynchronous.bucket import AsyncClient as CoreAsyncClient
@@ -73,6 +73,14 @@ class AsyncBucketFactory(type):
                 if "itercls" not in kwargs:
                     kwargs["itercls"] = self.search_itercls
                 return search_query(self, *args, **kwargs)
+
+            @property
+            def analytics_itercls(self):
+                return AAnalyticsResult
+
+            def analytics_query(self, *args, **kwargs):
+                return super(Bucket, self).analytics_query(*args, itercls=kwargs.pop('itercls', self.analytics_itercls),
+                                                           **kwargs)
 
             def on_connect(self):
                 if not self.connected:

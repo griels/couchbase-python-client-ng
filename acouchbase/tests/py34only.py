@@ -1,7 +1,11 @@
 import asyncio
 
+from couchbase_tests.base import AnalyticsTestCaseBase
 from couchbase.asynchronous import AsyncSearchResult
-from couchbase_core.experimental import enable; enable()
+from couchbase_core.experimental import enable;
+from couchbase.asynchronous import AsyncAnalyticsResult
+
+enable()
 from .fixtures import asynct, AioTestCase
 from couchbase.exceptions import CouchbaseException
 from unittest import SkipTest
@@ -97,3 +101,19 @@ class AIOClusterTest(AioTestCase):
         data = list(it)
         self.assertIsInstance(it, AsyncSearchResult)
         self.assertEqual(10, len(data))
+
+
+class AnalyticsTest(AioTestCase):
+    def testBatchedAnalytics(self  # type: Base
+                             ):
+        if self.is_mock:
+            raise SkipTest("No analytics on mock")
+        cluster = self.gen_cluster(**self.make_connargs())
+        yield from (cluster.on_connect() or asyncio.sleep(0.01))
+
+        it = cluster.analytics_query("SELECT * FROM `{}` LIMIT 1".format(self.dataset_name))
+        yield from it.future
+
+        self.assertIsInstance(it, AsyncAnalyticsResult)
+        self.assertEqual(1, len(it.rows()))
+
