@@ -19,6 +19,10 @@ import sys
 import types
 import platform
 import warnings
+from abc import abstractmethod
+
+from couchbase.cluster import ClassicAuthenticator, PasswordAuthenticator
+from couchbase_core.connstr import ConnectionString
 
 from couchbase.management.analytics import CreateDatasetOptions
 from collections import defaultdict
@@ -870,21 +874,30 @@ class ClusterTestCase(CouchbaseTestCase):
         self.bucket = self.cluster.bucket(bucket_name)
         self.bucket_name = bucket_name
 
+    def _get_connstr_and_bucket_name(self,
+                                     args,  # type: List[Any]
+                                     kwargs):
+        connstr = args.pop(0) if args else kwargs.pop('connection_string')
+        connstr_nobucket = ConnectionString.parse(connstr)
+        bucket = connstr_nobucket.bucket
+        connstr_nobucket.bucket = None
+        return connstr_nobucket, bucket
+
     def init_cluster_and_bucket(self):
         connargs = self.cluster_info.make_connargs()
-        connstr_abstract = ConnectionString.parse(connargs.pop('connection_string'))
-        bucket_name = connstr_abstract.bucket
-        connstr_abstract.bucket = None
-        connstr_abstract.set_option('enable_collections', 'true')
+        connstr_abstract, bucket_name = self._get_connstr_and_bucket_name([], connargs)
+        self.cluster = self._instantiate_cluster(connstr_abstract, self.cluster_factory)
+        return bucket_name
+
+    def _instantiate_cluster(self, connstr_nobucket, cluster_factory):
         # FIXME: we should not be using classic here!  But, somewhere in the tests, we need
         # this for hitting the mock, it seems
-        from couchbase.cluster import PasswordAuthenticator
         auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
         # hack because the Mock seems to want a bucket name for cluster connections, odd
-        mock_hack = {'bucket': bucket_name} if self.is_mock else {}
-        self.cluster = self.cluster_factory(connection_string=connstr_abstract, authenticator=
-        auth_type(self.cluster_info.admin_username, self.cluster_info.admin_password), **mock_hack)
-        return bucket_name
+        mock_hack = {'bucket': self.cluster_info.bucket_name} if self.is_mock else {}
+        return cluster_factory(connection_string=str(connstr_nobucket),
+                                    authenticator=auth_type(self.cluster_info.admin_username,
+                                                 self.cluster_info.admin_password), **mock_hack)
 
     # NOTE: this really is only something you can trust in homogeneous clusters, but then again
     # this is a test suite.
@@ -971,6 +984,33 @@ class CollectionTestCase(ClusterTestCase):
             pass
 
 
+class AsyncClusterTestCase(ClusterTestCase):
+
+    def gen_cluster(self,  # type: AsyncClusterTestCase
+                    *args,
+                    **kwargs):
+        # type: (...) -> Cluster
+        args = list(args)
+        connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
+        return self._instantiate_cluster(connstr_nobucket, self.cluster_class)
+
+    def gen_bucket(self, *args, override_bucket=None, **kwargs):
+        args = list(args)
+        connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
+        bucket = override_bucket or bucket
+        return self._instantiate_cluster(connstr_nobucket, self.cluster_class).bucket(bucket)
+
+    def gen_collection(self,
+                       *args, **kwargs):
+        bucket_result = self.gen_bucket(*args, **kwargs)
+        return bucket_result.default_collection()
+
+    @property
+    @abstractmethod
+    def cluster_class(self):
+        # type: (...) -> Cluster
+        pass
+
 class DDocTestCase(RealServerTestCase):
     pass
 
@@ -999,3 +1039,4 @@ class AnalyticsTestCaseBase(CollectionTestCase):
             return self.mgr.connect_link()
 
         self.try_n_times(10, 3, has_dataset, self.dataset_name, on_success=on_dataset)
+

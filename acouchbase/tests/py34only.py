@@ -22,10 +22,12 @@ class CouchbaseBeerKVTest(CouchbaseBeerTest):
     @asynct
     @asyncio.coroutine
     def test_get_data(self):
-        beer_bucket = self.cb
-        yield from (beer_bucket.on_connect() or asyncio.sleep(0.01))
+        connargs=self.make_connargs()
+        beer_default_collection = self.gen_collection(**connargs)
 
-        data = yield from beer_bucket.get('21st_amendment_brewery_cafe')
+        yield from (beer_default_collection.on_connect() or asyncio.sleep(0.01))
+
+        data = yield from beer_default_collection.get('21st_amendment_brewery_cafe')
         self.assertEqual("21st Amendment Brewery Cafe", self.details.get_value(data)["name"])
 
 
@@ -35,7 +37,8 @@ class CouchbaseBeerViewTest(CouchbaseBeerTest):
     @asynct
     @asyncio.coroutine
     def test_query(self):
-        beer_bucket = self.cb
+
+        beer_bucket = self.gen_cluster(**self.make_connargs()).bucket('beer-sample')
 
         yield from (beer_bucket.on_connect() or asyncio.sleep(0.01))
         viewiter = beer_bucket.view_query("beer", "brewery_beers", limit=10)
@@ -54,12 +57,12 @@ class CouchbaseDefaultTestKV(AioTestCase):
 
         expected = str(uuid.uuid4())
 
-        default_bucket = self.cb
-        yield from (default_bucket.on_connect() or asyncio.sleep(0.01))
+        default_collection = self.gen_collection(**self.make_connargs())
+        yield from (default_collection.on_connect() or asyncio.sleep(0.01))
 
-        yield from default_bucket.upsert('hello', {"key": expected})
+        yield from default_collection.upsert('hello', {"key": expected})
 
-        obtained = yield from default_bucket.get('hello')
+        obtained = yield from default_collection.get('hello')
         self.assertEqual({"key": expected}, self.details.get_value(obtained))
 
 
@@ -71,11 +74,10 @@ class CouchbaseDefaultTestN1QL(AioTestCase):
     @asyncio.coroutine
     def test_n1ql(self):
 
-        default_bucket = self.cb
-        yield from (default_bucket.on_connect() or asyncio.sleep(0.01))
+        cluster = self.gen_cluster(**self.make_connargs())
+        yield from (cluster.on_connect() or asyncio.sleep(0.01))
 
-        q = N1QLQuery("SELECT mockrow")
-        it = default_bucket.query(q)
+        it = cluster.query("SELECT mockrow")
         yield from it.future
 
         data = list(it)
