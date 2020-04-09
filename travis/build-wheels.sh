@@ -6,9 +6,11 @@ yum install -y cmake
 ls -alr .
 echo `ls -alr /io`
 
+PY_VERSIONS=(3.5, 3.6, 3.7, 3.8)
 # Compile wheels
-for PYBIN in /opt/python/3.[5-9]/bin; do
-    echo "Building for ${PYBIN}"
+for VERSION in PY_VERSIONS; do
+    PYBIN="${/opt/python/${VERSION}/bin}"
+    echo "Building for ${VERSION}"
     result=`"${PYBIN}/pip" wheel /io/ -w /io/wheelhouse/`
 done
 
