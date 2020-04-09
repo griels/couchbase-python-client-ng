@@ -1,37 +1,37 @@
-language: python
-sudo: false
-
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.6"
-
-addons:
-  apt:
-    sources:
-      - couchbase-trusty
-    packages:
-      - libcouchbase-dev
-      - libcouchbase2-libevent
-
-install:
-  - pip -q install testresources==0.2.7
-  - pip -q install -r dev_requirements.txt
-  - pip -q install gevent || echo "Couldn't install gevent"
-  - pip -q install twisted || echo "Couldn't install Twisted"
-  - git describe --tags --long --always
-  - python setup.py build_ext --inplace
-  - python setup.py install
-
-script:
-  - python -m couchbase.bucket
-  - cp .tests.ini.travis tests.ini
-  - nosetests -v couchbase_tests.test_sync
-  - nosetests -v acouchbase
-  - nosetests -v txcouchbase || echo "Twisted tests failed"
-
 notifications:
-  email:
-    - PythonPackage@couchbase.com
+  email: ellis.breen@couchbase.com
+matrix:
+  include:
+  - sudo: required
+    services:
+    - docker
+    env: DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64 PLAT=manylinux1_x86_64
+  - sudo: required
+    services:
+    - docker
+    env: DOCKER_IMAGE=quay.io/pypa/manylinux1_i686 PRE_CMD=linux32 PLAT=manylinux1_i686
+#  - sudo: required
+#    services:
+#    - docker
+#    env: DOCKER_IMAGE=quay.io/pypa/manylinux2010_x86_64 PLAT=manylinux2010_x86_64
+install:
+- docker pull $DOCKER_IMAGE
+script:
+- ls -alrt
+- chmod ugo+x travis/build-wheels.sh
+- docker run --rm -e PLAT=$PLAT -v `pwd`:/io $DOCKER_IMAGE $PRE_CMD /io/travis/build-wheels.sh
+- echo `ls wheelhouse/`
+- echo `ls /io/wheelhouse`
+- echo `ls .`
+- echo `ls /`
+- echo `ls /io`
+deploy:
+  provider: releases
+  api_key:
+    secure: fGIw93WtABD6qcyht+uPQnSPW8RvykJU6GsHq8a+tvP8hxP0+4yYtiGh1OHyIu447qK5tvKrvmyOq6cN/BFO4pE28r9VWidA9nzkT8ug9MPhYAgtw7jb9swunkp8cKXbaVbPokuiS7AUCtAYQV3IJHWU7s3+Me+I8Lgac/15kZ3YsYQ3+ThA6DWNf1lVSjmUcnC2zEBbXaV6pFfffY3R0DpL15inVydpnzXbksgAOTDneppvHXKvt00XmAiZzUlmX8STdh20aav25NJBCCB2WhRpe924x56VVrprsVNuCzzWWAuN9vOnIfuyYLi6Dgfuz+4tKzJlFHxd9MEVfCoD16F1bxdWWTrPHeyvdckHg9sE5D8NvxqfcRkVpJYT6sq54kDbYOil4bPJmFmwR0RzBNXhUODAYl3iM+4W/ukwFBH6cLOCzVq9fkWM2gEroMi4KABvSmgTjeWODN4qEvoraVwdR67cYJzVGcrzZwPZbrXuaeLUrh7fh/ji3YZ6x5vV/9ZwRn5fy+rIm+40E4BSs35oVTGPhYlZOtWSCkCB0erXm1oTdA5ZKezcEpepn7LKcPpnqyR1s2i1Ycux1ztapy+dElLi1O4GT+YNnhwwoPc5r5G34iRxhg+w7g8peHHd9y40AJ6pQ1eaYFk2ZsvU+glDhY41SxkjSFXRNg8DcQs=
+  file_glob: true
+  file: wheelhouse/*
+  skip_cleanup: true
+  on:
+    repo: griels/couchbase-python-client-ng
+    all_branches: true
