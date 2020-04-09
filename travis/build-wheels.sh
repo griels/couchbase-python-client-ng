@@ -12,8 +12,8 @@ PY_VALID="3[5-9]\..*"
 for VERSION in ${PY_BASE}/*/; do
     PYBIN="${PY_BASE}/${VERSION}/bin"
     echo "Testing ${VERSION}"
-    valid=`${VERSION} =~ ${PY_VALID}`
-    if [ ${valid} ]; then
+    valid=``
+    if [[ "${VERSION}" =~ $PY_VALID ]]; then
       if [ -f "${PYBIN}" ]; then
         echo "Building for ${VERSION} at ${PYBIN}"
         result=`"${PYBIN}/pip" wheel /io/ -w /io/wheelhouse/`
