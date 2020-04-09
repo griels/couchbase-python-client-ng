@@ -41,7 +41,8 @@ for VERSION_PATH in ${PY_BASE}/*/; do
         "${PYBIN}/pip" install /io/wheelhouse/${VERSION}/couchbase*.whl
         pushd .
         cd /io/
-        export PYTHONPATH="${PYBIN}:${PYTHONPATH}"
+        VERSIONPATH_LIB="${VERSION_PATH}/lib/"
+        export PYTHONPATH="${VERSIONPATH_LIB}:${VERSIONPATH_LIB}/site-packages:${PYTHONPATH}"
         echo "PYTHONPATH ${PYTHONPATH}"
         "${PYBIN}/nosetests" couchbase.tests -v
         popd
