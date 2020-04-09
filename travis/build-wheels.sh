@@ -39,7 +39,10 @@ for VERSION_PATH in ${PY_BASE}/*/; do
         done
         "${PYBIN}/pip" install -r /io/dev_requirements.txt -r /io/requirements.txt
         "${PYBIN}/pip" install /io/wheelhouse/${VERSION}/couchbase*.whl
+        pushd .
+        cd /io/
         "${PYBIN}/nosetests" couchbase.tests -v
+        popd
       else
         echo "${PYBIN} does not exist"
       fi
