@@ -19,7 +19,7 @@ pushd .
 
 # Compile wheels
 PY_BASE="/opt/python"
-PY_VALID=".*3[6-9].*"
+PY_VALID=".*3[6].*"
 #export CFLAGS="-static-libstdc++ ${CFLAGS}"
 for VERSION_PATH in ${PY_BASE}/*/; do
     VERSION=`basename ${VERSION_PATH}`
@@ -31,20 +31,12 @@ for VERSION_PATH in ${PY_BASE}/*/; do
       if [ -d "${PYBIN}" ]
       then
         echo "Building for ${VERSION} at ${PYBIN}"
-        ${PYBIN}/pip wheel /io/ -w /io/wheelhouse/${VERSION}/
+        ${PYBIN}/pip wheel /io/ -w /io/wheelhouse/
 
         # Bundle external shared libraries into the wheels
         for whl in /io/wheelhouse/${VERSION}/*.whl; do
-            auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/${VERSION}/
+            auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
         done
-
-        # Install packages and test
-        cd /io/
-
-        "${PYBIN}/pip" install -r /io/dev_requirements.txt
-        "${PYBIN}/pip" install . --no-index -f /io/wheelhouse/${VERSION}/
-        "${PYBIN}/nosetests" couchbase.tests -v
-
       else
         echo "${PYBIN} does not exist"
       fi
@@ -55,9 +47,11 @@ done
 
 # Install packages and test
 
+cd /io/
 for PYBIN in /opt/python/*/bin/; do
     "${PYBIN}/pip" install -r /io/dev_requirements.txt
     "${PYBIN}/pip" install . --no-index -f /io/wheelhouse
+    "${PYBIN}/nosetests" couchbase.tests -v
 #    (cd "$HOME"; "${PYBIN}/nosetests" pymanylinuxdemo)
 done
 echo `ls /io/wheelhouse`
