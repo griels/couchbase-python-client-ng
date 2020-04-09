@@ -2,9 +2,9 @@
 set -e -x
 
 # Install a system package required by our library
-yum install -y cmake
+yum install -y cmake git
 yum list installed
-yum install -y python36-devel
+#yum install -y python36-devel
 LCB_VER_NUM=3.0.0
 LCB_VER=libcouchbase-3.0.0_centos7_x86_64
 curl -O https://packages.couchbase.com/clients/c/${LCB_VER}.tar
@@ -31,14 +31,14 @@ for VERSION_PATH in ${PY_BASE}/*/; do
       if [ -d "${PYBIN}" ]
       then
         echo "Building for ${VERSION} at ${PYBIN}"
-        ${PYBIN}/pip wheel /io/ -w /io/wheelhouse/
+        ${PYBIN}/pip wheel /io/ -w /io/wheelhouse/${VERSION}
 
         # Bundle external shared libraries into the wheels
-        for whl in /io/wheelhouse/*.whl; do
-            auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
+        for whl in /io/wheelhouse/${VERSION}*.whl; do
+            auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/${VERSION}
         done
         "${PYBIN}/pip" install -r /io/dev_requirements.txt -r /io/requirements.txt
-        "${PYBIN}/pip" install couchbase --no-index -f /io/wheelhouse
+        "${PYBIN}/pip" install /io/wheelhouse/${VERSION}/couchbase*.whl
         "${PYBIN}/nosetests" couchbase.tests -v
       else
         echo "${PYBIN} does not exist"
