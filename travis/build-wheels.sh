@@ -8,8 +8,8 @@ echo `ls -alr /io`
 
 # Compile wheels
 PY_BASE="/opt/python"
-PY_VALID="3\.[5-9]\..*"
-for VERSION in $(ls -d ${PY_BASE}/*/); do echo ${i%%/}; done
+PY_VALID="3[5-9]\..*"
+for VERSION in ${PY_BASE}/*/; do
     PYBIN="${PY_BASE}/${VERSION}/bin"
     echo "Testing ${VERSION}"
     valid=`${VERSION} =~ ${PY_VALID}`
@@ -17,7 +17,10 @@ for VERSION in $(ls -d ${PY_BASE}/*/); do echo ${i%%/}; done
       if [ -f "${PYBIN}" ]; then
         echo "Building for ${VERSION} at ${PYBIN}"
         result=`"${PYBIN}/pip" wheel /io/ -w /io/wheelhouse/`
+      else
+        echo "${PYBIN} does not exist"
       fi
+      echo "${VERSION} does not match"
     fi
 done
 
