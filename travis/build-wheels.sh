@@ -34,7 +34,7 @@ for VERSION_PATH in ${PY_BASE}/*/; do
         ${PYBIN}/pip wheel /io/ -w /io/wheelhouse/
 
         # Bundle external shared libraries into the wheels
-        for whl in /io/wheelhouse/${VERSION}/*.whl; do
+        for whl in /io/wheelhouse/*.whl; do
             auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
         done
       else
