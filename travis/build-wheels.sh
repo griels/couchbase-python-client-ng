@@ -8,7 +8,8 @@ echo `ls -alr /io`
 
 # Compile wheels
 PY_BASE="/opt/python"
-PY_VALID=".*3[5-9].*"
+PY_VALID=".*3[6].*"
+export CFLAGS="-static-libstdc++ ${CFLAGS}"
 cd ${PY_BASE}
 for VERSION in */; do
     PYBIN="${VERSION}bin"
@@ -29,9 +30,9 @@ for VERSION in */; do
 done
 
 # Bundle external shared libraries into the wheels
-#for whl in wheelhouse/*.whl; do
-#    auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
-#done
+for whl in wheelhouse/*.whl; do
+    auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
+done
 
 # Install packages and test
 
