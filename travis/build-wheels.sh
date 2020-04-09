@@ -31,11 +31,11 @@ for VERSION_PATH in ${PY_BASE}/*/; do
       if [ -d "${PYBIN}" ]
       then
         echo "Building for ${VERSION} at ${PYBIN}"
-        ${PYBIN}/pip wheel /io/ -w /io/wheelhouse/${VERSION}
+        ${PYBIN}/pip wheel /io/ -w /io/wheelhouse/${VERSION}/
 
         # Bundle external shared libraries into the wheels
-        for whl in /io/wheelhouse/${VERSION}*.whl; do
-            auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/${VERSION}
+        for whl in /io/wheelhouse/${VERSION}/*.whl; do
+            auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/${VERSION}/
         done
         "${PYBIN}/pip" install -r /io/dev_requirements.txt -r /io/requirements.txt
         "${PYBIN}/pip" install /io/wheelhouse/${VERSION}/couchbase*.whl
