@@ -19,7 +19,8 @@ for VERSION in */; do
       if [ -d "${PYBIN}" ]
       then
         echo "Building for ${VERSION} at ${PYBIN}"
-        result=`"${PYBIN}/pip" wheel /io/ -w /io/wheelhouse/`
+        ${PYBIN}/pip develo
+        ${PYBIN}/pip wheel /io/ -w /io/wheelhouse/
       else
         echo "${PYBIN} does not exist"
       fi

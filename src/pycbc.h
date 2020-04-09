@@ -87,11 +87,12 @@ affect:
 #define uint16_t lcb_uint16_t
 #define uint64_t lcb_uint64_t
 #endif
-
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 #include <libcouchbase/crypto.h>
 #include "../build/lcb_min_version.h"
 #if LCB_VERSION < LCB_MIN_VERSION
-#pragma message "Couchbase Python SDK requires libcouchbase " LCB_MIN_VERSION_TEXT " or greater"
+#pragma message "Couchbase Python SDK requires libcouchbase " LCB_MIN_VERSION_TEXT " or greater but found" STR(LCB_VERSION)
 #error "Please upgrade libcouchbase accordingly"
 #endif
 
