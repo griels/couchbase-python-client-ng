@@ -4,7 +4,9 @@ set -e -x
 # Install a system package required by our library
 yum install -y cmake
 ls -alr .
+
 echo `ls -alr /io`
+pushd .
 
 # Compile wheels
 PY_BASE="/opt/python"
@@ -29,8 +31,10 @@ for VERSION in */; do
     fi
 done
 
+popd
+
 # Bundle external shared libraries into the wheels
-for whl in wheelhouse/*.whl; do
+for whl in /io/wheelhouse/*.whl; do
     auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
 done
 
