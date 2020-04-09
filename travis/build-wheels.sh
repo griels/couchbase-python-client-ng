@@ -8,7 +8,7 @@ echo `ls -alr /io`
 
 # Compile wheels
 PY_BASE="/opt/python"
-PY_VALID=".*3[5-9]\..*"
+PY_VALID=".*3[5-9].*"
 for VERSION in ${PY_BASE}/*/; do
     PYBIN="${PY_BASE}/${VERSION}/bin"
     echo "Testing ${VERSION}"
