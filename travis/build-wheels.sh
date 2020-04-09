@@ -42,7 +42,7 @@ for VERSION_PATH in ${PY_BASE}/*/; do
         cd /io/
 
         "${PYBIN}/pip" install -r /io/dev_requirements.txt
-        "${PYBIN}/pip" install couchbase --no-index -f /io/wheelhouse/${VERSION}
+        "${PYBIN}/pip" install . --no-index -f /io/wheelhouse/${VERSION}
         "${PYBIN}/nosetests" couchbase.tests -v
 
       else
