@@ -10,10 +10,6 @@ matrix:
     services:
     - docker
     env: DOCKER_IMAGE=quay.io/pypa/manylinux1_i686 PRE_CMD=linux32 PLAT=manylinux1_i686
-#  - sudo: required
-#    services:
-#    - docker
-#    env: DOCKER_IMAGE=quay.io/pypa/manylinux2010_x86_64 PLAT=manylinux2010_x86_64
 install:
 - docker pull $DOCKER_IMAGE
 script:
@@ -28,7 +24,7 @@ script:
 deploy:
   provider: releases
   api_key:
-    secure: de39b9fcfc664bf3d898f22e6b9843f223670fb1
+    secure: YnTiCX6s9Kobprg6wpJq1LIwG1OvF7CWOtGWrG0pd22w529JXKSy0vepDUR2xy+PTECZoypt543XzwXJYRHBSx0RrUJ84UmeYHg2crrozJPtVdcPzrmktYE2TvoS+2GJpxAkrw7qzBIlXspobriCtyXS8vXVQLKUrii4tulMU55Aq/oAQWRtVyn4R0jKaiukNkJpOaI+kOeB7AEd0V2lGIhAtj1l0om9M/3O38spoGURUwTMx0qWY3xTPNrqCAuUJjW2G2dPgu57rkDcgcS2s2Q+1ukQMWyAIZObmlxlvOgxbVlff4f5Dl58AdzdFtpoxbOaXELDFWxtt0GLzWgAEDWif59aYzbhNA4U3fz2SgiRVF7bLkm6GZOOyNXoBME3XPpKcrqkqIZdAUbcKu2SOFEocfa3me9YtpXrBbCaf28SYxiYIToofbNcibCovnzWvPD0lqpRhQdHwxmym8csVGO0vwJ+fh12ekqBeCT1W36Y/YqBsuVkN1VOO9kPKwXBDL0skRu8apJDkCzEAvHqMOiz/Px1p4Tqv9ThcNSyXQT9EkQvil/zifmpBBQ34qXEcqpaPZdV2ZnBXm78L/MVpe7cm9GuXFN3YfRuVkpISxhEQ5VxF9BZsr0SIfMr3YzsDXFBlQBs+4YFrWqMoJlLveLu5jEAaX4u07D+etdu8oM=
   file_glob: true
   file: wheelhouse/*
   skip_cleanup: true
