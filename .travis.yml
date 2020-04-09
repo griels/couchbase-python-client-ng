@@ -1,37 +1,37 @@
-language: python
-sudo: false
-
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.6"
-
-addons:
-  apt:
-    sources:
-      - couchbase-trusty
-    packages:
-      - libcouchbase-dev
-      - libcouchbase2-libevent
-
-install:
-  - pip -q install testresources==0.2.7
-  - pip -q install -r dev_requirements.txt
-  - pip -q install gevent || echo "Couldn't install gevent"
-  - pip -q install twisted || echo "Couldn't install Twisted"
-  - git describe --tags --long --always
-  - python setup.py build_ext --inplace
-  - python setup.py install
-
-script:
-  - python -m couchbase.bucket
-  - cp .tests.ini.travis tests.ini
-  - nosetests -v couchbase_tests.test_sync
-  - nosetests -v acouchbase
-  - nosetests -v txcouchbase || echo "Twisted tests failed"
-
 notifications:
-  email:
-    - PythonPackage@couchbase.com
+  email: ellis.breen@couchbase.com
+language: python
+env:
+  global:
+  - CIBW_BUILD='cp3[5-8]-*'
+  - CIBW_SKIP='*arm* *ppc* *s390* *aarch64* *i686* *win32* *win_amd64*'
+  - CIBW_BEFORE_BUILD="python3 -m pip install --upgrade pip setuptools wheel cmake"
+jobs:
+  include:
+  - services: docker
+  - services: docker
+    arch: arm64
+  - services: docker
+    arch: ppc64le
+  - services: docker
+    arch: s390x
+  - os: osx
+    language: shell
+  - os: windows
+    language: shell
+    before_install:
+    - choco install python --version 3.8.0
+    - choco install cmake
+    - export PATH="/c/Python38:/c/Python38/Scripts:$PATH"
+    - ln -s /c/Python38/python.exe /c/Python38/python3.exe
+install:
+- python3 -m pip install cibuildwheel==1.4.1
+script:
+- ls -alrt
+- python3 -m cibuildwheel --output-dir wheelhouse
+- echo `ls wheelhouse/`
+deploy:
+  provider: releases
+  api_key:
+    secure: $PYCBC_TRAVIS_API
+  file: wheelhouse/*
