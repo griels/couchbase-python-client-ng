@@ -3,6 +3,8 @@ set -e -x
 
 # Install a system package required by our library
 yum install -y cmake
+yum list installed
+yum install -y python36-devel
 ls -alr .
 
 echo `ls -alr /io`

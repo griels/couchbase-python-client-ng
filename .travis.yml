@@ -9,11 +9,11 @@ matrix:
   - sudo: required
     services:
     - docker
-    env: DOCKER_IMAGE=quay.io/pypa/manylinux2010_x86_64 PLAT=manylinux2010
+    env: DOCKER_IMAGE=quay.io/pypa/manylinux2010_x86_64 PLAT=manylinux2010_x86_64
   - sudo: required
     services:
     - docker
-    env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64 PLAT=manylinux2014
+    env: DOCKER_IMAGE=quay.io/pypa/manylinux2014_x86_64 PLAT=manylinux2014_x86_64
 
 install:
 - docker pull $DOCKER_IMAGE
