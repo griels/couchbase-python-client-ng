@@ -5,6 +5,12 @@ set -e -x
 yum install -y cmake
 yum list installed
 yum install -y python36-devel
+
+curl -O https://packages.couchbase.com/clients/c/libcouchbase-3.0.0_centos8_x86_64.tar
+tar xf libcouchbase-3.0.0_centos8_x86_64.tar
+cd libcouchbase-3.0.0_centos8_x86_64
+sudo yum install -y libcouchbase3{-tools,-libevent,}-3.0.0*.rpm libcouchbase-devel-*.rpm
+
 ls -alr .
 
 echo `ls -alr /io`
