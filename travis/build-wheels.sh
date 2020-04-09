@@ -40,13 +40,12 @@ for VERSION_PATH in ${PY_BASE}/*/; do
         "${PYBIN}/pip" install -r /io/dev_requirements.txt -r /io/requirements.txt
         "${PYBIN}/pip" install /io/wheelhouse/${VERSION}/couchbase*.whl
         pushd .
-        cd /io/
+        cd /
         VERSIONPATH_LIB="${VERSION_PATH}lib"
         export PYTHONPATH="${VERSIONPATH_LIB}:${VERSIONPATH_LIB}/site-packages:${PYTHONPATH}"
         ls -al ${VERSION_PATH}
-        cp ${VERSIONPATH_LIB}/site-packages/couchbase_core/*.so couchbase_core
         echo "PYTHONPATH ${PYTHONPATH}"
-        "${PYBIN}/nosetests" couchbase.tests -v
+        "${PYBIN}/nosetests" -w /io/ couchbase.tests -v
         popd
       else
         echo "${PYBIN} does not exist"
