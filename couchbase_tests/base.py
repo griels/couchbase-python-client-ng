@@ -829,7 +829,7 @@ class ClusterTestCase(CouchbaseTestCase):
                 time.sleep(seconds_between)
             except Exception as e:
                 # helpful to have this print statement when tests fail
-                print("Got exception, returning: {}".format(traceback.print_exc()))
+                print("Got exception, returning: {}".format(traceback.format_exc()))
                 return
         self.fail(
             "successful {} after {} times waiting {} seconds between calls".format(func, num_times, seconds_between))
