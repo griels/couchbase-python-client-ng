@@ -6,12 +6,19 @@ yum install -y cmake
 ls -alr .
 echo `ls -alr /io`
 
-PY_VERSIONS=(3.5, 3.6, 3.7, 3.8)
 # Compile wheels
-for VERSION in PY_VERSIONS; do
-    PYBIN="${/opt/python/${VERSION}/bin}"
-    echo "Building for ${VERSION}"
-    result=`"${PYBIN}/pip" wheel /io/ -w /io/wheelhouse/`
+PY_BASE="/opt/python"
+PY_VALID="3\.[5-9]\..*"
+for VERSION in $(ls -d ${PY_BASE}/*/); do echo ${i%%/}; done
+    PYBIN="${PY_BASE}/${VERSION}/bin"
+    echo "Testing ${VERSION}"
+    valid=`${VERSION} =~ ${PY_VALID}`
+    if [ ${valid} ]; then
+      if [ -f "${PYBIN}" ]; then
+        echo "Building for ${VERSION} at ${PYBIN}"
+        result=`"${PYBIN}/pip" wheel /io/ -w /io/wheelhouse/`
+      fi
+    fi
 done
 
 # Bundle external shared libraries into the wheels
