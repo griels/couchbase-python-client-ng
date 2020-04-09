@@ -5,7 +5,7 @@ set -e -x
 yum install -y cmake
 yum list installed
 yum install -y python36-devel
-
+LCB_VER_NUM=3.0.0
 LCB_VER=libcouchbase-3.0.0_centos7_x86_64
 curl -O https://packages.couchbase.com/clients/c/${LCB_VER}.tar
 tar xf ${LCB_VER}.tar
