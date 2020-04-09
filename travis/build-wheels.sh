@@ -7,7 +7,7 @@ ls -alr .
 echo `ls -alr /io`
 
 # Compile wheels
-for PYBIN in /opt/python/*/bin; do
+for PYBIN in /opt/python/3.[5-9]/bin; do
     "${PYBIN}/pip" wheel /io/ -w /io/wheelhouse/
 done
 
