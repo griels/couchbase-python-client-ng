@@ -12,7 +12,7 @@ PY_VALID=".*3[5-9]\..*"
 for VERSION in ${PY_BASE}/*/; do
     PYBIN="${PY_BASE}/${VERSION}/bin"
     echo "Testing ${VERSION}"
-    if [[ "${VERSION}" =~ $PY_VALID ]]
+    if [[ ${VERSION} =~ $PY_VALID ]]
     then
       echo "${VERSION} matches ${PY_VALID}"
       if [ -f "${PYBIN}" ]
@@ -23,7 +23,7 @@ for VERSION in ${PY_BASE}/*/; do
         echo "${PYBIN} does not exist"
       fi
     else
-      echo "${VERSION} does not match"
+      echo "${VERSION} does not match ${PY_VALID}"
     fi
 done
 
