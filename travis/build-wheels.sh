@@ -9,8 +9,9 @@ echo `ls -alr /io`
 # Compile wheels
 PY_BASE="/opt/python"
 PY_VALID=".*3[5-9].*"
-for VERSION in ${PY_BASE}/*/; do
-    PYBIN="${PY_BASE}/${VERSION}/bin"
+cd ${PY_BASE}
+for VERSION in */; do
+    PYBIN="${VERSION}bin"
     echo "Testing ${VERSION}"
     if [[ ${VERSION} =~ $PY_VALID ]]
     then
