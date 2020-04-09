@@ -31,3 +31,4 @@ pyutil
 hypothesis-auto
 memory-profiler
 objgraph
+cibuildwheel>=1.4.1
