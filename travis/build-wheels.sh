@@ -11,7 +11,7 @@ pushd .
 # Compile wheels
 PY_BASE="/opt/python"
 PY_VALID=".*3[6].*"
-export CFLAGS="-static-libstdc++ ${CFLAGS}"
+#export CFLAGS="-static-libstdc++ ${CFLAGS}"
 cd ${PY_BASE}
 for VERSION in */; do
     PYBIN="${VERSION}bin"
