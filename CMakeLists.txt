@@ -40,7 +40,7 @@ else()
 endif()
 
 set(PYCBC_C_MOD_NAME "_dummy")
-
+set(PYCBC_C_MOD_SUFFIX ".so")
 macro(use_cxx11)
 if (CMAKE_VERSION VERSION_LESS "3.1")
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
