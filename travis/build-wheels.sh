@@ -37,6 +37,9 @@ for VERSION_PATH in ${PY_BASE}/*/; do
         for whl in /io/wheelhouse/*.whl; do
             auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/
         done
+        "${PYBIN}/pip" install -r /io/dev_requirements.txt -r /io/requirements.txt
+        "${PYBIN}/pip" install couchbase --no-index -f /io/wheelhouse
+        "${PYBIN}/nosetests" couchbase.tests -v
       else
         echo "${PYBIN} does not exist"
       fi
@@ -47,11 +50,6 @@ done
 
 # Install packages and test
 
-cd /io/
-for PYBIN in /opt/python/*/bin/; do
-    "${PYBIN}/pip" install -r /io/dev_requirements.txt
-    "${PYBIN}/pip" install . --no-index -f /io/wheelhouse
-    "${PYBIN}/nosetests" couchbase.tests -v
 #    (cd "$HOME"; "${PYBIN}/nosetests" pymanylinuxdemo)
 done
 echo `ls /io/wheelhouse`
