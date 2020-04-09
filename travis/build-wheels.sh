@@ -10,7 +10,7 @@ LCB_VER=libcouchbase-3.0.0_centos7_x86_64
 curl -O https://packages.couchbase.com/clients/c/${LCB_VER}.tar
 tar xf ${LCB_VER}.tar
 cd ${LCB_VER}
-sudo yum install -y libcouchbase3{-tools,-libevent,}-3.0.0*.rpm libcouchbase-devel-*.rpm
+yum install -y libcouchbase3{-tools,-libevent,}-3.0.0*.rpm libcouchbase-devel-*.rpm
 
 ls -alr .
 
