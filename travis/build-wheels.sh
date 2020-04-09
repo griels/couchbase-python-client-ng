@@ -31,18 +31,18 @@ for VERSION_PATH in ${PY_BASE}/*/; do
       if [ -d "${PYBIN}" ]
       then
         echo "Building for ${VERSION} at ${PYBIN}"
-        ${PYBIN}/pip wheel /io/ -w /io/wheelhouse/${VERSION}
+        ${PYBIN}/pip wheel /io/ -w /io/wheelhouse/${VERSION}/
 
         # Bundle external shared libraries into the wheels
         for whl in /io/wheelhouse/${VERSION}/*.whl; do
-            auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/${VERSION}
+            auditwheel repair "$whl" --plat $PLAT -w /io/wheelhouse/${VERSION}/
         done
 
         # Install packages and test
         cd /io/
 
         "${PYBIN}/pip" install -r /io/dev_requirements.txt
-        "${PYBIN}/pip" install . --no-index -f /io/wheelhouse/${VERSION}
+        "${PYBIN}/pip" install . --no-index -f /io/wheelhouse/${VERSION}/
         "${PYBIN}/nosetests" couchbase.tests -v
 
       else
@@ -53,6 +53,13 @@ for VERSION_PATH in ${PY_BASE}/*/; do
     fi
 done
 
+# Install packages and test
+
+for PYBIN in /opt/python/*/bin/; do
+    "${PYBIN}/pip" install -r /io/dev_requirements.txt
+    "${PYBIN}/pip" install . --no-index -f /io/wheelhouse
+#    (cd "$HOME"; "${PYBIN}/nosetests" pymanylinuxdemo)
+done
 echo `ls /io/wheelhouse`
 echo `ls /wheelhouse`
 echo `ls wheelhouse`
