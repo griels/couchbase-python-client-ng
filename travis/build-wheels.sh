@@ -16,7 +16,7 @@ for VERSION in */; do
     if [[ ${VERSION} =~ $PY_VALID ]]
     then
       echo "${VERSION} matches ${PY_VALID}"
-      if [ -f "${PYBIN}" ]
+      if [ -d "${PYBIN}" ]
       then
         echo "Building for ${VERSION} at ${PYBIN}"
         result=`"${PYBIN}/pip" wheel /io/ -w /io/wheelhouse/`
