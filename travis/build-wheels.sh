@@ -19,7 +19,7 @@ pushd .
 
 # Compile wheels
 PY_BASE="/opt/python"
-PY_VALID=".*3[5-9].*"
+PY_VALID=".*3[6-9].*"
 #export CFLAGS="-static-libstdc++ ${CFLAGS}"
 for VERSION_PATH in ${PY_BASE}/*/; do
     VERSION=`basename ${VERSION_PATH}`
