@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 
-import couchbase_core._bootstrap
 import couchbase_core._libcouchbase as _LCB
 from couchbase_core._libcouchbase import Bucket as _Base
 
@@ -987,11 +986,6 @@ class Bucket(CoreClient):
     def design_delete(self, *args, **kwargs):
         _depr('design_delete', 'bucket_manager().design_delete')
         return self.bucket_manager().design_delete(*args, **kwargs)
-
-    def add_bucket_creds(self, bucket, password):
-        if not bucket or not password:
-            raise ValueError('Bucket and password must be nonempty')
-        return _Base._add_creds(self, bucket, password)
 
     def get_attribute(self, key, attrname):
         pass

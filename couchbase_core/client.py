@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 
 from couchbase_core._libcouchbase import Bucket as _Base
 
@@ -176,12 +177,17 @@ class Client(_Base):
     def _get_timeout_common(self, op):
         return self._cntl(op, value_type='timeout')
 
-    def _set_timeout_common(self, op, value):
-        value = float(value)
-        if value <= 0:
+    def _set_timeout_common(self,
+                            op,  # type: Any
+                            timeout  # type: timedelta
+                            ):
+        if not isinstance(timeout, timedelta):
+            raise E.InvalidArgumentException("Expected timedelta for timeout but got {}".format(timeout))
+        timeout = float(timeout.total_seconds())
+        if timeout <= 0:
             raise ValueError('Timeout must be greater than 0')
 
-        self._cntl(op, value_type='timeout', value=value)
+        self._cntl(op, value_type='timeout', value=timeout)
 
     def mkmeth(oldname, newname, _dst):
         def _tmpmeth(self, *args, **kwargs):
@@ -998,3 +1004,8 @@ class Client(_Base):
                         continue
                     raise
         return d
+
+    def add_bucket_creds(self, bucket, password):
+        if not bucket or not password:
+            raise ValueError('Bucket and password must be nonempty')
+        return _Base._add_creds(self, bucket, password)
