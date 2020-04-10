@@ -14,13 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import enum
+import re
+import warnings
 from datetime import datetime, timedelta
 from warnings import warn
 
-import enum
-import warnings
 from collections import defaultdict
-import re
 
 try:
     from abc import abstractmethod, ABCMeta
@@ -28,8 +28,6 @@ except:
     import abstractmethod
 
 from copy import deepcopy
-import logging
-import traceback
 
 
 # Pythons > (2.7||3.2) silence deprecation warnings by default.
@@ -37,7 +35,6 @@ import traceback
 # know about potential upcoming breaking changes in their code.
 # Here we add a warning filter for any deprecation warning thrown
 # by Couchbase
-from enum import Enum
 
 warnings.filterwarnings(action='default',
                         category=DeprecationWarning,

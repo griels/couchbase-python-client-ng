@@ -17,7 +17,7 @@
 #include "pycbc.h"
 #include "lcb_v4_wrapper.h"
 #include <libcouchbase/crypto.h>
-
+#define PYCBC_CRYPTO_ENABLED
 // TODO: these crypto functions are now accessible but seem to return an error, so disabled for now
 
 lcb_STATUS pycbc_crypto_register(lcb_INSTANCE* instance, const char *name, lcbcrypto_PROVIDER *provider){
