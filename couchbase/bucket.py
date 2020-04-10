@@ -1,7 +1,6 @@
 from couchbase.management import CollectionManager, ViewIndexManager
 from couchbase.management.admin import Admin
 from couchbase.management.views import DesignDocumentNamespace
-from couchbase_core.supportability import uncommitted
 from couchbase_core.client import Client as CoreClient
 import couchbase_core._libcouchbase as _LCB
 from .collection import CBCollection, CollectionOptions, CoreClientDatastructureWrap
@@ -193,7 +192,7 @@ class Bucket(CoreClientDatastructureWrap):
         """
         self._name = name or kwargs.get('bucket', None)
         self._connstr = connection_string
-        self._bucket_args = forward_args(kwargs, *options)
+        self._bucket_args = kw_forward_args(kwargs, *options)
         self._bucket_args['bucket'] = name
         self._collection_factory = collection_factory
 
