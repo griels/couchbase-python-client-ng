@@ -12,7 +12,7 @@ class SubdocTest(ConnectionTestCase):
         cb = self.cb
         k = self.gen_key('sd_precheck')
         try:
-            cb.retrieve_in(k, 'pth')
+            cb.lookup_in(k, 'pth')
         except (E.NotSupportedException, E.UnknownCommandException):
             self.skipTest('Subdoc not supported on this server version')
         except E.CouchbaseException:

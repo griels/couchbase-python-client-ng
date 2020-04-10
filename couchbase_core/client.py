@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 
 from couchbase_core._libcouchbase import Bucket as _Base
 
@@ -10,7 +11,7 @@ from .views.params import make_options_string, make_dvpath
 import couchbase_core._libcouchbase as _LCB
 from couchbase_core._libcouchbase import FMT_JSON, FMT_BYTES
 
-from couchbase_core import priv_constants as _P, _depr
+from couchbase_core import priv_constants as _P, _depr, typecheck_rethrow
 from typing import *
 from .durability import Durability
 from .result import Result
@@ -176,12 +177,15 @@ class Client(_Base):
     def _get_timeout_common(self, op):
         return self._cntl(op, value_type='timeout')
 
-    def _set_timeout_common(self, op, value):
-        value = float(value)
-        if value <= 0:
+    @typecheck_rethrow
+    def _set_timeout_common(self,
+                            op: Any,
+                            timeout: timedelta):
+        timeout = float(timeout.total_seconds())
+        if timeout <= 0:
             raise ValueError('Timeout must be greater than 0')
 
-        self._cntl(op, value_type='timeout', value=value)
+        self._cntl(op, value_type='timeout', value=timeout)
 
     def mkmeth(oldname, newname, _dst):
         def _tmpmeth(self, *args, **kwargs):

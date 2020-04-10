@@ -22,14 +22,17 @@ import warnings
 from collections import defaultdict
 import re
 
+import couchbase
+from boltons.funcutils import wraps
+from six import raise_from
+
+
 try:
     from abc import abstractmethod, ABCMeta
 except:
     import abstractmethod
 
 from copy import deepcopy
-import logging
-import traceback
 
 
 # Pythons > (2.7||3.2) silence deprecation warnings by default.
@@ -356,3 +359,15 @@ def parse_time(time_str):
         if param:
             time_params[name] = float(param)
     return timedelta(**time_params)
+
+
+def typecheck_rethrow(func):
+    typechecked_func=typechecked(func)
+    @wraps(typechecked_func)
+    def wrapper(*args, **kwargs):
+        try:
+            return typechecked_func(*args, **kwargs)
+        except TypeError as e:
+            raise_from(couchbase.InvalidArgumentException.pyexc(str(e), inner=e), e)
+
+    return wrapper
