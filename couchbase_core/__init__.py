@@ -15,11 +15,18 @@
 # limitations under the License.
 #
 from datetime import datetime, timedelta
+from boltons.funcutils import wraps
 from warnings import warn
 
 import enum
 import warnings
 from collections import defaultdict
+
+import couchbase
+import wrapt
+from six import raise_from
+from typeguard import typechecked
+
 try:
     from abc import abstractmethod, ABCMeta
 except:
@@ -338,3 +345,16 @@ def mk_formstr(d):
 def syncwait_or_deadline_time(syncwait, timeout):
     deadline = (datetime.now() + timedelta(microseconds=timeout)) if timeout else None
     return lambda: syncwait if syncwait else (deadline - datetime.now()).total_seconds()
+
+
+
+def typecheck_rethrow(func):
+    typechecked_func=typechecked(func)
+    @wraps(typechecked_func)
+    def wrapper(*args, **kwargs):
+        try:
+            return typechecked_func(*args, **kwargs)
+        except TypeError as e:
+            raise_from(couchbase.InvalidArgumentException.pyexc(str(e), inner=e), e)
+
+    return wrapper
