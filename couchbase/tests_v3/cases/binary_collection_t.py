@@ -16,7 +16,7 @@
 #
 from couchbase_tests.base import CollectionTestCase, SkipTest
 from couchbase_core._libcouchbase import FMT_UTF8, FMT_BYTES
-from couchbase.collection import IncrementOptions, DecrementOptions, DeltaValue, SignedInt64
+from couchbase.collection import IncrementOptions, DecrementOptions, DeltaValue, SignedInt64, UnsignedInt64
 from couchbase.exceptions import ArgumentException, NotStoredException
 
 class BinaryCollectionTests(CollectionTestCase):

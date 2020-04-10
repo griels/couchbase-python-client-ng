@@ -17,14 +17,14 @@
 import os
 from unittest import SkipTest
 
-from couchbase_v2.exceptions import (
+from couchbase.exceptions import (
     DocumentNotFoundException)
 
 from couchbase_tests.base import TracedCase, ConnectionTestCase
 import logging
 import couchbase_core._libcouchbase
 import couchbase_core._logutil
-from couchbase_v2.exceptions import TimeoutException
+from couchbase.exceptions import TimeoutException
 from time import sleep
 import re
 import couchbase_core
@@ -35,9 +35,8 @@ try:
     import __builtin__ as builtins
 except:
     import builtins
-#ch = logging.StreamHandler()
-#ch.setLevel(logging.WARNING)
-#logging.getLogger().addHandler(ch)
+
+from datetime import timedelta
 
 
 class BogusHandler:
@@ -78,7 +77,6 @@ class CanDisableTest(ConnectionTestCase):
 
 class TimeoutTest(TracedCase):
     def setUp(self, *args, **kwargs):
-        raise SkipTest("bucket tracing/timeouts changed")
         if not couchbase_core._libcouchbase.PYCBC_TRACING:
             raise SkipTest("Tracing feature not compiled into Python Client")
         kwargs = {}
@@ -99,19 +97,20 @@ class TimeoutTest(TracedCase):
         bucket.upsert("key", "value")
 
         bucket.timeout = 9e-6
-        bucket.tracing_orphaned_queue_flush_interval = 1
+        bucket.tracing_orphaned_queue_flush_interval = timedelta(seconds=1)
         bucket.tracing_orphaned_queue_size = 10
-        bucket.tracing_threshold_queue_flush_interval = 5
+        bucket.tracing_threshold_queue_flush_interval = timedelta(seconds=5)
         bucket.tracing_threshold_queue_size = 10
-        bucket.tracing_threshold_kv = 0.00001
-        bucket.tracing_threshold_n1ql = 0.00001
-        bucket.tracing_threshold_view = 0.00001
-        bucket.tracing_threshold_fts = 0.00001
-        bucket.tracing_threshold_analytics = 0.00001
+        bucket.tracing_threshold_kv =timedelta(seconds=1000)
+        bucket.tracing_threshold_n1ql = timedelta(seconds=1000)
+        bucket.tracing_threshold_view = timedelta(seconds=1000)
+        bucket.tracing_threshold_fts = timedelta(seconds=1000)
+        bucket.tracing_threshold_analytics = timedelta(seconds=1000)
 
         self.verify_tracer(bucket, r'.*Operations over threshold:.*', rep_factor=100)
 
     def test_orphaned(self):
+        raise SkipTest("TODO: fix")
         if sys.version_info >= (3,6) and sys.platform.startswith('linux') and os.environ.get("VALGRIND_REPORT_DIR"):
             raise SkipTest("To be fixed on Linux 3.6/Valgrind")
         if sys.version_info >= (3,7) and sys.platform.startswith('win'):
@@ -119,16 +118,16 @@ class TimeoutTest(TracedCase):
         bucket = self.cb
         bucket.upsert("key", "value")
 
-        bucket.timeout = 9e-6
-        bucket.tracing_orphaned_queue_flush_interval = 1
+        #bucket.timeout = 9e-6
+        bucket.tracing_orphaned_queue_flush_interval = timedelta(seconds=1)
         bucket.tracing_orphaned_queue_size = 10
-        bucket.tracing_threshold_queue_flush_interval = 5
+        bucket.tracing_threshold_queue_flush_interval = timedelta(seconds=5)
         bucket.tracing_threshold_queue_size = 10
-        bucket.tracing_threshold_kv = 1000
-        bucket.tracing_threshold_n1ql = 1000
-        bucket.tracing_threshold_view = 1000
-        bucket.tracing_threshold_fts = 1000
-        bucket.tracing_threshold_analytics = 1000
+        bucket.tracing_threshold_kv = timedelta(seconds=1000)
+        bucket.tracing_threshold_n1ql = timedelta(seconds=1000)
+        bucket.tracing_threshold_view = timedelta(seconds=1000)
+        bucket.tracing_threshold_fts = timedelta(seconds=1000)
+        bucket.tracing_threshold_analytics = timedelta(seconds=1000)
 
         self.verify_tracer(bucket, r'.*Orphan responses observed:.*', rep_factor=100)
 
@@ -146,7 +145,7 @@ class TimeoutTest(TracedCase):
         # first do a bunch of work in a tight loop to trigger a timeout
         for x in range(0, i):
             try:
-                bucket.get("key")
+                bucket.get("key", timeout=timedelta(seconds=9e-6))
             except TimeoutException as e:
                 logging.error("Got exception [{}]".format(str(e)))
                 to_ops += 1
@@ -157,7 +156,7 @@ class TimeoutTest(TracedCase):
         for x in range(0, 10):
             sleep(1)
             try:
-                bucket.get("key")
+                bucket.get("key", timeout=timedelta(seconds=9e-6))
             except TimeoutException as e:
                 logging.error("Got exception [{}]".format(str(e)))
                 to_ops += 1
