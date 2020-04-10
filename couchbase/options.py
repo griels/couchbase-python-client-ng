@@ -1,6 +1,8 @@
 import copy
 from typing import *
 
+from six import raise_from
+
 import couchbase.exceptions
 import ctypes
 from couchbase_core import abstractmethod, ABCMeta
@@ -12,6 +14,8 @@ try:
 except:
     from typing_extensions import TypedDict
 
+from typeguard import typechecked
+import wrapt
 
 OptionBlockBase = dict
 

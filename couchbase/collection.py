@@ -11,7 +11,7 @@ from .subdocument import LookupInSpec, MutateInSpec, MutateInOptions, \
 from .result import GetResult, GetReplicaResult, ExistsResult, get_result_wrapper, CoreResult, ResultPrecursor, \
     LookupInResult, MutateInResult, \
     MutationResult, _wrap_in_mutation_result, get_replica_result_wrapper, get_multi_mutation_result, get_multi_get_result
-from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64
+from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64, UnsignedInt64
 from .options import OptionBlock, AcceptableInts
 import couchbase.exceptions
 from couchbase.exceptions import NotSupportedException, DocumentNotFoundException, PathNotFoundException, QueueEmpty, \
@@ -35,7 +35,6 @@ from couchbase_core import abstractmethod, ABCMeta, with_metaclass
 import wrapt
 
 import couchbase_core.subdocument as SD
-
 
 class DeltaValue(ConstrainedInt):
     def __init__(self,
@@ -680,7 +679,6 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
     unlock_multi = _wrap_multi_mutation_result(_Base.unlock_multi)
     append_multi = _wrap_multi_mutation_result(_Base.append_multi)
     prepend_multi = _wrap_multi_mutation_result(_Base.prepend_multi)
-    counter_multi = _wrap_multi_mutation_result(_Base.counter_multi)
 
     @_inject_scope_and_collection
     def touch(self,
@@ -1519,6 +1517,19 @@ class BinaryCollection(object):
         x = CoreClient.counter(self._collection.bucket, key, **final_opts)
         return ResultPrecursor(x, final_opts)
 
+    def increment_multi(self, keys, *options, **kwargs):
+        func=_wrap_multi_mutation_result(_Base.counter_multi)
+        final_opts=self._check_delta_initial(kwargs, *options)
+        return func(self._collection, keys, **final_opts)
+
+    def decrement_multi(self, keys, *options, **kwargs):
+        func=_wrap_multi_mutation_result(_Base.counter_multi)
+        final_opts=self._check_delta_initial(kwargs, *options)
+        delta = final_opts.pop('delta')
+        if delta:
+            final_opts['delta']=-delta
+        return func(self._collection, keys, **final_opts)
+
     @staticmethod
     def _check_delta_initial(kwargs, *options):
         final_opts = forward_args(kwargs, *options)
@@ -1526,6 +1537,10 @@ class BinaryCollection(object):
         initial = None if init_arg is None else int(SignedInt64.verified(init_arg))
         if initial is not None:
             final_opts['initial'] = initial
+        delta_arg = final_opts.get('delta')
+        delta = None if delta_arg is None else int(DeltaValue.verified(delta_arg))
+        if delta is not None:
+            final_opts['delta'] = delta
         return final_opts
 
 
