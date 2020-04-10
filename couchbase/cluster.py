@@ -574,11 +574,11 @@ class Cluster(CoreClient):
 
     @n1ql_timeout.setter
     def n1ql_timeout(self,
-                     value  # type: timedelta
+                     timeout  # type: timedelta
                      ):
         # type: (...) -> None
         self._check_for_shutdown()
-        self._set_timeout_common(_LCB.LCB_CNTL_QUERY_TIMEOUT, value.total_seconds())
+        self._set_timeout_common(_LCB.LCB_CNTL_QUERY_TIMEOUT, timeout)
 
     @property
     def tracing_threshold_n1ql(self):

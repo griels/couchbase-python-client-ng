@@ -414,16 +414,15 @@ def get_mutation_result(result  # type: CoreResult
     return factory_class(orig_result)
 
 
-class MultiMutationResult(dict):
-    def __init__(self, raw_result):
-        self.update({k: get_mutation_result(v) for k, v in raw_result.items()})
-
-
 class MultiResultBase(dict):
     def converter(self, value):
         pass
 
+    def all_ok(self):
+        return self._raw_result.all_ok
+
     def __init__(self, raw_result):
+        self._raw_result=raw_result
         super(MultiResultBase,self).__init__({k: self.converter(v) for k, v in raw_result.items()})
 
 
@@ -434,6 +433,12 @@ class MultiGetResult(MultiResultBase):
     def __init__(self, *args, **kwargs):
         super(MultiGetResult, self).__init__(*args, **kwargs)
 
+class MultiMutationResult(MultiResultBase):
+    def converter(self, raw_value):
+        return get_mutation_result(raw_value)
+
+    def __init__(self, *args, **kwargs):
+        super(MultiMutationResult, self).__init__(*args, **kwargs)
 
 class AsyncMultiMutationResult(AsyncWrapper.gen_wrapper(MultiMutationResult)):
     def __init__(self,
