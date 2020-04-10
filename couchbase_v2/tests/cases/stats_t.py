@@ -27,7 +27,8 @@ except NameError:
 
 
 class StatsTest(ConnectionTestCase):
-
+    def setUp(self):
+        raise SkipTest("Not applicable to SDK3")
     def test_trivial_stats_without_argument(self):
         try:
             stats = self.cb.stats()
