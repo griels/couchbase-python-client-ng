@@ -468,8 +468,7 @@ class CouchbaseTestCase(ResourcedTestCase):
             from couchbase_core.result import (
                 MultiResult, Result, OperationResult, ValueResult,
                 ObserveInfo)
-            from couchbase_v2.bucket import Bucket as V2Bucket
-            self.factory = V2Bucket
+            self.factory = V3Bucket
             self.viewfactory = View
             self.cls_Result = Result
             self.cls_MultiResult = MultiResult
