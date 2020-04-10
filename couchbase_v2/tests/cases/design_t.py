@@ -1,3 +1,5 @@
+from unittest import SkipTest
+
 0#
 # Copyright 2013, Couchbase, Inc.
 # All Rights Reserved
@@ -36,6 +38,7 @@ DESIGN_JSON = {
 class DesignDocManagementTest(DDocTestCase):
     def setUp(self):
         super(DesignDocManagementTest, self).setUp()
+        raise SkipTest("Needs to be ported/dropped")
         self.skipIfMock()
         self.mgr = self.cb.bucket_manager()
 

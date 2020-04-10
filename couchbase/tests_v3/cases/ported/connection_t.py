@@ -20,14 +20,14 @@ import tempfile
 
 from nose.plugins.attrib import attr
 
+from couchbase.bucket import Bucket
 from couchbase.exceptions import (AuthenticationException, BucketNotFoundException, DocumentNotFoundException,
-                                  InvalidException,
-                                  TimeoutException)
+                                  TimeoutException, InvalidArgumentException)
 from couchbase_core.connstr import ConnectionString
-from couchbase_tests.base import CouchbaseTestCase, SkipTest, ConnectionTestCase
+from couchbase_tests.base import SkipTest, ConnectionTestCase, ClusterTestCase
 
 
-class ConnectionTest(CouchbaseTestCase):
+class ConnectionTest(ClusterTestCase):
     @attr('slow')
     def test_server_not_found(self):
         connargs = self.make_connargs()
@@ -40,8 +40,8 @@ class ConnectionTest(CouchbaseTestCase):
         self.assertRaises(TimeoutException, self.factory, **connargs)
 
     def test_bucket(self):
-        cb = self.factory(**self.make_connargs())
-        self.assertIsInstance(cb, self.factory)
+        cb = self.cluster.bucket(self.bucket_name)
+        self.assertIsInstance(cb, Bucket)
 
     def test_bucket_not_found(self):
         connargs = self.make_connargs(bucket='this_bucket_does_not_exist')
@@ -75,7 +75,7 @@ class ConnectionTest(CouchbaseTestCase):
             cb2 = self.factory(**self.make_connargs(config_cache=cachefile.name))
 
             self.assertTrue(cb2.upsert("foo", "bar").success)
-            self.assertEqual("bar", cb.get("foo").value)
+            self.assertEqual("bar", cb.get("foo").content)
 
             sb = os.stat(cachefile.name)
 
@@ -90,7 +90,7 @@ class ConnectionTest(CouchbaseTestCase):
         # apparently libcouchbase does not report this failure.
 
     def test_invalid_hostname(self):
-        self.assertRaises(InvalidException, self.factory,
+        self.assertRaises(InvalidArgumentException, self.factory,
                           str('couchbase://12345:qwer###/default'))
 
     def test_multi_hosts(self):
