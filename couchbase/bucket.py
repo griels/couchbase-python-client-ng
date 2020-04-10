@@ -1,5 +1,6 @@
 import logging
 from datetime import timedelta
+from datetime import timedelta
 from enum import Enum
 
 import couchbase_core._libcouchbase as _LCB
