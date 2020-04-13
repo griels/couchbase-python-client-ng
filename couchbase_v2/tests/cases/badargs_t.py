@@ -73,12 +73,12 @@ class BadArgsTest(CollectionTestCase):
 
     def test_bad_timeout(self):
         def _set_timeout(x):
-            self.cb.timeout = x
+            self.cb.kv_timeout = x
 
-        self.assertRaises(Exception, _set_timeout, 0)
-        self.assertRaises(Exception, _set_timeout, -1)
-        self.assertRaises(Exception, _set_timeout, None)
-        self.assertRaises(Exception, _set_timeout, "a string")
+        self.assertRaisesRegex(InvalidArgumentException, "timedelta", _set_timeout, 0)
+        self.assertRaisesRegex(InvalidArgumentException, "timedelta", _set_timeout, -1)
+        self.assertRaisesRegex(InvalidArgumentException, "timedelta", _set_timeout, None)
+        self.assertRaisesRegex(InvalidArgumentException, "timedelta", _set_timeout, "a string")
 
         self.cb.timeout = 0.1
         self.cb.timeout = 1
