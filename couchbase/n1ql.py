@@ -26,6 +26,38 @@ from couchbase_core import iterable_wrapper
 from typing import *
 
 
+class QueryMetaData(object):
+    def __init__(self,
+                 parent  # type: QueryResult
+                 ):
+        self._parent = parent
+
+    def request_id(self):
+        return self._parent.meta.get('requestID')
+
+    def client_context_id(self):
+        return self._parent.meta.get('clientContextID')
+
+    def signature(self):
+        return self._parent.meta.get('signature')
+
+    def status(self):
+        # type: (...) -> Status
+        raise NotImplementedError()
+
+    def warnings(self):
+        # type: (...) -> List[QueryWarning]
+        pass
+
+    def metrics(self):
+        # type: (...) -> Optional[QueryMetrics]
+        return self._parent.metrics
+
+    def profile(self):
+        # type: (...) -> Optional[JsonObject]
+        return self._parent.profile
+
+
 class QueryResult(iterable_wrapper(N1QLRequest)):
     def __init__(self,
                  *args, **kwargs
@@ -33,22 +65,8 @@ class QueryResult(iterable_wrapper(N1QLRequest)):
         # type (...)->None
         super(QueryResult,self).__init__(*args, **kwargs)
 
-    def metrics(self):  # type: (...) -> QueryMetrics
-        return super(QueryResult, self).metrics
+    def metadata(self):
+        return QueryMetaData(self)
 
-    def profile(self):
-        return super(QueryResult, self).profile
-
-    def request_id(self):
-        raise NotImplementedError("To be implemented")
-
-    def client_context_id(self):
-        raise NotImplementedError("To be implemented")
-
-    def signature(self):
-        raise NotImplementedError("To be implemented")
-
-    def warnings(self):
-        raise NotImplementedError("To be implemented")
 
 
