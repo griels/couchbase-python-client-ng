@@ -22,8 +22,8 @@ from couchbase_core.n1ql import N1QLQuery
 from .options import OptionBlock, OptionBlockDeriv
 from .bucket import Bucket, CoreClient, PingOptions
 from couchbase_core.cluster import _Cluster as CoreCluster, Authenticator as CoreAuthenticator
-from .exceptions import CouchbaseException, AlreadyShutdownException, InvalidArgumentsException, \
-    SearchException, DiagnosticsException, QueryException, ArgumentException, AnalyticsException
+from .exceptions import CouchbaseException, AlreadyShutdownException, InvalidArgumentException, \
+    SearchException, DiagnosticsException, QueryException, InvalidArgumentException, AnalyticsException
 import couchbase_core._libcouchbase as _LCB
 from couchbase_core._pyport import raise_from
 from couchbase.options import OptionBlockTimeOut
@@ -61,7 +61,7 @@ class QueryScanConsistency(object):
         if val == self.REQUEST_PLUS or val == self.NOT_BOUNDED:
             self._value = val
         else:
-            raise InvalidArgumentsException("QueryScanConsistency can only be {} or {}".format(self.REQUEST_PLUS, self.NOT_BOUNDED))
+            raise InvalidArgumentException("QueryScanConsistency can only be {} or {}".format(self.REQUEST_PLUS, self.NOT_BOUNDED))
 
     @classmethod
     def request_plus(cls):
@@ -96,7 +96,7 @@ class QueryProfile(object):
     if val == self.OFF or val == self.PHASES or val==self.TIMINGS:
       self._value = val
     else:
-      raise InvalidArgumentsException("QueryProfile can only be {}, {}, {}".format(self.OFF, self.TIMINGS, self.PHASES))
+      raise InvalidArgumentException("QueryProfile can only be {}, {}, {}".format(self.OFF, self.TIMINGS, self.PHASES))
 
   def as_string(self):
     return getattr(self, '_value', self.OFF)
@@ -239,7 +239,7 @@ class Cluster(CoreClient):
         cluster_opts = forward_args(kwargs, *options)  # type: Dict[str,Any]
         self._authenticator = cluster_opts.pop('authenticator', None)  # type: Authenticator
         if not self._authenticator:
-            raise ArgumentException("Authenticator is mandatory")
+            raise InvalidArgumentException("Authenticator is mandatory")
 
         self.__admin = None
         self._cluster = CoreCluster(connection_string, bucket_factory=bucket_factory)  # type: CoreCluster
