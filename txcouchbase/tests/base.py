@@ -31,6 +31,9 @@ Factory = Callable[[Any], Client]
 twisted.internet.base.DelayedCall.debug = True
 
 import logging
+import logging
+import re
+
 
 
 def logged_spewer(frame, s, ignored):
@@ -51,6 +54,55 @@ def logged_spewer(frame, s, ignored):
             logging.info('function %s in %s, line %s' % (
                 frame.f_code.co_name,
                 frame.f_code.co_filename,
+                frame.f_lineno))
+    except:
+        pass
+
+candidate_pattern=re.compile(r'.*(twisted|tx|couchbase).*')
+def validate_frame(frame, s):
+    co_name = frame.f_code.co_name
+    co_filename = frame.f_code.co_filename
+    return candidate_pattern.match(co_filename)
+
+def magicmethod(clazz, method):
+    if method not in clazz.__dict__:  # Not defined in clazz : inherited
+        return 'inherited'
+    elif hasattr(super(clazz), method):  # Present in parent : overloaded
+        return 'overloaded'
+    else:  # Not present in parent : newly defined
+        return 'newly defined'
+
+def logged_spewer(frame, s, ignored):
+    """
+    A trace function for sys.settrace that prints every function or method call.
+    """
+    from twisted.python import reflect
+    try:
+        co_name = frame.f_code.co_name
+        co_filename = frame.f_code.co_filename
+
+        if not validate_frame(frame, s):
+            return
+        if 'self' in frame.f_locals:
+            se = frame.f_locals['self']
+            if hasattr(se, '__class__'):
+                clazz = se.__class__
+            else:
+                clazz = type(se)
+            k = reflect.qual(clazz)
+            #logging.info("Getting qualified name of {}".format(clazz))
+            qualname=str(clazz)#getattr(clazz, '__qualname__', None)
+            #logging.info("Got qualified name of {}, {}".format(clazz, qualname))
+            if qualname and not candidate_pattern.match(qualname):
+                return
+            if magicmethod(clazz,co_name) in ('inherited',):
+                return
+            logging.info('method %s.%s at %s' % (
+                k, co_name, id(se)))
+        else:
+            logging.info('function %s in %s, line %s' % (
+                co_name,
+                co_filename,
                 frame.f_lineno))
     except:
         pass
@@ -100,12 +152,20 @@ def gen_base(basecls,  # type: Type[T]
                 # enable very detailed call logging
                 self._oldtrace=sys.gettrace()
                 sys.settrace(logged_spewer)
+            if os.getenv("PYCBC_DEBUG_SPEWER"):
+                # enable very detailed call logging
+                self._oldtrace=sys.gettrace()
+                sys.settrace(logged_spewer)
+
             super(_TxTestCase, self).setUp()
             self.cb = None
 
         def tearDown(self):
             super(_TxTestCase, self).tearDown()
             oldtrace = getattr(self, '_oldtrace', None)
+            if oldtrace:
+                sys.settrace(oldtrace)
+            oldtrace=getattr(self, '_oldtrace', None)
             if oldtrace:
                 sys.settrace(oldtrace)
 
