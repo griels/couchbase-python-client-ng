@@ -7,7 +7,6 @@ set(LCB_ROOT ${THIRDPARTY_LCB_ROOT}/src/libcouchbase_src)
 set(PYCBC_CMAKE_CPYTHON_WRAPPER 1)
 cmake_policy(SET CMP0054 NEW)
 if(NOT "${HYBRID_BUILD}")
-    set(ENABLE_HYBRID_BUILD TRUE)
     include(FindPythonInterp)
     include(FindPythonLibs)
 
