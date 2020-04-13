@@ -407,13 +407,26 @@ class TxRawClientFactory(object):
                 return self.deferred_verb(BatchedQueryResult, self._do_n1ql_query, self.query, *args, **kwargs)
 
             def deferred_verb(self, itercls, raw_verb, cooked_verb, *args, **kwargs):
+                import logging
                 if not self.connected:
-                    cb = lambda x: cooked_verb(*args, **kwargs)
-                    return self.on_connect().addCallback(cb)
+                    logging.error("Not connected yet, deferring cooked_verb {}".format(cooked_verb))
+                    def call_cooked(_):
+                        logging.error("Calling cooked_verb {}({},{})".format(cooked_verb, args, kwargs))
+                        result=cooked_verb(*args, **kwargs)
+                        logging.error("Calling cooked_verb {}({},{}), got {}".format(cooked_verb, args, kwargs, result))
+                        return result
+                    return self.on_connect().addCallback(call_cooked)
+
                 kwargs['itercls'] = itercls
+                logging.error("Calling raw_verb {}({},{})".format(raw_verb, args, kwargs))
                 o = raw_verb(*args, **kwargs)
-                o.start()
-                return o._getDeferred()
+                logging.error("Called raw_verb {}({},{}), got {}".format(raw_verb, args, kwargs, o))
+                logging.error("Calling {}.start".format(o))
+                start_result=o.start()
+                logging.error("Calling {}.start, got {}".format(o,start_result))
+                deferred=o._getDeferred()
+                logging.error("Got deferred {}".format(deferred))
+                return deferred
 
             def analytics_query(self, *args, **kwargs):
                 return self.deferred_verb(BatchedAnalyticsResult, self._do_analytics_query, self.analytics_query, *args, **kwargs)
