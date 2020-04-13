@@ -88,14 +88,14 @@ class OperationTestCase(Base):
 
     def test_multi_errors(self  # type: Base
                         ):
-        cb = self.make_connection()
+        orig_cb = self.make_connection()
         kv = self.gen_kv_dict(prefix = "test_multi_errors")
-        cb.upsert_multi(kv)
 
+        cb = orig_cb.upsert_multi(kv)
         rmkey = list(kv.keys())[0]
-        cb.remove(rmkey)
 
-        d = cb.getMulti(kv.keys())
+
+        success=False
 
         def t(err):
             self.assertIsInstance(err.value, DocumentNotFoundException)
@@ -111,6 +111,27 @@ class OperationTestCase(Base):
             res_fail = err.value.result
             self.assertFalse(res_fail.success)
             self.assertTrue(DocumentNotFoundException._can_derive(res_fail.rc))
+            success=True
 
-        d.addErrback(t)
-        return d
+        def respond(target):
+            d =orig_cb.remove(rmkey)
+            def and_then(*args, **kwargs):
+                at = orig_cb.getMulti(kv.keys())
+                at.addErrback(t)
+                class Checker(object):
+                    def __init__(self):
+                        self.count=1
+                    def __call__(self, *args, **kwargs):
+                        try:
+                            self.assertTrue(success)
+                        except Exception as e:
+                            if not self.count:
+                                raise
+                            self.count-=1
+
+                at.addCallback(Checker())
+                return at
+            d.addCallback(and_then)
+            return d
+        cb.addCallback(respond)
+        return cb
