@@ -1,7 +1,7 @@
 from couchbase_core._libcouchbase import FMT_JSON, FMT_PICKLE, FMT_UTF8, FMT_BYTES
 from couchbase.exceptions import (ValueFormatException,
                                      InvalidArgumentException)
-from couchbase_tests.base import ConnectionTestCase, CollectionTestCase
+from couchbase_tests.base import CollectionTestCase
 
 
 #

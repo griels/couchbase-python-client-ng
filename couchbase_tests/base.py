@@ -806,8 +806,12 @@ class ClusterTestCase(CouchbaseTestCase):
             return self.try_n_times(num_times, seconds_between, func, *args, on_success=success_func, **kwargs)
         return wrapper
 
-    def factory(self, *args, **kwargs):
-        return V3Bucket(*args, username="default", **kwargs).default_collection()
+    @property
+    def factory_product(self):
+        return CBCollection
+
+    def factory(self, *args, username="default", **kwargs):
+        return V3Bucket(*args, username=username, **kwargs).default_collection()
 
     def setUp(self, **kwargs):
         super(ClusterTestCase, self).setUp()
@@ -834,7 +838,11 @@ class ClusterTestCase(CouchbaseTestCase):
         self.cluster = self._instantiate_cluster(connstr_abstract, self.cluster_factory)
         return bucket_name
 
-    def _instantiate_cluster(self, connstr_nobucket, cluster_factory):
+    def _instantiate_cluster(self,
+                             connstr_nobucket,
+                             cluster_factory
+                             ):
+        # type: (...) -> Cluster
         # FIXME: we should not be using classic here!  But, somewhere in the tests, we need
         # this for hitting the mock, it seems
         auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
