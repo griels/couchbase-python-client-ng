@@ -17,7 +17,7 @@
 
 from couchbase_tests.base import CouchbaseTestCase
 from couchbase_core.connstr import ConnectionString
-from couchbase_v2.cluster import Cluster, ClassicAuthenticator,PasswordAuthenticator, NoBucketException, MixedAuthException, CertAuthenticator
+from couchbase_core.cluster import _Cluster as Cluster, ClassicAuthenticator,PasswordAuthenticator, NoBucketException, MixedAuthException, CertAuthenticator
 import gc
 import os
 import warnings
