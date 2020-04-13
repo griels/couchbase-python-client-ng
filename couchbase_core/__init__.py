@@ -20,6 +20,8 @@ from warnings import warn
 import enum
 import warnings
 from collections import defaultdict
+import re
+
 try:
     from abc import abstractmethod, ABCMeta
 except:
@@ -275,7 +277,7 @@ def recursive_reload(module, paths=None, mdict=None):
     reload(module)
 
 
-WrappedIterable = TypeVar('T', bound=Iterable[Any])
+WrappedIterable = TypeVar('T', bound=Any)#Iterable[Any])
 
 
 class IterableWrapper(object):
@@ -313,7 +315,7 @@ class IterableWrapper(object):
 
 def iterable_wrapper(basecls  # type: Type[WrappedIterable]
                      ):
-    # type: (...) -> Type[IterableWrapper]
+    # type: (...) -> Type[WrappedIterable]
     class IterableWrapperSpecific(IterableWrapper, basecls):
         def __init__(self, *args, **kwargs):
             IterableWrapper.__init__(self, basecls,  *args, **kwargs)
@@ -338,3 +340,26 @@ def mk_formstr(d):
 def syncwait_or_deadline_time(syncwait, timeout):
     deadline = (datetime.now() + timedelta(microseconds=timeout)) if timeout else None
     return lambda: syncwait if syncwait else (deadline - datetime.now()).total_seconds()
+
+
+class TimeDeltaParser(object):
+    _float_pattern = r'\d+(\.\d+)?'
+
+    def __init__(self):
+        self.regex = re.compile(
+            r'((?P<hours>{fp})hr)?((?P<minutes>{fp})min)?((?P<seconds>{fp})s)?((?P<milliseconds>{fp})ms)?'.format(
+                fp=self._float_pattern))
+
+    def __call__(self, time_str):
+        parts = self.regex.match(time_str)
+        if not parts:
+            return
+        parts = parts.groupdict()
+        time_params = {}
+        for (name, param) in parts.items():
+            if param:
+                time_params[name] = float(param)
+        return timedelta(**time_params)
+
+
+parse_to_timedelta = TimeDeltaParser()
