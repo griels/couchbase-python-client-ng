@@ -35,10 +35,6 @@ from random import choice
 T = TypeVar('T')
 
 
-class QueryMetrics(object):
-    pass
-
-
 CallableOnOptionBlock = Callable[[OptionBlockDeriv, Any], Any]
 
 
