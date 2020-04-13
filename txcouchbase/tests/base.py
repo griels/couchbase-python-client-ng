@@ -30,10 +30,30 @@ T = TypeVar('T', bound=ConnectionTestCase)
 Factory = Callable[[Any], Client]
 twisted.internet.base.DelayedCall.debug = True
 
+import logging
 
-if os.getenv("PYCBC_DEBUG_SPEWER"):
-    # enable very detailed call logging
-    sys.settrace(twisted.python.util.spewer)
+
+def logged_spewer(frame, s, ignored):
+    """
+    A trace function for sys.settrace that prints every function or method call.
+    """
+    from twisted.python import reflect
+    try:
+        if 'self' in frame.f_locals:
+            se = frame.f_locals['self']
+            if hasattr(se, '__class__'):
+                k = reflect.qual(se.__class__)
+            else:
+                k = reflect.qual(type(se))
+            logging.info('method %s of %s at %s' % (
+                frame.f_code.co_name, k, id(se)))
+        else:
+            logging.info('function %s in %s, line %s' % (
+                frame.f_code.co_name,
+                frame.f_code.co_filename,
+                frame.f_lineno))
+    except:
+        pass
 
 
 def gen_base(basecls,  # type: Type[T]
@@ -76,11 +96,17 @@ def gen_base(basecls,  # type: Type[T]
             return factory or self.gen_collection
 
         def setUp(self):
+            if os.getenv("PYCBC_DEBUG_SPEWER"):
+                # enable very detailed call logging
+                self._oldtrace=sys.gettrace()
+                sys.settrace(logged_spewer)
             super(_TxTestCase, self).setUp()
             self.cb = None
 
         def tearDown(self):
             super(_TxTestCase, self).tearDown()
+            if self._oldtrace:
+                sys.settrace(self._oldtrace)
 
         @classmethod
         def setUpClass(cls) -> None:
