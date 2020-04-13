@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from couchbase.options import UnsignedInt64
 
 try:
     from abc import abstractmethod
@@ -22,8 +23,109 @@ except:
 
 
 from couchbase_core.n1ql import N1QLRequest
-from couchbase_core import iterable_wrapper
+from couchbase_core import iterable_wrapper, JSON, parse_time
 from typing import *
+from datetime import timedelta
+import enum
+import attr
+
+
+class QueryStatus(enum.Enum):
+    RUNNING = ()
+    SUCCESS = ()
+    ERRORS = ()
+    COMPLETED = ()
+    STOPPED = ()
+    TIMEOUT = ()
+    CLOSED = ()
+    FATAL = ()
+    ABORTED = ()
+    UNKNOWN = ()
+
+
+class QueryWarning(object):
+    def __init__(self, raw_warning):
+        self._raw_warning = raw_warning
+
+    def code(self):
+        # type: (...) -> int
+        pass
+
+    def message(self):
+        # type: (...) -> str
+        pass
+
+
+class QueryMetrics(object):
+    def __init__(self, raw_metrics):
+        self._raw_metrics = raw_metrics
+
+    def elapsed_time(self):
+        # type: (...) -> timedelta
+        return parse_time(self._raw_metrics.get('elapsedTime'))
+
+    def execution_time(self):
+        # type: (...) -> timedelta
+        pass
+
+    def sort_count(self):
+        # type: (...) -> UnsignedInt64
+        pass
+
+    def result_count(self):
+        # type: (...) -> UnsignedInt64
+        pass
+
+    def result_size(self):
+        # type: (...) -> UnsignedInt64
+        pass
+
+    def mutation_count(self):
+        # type: (...) -> UnsignedInt64
+        pass
+
+    def error_count(self):
+        # type: (...) -> UnsignedInt64
+        return UnsignedInt64(self._raw_metrics.get('errorCount', 0))
+
+    def warning_count(self):
+        # type: (...) -> UnsignedInt64
+        pass
+
+
+class QueryMetaData(object):
+    def __init__(self,
+                 parent  # type: QueryResult
+                 ):
+        self._parent = parent
+
+    def request_id(self):
+        # type: (...) -> str
+        return self._parent.meta.get('requestID')
+
+    def client_context_id(self):
+        # type: (...) -> str
+        return self._parent.meta.get('clientContextID')
+
+    def signature(self):
+        # type: (...) -> JSON
+        return self._parent.meta.get('signature')
+
+    def status(self):
+        # type: (...) -> QueryStatus
+        raise QueryStatus(self._parent.meta.get('status').upper())
+
+    def warnings(self):
+        # type: (...) -> List[QueryWarning]
+        raise NotImplementedError()
+
+    def metrics(self):
+        # type: (...) -> Optional[QueryMetrics]
+        return QueryMetrics(self._parent.metrics)
+
+    def profile(self):
+        # type: (...) -> Optional[JSON]
+        return self._parent.profile
 
 
 class QueryResult(iterable_wrapper(N1QLRequest)):
@@ -33,22 +135,10 @@ class QueryResult(iterable_wrapper(N1QLRequest)):
         # type (...)->None
         super(QueryResult,self).__init__(*args, **kwargs)
 
-    def metrics(self):  # type: (...) -> QueryMetrics
-        return super(QueryResult, self).metrics
+    def metadata(self  # type: QueryResult
+                 ):
+        # type: (...) -> QueryMetaData
+        return QueryMetaData(self)
 
-    def profile(self):
-        return super(QueryResult, self).profile
-
-    def request_id(self):
-        raise NotImplementedError("To be implemented")
-
-    def client_context_id(self):
-        raise NotImplementedError("To be implemented")
-
-    def signature(self):
-        raise NotImplementedError("To be implemented")
-
-    def warnings(self):
-        raise NotImplementedError("To be implemented")
 
 

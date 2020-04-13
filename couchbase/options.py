@@ -181,6 +181,9 @@ class ConstrainedInt(object):
     def __repr__(self):
         return str(self)
 
+    def __eq__(self, other):
+        return self.value == other.value
+
 
 class SignedInt64(ConstrainedInt):
     def __init__(self, value):
