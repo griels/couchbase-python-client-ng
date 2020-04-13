@@ -14,12 +14,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import datetime
 
+from couchbase import UnsignedInt64
 from couchbase_tests.base import CollectionTestCase
 from couchbase.cluster import QueryOptions, QueryProfile, DiagnosticsOptions, QueryResult
 from couchbase.diagnostics import ServiceType, EndpointState, ClusterState
 
 from unittest import SkipTest
+
+from couchbase.n1ql import QueryMetaData
 
 
 class QueryTests(CollectionTestCase):
@@ -50,8 +54,7 @@ class QueryTests(CollectionTestCase):
     def test_simple_query(self):
         result = self.cluster.query("SELECT * FROM `beer-sample` LIMIT 2")
         self.assertRows(result, 2)
-        self.assertIsNone(result.metrics())
-        self.assertIsNone(result.profile())
+        self.assertIsNone(result.metadata().profile())
 
     def test_simple_query_with_positional_params(self):
         result = self.cluster.query("SELECT * FROM `beer-sample` WHERE brewery_id LIKE $1 LIMIT 1", '21st_amendment%')
@@ -90,14 +93,20 @@ class QueryTests(CollectionTestCase):
     def test_query_with_profile(self):
         result = self.cluster.query("SELECT * FROM `beer-sample` LIMIT 1", QueryOptions(profile=QueryProfile.timings()))
         self.assertRows(result, 1)
-        self.assertIsNone(result.metrics())
-        self.assertIsNotNone(result.profile())
+        self.assertIsNotNone(result.metadata().profile())
 
     def test_query_with_metrics(self):
+        initial = datetime.datetime.now()
         result = self.cluster.query("SELECT * FROM `beer-sample` LIMIT 1", QueryOptions(metrics=True))
         self.assertRows(result, 1)
-        self.assertIsNotNone(result.metrics())
-        self.assertIsNone(result.profile())
+        taken = datetime.datetime.now()-initial
+        metadata = result.metadata()  # type: QueryMetaData
+        metrics =metadata.metrics()
+        self.assertIsInstance(metrics.elapsed_time(), datetime.timedelta)
+        self.assertLess(metrics.elapsed_time(), taken)
+        self.assertGreater(metrics.elapsed_time(), datetime.timedelta(milliseconds=0))
+        self.assertEqual(UnsignedInt64(0), metrics.error_count())
+        self.assertIsNone(result.profile)
 
     def test_mixed_positional_parameters(self):
         # we assume that positional overrides one in the Options
