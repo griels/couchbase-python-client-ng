@@ -17,7 +17,7 @@
 import datetime
 from unittest import SkipTest
 
-from couchbase import UnsignedInt64
+from couchbase.n1ql import UnsignedInt64
 from couchbase.cluster import QueryOptions, QueryProfile, QueryResult
 from couchbase.n1ql import QueryMetaData, QueryStatus, QueryWarning
 from couchbase_tests.base import CollectionTestCase

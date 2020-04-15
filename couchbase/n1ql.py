@@ -14,14 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from couchbase.options import UnsignedInt64
 
-
-from couchbase_core.n1ql import N1QLRequest
-from couchbase_core import iterable_wrapper, JSON, parse_to_timedelta
-from typing import *
-from datetime import timedelta
 import enum
+import traceback
+from datetime import timedelta
+from typing import *
+
+from couchbase.options import UnsignedInt64
+from couchbase_core import iterable_wrapper, JSON, parse_to_timedelta
+from couchbase_core.n1ql import N1QLRequest
+import warnings
 
 
 class QueryStatus(enum.Enum):
@@ -51,16 +53,25 @@ class QueryWarning(object):
 
 
 class QueryMetrics(object):
-    def __init__(self, raw_metrics):
-        self._raw_metrics = raw_metrics
+    def __init__(self,
+                 parent  # type: QueryResult
+                 ):
+        self._parent = parent
+
+    @property
+    def _raw_metrics(self):
+        return self._parent.metrics
 
     def elapsed_time(self):
         # type: (...) -> timedelta
-        return parse_to_timedelta(self._raw_metrics.get('elapsedTime'))
+        return self._as_timedelta('elapsedTime')
+
+    def _as_timedelta(self, time_str):
+        return self._parent._duration_as_timedelta(self._raw_metrics.get(time_str))
 
     def execution_time(self):
         # type: (...) -> timedelta
-        return parse_to_timedelta(self._raw_metrics.get('executionTime'))
+        return self._as_timedelta('executionTime')
 
     def sort_count(self):
         # type: (...) -> UnsignedInt64
@@ -115,7 +126,7 @@ class QueryMetaData(object):
 
     def metrics(self):
         # type: (...) -> Optional[QueryMetrics]
-        return QueryMetrics(self._parent.metrics)
+        return QueryMetrics(self._parent)
 
     def profile(self):
         # type: (...) -> Optional[JSON]
@@ -124,15 +135,33 @@ class QueryMetaData(object):
 
 class QueryResult(iterable_wrapper(N1QLRequest)):
     def __init__(self,
-                 *args, **kwargs
+                 params, parent, **kwargs
                  ):
         # type (...)->None
-        super(QueryResult,self).__init__(*args, **kwargs)
+        super(QueryResult, self).__init__(params, parent, **kwargs)
+
+        from couchbase.cluster import Cluster
+        self._parent = parent  # type: Cluster
+        self._params = params
 
     def metadata(self  # type: QueryResult
                  ):
         # type: (...) -> QueryMetaData
         return QueryMetaData(self)
 
+    def _duration_as_timedelta(self,
+                               metrics_str):
+        try:
+            conv_query = self._parent.query(r'select str_to_duration("{}")'.format(metrics_str), timeout=timedelta(seconds=5))
+            first_entry = next(iter(conv_query.rows()), {})
+            nanoseconds = first_entry.get('$1', None)
 
+            if nanoseconds is None:
+                raise Exception("Cannot get result from query response {}".format(conv_query.rows()))
+            return timedelta(seconds=nanoseconds * 1e-9)
+        except Exception as e:
+            warnings.warn("Not able to get result in nanoseconds: {}".format(traceback.format_exc()))
 
+        # fall back to parsing if this fails for some reason
+
+        return parse_to_timedelta(metrics_str)
