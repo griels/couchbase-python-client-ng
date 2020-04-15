@@ -152,14 +152,15 @@ class QueryResult(iterable_wrapper(N1QLRequest)):
     def _duration_as_timedelta(self,
                                metrics_str):
         try:
-            conv_query = self._parent.query(r'select str_to_duration("{}")'.format(metrics_str))
-            nanoseconds = next(iter(next(iter(conv_query), {}).values()), None)
+            conv_query = self._parent.query(r'select str_to_duration("{}")'.format(metrics_str), timeout=timedelta(seconds=5))
+            first_entry = next(iter(conv_query.rows()), {})
+            nanoseconds = first_entry.get('$1', None)
 
             if nanoseconds is None:
-                warnings.warn("Not able to get explicit result from conv_query, falling back to parser")
+                raise Exception("Cannot get result from query response {}".format(conv_query.rows()))
             return timedelta(seconds=nanoseconds * 1e-9)
         except Exception as e:
-            warnings.warn("Problem getting explicit result from conv_query {}".format(traceback.format_exc()))
+            warnings.warn("Not able to get result in nanoseconds: {}".format(traceback.format_exc()))
 
         # fall back to parsing if this fails for some reason
 
