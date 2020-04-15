@@ -27,8 +27,9 @@ from testresources import ResourcedTestCase as ResourcedTestCaseReal, TestResour
 
 import couchbase_core
 from collections import defaultdict
-from couchbase import Cluster, CBCollection, CoreClient
-from couchbase.cluster import ClassicAuthenticator
+from couchbase.collection import CBCollection
+from couchbase_core.client import Client as CoreClient
+from couchbase.cluster import Cluster, ClassicAuthenticator
 from couchbase.cluster import PasswordAuthenticator
 from couchbase.exceptions import CollectionAlreadyExistsException, ScopeAlreadyExistsException, NotSupportedException
 from couchbase.management.analytics import CreateDatasetOptions
