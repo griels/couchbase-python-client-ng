@@ -11,7 +11,7 @@ from couchbase_core.asynchronous import AsyncClientFactory
 from couchbase_core.client import Client as CoreClient
 from .collection import CBCollection, CoreClientDatastructureWrap
 from .collection import Scope
-from .options import OptionBlockTimeOut, kw_forward_args
+from .options import OptionBlockTimeOut, forward_args
 from .result import *
 
 

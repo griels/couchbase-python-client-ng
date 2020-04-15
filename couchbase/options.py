@@ -99,11 +99,20 @@ class Forwarder(with_metaclass(ABCMeta)):
         import boltons.funcutils
         import inspect
 
-        sig=inspect.signature(func, follow_wrapped=True)
-        index=next((x for (index,x) in enumerate(sig.parameters.keys())),None)
+        sig = inspect.signature(func, follow_wrapped=True)
+        argnames = list(sig.parameters.keys())
+        try:
+            index = argnames.index('options')
+        except:
+            index = argnames.index('_')
+
         @boltons.funcutils.wraps(func)
         def wrapped(*args, **kwargs):
-            return func(*args, **self.forward_args(kwargs, args[index:]))
+            options = args[index:]
+            final_kwargs = self.forward_args(kwargs, *options)
+            final_args = args[:index]
+            return func(*final_args, **final_kwargs)
+
         return wrapped
 
 
@@ -135,15 +144,30 @@ class DefaultForwarder(Forwarder):
                                "persist_to": lambda client_dur: client_dur.get('persist_to', None)}}
 
 
-class NoKwargsForwarder(DefaultForwarder):
+class LoggedKwargsForwarder(DefaultForwarder):
+    def __init__(self):
+        from _collections import defaultdict
+        self._argdict=defaultdict(dict)
+
     def forward_args(self, arg_vars,  # type: Optional[Dict[str,Any]]
                      *options  # type: Tuple[OptionBlockDeriv,...]
                      ):
-        return super(NoKwargsForwarder, self).forward_args({}, *options)
+        return super(LoggedKwargsForwarder, self).forward_args(arg_vars, *options)
+    def __call__(self, func):
+        forwarder_func=super(LoggedKwargsForwarder, self).__call__(func)
+        import inspect
 
+        def logged_func(*args, **kwargs):
+            result=forwarder_func(*args, **kwargs)
+            import logging
+            self._argdict[func.__name__].update(kwargs)
+            print(self._argdict)
+            logging.error("Calling {} with args {} and kwargs {} returns {}".format(func, args, kwargs, result))
+            return result
+        return logged_func
 
-kw_forward_args = DefaultForwarder().forward_args
-forward_args = NoKwargsForwarder().forward_args
+default_forwarder = LoggedKwargsForwarder()
+forward_args = default_forwarder.forward_args
 
 AcceptableInts = Union['ConstrainedValue', ctypes.c_int64, ctypes.c_uint64, int]
 

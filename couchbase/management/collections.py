@@ -1,4 +1,4 @@
-from ..options import OptionBlockTimeOut, kw_forward_args as forward_args
+from ..options import OptionBlockTimeOut, forward_args
 from couchbase.management.admin import Admin
 from typing import *
 from .generic import GenericManager
