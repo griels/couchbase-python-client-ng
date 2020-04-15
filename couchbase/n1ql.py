@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from couchbase.cluster import Cluster
 from couchbase.options import UnsignedInt64
 
 
@@ -51,16 +52,25 @@ class QueryWarning(object):
 
 
 class QueryMetrics(object):
-    def __init__(self, raw_metrics):
-        self._raw_metrics = raw_metrics
+    def __init__(self,
+                 parent  # type: QueryResult
+                 ):
+        self._parent = parent
+
+    @property
+    def _raw_metrics(self):
+        return self._parent.metrics
 
     def elapsed_time(self):
         # type: (...) -> timedelta
-        return parse_to_timedelta(self._raw_metrics.get('elapsedTime'))
+        return self._as_timedelta('elapsedTime')
+
+    def _as_timedelta(self, time_str):
+        return self._parent._duration_as_ns(self._raw_metrics.get(time_str))
 
     def execution_time(self):
         # type: (...) -> timedelta
-        return parse_to_timedelta(self._raw_metrics.get('executionTime'))
+        return self._as_timedelta('executionTime')
 
     def sort_count(self):
         # type: (...) -> UnsignedInt64
@@ -115,7 +125,7 @@ class QueryMetaData(object):
 
     def metrics(self):
         # type: (...) -> Optional[QueryMetrics]
-        return QueryMetrics(self._parent.metrics)
+        return QueryMetrics(self._parent)
 
     def profile(self):
         # type: (...) -> Optional[JSON]
@@ -124,15 +134,25 @@ class QueryMetaData(object):
 
 class QueryResult(iterable_wrapper(N1QLRequest)):
     def __init__(self,
-                 *args, **kwargs
+                 params, parent, **kwargs
                  ):
         # type (...)->None
-        super(QueryResult,self).__init__(*args, **kwargs)
+        super(QueryResult,self).__init__(params, parent, **kwargs)
+        self._parent=parent
+        self._params=params
 
     def metadata(self  # type: QueryResult
                  ):
         # type: (...) -> QueryMetaData
         return QueryMetaData(self)
 
+    @classmethod
+    def _duration_as_ns_impl(cls, parent,  # type: Cluster
+                             metrics_str):
+        conv_query = parent.query(r'str_to_duration("{}")'.format(metrics_str))
+        return conv_query.rows()[0]
+
+    def _duration_as_ns(self, metrics_str):
+        return self._duration_as_ns_impl(self._parent, metrics_str)
 
 
