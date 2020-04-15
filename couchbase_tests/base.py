@@ -15,35 +15,35 @@
 
 from __future__ import absolute_import
 
+import gc
+import logging
+import os
 import platform
 import sys
-import types
-import warnings
-import logging
-import gc
-import os
 import time
 import traceback
+import types
+import warnings
 from abc import abstractmethod
 from functools import wraps
 
+from deepdiff import DeepDiff
+from flaky import flaky
 from testfixtures import LogCapture
 from testresources import ResourcedTestCase as ResourcedTestCaseReal, TestResourceManager
+from utilspie.collectionsutils import frozendict
 
 import couchbase_core
 from collections import defaultdict
+from couchbase.bucket import Bucket as V3Bucket
 from couchbase.cluster import Cluster, ClassicAuthenticator
 from couchbase.cluster import PasswordAuthenticator
 from couchbase.collection import CBCollection
 from couchbase.exceptions import CollectionAlreadyExistsException, ScopeAlreadyExistsException, NotSupportedException
 from couchbase.management.analytics import CreateDatasetOptions
+from couchbase.management.collections import CollectionSpec
 from couchbase_core.client import Client as CoreClient
 from couchbase_core.connstr import ConnectionString
-from utilspie.collectionsutils import frozendict
-from couchbase.management.collections import CollectionSpec
-from couchbase.bucket import Bucket as V3Bucket
-from flaky import flaky
-from deepdiff import DeepDiff
 
 try:
     from unittest2.case import SkipTest
@@ -70,7 +70,6 @@ from basictracer import BasicTracer, SpanRecorder
 from couchbase_core._libcouchbase import PYCBC_TRACING
 
 from typing import *
-from couchbase_v2.bucket import Bucket as V2Bucket
 
 if os.environ.get("PYCBC_TRACE_GC") in ['FULL', 'STATS_LEAK_ONLY']:
     gc.set_debug(gc.DEBUG_STATS | gc.DEBUG_LEAK)
@@ -469,6 +468,7 @@ class CouchbaseTestCase(ResourcedTestCase):
             from couchbase_core.result import (
                 MultiResult, Result, OperationResult, ValueResult,
                 ObserveInfo)
+            from couchbase_v2.bucket import Bucket as V2Bucket
             self.factory = V2Bucket
             self.viewfactory = View
             self.cls_Result = Result
