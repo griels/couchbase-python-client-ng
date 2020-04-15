@@ -426,7 +426,8 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
                 unsigned nparams,
                 int is_prepared,
                 int is_xbucket,
-                int is_analytics)
+                int is_analytics,
+                double timeout)
 {
     PyObject *ret = NULL;
     pycbc_MultiResult *mres;
@@ -475,10 +476,11 @@ pycbc_Bucket__n1ql_query(pycbc_Bucket *self, PyObject *args, PyObject *kwargs)
     pycbc_strlen_t nparams = 0;
     int prepared = 0, cross_bucket = 0;
     PyObject *result = NULL;
-    static char *kwlist[] = { "params", "prepare", "cross_bucket", NULL };
+    double timeout = 0;
+    static char *kwlist[] = { "params", "prepare", "cross_bucket", "timeout", NULL };
     if (!PyArg_ParseTupleAndKeywords(
-        args, kwargs, "s#|ii", kwlist, &params,
-        &nparams, &prepared, &cross_bucket)) {
+        args, kwargs, "s#|iid", kwlist, &params,
+        &nparams, &prepared, &cross_bucket, &timeout)) {
 
         PYCBC_EXCTHROW_ARGS();
         return NULL;
@@ -492,7 +494,8 @@ pycbc_Bucket__n1ql_query(pycbc_Bucket *self, PyObject *args, PyObject *kwargs)
                               nparams,
                               prepared,
                               cross_bucket,
-                              0);
+                              0,
+                              timeout);
     return result;
 }
 
@@ -504,8 +507,9 @@ PyObject *pycbc_Bucket__cbas_query(pycbc_Bucket *self,
     pycbc_strlen_t nparams = 0;
     static char *kwlist[] = {"params", NULL};
     PyObject *result = NULL;
+    double timeout = 0;
     if (!PyArg_ParseTupleAndKeywords(
-                args, kwargs, "s#", kwlist, &params, &nparams)) {
+                args, kwargs, "s#d", kwlist, &params, &nparams, &timeout)) {
         PYCBC_EXCTHROW_ARGS();
         return NULL;
     }
@@ -519,7 +523,8 @@ PyObject *pycbc_Bucket__cbas_query(pycbc_Bucket *self,
                                   nparams,
                                   0,
                                   0,
-                                  1);
+                                  1,
+                                  timeout);
     }
     return result;
 }

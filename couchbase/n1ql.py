@@ -140,7 +140,7 @@ class QueryResult(iterable_wrapper(N1QLRequest)):
         # type (...)->None
         super(QueryResult, self).__init__(params, parent, **kwargs)
 
-        from couchbase.cluster import Cluster
+        #from couchbase.cluster import Cluster
         self._parent = parent  # type: Cluster
         self._params = params
 
