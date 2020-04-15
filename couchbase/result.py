@@ -1,5 +1,9 @@
+import attr
+
 from couchbase_core.subdocument import Spec
 from couchbase_core.supportability import internal
+from search import SearchRow, SearchRowLocations, SearchFacetResult, SearchMetaData, SearchRequest
+from supportability import internal
 from .options import timedelta, forward_args
 from couchbase_core.transcodable import Transcodable
 from couchbase_core._libcouchbase import Result as CoreResult
@@ -496,4 +500,40 @@ class ViewResult(iterable_wrapper(CoreView)):
         raise NotImplementedError()
 
 
+class SearchResultBase(object):
+    @internal
+    def __init__(self,
+                 *args, row_factory=None, **kwargs  # type: SearchRequest
+                 ):
+        """
+        The SearchResult interface provides a means of mapping the results of a Search query into an object.
+        The description and details on the fields can be found in the Couchbase Full Text Search Index Query (FTS) RFC.
 
+
+        """
+
+        super(SearchResultBase, self).__init__(*args, row_factory=(row_factory or self._row_factory), **kwargs)
+
+    @staticmethod
+    def _row_factory(orig_value  # type: Dict[str, Any]
+                     ):
+        # type: (...) -> SearchRow
+        return SearchRow(orig_value.pop('index'), orig_value.pop('id'), orig_value.pop('score'),
+                         locations=SearchRowLocations(**orig_value.pop('locations', {})),
+                         **{k: orig_value[k] for k in (attr.fields(SearchRow) & orig_value.keys())})
+
+    def facets(self):
+        # type: (...) -> Dict[str, SearchFacetResult]
+        return {k: SearchFacetResult(k, v.pop('field'), v.pop('total'), v.pop('missing'), v.pop('other')) for k, v in
+                super(SearchResultBase, self).facets.items()}
+
+    def metadata(self):  # type: (...) -> SearchMetaData
+        return SearchMetaData(**super(SearchResultBase, self).meta)
+
+    @classmethod
+    def mk_kwargs(cls, kwargs):
+        return SearchRequest.mk_kwargs(kwargs)
+
+
+class SearchResult(SearchResultBase, iterable_wrapper(SearchRequest)):
+    pass

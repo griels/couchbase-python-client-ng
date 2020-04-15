@@ -19,8 +19,10 @@
 from unittest import SkipTest
 
 import couchbase.search as search
+import result
 from couchbase.management.search import SearchIndex
-from couchbase.search import SearchResult, SearchOptions
+from couchbase.search import SearchOptions
+from result import SearchResult
 from couchbase_core.mutation_state import MutationState
 from couchbase_tests.base import CouchbaseTestCase
 
@@ -82,7 +84,7 @@ class SearchRequestMock(search.SearchRequest):
             raise
 
 
-class SearchResultMock(search.SearchResultBase, iterable_wrapper(SearchRequestMock)):
+class SearchResultMock(result.SearchResultBase, iterable_wrapper(SearchRequestMock)):
     pass
 
 

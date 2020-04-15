@@ -7,9 +7,9 @@ import couchbase_core
 
 from couchbase.exceptions import CouchbaseException
 from couchbase_core.views.iterator import AlreadyQueriedException
-from couchbase_core import abstractmethod, JSON, _to_json, iterable_wrapper
+from couchbase_core import abstractmethod, JSON, _to_json
 from couchbase_core._pyport import unicode
-from couchbase_core.supportability import internal
+from result import SearchResult
 from .options import OptionBlockTimeOut, UnsignedInt32, UnsignedInt64, forward_args
 import abc
 import couchbase_core.mutation_state as MutationState
@@ -1413,45 +1413,6 @@ class SearchMetaData(object):
         self.errors = raw_json
 
 
-class SearchResultBase(object):
-    @internal
-    def __init__(self,
-                 *args, row_factory=None, **kwargs  # type: SearchRequest
-                 ):
-        """
-        The SearchResult interface provides a means of mapping the results of a Search query into an object.
-        The description and details on the fields can be found in the Couchbase Full Text Search Index Query (FTS) RFC.
-
-
-        """
-
-        super(SearchResultBase, self).__init__(*args, row_factory=(row_factory or self._row_factory), **kwargs)
-
-    @staticmethod
-    def _row_factory(orig_value  # type: Dict[str, Any]
-                     ):
-        # type: (...) -> SearchRow
-        return SearchRow(orig_value.pop('index'), orig_value.pop('id'), orig_value.pop('score'),
-                         locations=SearchRowLocations(**orig_value.pop('locations', {})),
-                         **{k: orig_value[k] for k in (attr.fields(SearchRow) & orig_value.keys())})
-
-    def facets(self):
-        # type: (...) -> Dict[str, SearchFacetResult]
-        return {k: SearchFacetResult(k, v.pop('field'), v.pop('total'), v.pop('missing'), v.pop('other')) for k, v in
-                super(SearchResultBase, self).facets.items()}
-
-    def metadata(self):  # type: (...) -> SearchMetaData
-        return SearchMetaData(**super(SearchResultBase, self).meta)
-
-    @classmethod
-    def mk_kwargs(cls, kwargs):
-        return SearchRequest.mk_kwargs(kwargs)
-
-
-class SearchResult(SearchResultBase, iterable_wrapper(SearchRequest)):
-    pass
-
-
 SearchParams = NamedTuple('SearchParams',
                           [('body', JSON), ('iterargs', Dict[str, Any]), ('itercls', Type[SearchResult])])
 
@@ -1491,7 +1452,8 @@ class SearchOptions(OptionBlockTimeOut):
         iterargs, itercls, params = cls._gen_params_kwargs_options(*options, **kwargs)
         return SearchParams(_make_search_body(index, query, params), iterargs, itercls)
 
-    SearchParamsInternal = NamedTuple('SearchParamsInternal', [('iterargs',Dict[str,Any]), ('itercls', Type[SearchResult]), ('params', _Params)])
+    SearchParamsInternal = NamedTuple('SearchParamsInternal', [('iterargs',Dict[str,Any]), ('itercls', Type[
+        SearchResult]), ('params', _Params)])
 
     @classmethod
     def _gen_params_kwargs_options(cls, *options, **kwargs):

@@ -14,7 +14,8 @@ from .management.users import UserManager
 from .management.buckets import BucketManager
 from couchbase.management.admin import Admin
 from couchbase.diagnostics import DiagnosticsResult, EndPointDiagnostics
-from couchbase.search import SearchResult, SearchOptions
+from couchbase.search import SearchOptions
+from result import SearchResult
 from .analytics import AnalyticsResult
 from .n1ql import QueryResult
 from couchbase_core.n1ql import N1QLQuery
