@@ -46,7 +46,7 @@ class QueryTests(CollectionTestCase):
             self.assertIsNotNone(row)
             count += 1
         print(result.errors)
-        self.assertEquals(count, expected_count)
+        self.assertEqual(count, expected_count)
 
     def test_simple_query(self):
         result = self.cluster.query("SELECT * FROM `beer-sample` LIMIT 2")
