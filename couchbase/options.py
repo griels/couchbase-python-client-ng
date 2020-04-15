@@ -96,6 +96,17 @@ class Forwarder(with_metaclass(ABCMeta)):
     def arg_mapping(self):
         pass
 
+    def __call__(self, func):
+        import boltons.funcutils
+        import inspect
+
+        sig=inspect.signature(func, follow_wrapped=True)
+        index=next((x for (index,x) in enumerate(sig.parameters.keys())),None)
+        @boltons.funcutils.wraps(func)
+        def wrapped(*args, **kwargs):
+            return func(*args, **self.forward_args(kwargs, args[index:]))
+        return wrapped
+
 
 def timedelta_as_timestamp(duration  # type: timedelta
                         ):
