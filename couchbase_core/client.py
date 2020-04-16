@@ -16,6 +16,8 @@ from .durability import Durability
 from .result import Result
 from couchbase_core.analytics import AnalyticsQuery
 from datetime import timedelta
+import enum
+
 
 ViewInstance = TypeVar('ViewInstance', bound=View)
 ViewSubType = TypeVar('ViewSubType', bound=Type[ViewInstance])
