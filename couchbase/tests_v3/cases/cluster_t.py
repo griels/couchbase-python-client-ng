@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from couchbase.bucket import Bucket
+
 from couchbase_tests.base import CollectionTestCase
 from couchbase.cluster import ClassicAuthenticator
 from couchbase.cluster import  DiagnosticsOptions, Cluster, ClusterOptions
@@ -140,3 +142,10 @@ class ClusterTests(CollectionTestCase):
         # well, our tests are not ssl, so...
         self.assertFalse(self.cluster.is_ssl)
 
+    def test_bucket_settings_propagation(self  # type: ClusterTests
+                                         ):
+        import random
+        expected_size = random.randint(1, 100)
+        self.cluster.tracing_threshold_queue_size=expected_size
+        default_bucket = self.cluster.bucket("default")  # type: Bucket
+        self.assertEqual(expected_size, default_bucket.tracing_threshold_queue_size)
