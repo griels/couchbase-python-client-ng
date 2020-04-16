@@ -9,9 +9,9 @@ class XattrTest(MockTestCase):
         cb.upsert(k, {})
 
         # Try to upsert a single xattr
-        rv = cb.mutate_in(k, SD.upsert('my.attr', 'value',
+        rv = cb.mutate_in(k, (SD.upsert('my.attr', 'value',
                                        xattr=True,
-                                       create_parents=True))
+                                       create_parents=True),))
         self.assertTrue(rv.success)
 
         body = cb.get(k)
@@ -23,6 +23,6 @@ class XattrTest(MockTestCase):
         self.assertFalse(rv.exists('my.attr'))
 
         # Finally, use lookup_in with 'xattrs' attribute enabled
-        rv = cb.lookup_in(k, SD.get('my.attr', xattr=True))
+        rv = cb.lookup_in(k, (SD.get('my.attr', xattr=True),))
         self.assertTrue(rv.exists('my.attr'))
         self.assertEqual('value', rv['my.attr'])
