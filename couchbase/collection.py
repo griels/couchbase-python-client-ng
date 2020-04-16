@@ -15,7 +15,7 @@ from couchbase_core import JSON
 from couchbase_core.asynchronous.bucket import AsyncClientFactory
 from couchbase_core.client import Client as CoreClient
 from couchbase_core.supportability import volatile
-from .options import OptionBlock, AcceptableInts
+from .options import OptionBlock, AcceptableInts, default_forwarder, timedelta_as_timestamp
 from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64
 from .result import GetResult, GetReplicaResult, ExistsResult, get_result_wrapper, CoreResult, ResultPrecursor, \
     LookupInResult, MutateInResult, \
@@ -406,8 +406,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         result = parent_scope.bucket._collection_factory(connection_string=parent_scope.bucket._connstr, **coll_args)
         return result
 
-    def _get_generic(self, key, kwargs, options):
-        opts = forward_args(kwargs, *options)
+    def _get_generic(self, key, **opts):
         opts.pop('key', None)
         project = opts.pop('project', [])
         with_expiry = opts.pop('with_expiry', False)
@@ -420,9 +419,10 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         # we get expiry done correctly, lets eliminate that as well.  Previously the
         # expiry you passed in was just duplicated into the result, which of course made
         # no sense since expiry should have been with_expiry (a bool) in the options.
-        return ResultPrecursor(x, options)
+        return ResultPrecursor(x, opts)
 
     @_get_result_and_inject
+    @default_forwarder
     def get(self,
             key,        # type: str
             *options,   # type: GetOptions
@@ -452,12 +452,13 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
             rv = cb.get("key", GetOptions(with_expiry=True))
             value, expiry = rv.content_as[str], rv.expiry
         """
-        return self._get_generic(key, kwargs, options)
+        return self._get_generic(key, **kwargs)
 
     @_get_result_and_inject
+    @default_forwarder
     def get_and_touch(self,
                       key,          # type: str
-                      expiry,       # type: int
+                      expiry,       # type: timedelta
                       *options,     # type: GetAndTouchOptions
                       **kwargs
                       ):
@@ -471,10 +472,11 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         :return: A :class:`couchbase.result.GetResult` object representing the document for this key.
         """
         # we place the expiry in the kwargs...
-        kwargs['expiry'] = expiry
-        return self._get_generic(key, kwargs, options)
+        kwargs['ttl'] = timedelta_as_timestamp(expiry)
+        return self._get_generic(key, **kwargs)
 
     @_get_result_and_inject
+    @default_forwarder
     def get_and_lock(self,
                      key,       # type: str
                      expiry,    # type: timedelta
@@ -491,14 +493,14 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         :param Any kwargs: Override corresponding value in options.
         :return: A :class:`couchbase.result.GetResult` object representing the document for this key.
         """
-        final_options = forward_args(kwargs, *options)
-        return ResultPrecursor(CoreClient.lock(self.bucket, key, int(expiry.total_seconds()), **final_options), final_options)
+        return ResultPrecursor(CoreClient.lock(self.bucket, key, int(expiry.total_seconds()), **kwargs), kwargs)
 
     @_inject_scope_and_collection
     @get_replica_result_wrapper
+    @default_forwarder
     def get_any_replica(self,
                         key,        # type: str
-                        *options,   # type: GetFromReplicaOptions
+                        *_,   # type: GetFromReplicaOptions
                         **kwargs
                         ):
         # type: (...) -> GetReplicaResult
@@ -514,14 +516,14 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         :return: A :class:`couchbase.result.GetReplicaResult` object
 
         """
-        final_options = forward_args(kwargs, *options)
-        return CoreClient.rget(self.bucket, key, **final_options)
+        return CoreClient.rget(self.bucket, key, **kwargs)
 
     @_inject_scope_and_collection
     @get_replica_result_wrapper
+    @default_forwarder
     def get_all_replicas(self,
                          key,        # type: str
-                         *options,   # type: GetAllReplicasOptions
+                         *_,   # type: GetAllReplicasOptions
                          **kwargs    # type: Any
                          ):
       # type: (...) -> Iterable[GetReplicaResult]
@@ -536,14 +538,15 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
               :exc:`.DocumentUnretrievableException` if no replicas exist
       :return: A list(:class:`couchbase.result.GetReplicaResult`) object
       """
-      return CoreClient.rgetall(self.bucket, key, **forward_args(kwargs, *options))
+      return CoreClient.rgetall(self.bucket, key, **kwargs)
 
 
     @_inject_scope_and_collection
+    @default_forwarder
     @volatile
     def get_multi(self,         # type: CBCollectionBase
                   keys,         # type: Iterable[str]
-                  *options,     # type: GetOptions
+                  *_,     # type: GetOptions
                   **kwargs
                   ):
         # type: (...) -> Dict[str,GetResult]
@@ -555,7 +558,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         :return: a dictionary of :class:`~.GetResult` objects by key
         :rtype: dict
         """
-        return get_multi_get_result(self.bucket, _Base.get_multi, keys, *options, **kwargs)
+        return get_multi_get_result(self.bucket, _Base.get_multi, keys, **kwargs)
 
     @overload
     def upsert_multi(self,  # type: CBCollectionBase
@@ -739,6 +742,8 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         return ExistsResult(CoreClient.exists(self.bucket, key, **forward_args(kwargs, *options)))
 
     @_mutate_result_and_inject
+
+    @default_forwarder
     def upsert(self,
                key,         # type: str
                value,       # type: Any
@@ -807,8 +812,8 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
 
         """
 
-        final_options = forward_args(kwargs, *options)
-        return ResultPrecursor(CoreClient.upsert(self.bucket, key, value, **final_options), final_options)
+        #final_options = forward_args(kwargs, *options)
+        return ResultPrecursor(CoreClient.upsert(self.bucket, key, value, **kwargs), kwargs)
 
     @_mutate_result_and_inject
     def insert(self,
