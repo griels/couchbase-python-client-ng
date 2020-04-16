@@ -33,14 +33,15 @@ from couchbase_core.transcodable import Transcodable
 import couchbase_core.connstr
 import couchbase.exceptions
 
-from couchbase import JSONDocument, MutateInResult
-from couchbase import copy, \
-    timedelta, ReplicaNotConfiguredException, DocumentConcurrentlyModifiedException, \
-    DocumentMutationLostException, ReplicaNotAvailableException, MutateSpec, CASMismatchException, \
-    MutateInOptions
-from couchbase import GetOptions, RemoveOptions, ReplaceOptions
-from couchbase import raise_from
-
+from couchbase.JSONdocument import JSONDocument
+from copy import copy
+from datetime import timedelta
+from couchbase.subdocument import MutateSpec
+from couchbase.exceptions import  ReplicaNotConfiguredException, DocumentConcurrentlyModifiedException, \
+    DocumentMutationLostException, ReplicaNotAvailableException,CASMismatchException
+from couchbase.collection import GetOptions, RemoveOptions, ReplaceOptions, MutateInOptions
+from six import raise_from
+from couchbase.result import MutateInResult
 from couchbase_tests.base import CollectionTestCase
 import couchbase.subdocument as SD
 import couchbase.management
