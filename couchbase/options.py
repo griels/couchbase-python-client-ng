@@ -96,6 +96,17 @@ class Forwarder(with_metaclass(ABCMeta)):
     def arg_mapping(self):
         pass
 
+    def __call__(self, func):
+        import boltons.funcutils
+        import inspect
+
+        sig=inspect.signature(func, follow_wrapped=True)
+        index=next((x for (index,x) in enumerate(sig.parameters.keys())),None)
+        @boltons.funcutils.wraps(func)
+        def wrapped(*args, **kwargs):
+            return func(*args, **self.forward_args(kwargs, args[index:]))
+        return wrapped
+
 
 def timedelta_as_timestamp(duration  # type: timedelta
                         ):
@@ -125,7 +136,15 @@ class DefaultForwarder(Forwarder):
                                "persist_to": lambda client_dur: client_dur.get('persist_to', None)}}
 
 
-forward_args = DefaultForwarder().forward_args
+class NoKwargsForwarder(DefaultForwarder):
+    def forward_args(self, arg_vars,  # type: Optional[Dict[str,Any]]
+                     *options  # type: Tuple[OptionBlockDeriv,...]
+                     ):
+        return super(NoKwargsForwarder, self).forward_args({}, *options)
+
+
+kw_forward_args = DefaultForwarder().forward_args
+forward_args = NoKwargsForwarder().forward_args
 
 AcceptableInts = Union['ConstrainedValue', ctypes.c_int64, ctypes.c_uint64, int]
 
