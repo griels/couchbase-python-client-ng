@@ -1,16 +1,18 @@
+import logging
+from datetime import timedelta
+from enum import Enum
+
+import couchbase_core._libcouchbase as _LCB
+
 from couchbase.management import CollectionManager, ViewIndexManager
 from couchbase.management.admin import Admin
 from couchbase.management.views import DesignDocumentNamespace
-from couchbase_core.client import Client as CoreClient
-import couchbase_core._libcouchbase as _LCB
-from .collection import CBCollection, CollectionOptions, CoreClientDatastructureWrap
-from .options import OptionBlockTimeOut
-from .result import *
-from .collection import Scope
-from datetime import timedelta
-from enum import Enum
-import logging
 from couchbase_core.asynchronous import AsyncClientFactory
+from couchbase_core.client import Client as CoreClient
+from .collection import CBCollection, CoreClientDatastructureWrap
+from .collection import Scope
+from .options import OptionBlockTimeOut, kw_forward_args
+from .result import *
 
 
 class ViewScanConsistency(Enum):
