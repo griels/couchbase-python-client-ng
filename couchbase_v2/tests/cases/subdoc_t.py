@@ -25,10 +25,10 @@ class SubdocTest(CollectionTestCase):
         })
 
         result = cb.get(key, project=['path1'])
-        self.assertEqual((0, 'value1'), result.get(0))
-        self.assertEqual((0, 'value1'), result.get('path1'))
-        self.assertEqual('value1', result[0])
-        self.assertEqual('value1', result['path1'])
+        self.assertEqual((0, 'value1'), result.content_as_array[0])
+        self.assertEqual((0, 'value1'), result.content['path1'])
+        self.assertEqual('value1', result.content_as_array[0])
+        self.assertEqual('value1', result.content['path1'])
         self.assertTrue(result.cas)
 
         # Try when path is not found
@@ -180,7 +180,7 @@ class SubdocTest(CollectionTestCase):
         })
 
         rvs = cb.lookup_in(
-            key, SD.get('field1'), SD.exists('field2'), SD.exists('field3'),
+            key, (SD.get('field1'), SD.exists('field2'), SD.exists('field3'),),
             quiet=True
         )
 
@@ -189,7 +189,7 @@ class SubdocTest(CollectionTestCase):
         # _all_ the paths.  Now, however, lcb returns success if it found
         # any of them, so...
         self.assertTrue(rvs.success)
-        self.assertEqual(3, rvs.result_count)
+        self.assertEqual(3, len(rvs))
 
         self.assertEqual((0, 'value1'), rvs.get(0))
         self.assertEqual((0, 'value1'), rvs.get('field1'))
@@ -233,7 +233,7 @@ class SubdocTest(CollectionTestCase):
 
         cb.upsert(key, {'array': []})
         cb.mutate_in(key, (SD.array_append('array', True),))
-        self.assertEqual([True], cb.get(key, project=['array'])[0])
+        self.assertEqual([True], cb.get(key, project=['array']).content_as_array[0])
 
         cb.mutate_in(key, (SD.array_append('array', 1, 2, 3),))
         self.assertEqual([True, 1, 2, 3], cb.get(key, project=['array'])[0])
