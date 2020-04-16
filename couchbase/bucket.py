@@ -1,17 +1,19 @@
+import logging
+from datetime import timedelta
+from enum import Enum
+
+import couchbase_core._libcouchbase as _LCB
+
 from couchbase.management import CollectionManager, ViewIndexManager
 from couchbase.management.admin import Admin
 from couchbase.management.views import DesignDocumentNamespace
-from couchbase_core.supportability import uncommitted
-from couchbase_core.client import Client as CoreClient
-import couchbase_core._libcouchbase as _LCB
-from .collection import CBCollection, CollectionOptions, CoreClientDatastructureWrap
-from .options import OptionBlockTimeOut
-from .result import *
-from .collection import Scope
-from datetime import timedelta
-from enum import Enum
-import logging
 from couchbase_core.asynchronous import AsyncClientFactory
+from couchbase_core.client import Client as CoreClient
+from .collection import CBCollection, CoreClientDatastructureWrap
+from .collection import Scope
+from .options import OptionBlockTimeOut, kw_forward_args
+from .result import *
+
 
 
 class ViewScanConsistency(Enum):
@@ -192,7 +194,7 @@ class Bucket(CoreClientDatastructureWrap):
         """
         self._name = name or kwargs.get('bucket', None)
         self._connstr = connection_string
-        self._bucket_args = forward_args(kwargs, *options)
+        self._bucket_args = kw_forward_args(kwargs, *options)
         self._bucket_args['bucket'] = name
         self._collection_factory = collection_factory
 
@@ -300,11 +302,18 @@ class Bucket(CoreClientDatastructureWrap):
         """
         return timedelta(seconds=self._get_timeout_common(_LCB.LCB_CNTL_OP_TIMEOUT))
 
+    def _set_timeout_common_timedelta(self, op, value):
+        value = float(value)
+        if value <= 0:
+            raise ValueError('Timeout must be greater than 0')
+
+        self._cntl(op, value_type='timeout', value=value)
+
     @kv_timeout.setter
     def kv_timeout(self,
                    timeout  # type: timedelta
                    ):
-        self._set_timeout_common(_LCB.LCB_CNTL_OP_TIMEOUT, timeout.total_seconds())
+        self._set_timeout_common(_LCB.LCB_CNTL_OP_TIMEOUT, timeout)
 
     @property
     def view_timeout(self):
@@ -327,7 +336,7 @@ class Bucket(CoreClientDatastructureWrap):
                      timeout  # type: timedelta
                      ):
         # (...) -> None
-        self._set_timeout_common(_LCB.LCB_CNTL_VIEW_TIMEOUT, timeout.total_seconds())
+        self._set_timeout_common(_LCB.LCB_CNTL_VIEW_TIMEOUT, timeout)
 
     @property
     def tracing_orphaned_queue_flush_interval(self):
