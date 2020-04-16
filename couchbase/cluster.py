@@ -208,6 +208,11 @@ class QueryOptions(OptionBlockTimeOut):
 
 
 class Cluster(CoreClient):
+    _CntlOptionEntry = NamedTuple('_CacheEntry', [('value', Any), ('value_type', CoreClient.CntlValueType)])
+
+    class CntlOptions(Dict[CoreClient.CntlOpType, _CntlOptionEntry]):
+        pass
+
     class ClusterOptions(OptionBlock):
         def __init__(self,
                      authenticator,  # type: CoreAuthenticator
@@ -238,6 +243,7 @@ class Cluster(CoreClient):
             raise InvalidArgumentException("Authenticator is mandatory")
 
         self.__admin = None
+        self._settings_cache = Cluster.CntlOptions()
         self._cluster = CoreCluster(connection_string, bucket_factory=bucket_factory)  # type: CoreCluster
         self._cluster.authenticate(self._authenticator)
         credentials = self._authenticator.get_credentials()
@@ -245,7 +251,6 @@ class Cluster(CoreClient):
         self._clusteropts.update(cluster_opts)
         self._adminopts = dict(**self._clusteropts)
         self._clusteropts.update(async_items)
-        #self._clusteropts['bucket'] = "default"
         super(Cluster, self).__init__(connection_string=str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
 
     @classmethod
@@ -276,15 +281,24 @@ class Cluster(CoreClient):
             self.__admin = Admin(connection_string=str(self.connstr), **self._adminopts)
         return self.__admin
 
-    # TODO: There should be no reason for these kwargs.  However, our tests against the mock
-    # will all fail with auth errors without it...  So keeping it just for now, but lets fix it
-    # and remove this for 3.0.0
+    def _cache_settings(self,
+                        op,  # type: Client.OpType
+                        value,  # type: Client.CntlOpType[value_type]
+                        value_type  # type: Client.CntlValueType
+                        ):
+        # type: (...) -> None
+        self._settings_cache[op] = Cluster._CntlOptionEntry(value, value_type)
+
     def bucket(self,
                name    # type: str
                ):
         # type: (...) -> Bucket
         self._check_for_shutdown()
-        return self._cluster.open_bucket(name, admin=self._admin)
+
+        result = self._cluster.open_bucket(name, admin=self._admin)
+        for optype, entry in self._settings_cache.items():
+            result._cntl(optype, entry.value, entry.value_type.name)
+        return result
 
     # Temporary, helpful with working around CCBC-1204
     def _is_6_5_plus(self):
