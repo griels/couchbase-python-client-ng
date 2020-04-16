@@ -11,7 +11,7 @@ from couchbase_core.asynchronous import AsyncClientFactory
 from couchbase_core.client import Client as CoreClient
 from .collection import CBCollection, CoreClientDatastructureWrap
 from .collection import Scope
-from .options import OptionBlockTimeOut
+from .options import OptionBlockTimeOut, kw_forward_args
 from .result import *
 
 
@@ -193,7 +193,7 @@ class Bucket(CoreClientDatastructureWrap):
         """
         self._name = name or kwargs.get('bucket', None)
         self._connstr = connection_string
-        self._bucket_args = forward_args(kwargs, *options)
+        self._bucket_args = kw_forward_args(kwargs, *options)
         self._bucket_args['bucket'] = name
         self._collection_factory = collection_factory
 
