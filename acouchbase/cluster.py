@@ -95,6 +95,11 @@ class ABucket(AIOClientMixin, V3AsyncBucket):
 Bucket = ABucket
 
 
+class DefaultCluster(AIOClientMixin, V3AsyncCluster):
+    def __init__(self, connection_string, *options, **kwargs):
+        super(DefaultCluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
+
+
 class ACluster(AIOClientMixin, V3AsyncCluster):
     def __init__(self, connection_string, *options, **kwargs):
         super(ACluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
