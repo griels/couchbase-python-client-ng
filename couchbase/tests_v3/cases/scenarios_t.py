@@ -103,7 +103,7 @@ class Scenarios(CollectionTestCase):
         subdoc = self.coll.get("id", GetOptions(project = ["someArray"]))
         result = None
         if subdoc:
-            arr = subdoc.content_as_array()
+            arr = subdoc.content_as_array
             arr.append("foo")
 
             result = self.coll.mutate_in("id", [SD.upsert("someArray", arr)],
