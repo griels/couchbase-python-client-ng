@@ -21,7 +21,7 @@ from couchbase_v2.cluster import Cluster, ClassicAuthenticator,PasswordAuthentic
 import gc
 import os
 import warnings
-from couchbase.exceptions import CouchbaseNetworkException, CouchbaseFatalException, CouchbaseInputException, CouchbaseException
+from couchbase.exceptions import NetworkException, CouchbaseFatalException, CouchbaseInputException, CouchbaseException
 
 
 CERT_PATH = os.getenv("PYCBC_CERT_PATH")
