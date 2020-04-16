@@ -1,7 +1,9 @@
 import json
+from datetime import timedelta
 
 from couchbase_core._libcouchbase import Bucket as _Base
 
+from couchbase.options import UnsignedInt32
 import couchbase.exceptions as E
 from couchbase.exceptions import NotImplementedInV3
 from couchbase_core.n1ql import N1QLQuery, N1QLRequest
@@ -15,6 +17,7 @@ from typing import *
 from .durability import Durability
 from .result import Result
 from couchbase_core.analytics import AnalyticsQuery
+import enum
 
 
 ViewInstance = TypeVar('ViewInstance', bound=View)
@@ -22,6 +25,15 @@ ViewSubType = TypeVar('ViewSubType', bound=Type[ViewInstance])
 
 
 class Client(_Base):
+    class CntlValueType(enum.Enum):
+        string = str
+        int = int
+        uint32_t = UnsignedInt32
+        float = float
+        timeout = timedelta
+
+    CntlOpType = int
+
     _MEMCACHED_NOMULTI = ('stats', 'lookup_in', 'mutate_in')
     _MEMCACHED_OPERATIONS = ('upsert', 'get', 'insert',
                              'replace', 'remove', 'touch',
@@ -221,7 +233,25 @@ class Client(_Base):
                                  response_format=FMT_JSON)
         return ret
 
-    def _cntl(self, *args, **kwargs):
+    @overload
+    def _cntl(self,
+              op,  # type: Client.CntlOpType
+              value,  # type: Client.CntlValueType[value_type]
+              value_type  # type: Literal[Client.CntlValueType]
+              ):
+        # type: (...) -> Client.CntlValueType[value_type]
+        pass
+
+    @overload
+    def _cntl(self,
+              op,  # type: Client.OpType
+              value_type  # type: Literal[Client.CntlValueType]
+              ):
+        # type: (...) -> Client.CntlValueType[value_type]
+        pass
+
+    def _cntl(self, op, *args, **kwargs):
+        # type: (...) -> Any
         """Low-level interface to the underlying C library's settings. via
         ``lcb_cntl()``.
 
@@ -268,7 +298,9 @@ class Client(_Base):
             current setting (per the ``value_type`` specification).
             Otherwise this function returns ``None``.
         """
-        return _Base._cntl(self, *args, **kwargs)
+        if 'value' in kwargs:
+            self._cache_settings_proxy(op, *args, **kwargs)
+        return _Base._cntl(self, op, *args, **kwargs)
 
     def _cntlstr(self, key, value):
         """
@@ -290,6 +322,24 @@ class Client(_Base):
         acceptable setting keys.
         """
         return _Base._cntlstr(self, key, value)
+
+    def _cache_settings(self,
+                        op,  # type: Client.OpType
+                        value,  # type: Client.CntlOpType[value_type]
+                        value_type  # type: Client.CntlValueType
+                        ):
+        # type: (...) -> None
+        """ override this to record settings """
+        pass
+
+    def _cache_settings_proxy(self,
+                        op,  # type: Client.OpType
+                        value,  # type: Client.CntlOpType[value_type]
+                        value_type  # type: str
+                        ):
+        # type: (...) -> None
+        """ override this to record settings """
+        return self._cache_settings(op, value, Client.CntlValueType[value_type])
 
     @staticmethod
     def lcb_version():
