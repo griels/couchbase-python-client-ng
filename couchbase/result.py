@@ -11,7 +11,7 @@ from couchbase_core.subdocument import Spec
 from couchbase_core.supportability import internal
 from couchbase_core.transcodable import Transcodable
 from couchbase_core.views.iterator import View as CoreView
-from .options import timedelta, forward_args
+from .options import timedelta, forward_args, default_forwarder
 
 Proxy_T = TypeVar('Proxy_T')
 
@@ -491,9 +491,9 @@ class MultiResultWrapper(object):
         self.orig_result_type = orig_result_type
         self.async_result_type = async_result_type or AsyncWrapper.gen_wrapper(orig_result_type)
 
-    def get_multi_result(self, target, wrapped, keys, *options, **kwargs):
-        final_options = forward_args(kwargs, *options)
-        raw_result = wrapped(target, keys, **final_options)
+    @default_forwarder
+    def get_multi_result(self, target, wrapped, keys, *_, **kwargs):
+        raw_result = wrapped(target, keys, **kwargs)
         orig_result = getattr(raw_result, 'orig_result', raw_result)
         factory_class = self.async_result_type if issubclass(type(orig_result), AsyncResult) else self.orig_result_type
         result = factory_class(orig_result)
