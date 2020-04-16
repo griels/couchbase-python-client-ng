@@ -37,7 +37,7 @@ from utilspie.collectionsutils import frozendict
 import couchbase_core
 from collections import defaultdict
 from couchbase.bucket import Bucket as V3Bucket
-from couchbase.cluster import Cluster, ClassicAuthenticator
+from couchbase.cluster import Cluster, ClassicAuthenticator, ClusterOptions
 from couchbase.cluster import PasswordAuthenticator
 from couchbase.collection import CBCollection
 from couchbase.exceptions import CollectionAlreadyExistsException, ScopeAlreadyExistsException, NotSupportedException
