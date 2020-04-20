@@ -25,12 +25,13 @@ import sys
 import warnings
 from distutils.command.install_headers import install_headers as install_headers_orig
 from shutil import copyfile, copymode
-
 from setuptools.command.build_ext import build_ext
+import os
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 def get_json_build_cfg():
-    with open("cbuild_cfg.json") as JSONFILE:
+    with open(os.path.join(dir_path, "cbuild_cfg.json")) as JSONFILE:
         return json.load(JSONFILE)
 
 
