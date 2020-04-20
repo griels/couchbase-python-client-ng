@@ -4,6 +4,7 @@ import couchbase_core.priv_constants as _P
 from .options import OptionBlockTimeOut
 from couchbase_core.subdocument import array_addunique, array_append, array_insert, array_prepend, insert, remove, replace, upsert, counter, Spec
 from couchbase_core import abstractmethod
+from itertools import chain
 
 SDType = type(SD)
 
@@ -74,11 +75,34 @@ def get_full():
 
     :return: Spec
     """
-    return SD._gen_3spec(_P.SDCMD_GET_FULLDOC,None)
+    return SD._gen_3spec(_P.SDCMD_GET_FULLDOC, "")
 
 
-def gen_projection_spec(project):
-    return map(SD.get, project)
+def with_expiry():
+    # type: (...) -> Spec
+    """
+    Fetches the expiry from the xattrs of the doc
+
+    :return: Spec
+    """
+    return SD.get('$document.exptime', xattr=True)
+
+
+def gen_projection_spec(project, with_exp=False):
+    def generate(path):
+        if path is None:
+            return with_expiry()
+        if path:
+            return SD.get(path)
+        return get_full()
+
+    # empty string = with_expiry
+    # None = get_full
+    if not project:
+        project = [""]
+    if with_exp:
+        project = [None] + project
+    return map(generate, project)
 
 
 class MutateInOptions(OptionBlockTimeOut):

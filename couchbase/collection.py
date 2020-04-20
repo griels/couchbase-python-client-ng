@@ -415,21 +415,17 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         opts = forward_args(kwargs, *options)
         opts.pop('key', None)
         spec = opts.pop('spec', [])
-        project = opts.pop('project', None)
+        project = opts.pop('project', [])
         with_expiry = opts.pop('with_expiry', False)
-        if project:
-            if len(project) <= CBCollectionBase.MAX_GET_OPS:
-                spec = gen_projection_spec(project)
-            else:
+        if project or with_expiry:
+            # if with_expiry, that adds one spec, so lets be sure to capture that
+            if (len(project)+1 if with_expiry else len(project)) > CBCollectionBase.MAX_GET_OPS:
                 raise couchbase.exceptions.ArgumentException(
                     "Project only accepts {} operations or less".format(CBCollectionBase.MAX_GET_OPS))
-        if not project and not opts.get('with_expiry', False):
-            x = CoreClient.get(self.bucket, key, **opts)
-        else:
-            # if you want the expiry, or a projection, need to do a subdoc lookup
-            # NOTE: this currently doesn't work for with_expiry.  We need to add that
+            spec = gen_projection_spec(project, with_expiry)
             x = CoreClient.lookup_in(self.bucket, key, spec, **opts)
-
+        else:
+            x = CoreClient.get(self.bucket, key, **opts)
         # NOTE: there is no reason for the options in the ResultPrecursor below.  Once
         # we get expiry done correctly, lets eliminate that as well.  Previously the
         # expiry you passed in was just duplicated into the result, which of course made
