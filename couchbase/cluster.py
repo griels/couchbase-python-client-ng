@@ -596,7 +596,7 @@ class Cluster(CoreClient):
     def tracing_threshold_n1ql(self,
                                val  # type: timedelta
                                ):
-        self._cntl(op=_LCB.TRACING_THRESHOLD_QUERY, value=val.total_seconds(), value_type="timeout")
+        self._set_timeout_common(_LCB.TRACING_THRESHOLD_QUERY, val)
 
 
     @property
@@ -616,9 +616,7 @@ class Cluster(CoreClient):
     def tracing_threshold_fts(self,
                               val   # type: timedelta
                               ):
-        self._cntl(op=_LCB.TRACING_THRESHOLD_SEARCH,
-                                        value=val.total_seconds(),
-                                        value_type="timeout")
+        self._set_timeout_common(_LCB.TRACING_THRESHOLD_SEARCH, val)
 
     @property
     def tracing_threshold_analytics(self):
@@ -638,9 +636,8 @@ class Cluster(CoreClient):
     def tracing_threshold_analytics(self,
                                     val     # type: timedelta
                                     ):
-        self._cntl(op=_LCB.TRACING_THRESHOLD_ANALYTICS,
-                                        value=val.total_seconds(),
-                                        value_type="timeout")
+        self._set_timeout_common(_LCB.TRACING_THRESHOLD_ANALYTICS, val)
+
     @property
     def tracing_orphaned_queue_flush_interval(self):
         """
@@ -659,10 +656,9 @@ class Cluster(CoreClient):
     def tracing_orphaned_queue_flush_interval(self,
                                               val   # type: timedelta
                                               ):
-        self._sync_operate_on_entire_cluster(CoreClient._cntl,
-                                             op=_LCB.TRACING_ORPHANED_QUEUE_FLUSH_INTERVAL,
-                                             value=val.total_seconds(),
-                                             value_type="timeout")
+        self._sync_operate_on_entire_cluster(CoreClient._set_timeout_common,
+                                             _LCB.TRACING_ORPHANED_QUEUE_FLUSH_INTERVAL,
+                                             val)
 
     @property
     def tracing_orphaned_queue_size(self):
@@ -704,10 +700,9 @@ class Cluster(CoreClient):
     def tracing_threshold_queue_flush_interval(self,
                                                val  # type: timedelta
                                                ):
-        self._sync_operate_on_entire_cluster(CoreClient._cntl,
-                                             op=_LCB.TRACING_THRESHOLD_QUEUE_FLUSH_INTERVAL,
-                                             value=val.total_seconds(),
-                                             value_type="timeout")
+        self._sync_operate_on_entire_cluster(CoreClient._set_timeout_common,
+                                             _LCB.TRACING_THRESHOLD_QUEUE_FLUSH_INTERVAL,
+                                             val)
 
     @property
     def tracing_threshold_queue_size(self):
