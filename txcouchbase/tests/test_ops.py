@@ -40,8 +40,7 @@ class OperationTestCase(Base):
         key = self.gen_key("test_simple_get")
         value = "simple_value"
 
-        cb.upsert(key, value)
-        d_get = cb.get(key)
+        upserted=cb.upsert(key, value)
 
         def t(ret  # type: GetResult
               ):
@@ -49,8 +48,11 @@ class OperationTestCase(Base):
             self.assertEqual(ret.id, key)
             self.assertEqual(ret.content, value)
 
-        d_get.addCallback(t)
-        return d_get
+        def respond(deferred):
+            d_get=cb.get(key)
+            d_get.addCallback(t)
+        upserted.addCallback(respond)
+        return upserted
 
     def test_multi_set(self):
         cb = self.make_connection()
