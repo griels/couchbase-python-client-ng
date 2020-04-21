@@ -76,7 +76,7 @@ config_schema = {"type": "array",
 python_id="PYCBC"
 
 client_id_schema = {"type": "string",
-                    "pattern": "^0x[a-f0-9]+"}#/"+python_id}
+                    "pattern": "^0x[a-f0-9]+/"+python_id}
 
 two_part_ver_num = "([0-9]+\.)+[0-9]+"
 

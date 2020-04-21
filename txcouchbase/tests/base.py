@@ -31,7 +31,6 @@ Factory = Callable[[Any], Client]
 twisted.internet.base.DelayedCall.debug = True
 
 import logging
-import logging
 import re
 
 
