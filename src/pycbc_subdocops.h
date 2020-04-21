@@ -30,7 +30,8 @@
     CTR(COUNTER, counter, EXP_TYPE)                     \
     X(REMOVE, remove, EXP_TYPE)                         \
     X(GET_COUNT, get_count, EXP_TYPE)                   \
-    X(FULLDOC_GET, get, EXP_TYPE)
-
+    X(GET_FULLDOC, get, EXP_TYPE)                       \
+    VAL(SET_FULLDOC, replace, EXP_TYPE)                 \
+    X(REMOVE_FULLDOC, remove, EXP_TYPE)
 
 #endif //COUCHBASE_PYTHON_CLIENT_PYCBC_SUBDOCOPS_COMMON_H

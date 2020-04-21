@@ -1,10 +1,8 @@
 from typing import *
 from couchbase_core import subdocument as SD
-import couchbase_core.priv_constants as _P
 from .options import OptionBlockTimeOut
 from couchbase_core.subdocument import array_addunique, array_append, array_insert, array_prepend, insert, remove, replace, upsert, counter, Spec
-from couchbase_core import abstractmethod
-from itertools import chain
+
 
 SDType = type(SD)
 
@@ -75,7 +73,7 @@ def get_full():
 
     :return: Spec
     """
-    return SD._gen_3spec(_P.SDCMD_GET_FULLDOC, "")
+    return SD._gen_3spec(SD.LCB_SDCMD_GET_FULLDOC, "")
 
 
 def with_expiry():

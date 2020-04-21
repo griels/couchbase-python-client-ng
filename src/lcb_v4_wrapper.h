@@ -175,7 +175,7 @@ typedef enum {
      *
      * Currently the value for this operation must be a JSON primitive (i.e.
      * no arrays or dictionaries) and the existing array itself must also
-     * contain only primitives (otherwise a @ref LCB_SUBDOC_PATH_MISMATCH
+     * contain only primitives (otherwise a @ref LCB_ERR_SUBDOC_PATH_MISMATCH
      * error will be received).
      */
     LCB_SDCMD_ARRAY_ADD_UNIQUE,
@@ -214,26 +214,17 @@ typedef enum {
     /**
      * Retrieve the entire document
      */
-    LCB_SDCMD_FULLDOC_GET,
+    LCB_SDCMD_GET_FULLDOC,
 
-    /**
-     * Add the entire document
-     */
-    LCB_SDCMD_FULLDOC_ADD,
-
-    /**
-     * Upsert the entire document
-     */
-    LCB_SDCMD_FULLDOC_UPSERT,
     /**
      * Replace the entire document
      */
-    LCB_SDCMD_FULLDOC_REPLACE,
+    LCB_SDCMD_SET_FULLDOC,
 
     /**
      * Remove the entire document
      */
-    LCB_SDCMD_FULLDOC_REMOVE,
+    LCB_SDCMD_REMOVE_FULLDOC,
 
     LCB_SDCMD_MAX
 } lcb_SUBDOCOP;
@@ -357,7 +348,6 @@ lcb_STATUS pycbc_cmdview_spatial(lcb_CMDVIEW *pCmdview, int is_spacial);
     X(value,row)
 
 #define PYCBC_PP_ENCRYPT_CONSTANTS(X)
-#define PYCBC_X_SD_OPS_FULLDOC(X, NP, VAL, MVAL, CTR, ...)
 
 typedef lcb_DURABILITY_LEVEL pycbc_DURABILITY_LEVEL;
 #define lcb_cmdremove_durability_observe(...) LCB_ERR_SDK_INTERNAL

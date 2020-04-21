@@ -18,6 +18,7 @@
 #include "pycbc_http.h"
 #include <libcouchbase/crypto.h>
 #include <libcouchbase/error.h>
+#include "pycbc_subdocops.h"
 /**
  * Very simple file that simply adds LCB constants to the module
  */
@@ -227,18 +228,26 @@ do_all_constants(PyObject *module, pycbc_constant_handler handler)
     /* View options */
     ADD_MACRO(LCB_CMDVIEWQUERY_F_INCLUDE_DOCS);
     ADD_MACRO(LCB_CMDVIEWQUERY_F_SPATIAL);
-    ADD_MACRO(LCB_SDCMD_REPLACE);
-    ADD_MACRO(LCB_SDCMD_DICT_ADD);
-    ADD_MACRO(LCB_SDCMD_DICT_UPSERT);
-    ADD_MACRO(LCB_SDCMD_ARRAY_ADD_FIRST);
-    ADD_MACRO(LCB_SDCMD_ARRAY_ADD_LAST);
-    ADD_MACRO(LCB_SDCMD_ARRAY_ADD_UNIQUE);
-    ADD_MACRO(LCB_SDCMD_EXISTS);
-    ADD_MACRO(LCB_SDCMD_GET);
-    ADD_MACRO(LCB_SDCMD_COUNTER);
-    ADD_MACRO(LCB_SDCMD_REMOVE);
-    ADD_MACRO(LCB_SDCMD_ARRAY_INSERT);
-    ADD_MACRO(LCB_SDCMD_FULLDOC_GET);
+#define SD_NAMER(X, ...) ADD_MACRO(LCB_SDCMD_##X);
+#ifdef PYCBC_GEN_SUBDOC
+    PYCBC_X_SD_OPS(SD_NAMER, SD_NAMER, SD_NAMER, SD_NAMER, SD_NAMER, SD_NAMER)
+#else
+    handler(module, "LCB_SDCMD_GET", LCB_SDCMD_GET);
+    handler(module, "LCB_SDCMD_EXISTS", LCB_SDCMD_EXISTS);
+    handler(module, "LCB_SDCMD_REPLACE", LCB_SDCMD_REPLACE);
+    handler(module, "LCB_SDCMD_DICT_ADD", LCB_SDCMD_DICT_ADD);
+    handler(module, "LCB_SDCMD_DICT_UPSERT", LCB_SDCMD_DICT_UPSERT);
+    handler(module, "LCB_SDCMD_ARRAY_ADD_FIRST", LCB_SDCMD_ARRAY_ADD_FIRST);
+    handler(module, "LCB_SDCMD_ARRAY_ADD_LAST", LCB_SDCMD_ARRAY_ADD_LAST);
+    handler(module, "LCB_SDCMD_ARRAY_ADD_UNIQUE", LCB_SDCMD_ARRAY_ADD_UNIQUE);
+    handler(module, "LCB_SDCMD_ARRAY_INSERT", LCB_SDCMD_ARRAY_INSERT);
+    handler(module, "LCB_SDCMD_COUNTER", LCB_SDCMD_COUNTER);
+    handler(module, "LCB_SDCMD_REMOVE", LCB_SDCMD_REMOVE);
+    handler(module, "LCB_SDCMD_GET_COUNT", LCB_SDCMD_GET_COUNT);
+    handler(module, "LCB_SDCMD_GET_FULLDOC", LCB_SDCMD_GET_FULLDOC);
+    handler(module, "LCB_SDCMD_SET_FULLDOC", LCB_SDCMD_SET_FULLDOC);
+    handler(module, "LCB_SDCMD_REMOVE_FULLDOC", LCB_SDCMD_REMOVE_FULLDOC);
+#endif
     /* Bucket types */
     ADD_MACRO(LCB_BTYPE_UNSPEC);
     ADD_MACRO(LCB_BTYPE_COUCHBASE);

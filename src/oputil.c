@@ -78,12 +78,60 @@ pycbc_sd_metainfo pycbc_get_metainfo(const pycbc_sdspec_details_t* details)
 #define PYCBC_METAINFO_SDCMD_CASE_COUNTER(UC, LC, ...) \
     PYCBC_SDCMD_CASE_GENERIC(UC, LC, PYCBC_METAINFO_COUNTER, __VA_ARGS__)
     switch (details->op) {
+#ifdef PYCBC_GEN_SUBDOC
         PYCBC_X_SD_OPS(PYCBC_METAINFO_SDCMD_CASE,
                        PYCBC_METAINFO_SDCMD_CASE_NP,
                        PYCBC_METAINFO_SDCMD_CASE_VAL,
                        PYCBC_METAINFO_SDCMD_CASE_MVAL,
                        PYCBC_METAINFO_SDCMD_CASE_COUNTER,
                        INLINE)
+#else
+        case LCB_SDCMD_GET:
+            result = (pycbc_sd_metainfo) {.is_multival=0, .category=PYCBC_PATH_ONLY};
+            break;
+        case LCB_SDCMD_EXISTS:
+            result = (pycbc_sd_metainfo) {.is_multival=0, .category=PYCBC_PATH_ONLY};
+            break;
+        case LCB_SDCMD_REPLACE:
+            result = (pycbc_sd_metainfo) {.is_multival=0, .category=PYCBC_STR};
+            break;
+        case LCB_SDCMD_DICT_ADD:
+            result = (pycbc_sd_metainfo) {.is_multival=0, .category=PYCBC_STR};
+            break;
+        case LCB_SDCMD_DICT_UPSERT:
+            result = (pycbc_sd_metainfo) {.is_multival=0, .category=PYCBC_STR};
+            break;
+        case LCB_SDCMD_ARRAY_ADD_FIRST:
+            result = (pycbc_sd_metainfo) {.is_multival=1, .category=PYCBC_STR};
+            break;
+        case LCB_SDCMD_ARRAY_ADD_LAST:
+            result = (pycbc_sd_metainfo) {.is_multival=1, .category=PYCBC_STR};
+            break;
+        case LCB_SDCMD_ARRAY_ADD_UNIQUE:
+            result = (pycbc_sd_metainfo) {.is_multival=0, .category=PYCBC_STR};
+            break;
+        case LCB_SDCMD_ARRAY_INSERT:
+            result = (pycbc_sd_metainfo) {.is_multival=1, .category=PYCBC_STR};
+            break;
+        case LCB_SDCMD_COUNTER:
+            result = (pycbc_sd_metainfo) {.is_multival=0, .category=PYCBC_COUNTER};
+            break;
+        case LCB_SDCMD_REMOVE:
+            result = (pycbc_sd_metainfo) {.is_multival=0, .category=PYCBC_PATH_ONLY};
+            break;
+        case LCB_SDCMD_GET_COUNT:
+            result = (pycbc_sd_metainfo) {.is_multival=0, .category=PYCBC_PATH_ONLY};
+            break;
+        case LCB_SDCMD_GET_FULLDOC:
+            result = (pycbc_sd_metainfo) {.is_multival=0, .category=PYCBC_PATH_ONLY};
+            break;
+        case LCB_SDCMD_SET_FULLDOC:
+            result = (pycbc_sd_metainfo) {.is_multival=0, .category=PYCBC_STR};
+            break;
+        case LCB_SDCMD_REMOVE_FULLDOC:
+            result = (pycbc_sd_metainfo) {.is_multival=0, .category=PYCBC_PATH_ONLY};
+            break;
+#endif
         default:
             result.err = LCB_ERR_SUBDOC_PATH_INVALID;
             break;
@@ -146,12 +194,77 @@ lcb_STATUS pycbc_build_spec(pycbc_SDSPEC *subdocops,
 #define PYCBC_BUILDSPEC_SDCMD_CASE_COUNTER(UC, LC, ...) \
     PYCBC_SDCMD_CASE_GENERIC(UC, LC, PYCBC_BUILDSPEC_COUNTER, __VA_ARGS__)
     switch (details->op) {
+#ifdef PYCBC_GEN_SUBDOC
         PYCBC_X_SD_OPS(PYCBC_BUILDSPEC_SDCMD_CASE,
                        PYCBC_BUILDSPEC_SDCMD_CASE_NP,
                        PYCBC_BUILDSPEC_SDCMD_CASE_VAL,
                        PYCBC_BUILDSPEC_SDCMD_CASE_MVAL,
                        PYCBC_BUILDSPEC_SDCMD_CASE_COUNTER,
                        INLINE)
+#else
+        case LCB_SDCMD_GET:
+            lcb_subdocspecs_get(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                details->pathbuf->length);
+            break;
+        case LCB_SDCMD_EXISTS:
+            lcb_subdocspecs_exists(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                   details->pathbuf->length);
+            break;
+        case LCB_SDCMD_REPLACE:
+            lcb_subdocspecs_replace(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                    details->pathbuf->length, details->valbuf->buffer, details->valbuf->length);
+            break;
+        case LCB_SDCMD_DICT_ADD:
+            lcb_subdocspecs_dict_add(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                     details->pathbuf->length, details->valbuf->buffer, details->valbuf->length);
+            break;
+        case LCB_SDCMD_DICT_UPSERT:
+            lcb_subdocspecs_dict_upsert(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                        details->pathbuf->length, details->valbuf->buffer, details->valbuf->length);
+            break;
+        case LCB_SDCMD_ARRAY_ADD_FIRST:
+            lcb_subdocspecs_array_add_first(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                            details->pathbuf->length, details->valbuf->buffer, details->valbuf->length);
+            break;
+        case LCB_SDCMD_ARRAY_ADD_LAST:
+            lcb_subdocspecs_array_add_last(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                           details->pathbuf->length, details->valbuf->buffer, details->valbuf->length);
+            break;
+        case LCB_SDCMD_ARRAY_ADD_UNIQUE:
+            lcb_subdocspecs_array_add_unique(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                             details->pathbuf->length, details->valbuf->buffer,
+                                             details->valbuf->length);
+            break;
+        case LCB_SDCMD_ARRAY_INSERT:
+            lcb_subdocspecs_array_insert(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                         details->pathbuf->length, details->valbuf->buffer, details->valbuf->length);
+            break;
+        case LCB_SDCMD_COUNTER:
+            lcb_subdocspecs_counter(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                    details->pathbuf->length, (details->valbuf && details->valbuf->buffer) ? strtol(
+                            (const char *) details->valbuf->buffer, ((void *) 0), 10) : 0);
+            break;
+        case LCB_SDCMD_REMOVE:
+            lcb_subdocspecs_remove(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                   details->pathbuf->length);
+            break;
+        case LCB_SDCMD_GET_COUNT:
+            lcb_subdocspecs_get_count(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                      details->pathbuf->length);
+            break;
+        case LCB_SDCMD_GET_FULLDOC:
+            lcb_subdocspecs_get(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                details->pathbuf->length);
+            break;
+        case LCB_SDCMD_SET_FULLDOC:
+            lcb_subdocspecs_replace(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                    details->pathbuf->length, details->valbuf->buffer, details->valbuf->length);
+            break;
+        case LCB_SDCMD_REMOVE_FULLDOC:
+            lcb_subdocspecs_remove(subdocops, details->index, details->flags, details->pathbuf->buffer,
+                                   details->pathbuf->length);
+            break;
+#endif
     default:
         result = LCB_ERR_SUBDOC_PATH_INVALID;
         break;
