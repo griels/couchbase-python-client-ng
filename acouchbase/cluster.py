@@ -9,7 +9,6 @@ from acouchbase.asyncio_iops import IOPS
 from acouchbase.iterator import AQueryResult, ASearchResult, AAnalyticsResult, AViewResult
 from couchbase_core.experimental import enable; enable()
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
-from couchbase_core.asynchronous.bucket import AsyncClient as CoreAsyncClient
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
 from couchbase_core.client import Client as CoreClient
 from couchbase.bucket import AsyncBucket as V3AsyncBucket
@@ -110,11 +109,6 @@ class AsyncBucketFactory(type):
             return ft
 
         return ret
-
-
-class V3CoreClient(AsyncBucketFactory.gen_async_bucket(CoreAsyncClient)):
-    def __init__(self, *args, **kwargs):
-        super(V3CoreClient, self).__init__(*args, **kwargs)
 
 
 class AsyncCBCollection(AsyncBucketFactory.gen_async_bucket(BaseAsyncCBCollection)):
