@@ -17,14 +17,11 @@
 
 import couchbase_core._bootstrap
 from couchbase_core._libcouchbase import (
-    AsyncResult,
     PYCBC_CONN_F_ASYNC,
     PYCBC_CONN_F_ASYNC_DTOR)
 
-from couchbase_core.result import AsyncResult
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase.exceptions import InvalidArgumentException
-from couchbase_core._pyport import with_metaclass
 from couchbase_core.client import Client as CoreClient
 from typing import *
 

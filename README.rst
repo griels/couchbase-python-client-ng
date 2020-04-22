@@ -33,6 +33,7 @@ version by issuing the following incantation
 Prerequisites
 ~~~~~~~~~~~~~
 .. |libcouchbase_version| replace:: 3.0.0
+
 - Couchbase Server (http://couchbase.com/download)
 - You may need a C compiler and Python development files, unless a
   binary wheel is available for your platform. These are available for

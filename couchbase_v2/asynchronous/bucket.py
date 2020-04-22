@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-from couchbase_core.asynchronous.bucket import AsyncClientFactory as CoreAsyncBucketFactory
+from couchbase_core.asynchronous.client import AsyncClientFactory as CoreAsyncBucketFactory
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase.exceptions import InvalidArgumentException
 from couchbase_v2.bucket import Bucket

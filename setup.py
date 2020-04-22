@@ -102,6 +102,7 @@ setup(
     license="Apache License 2.0",
     description="Python Client for Couchbase",
     long_description=open(curdir.joinpath("README.rst"), "r").read(),
+    long_description_content_type='text/x-rst',
     keywords=["couchbase", "nosql", "pycouchbase", "libcouchbase"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
