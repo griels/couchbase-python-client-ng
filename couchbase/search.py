@@ -12,7 +12,7 @@ from couchbase_core._pyport import unicode
 from couchbase_core.supportability import internal
 from .options import OptionBlockTimeOut, UnsignedInt32, UnsignedInt64, forward_args
 import abc
-import couchbase_core.mutation_state as MutationState
+import couchbase.mutation_state as MutationState
 
 
 SearchQueryRow = JSON
