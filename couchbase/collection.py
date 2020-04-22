@@ -741,6 +741,8 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         """
         return ExistsResult(CoreClient.exists(self.bucket, key, **forward_args(kwargs, *options)))
 
+    from jedi import Script
+
     @_mutate_result_and_inject
 
     @default_forwarder
