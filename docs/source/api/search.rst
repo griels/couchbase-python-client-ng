@@ -2,7 +2,7 @@
 Full Text Queries
 #################
 
-.. module:: couchbase_core.fulltext
+.. module:: couchbase.search
 
 Full-text queries search the cluster for documents matching certain terms or
 strings of texts. Unlike N1QL queries which are designed to be structured, i.e.
