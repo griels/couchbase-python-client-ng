@@ -16,7 +16,7 @@ library which may be found at http://www.twistedmatrix.com. This documentation
 contains the API reference for how to use the ``txcouchbase`` module with
 Twisted.
 
-.. currentmodule:: txcouchbase.bucket
+.. currentmodule:: txcouchbase.cluster
 
 For the most part, the ``txcouchbase`` API functions like its synchronous
 counterpart, :class:`~couchbase_v2.bucket.Bucket`, except for its

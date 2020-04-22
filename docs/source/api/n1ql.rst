@@ -2,7 +2,7 @@
 N1QL Queries
 ############
 
-.. currentmodule:: couchbase_core.n1ql
+.. currentmodule:: couchbase.n1ql
 
 .. class:: N1QLQuery
 
@@ -23,10 +23,6 @@ N1QL Queries
 .. autoclass:: MutationState
 
 .. currentmodule:: couchbase_core.n1ql
-.. class:: N1QLRequest
+.. class:: N1QLResult
 
     .. automethod:: __init__
-    .. automethod:: __iter__
-    .. automethod:: execute
-    .. autoattribute:: meta
-    .. automethod:: get_single_result
