@@ -15,7 +15,7 @@ from couchbase_core import JSON
 from couchbase_core.asynchronous.bucket import AsyncClientFactory
 from couchbase_core.client import Client as CoreClient
 from couchbase_core.supportability import volatile
-from .options import OptionBlock, AcceptableInts, default_forwarder
+from .options import OptionBlock, AcceptableInts, default_forwarder, timedelta_as_timestamp
 from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64
 from .result import GetResult, GetReplicaResult, ExistsResult, get_result_wrapper, CoreResult, ResultPrecursor, \
     LookupInResult, MutateInResult, \
@@ -406,8 +406,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         result = parent_scope.bucket._collection_factory(connection_string=parent_scope.bucket._connstr, **coll_args)
         return result
 
-    def _get_generic(self, key, kwargs, options):
-        opts = forward_args(kwargs, *options)
+    def _get_generic(self, key, **opts):
         opts.pop('key', None)
         project = opts.pop('project', [])
         with_expiry = opts.pop('with_expiry', False)
@@ -420,9 +419,10 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         # we get expiry done correctly, lets eliminate that as well.  Previously the
         # expiry you passed in was just duplicated into the result, which of course made
         # no sense since expiry should have been with_expiry (a bool) in the options.
-        return ResultPrecursor(x, options)
+        return ResultPrecursor(x, opts)
 
     @_get_result_and_inject
+    @default_forwarder
     def get(self,
             key,        # type: str
             *options,   # type: GetOptions
@@ -458,7 +458,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
     @default_forwarder
     def get_and_touch(self,
                       key,          # type: str
-                      expiry,       # type: int
+                      expiry,       # type: timedelta
                       *options,     # type: GetAndTouchOptions
                       **kwargs
                       ):
@@ -472,8 +472,8 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         :return: A :class:`couchbase.result.GetResult` object representing the document for this key.
         """
         # we place the expiry in the kwargs...
-        kwargs['expiry'] = expiry
-        return self._get_generic(key, **forward_args(kwargs))
+        kwargs['ttl'] = timedelta_as_timestamp(expiry)
+        return self._get_generic(key, **kwargs)
 
     @_get_result_and_inject
     @default_forwarder

@@ -159,12 +159,15 @@ class LoggedKwargsForwarder(DefaultForwarder):
         import inspect
 
         def logged_func(*args, **kwargs):
-            result=forwarder_func(*args, **kwargs)
-            import logging
-            self._argdict[func.__name__].update(kwargs)
-            print(self._argdict)
-            logging.error("Calling {} with args {} and kwargs {} returns {}".format(func, args, kwargs, result))
-            return result
+            try:
+                result=forwarder_func(*args, **kwargs)
+                import logging
+                self._argdict[func.__name__].update(kwargs)
+                print(self._argdict)
+                logging.error("Calling {} with args {} and kwargs {} returns {}".format(func, args, kwargs, result))
+                return result
+            except Exception as e:
+                raise
         return logged_func
 
 default_forwarder = LoggedKwargsForwarder()
