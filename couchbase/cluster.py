@@ -1,9 +1,8 @@
 import asyncio
 from typing import *
 
-
+from couchbase_core.asynchronous.client import AsyncClientMixin
 from couchbase.mutation_state import MutationState
-from couchbase_core.asynchronous import AsyncClientFactory
 from couchbase.management.queries import QueryIndexManager
 from couchbase.management.search import SearchIndexManager
 from couchbase.management.analytics import AnalyticsIndexManager
@@ -823,7 +822,7 @@ class Cluster(CoreClient):
         return mode & _LCB.LCB_SSL_ENABLED != 0
 
 
-class AsyncCluster(AsyncClientFactory.gen_async_client(Cluster)):
+class AsyncCluster(AsyncClientMixin, Cluster):
     @classmethod
     def connect(cls, connection_string=None, *args, **kwargs):
         return cls(connection_string=connection_string, *args, **kwargs)

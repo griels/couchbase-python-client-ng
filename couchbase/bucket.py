@@ -4,10 +4,10 @@ from enum import Enum
 
 import couchbase_core._libcouchbase as _LCB
 
+from couchbase_core.asynchronous.client import AsyncClientMixin
 from couchbase.management import CollectionManager, ViewIndexManager
 from couchbase.management.admin import Admin
 from couchbase.management.views import DesignDocumentNamespace
-from couchbase_core.asynchronous import AsyncClientFactory
 from couchbase_core.client import Client as CoreClient
 from .collection import CBCollection, CoreClientDatastructureWrap
 from .collection import Scope
@@ -445,4 +445,5 @@ class Bucket(CoreClientDatastructureWrap):
         self._set_timeout_common(_LCB.TRACING_THRESHOLD_VIEW, val)
 
 
-AsyncBucket=AsyncClientFactory.gen_async_client(Bucket)
+class AsyncBucket(AsyncClientMixin, Bucket):
+    pass
