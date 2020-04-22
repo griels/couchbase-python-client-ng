@@ -9,7 +9,7 @@ from acouchbase.asyncio_iops import IOPS
 from acouchbase.iterator import AQueryResult, ASearchResult, AAnalyticsResult, AViewResult
 from couchbase_core.experimental import enable; enable()
 from couchbase_core.experimental import enabled_or_raise; enabled_or_raise()
-from couchbase_core.asynchronous.bucket import AsyncClient as CoreAsyncClient
+from couchbase_core.asynchronous.client import AsyncClient as CoreAsyncClient
 from couchbase.collection import AsyncCBCollection as BaseAsyncCBCollection
 from couchbase_core.client import Client as CoreClient
 from couchbase.bucket import AsyncBucket as V3AsyncBucket
