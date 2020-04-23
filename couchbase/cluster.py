@@ -3,7 +3,6 @@ from typing import *
 
 from couchbase_core.asynchronous.client import AsyncClientMixin
 from couchbase.mutation_state import MutationState
-from couchbase_core.asynchronous import AsyncClientFactory
 from couchbase.management.queries import QueryIndexManager
 from couchbase.management.search import SearchIndexManager
 from couchbase.management.analytics import AnalyticsIndexManager
