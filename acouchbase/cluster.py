@@ -18,97 +18,97 @@ from couchbase.cluster import AsyncCluster as V3AsyncCluster
 T = TypeVar('T', bound=CoreClient)
 
 
+def _meth_factory(meth, name):
+    def ret(self, *args, **kwargs):
+        rv = meth(self, *args, **kwargs)
+        ft = asyncio.Future()
+
+        def on_ok(res):
+            ft.set_result(res)
+            rv.clear_callbacks()
+
+        def on_err(res, excls, excval, exctb):
+            err = excls(excval)
+            ft.set_exception(err)
+            rv.clear_callbacks()
+
+        rv.set_callbacks(on_ok, on_err)
+        return ft
+
+    return ret
+
+
+class AIOClientMixin(object):
+    def __new__(cls, *args, **kwargs):
+        return super(AIOClientMixin, cls).__new__(cls, *args, **kwargs)
+    def __init__(self, connstr=None, *args, **kwargs):
+        loop = asyncio.get_event_loop()
+        if connstr and 'connstr' not in kwargs:
+            kwargs['connstr'] = connstr
+        super(AIOClientMixin, self).__init__(IOPS(loop), *args, **kwargs)
+        self._loop = loop
+
+        cft = asyncio.Future(loop=loop)
+
+        def ftresult(err):
+            if err:
+                cft.set_exception(err)
+            else:
+                cft.set_result(True)
+
+        self._cft = cft
+        self._conncb = ftresult
+
+    @property
+    def view_itercls(self):
+        return AViewResult
+
+    def view_query(self, *args, **kwargs):
+        if "itercls" not in kwargs:
+            kwargs["itercls"] = self.view_itercls
+        return super(AIOClientMixin, self).view_query(*args, **kwargs)
+
+    @property
+    def query_itercls(self):
+        return AQueryResult
+
+    def query(self, *args, **kwargs):
+        if "itercls" not in kwargs:
+            kwargs["itercls"] = self.query_itercls
+        return super(AIOClientMixin, self).query(*args, **kwargs)
+
+    @property
+    def search_itercls(self):
+        return ASearchResult
+
+    def search_query(self, *args, **kwargs):
+        if "itercls" not in kwargs:
+            kwargs["itercls"] = self.search_itercls
+        return super(AIOClientMixin, self).search_query(*args, **kwargs)
+
+    @property
+    def analytics_itercls(self):
+        return AAnalyticsResult
+
+    def analytics_query(self, *args, **kwargs):
+        return super(AIOClientMixin, self).analytics_query(*args, itercls=kwargs.pop('itercls', self.analytics_itercls),
+                                                   **kwargs)
+
+    def on_connect(self):
+        if not self.connected:
+            self._connect()
+            return self._cft
+
+
 class AsyncBucketFactory(type):
     @staticmethod
     def gen_async_bucket(asyncbase  # type: Type[T]
                          ):
         # type: (...) -> Type[T]
-        n1ql_query = getattr(asyncbase, 'n1ql_query', getattr(asyncbase, 'query', None))
-        view_query = getattr(asyncbase, 'view_query', getattr(asyncbase, 'query', None))
-        search_query = getattr(asyncbase, 'search_query', None)
+        class AIOClientSpecific(AIOClientMixin, asyncbase):
 
-        class Bucket(asyncbase):
-            def __init__(self, connstr=None, *args, **kwargs):
-                loop = asyncio.get_event_loop()
-                if connstr and 'connstr' not in kwargs:
-                    kwargs['connstr'] = connstr
-                super(Bucket, self).__init__(IOPS(loop), *args, **kwargs)
-                self._loop = loop
-
-                cft = asyncio.Future(loop=loop)
-
-                def ftresult(err):
-                    if err:
-                        cft.set_exception(err)
-                    else:
-                        cft.set_result(True)
-
-                self._cft = cft
-                self._conncb = ftresult
-
-            @property
-            def view_itercls(self):
-                return AViewResult
-
-            def view_query(self, *args, **kwargs):
-                if "itercls" not in kwargs:
-                    kwargs["itercls"] = self.view_itercls
-                return view_query(self, *args, **kwargs)
-
-            @property
-            def query_itercls(self):
-                return AQueryResult
-
-            def query(self, *args, **kwargs):
-                if "itercls" not in kwargs:
-                    kwargs["itercls"] = self.query_itercls
-                return n1ql_query(self, *args, **kwargs)
-
-            @property
-            def search_itercls(self):
-                return ASearchResult
-
-            def search_query(self, *args, **kwargs):
-                if "itercls" not in kwargs:
-                    kwargs["itercls"] = self.search_itercls
-                return search_query(self, *args, **kwargs)
-
-            @property
-            def analytics_itercls(self):
-                return AAnalyticsResult
-
-            def analytics_query(self, *args, **kwargs):
-                return super(Bucket, self).analytics_query(*args, itercls=kwargs.pop('itercls', self.analytics_itercls),
-                                                           **kwargs)
-
-            def on_connect(self):
-                if not self.connected:
-                    self._connect()
-                    return self._cft
-
-            locals().update(asyncbase._gen_memd_wrappers(AsyncBucketFactory._meth_factory))
-
-        return Bucket
-
-    @staticmethod
-    def _meth_factory(meth, name):
-        def ret(self, *args, **kwargs):
-            rv = meth(self, *args, **kwargs)
-            ft = asyncio.Future()
-
-            def on_ok(res):
-                ft.set_result(res)
-                rv.clear_callbacks()
-
-            def on_err(res, excls, excval, exctb):
-                err = excls(excval)
-                ft.set_exception(err)
-                rv.clear_callbacks()
-
-            rv.set_callbacks(on_ok, on_err)
-            return ft
-
-        return ret
+            locals().update(asyncbase._gen_memd_wrappers(_meth_factory))
+        return AIOClientSpecific
 
 
 class AsyncCBCollection(AsyncBucketFactory.gen_async_bucket(BaseAsyncCBCollection)):
