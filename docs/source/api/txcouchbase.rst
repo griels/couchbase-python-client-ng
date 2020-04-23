@@ -27,7 +27,7 @@ The :class:`TxDeferredClient` mixin for Twisted is subclassed from the lower-lev
 objects rather than `Deferred` objects. This is largely due to performance
 reasons (Deferreds result in a 3x performance slowdown).
 
-.. class:: TxRawClient
+.. class:: TxRawClientMixin
 
     .. automethod:: __init__
     .. automethod:: registerDeferred
@@ -35,7 +35,7 @@ reasons (Deferreds result in a 3x performance slowdown).
     .. automethod:: defer
     .. autoattribute:: connected
 
-.. class:: TxClientFactory.gen_client.<locals>.TxDeferredClient
+.. class:: TxDeferredClientMixin
 
     .. automethod:: __init__
     .. automethod:: query
