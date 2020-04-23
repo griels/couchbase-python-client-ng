@@ -81,8 +81,6 @@ packages = {
     couchbase_core+'.iops',
     couchbase_core+'.asynchronous',
     'couchbase_v2.views',
-    'couchbase_v2.iops',
-    'couchbase_v2.asynchronous',
     'couchbase_v2.tests',
     'couchbase_v2.tests.cases',
     'couchbase.management',
