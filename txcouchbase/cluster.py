@@ -33,6 +33,7 @@ from couchbase_core.asynchronous.n1ql import AsyncN1QLRequest
 from couchbase_core.asynchronous.view import AsyncViewBase
 from couchbase_core.client import Client as CoreClient
 from couchbase.exceptions import CouchbaseException
+from couchbase_core.supportability import internal
 from txcouchbase.iops import v0Iops
 from couchbase.bucket import AsyncBucket as V3AsyncBucket
 
@@ -168,7 +169,8 @@ class ConnectionEventQueue(TxEventQueue):
 T = TypeVar('T', bound=CoreClient)
 
 
-class TxRawClient(object):
+class TxRawClientMixin(object):
+    @internal
     def __init__(self, connstr=None, **kwargs):
         """
         Client mixin for Twisted. This inherits from an 'AsyncClient' class,
@@ -177,7 +179,7 @@ class TxRawClient(object):
         if connstr and 'connstr' not in kwargs:
             kwargs['connstr'] = connstr
         iops = v0Iops(reactor)
-        super(TxRawClient, self).__init__(iops=iops, **kwargs)
+        super(TxRawClientMixin, self).__init__(iops=iops, **kwargs)
 
         self._evq = {
             'connect': ConnectionEventQueue(),
@@ -186,27 +188,6 @@ class TxRawClient(object):
 
         self._conncb = self._evq['connect']
         self._dtorcb = self._evq['_dtor']
-
-    def _do_n1ql_query(self,  # type: TxRawClient
-                       *args,  # type: Any
-                       **kwargs  # type: Any
-                       ):
-        # type: (...) -> Any
-        super_obj = super(TxRawClient, self)
-        meth = getattr(super_obj, 'n1ql_query', getattr(super_obj, 'query', None))
-        return meth(*args, **kwargs)
-
-    def _do_analytics_query(self,  # type: TxRawClient
-                            *args,  # type: Any
-                            **kwargs  # type: Any
-                            ):
-        # type: (...) -> Any
-        super_obj = super(TxRawClient, self)
-        meth = getattr(super_obj, 'analytics_query')
-        return meth(*args, **kwargs)
-
-    def _do_view_query(self, *args, **kwargs):
-        return super(TxRawClient, self).view_query(*args, **kwargs)
 
     def registerDeferred(self, event, d):
         """
@@ -314,7 +295,7 @@ class TxRawClient(object):
         """
 
         kwargs['itercls'] = viewcls
-        o = self._do_view_query(*args, **kwargs)
+        o = super(TxRawClientMixin, self).view_query(*args, **kwargs)
         if not self.connected:
             self.on_connect().addCallback(lambda x: o.start())
         else:
@@ -346,7 +327,7 @@ class TxRawClient(object):
             return self.on_connect().addCallback(cb)
 
         kwargs['itercls'] = BatchedViewResult
-        o = self._do_view_query(*args, **kwargs)
+        o = super(TxRawClientMixin, self).view_query(*args, **kwargs)
         try:
             o.start()
         except Exception as e:
@@ -368,7 +349,7 @@ class TxRawClient(object):
         .. seealso:: :meth:`queryEx`, around which this method wraps
         """
         kwargs['itercls'] = cls
-        o = self._do_n1ql_query(*args, **kwargs)
+        o = super(TxRawClientMixin,self).query(*args, **kwargs)
         if not self.connected:
             self.on_connect().addCallback(lambda x: o.start())
         else:
@@ -400,7 +381,7 @@ class TxRawClient(object):
 
         .. seealso:: :meth:`~couchbase_v2.bucket.Bucket.n1ql_query`
         """
-        return self.deferred_verb(BatchedQueryResult, self._do_n1ql_query, self.query, *args, **kwargs)
+        return self.deferred_verb(BatchedQueryResult, super(TxRawClientMixin,self).query, self.query, *args, **kwargs)
 
     def deferred_verb(self, itercls, raw_verb, cooked_verb, *args, **kwargs):
         if not self.connected:
@@ -412,7 +393,7 @@ class TxRawClient(object):
         return o._getDeferred()
 
     def analytics_query(self, *args, **kwargs):
-        return self.deferred_verb(BatchedAnalyticsResult, self._do_analytics_query, self.analytics_query, *args,
+        return self.deferred_verb(BatchedAnalyticsResult, super(TxRawClientMixin, self).analytics_query, self.analytics_query, *args,
                                   **kwargs)
 
     def search(self, cls, *args, **kwargs):
@@ -432,7 +413,7 @@ class TxRawClient(object):
         .. seealso:: :meth:`search`, around which this method wraps
         """
         kwargs['itercls'] = cls
-        o = super(TxRawClient, self).search_query(*args, **kwargs)
+        o = super(TxRawClientMixin, self).search_query(*args, **kwargs)
         if not self.connected:
             self.on_connect().addCallback(lambda x: o.start())
         else:
@@ -471,7 +452,7 @@ class TxRawClient(object):
             return self.on_connect().addCallback(cb)
 
         kwargs['itercls'] = BatchedSearchResult
-        o = super(TxRawClient, self).search_query(*args, **kwargs)
+        o = super(TxRawClientMixin, self).search_query(*args, **kwargs)
         o.start()
         return o._getDeferred()
 
@@ -481,124 +462,127 @@ class TxRawClientFactory(object):
     def gen_raw(async_base  # type: Type[T]
                 ):
         # type: (...) -> Type[T]
-        class TxRawClientSpecific(TxRawClient, async_base):
+        class TxRawClientSpecific(TxRawClientMixin, async_base):
             pass
         return TxRawClientSpecific
 
 
-class TxClientFactory(object):
+class TxDeferredClientMixin(TxRawClientMixin):
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "TxDeferred_Wrapped"):
+            for k, v in cls._gen_memd_wrappers(TxDeferredClientMixin._meth_factory).items():
+                setattr(cls, k, v)
+            cls.TxDeferred_Wrapped = True
+        return super(TxDeferredClientMixin, cls).__new__(cls, *args, **kwargs)
+
+    @internal
+    def __init__(self, *args, **kwargs):
+        """
+        This mixin inherits from :class:`TxRawClientMixin`.
+        In addition to the connection methods, this class' data access methods
+        return :class:`Deferreds` instead of :class:`Result` objects.
+
+        Operations such as :meth:`get` or :meth:`set` will invoke the
+        :attr:`Deferred.callback` with the result object when the result is
+        complete, or they will invoke the :attr:`Deferred.errback` with an
+        exception (or :class:`Failure`) in case of an error. The rules of the
+        :attr:`~couchbase_v2.connection.Connection.quiet` attribute for raising
+        exceptions apply to the invocation of the ``errback``. This means that
+        in the case where the synchronous client would raise an exception,
+        the Deferred API will have its ``errback`` invoked. Otherwise, the
+        result's :attr:`~couchbase_v2.result.Result.success` field should be
+        inspected.
+
+
+        Likewise multi operations will be invoked with a
+        :class:`~couchbase.result.MultiResultBase` compatible object.
+
+        Some examples:
+
+        Using single items::
+
+          d_set = cb.upsert("foo", "bar")
+          d_get = cb.get("foo")
+
+          def on_err_common(*args):
+              print("Got an error: {0}".format(args)),
+          def on_set_ok(res):
+              print("Successfuly set key with CAS {0}".format(res.cas))
+          def on_get_ok(res):
+              print("Successfuly got key with value {0}".format(res.value))
+
+          d_set.addCallback(on_set_ok).addErrback(on_err_common)
+          d_get.addCallback(on_get_ok).addErrback(on_get_common)
+
+          # Note that it is safe to do this as operations performed on the
+          # same key are *always* performed in the order they were scheduled.
+
+        Using multiple items::
+
+          d_get = cb.get_multi(("Foo", "bar", "baz"))
+          def on_mres(mres):
+              for k, v in mres.items():
+                  print("Got result for key {0}: {1}".format(k, v.value))
+          d_get.addCallback(on_mres)
+
+        """
+        super(TxDeferredClientMixin, self).__init__(*args, **kwargs)
+
+    def _connectSchedule(self, f, meth, *args, **kwargs):
+        qop = Deferred()
+        qop.addCallback(lambda x: f(meth, *args, **kwargs))
+        self._evq['connect'].schedule(qop)
+        return qop
+
+    def _wrap(self,  # type: TxDeferredClient
+              meth, *args, **kwargs):
+        """
+        Calls a given method with the appropriate arguments, or defers such
+        a call until the instance has been connected
+        """
+        if not self.connected:
+            return self._connectSchedule(self._wrap, meth, *args, **kwargs)
+
+        opres = meth(self, *args, **kwargs)
+        return self.defer(opres)
+
+
+    ### Generate the methods
     @staticmethod
-    def gen_client(raw_class,  # type: Type[T]
-                   **injected_kwargs  # type: Any
-                   ):
-        # type: (...) -> Type[T]
-        class TxDeferredClient(raw_class):
-            def __init__(self, *args, **kwargs):
-                """
-                This class inherits from :class:`RawBucket`.
-                In addition to the connection methods, this class' data access methods
-                return :class:`Deferreds` instead of :class:`AsyncResult` objects.
-
-                Operations such as :meth:`get` or :meth:`set` will invoke the
-                :attr:`Deferred.callback` with the result object when the result is
-                complete, or they will invoke the :attr:`Deferred.errback` with an
-                exception (or :class:`Failure`) in case of an error. The rules of the
-                :attr:`~couchbase_v2.connection.Connection.quiet` attribute for raising
-                exceptions apply to the invocation of the ``errback``. This means that
-                in the case where the synchronous client would raise an exception,
-                the Deferred API will have its ``errback`` invoked. Otherwise, the
-                result's :attr:`~couchbase_v2.result.Result.success` field should be
-                inspected.
+    def _meth_factory(meth, _):
+        def ret(self, *args, **kwargs):
+            return self._wrap(meth, *args, **kwargs)
+        return ret
 
 
-                Likewise multi operations will be invoked with a
-                :class:`~couchbase_v2.result.MultiResult` compatible object.
-
-                Some examples:
-
-                Using single items::
-
-                  d_set = cb.upsert("foo", "bar")
-                  d_get = cb.get("foo")
-
-                  def on_err_common(*args):
-                      print("Got an error: {0}".format(args)),
-                  def on_set_ok(res):
-                      print("Successfuly set key with CAS {0}".format(res.cas))
-                  def on_get_ok(res):
-                      print("Successfuly got key with value {0}".format(res.value))
-
-                  d_set.addCallback(on_set_ok).addErrback(on_err_common)
-                  d_get.addCallback(on_get_ok).addErrback(on_get_common)
-
-                  # Note that it is safe to do this as operations performed on the
-                  # same key are *always* performed in the order they were scheduled.
-
-                Using multiple items::
-
-                  d_get = cb.get_multi(("Foo", "bar", "baz"))
-                  def on_mres(mres):
-                      for k, v in mres.items():
-                          print("Got result for key {0}: {1}".format(k, v.value))
-                  d_get.addCallback(on_mres)
-
-                """
-                kwargs.update(injected_kwargs)
-                super(TxDeferredClient, self).__init__(*args, **kwargs)
-
-            def _connectSchedule(self, f, meth, *args, **kwargs):
-                qop = Deferred()
-                qop.addCallback(lambda x: f(meth, *args, **kwargs))
-                self._evq['connect'].schedule(qop)
-                return qop
-
-            def _wrap(self,  # type: TxDeferredClient
-                      meth, *args, **kwargs):
-                """
-                Calls a given method with the appropriate arguments, or defers such
-                a call until the instance has been connected
-                """
-                if not self.connected:
-                    return self._connectSchedule(self._wrap, meth, *args, **kwargs)
-
-                opres = meth(self, *args, **kwargs)
-                return self.defer(opres)
-
-
-            ### Generate the methods
-            def _meth_factory(meth, name):
-                def ret(self, *args, **kwargs):
-                    return self._wrap(meth, *args, **kwargs)
-                return ret
-
-            locals().update(raw_class._gen_memd_wrappers(_meth_factory))
-            for x in raw_class._MEMCACHED_OPERATIONS:
-                if locals().get(x+'_multi', None):
-                    locals().update({x+"Multi": locals()[x+"_multi"]})
-        return TxDeferredClient
-
-
-class TxRawCollection(TxRawClient, BaseAsyncCBCollection):
+class TxRawCollection(TxRawClientMixin, BaseAsyncCBCollection):
     pass
 
 
-TxCollection = TxClientFactory.gen_client(TxRawCollection)
-
-
-class TxRawBucket(TxRawClient, V3AsyncBucket):
+class TxCollection(TxDeferredClientMixin, BaseAsyncCBCollection):
     pass
 
 
-class TxBucket(TxClientFactory.gen_client(TxRawBucket)):
+class TxRawBucket(TxRawClientMixin, V3AsyncBucket):
+    @internal
+    def __init__(self, *args, **kwargs):
+        super(TxRawBucket, self).__init__(collection_factory=TxRawCollection, *args, **kwargs)
+
+
+class TxBucket(TxDeferredClientMixin, V3AsyncBucket):
+    @internal
     def __init__(self, *args, **kwargs):
         super(TxBucket,self).__init__(collection_factory=TxCollection, *args, **kwargs)
 
 
-class TxRawCluster(TxRawClient, V3AsyncCluster):
-    pass
+class TxRawCluster(TxRawClientMixin, V3AsyncCluster):
+    def __init__(self, *args, **kwargs):
+        super(TxRawCluster, self).__init__(*args, bucket_factory=TxRawBucket, **kwargs)
 
 
-TxCluster = TxClientFactory.gen_client(TxRawCluster, bucket_factory=TxBucket)
+class TxCluster(TxDeferredClientMixin, V3AsyncCluster):
+    def __init__(self, *args, **kwargs):
+        super(TxCluster, self).__init__(*args, bucket_factory=TxBucket, **kwargs)
 
 
 class TxSyncCluster(V3SyncCluster):
