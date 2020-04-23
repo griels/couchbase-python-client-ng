@@ -1,33 +1,31 @@
 import asyncio
-from typing import *
-
-from couchbase_core.asynchronous.client import AsyncClientMixin
-from couchbase.mutation_state import MutationState
-from couchbase_core.asynchronous import AsyncClientFactory
-from couchbase.management.queries import QueryIndexManager
-from couchbase.management.search import SearchIndexManager
-from couchbase.management.analytics import AnalyticsIndexManager
-from couchbase.analytics import AnalyticsOptions
-from .management.users import UserManager
-from .management.buckets import BucketManager
-from couchbase.management.admin import Admin
-from couchbase.diagnostics import DiagnosticsResult
-from couchbase.search import SearchResult, SearchOptions
-from .analytics import AnalyticsResult
-from .n1ql import QueryResult
-from couchbase_core.n1ql import _N1QLQuery
-from .options import OptionBlock, OptionBlockDeriv
-from .bucket import Bucket, CoreClient, PingOptions
-from couchbase_core.cluster import _Cluster as CoreCluster, Authenticator as CoreAuthenticator
-from .exceptions import AlreadyShutdownException, InvalidArgumentException, \
-    SearchException, QueryException, AnalyticsException
-import couchbase_core._libcouchbase as _LCB
-from couchbase_core._pyport import raise_from
-from couchbase.options import OptionBlockTimeOut
-from couchbase_core.cluster import *
-from .result import *
 from random import choice
 
+import couchbase_core._libcouchbase as _LCB
+
+from couchbase.analytics import AnalyticsOptions
+from couchbase.diagnostics import DiagnosticsResult
+from couchbase.management.admin import Admin
+from couchbase.management.analytics import AnalyticsIndexManager
+from couchbase.management.queries import QueryIndexManager
+from couchbase.management.search import SearchIndexManager
+from couchbase.mutation_state import MutationState
+from couchbase.options import OptionBlockTimeOut
+from couchbase.search import SearchResult, SearchOptions
+from couchbase_core._pyport import raise_from
+from couchbase_core.asynchronous.client import AsyncClientMixin
+from couchbase_core.cluster import *
+from couchbase_core.cluster import _Cluster as CoreCluster, Authenticator as CoreAuthenticator
+from couchbase_core.n1ql import _N1QLQuery
+from .analytics import AnalyticsResult
+from .bucket import Bucket, CoreClient, PingOptions
+from .exceptions import AlreadyShutdownException, InvalidArgumentException, \
+    SearchException, QueryException, AnalyticsException
+from .management.buckets import BucketManager
+from .management.users import UserManager
+from .n1ql import QueryResult
+from .options import OptionBlock, OptionBlockDeriv
+from .result import *
 
 T = TypeVar('T')
 
@@ -45,8 +43,6 @@ class DiagnosticsOptions(OptionBlock):
                  **kwargs
                  ):
         super(DiagnosticsOptions, self).__init__(**kwargs)
-
-
 
 
 class QueryScanConsistency(object):
@@ -72,30 +68,31 @@ class QueryScanConsistency(object):
 
 
 class QueryProfile(object):
-  OFF='off'
-  PHASES='phases'
-  TIMINGS='timings'
+    OFF = 'off'
+    PHASES = 'phases'
+    TIMINGS = 'timings'
 
-  @classmethod
-  def off(cls):
-    return cls(cls.OFF)
+    @classmethod
+    def off(cls):
+        return cls(cls.OFF)
 
-  @classmethod
-  def phases(cls):
-    return cls(cls.PHASES)
+    @classmethod
+    def phases(cls):
+        return cls(cls.PHASES)
 
-  @classmethod
-  def timings(cls):
-    return cls(cls.TIMINGS)
+    @classmethod
+    def timings(cls):
+        return cls(cls.TIMINGS)
 
-  def __init__(self, val):
-    if val == self.OFF or val == self.PHASES or val==self.TIMINGS:
-      self._value = val
-    else:
-      raise InvalidArgumentException("QueryProfile can only be {}, {}, {}".format(self.OFF, self.TIMINGS, self.PHASES))
+    def __init__(self, val):
+        if val == self.OFF or val == self.PHASES or val == self.TIMINGS:
+            self._value = val
+        else:
+            raise InvalidArgumentException(
+                "QueryProfile can only be {}, {}, {}".format(self.OFF, self.TIMINGS, self.PHASES))
 
-  def as_string(self):
-    return getattr(self, '_value', self.OFF)
+    def as_string(self):
+        return getattr(self, '_value', self.OFF)
 
 
 class QueryOptions(OptionBlockTimeOut):
