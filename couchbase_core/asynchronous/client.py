@@ -187,7 +187,3 @@ class AsyncClientFactory(type):
             pass
         return AsyncClientSpecialised
 
-
-class AsyncClient(AsyncClientMixin, CoreClient):
-    def __init__(self, *args, **kwargs):
-        super(AsyncClient, self).__init__(*args, **kwargs)
