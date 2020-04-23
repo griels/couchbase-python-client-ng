@@ -46,8 +46,6 @@ class DiagnosticsOptions(OptionBlock):
         super(DiagnosticsOptions, self).__init__(**kwargs)
 
 
-
-
 class QueryScanConsistency(object):
     REQUEST_PLUS="request_plus"
     NOT_BOUNDED="not_bounded"
@@ -71,30 +69,31 @@ class QueryScanConsistency(object):
 
 
 class QueryProfile(object):
-  OFF='off'
-  PHASES='phases'
-  TIMINGS='timings'
+    OFF = 'off'
+    PHASES = 'phases'
+    TIMINGS = 'timings'
 
-  @classmethod
-  def off(cls):
-    return cls(cls.OFF)
+    @classmethod
+    def off(cls):
+        return cls(cls.OFF)
 
-  @classmethod
-  def phases(cls):
-    return cls(cls.PHASES)
+    @classmethod
+    def phases(cls):
+        return cls(cls.PHASES)
 
-  @classmethod
-  def timings(cls):
-    return cls(cls.TIMINGS)
+    @classmethod
+    def timings(cls):
+        return cls(cls.TIMINGS)
 
-  def __init__(self, val):
-    if val == self.OFF or val == self.PHASES or val==self.TIMINGS:
-      self._value = val
-    else:
-      raise InvalidArgumentException("QueryProfile can only be {}, {}, {}".format(self.OFF, self.TIMINGS, self.PHASES))
+    def __init__(self, val):
+        if val == self.OFF or val == self.PHASES or val == self.TIMINGS:
+            self._value = val
+        else:
+            raise InvalidArgumentException(
+                "QueryProfile can only be {}, {}, {}".format(self.OFF, self.TIMINGS, self.PHASES))
 
-  def as_string(self):
-    return getattr(self, '_value', self.OFF)
+    def as_string(self):
+        return getattr(self, '_value', self.OFF)
 
 
 class QueryOptions(OptionBlockTimeOut):
