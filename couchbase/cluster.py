@@ -243,7 +243,6 @@ class Cluster(CoreClient):
         self._clusteropts.update(cluster_opts)
         self._adminopts = dict(**self._clusteropts)
         self._clusteropts.update(async_items)
-        #self._clusteropts['bucket'] = "default"
         super(Cluster, self).__init__(connection_string=str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
 
     @classmethod
@@ -274,9 +273,6 @@ class Cluster(CoreClient):
             self.__admin = Admin(connection_string=str(self.connstr), **self._adminopts)
         return self.__admin
 
-    # TODO: There should be no reason for these kwargs.  However, our tests against the mock
-    # will all fail with auth errors without it...  So keeping it just for now, but lets fix it
-    # and remove this for 3.0.0
     def bucket(self,
                name    # type: str
                ):
