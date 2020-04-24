@@ -845,15 +845,17 @@ class ClusterTestCase(CouchbaseTestCase):
         self.cluster = self._instantiate_cluster(connstr_abstract, self.cluster_factory)
         return bucket_name
 
-    def _instantiate_cluster(self, connstr_nobucket, cluster_factory):
+    def _instantiate_cluster(self, connstr_nobucket, cluster_factory=None, **kwargs):
+        cluster_factory = cluster_factory or self.cluster_factory
         # FIXME: we should not be using classic here!  But, somewhere in the tests, we need
         # this for hitting the mock, it seems
         auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
         # hack because the Mock seems to want a bucket name for cluster connections, odd
         mock_hack = {'bucket': self.cluster_info.bucket_name} if self.is_mock else {}
+        kwargs.update(mock_hack)
         return cluster_factory.connect(connection_string=str(connstr_nobucket),
                                authenticator=auth_type(self.cluster_info.admin_username,
-                                                       self.cluster_info.admin_password), **mock_hack)
+                                                       self.cluster_info.admin_password), **kwargs)
 
     # NOTE: this really is only something you can trust in homogeneous clusters, but then again
     # this is a test suite.
