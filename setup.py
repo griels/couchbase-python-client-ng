@@ -16,19 +16,14 @@ except ImportError:
     from distutils.core import setup, Extension
 
 import os
-import platform
 import itertools
 import pathlib
 curdir = pathlib.Path(__file__).parent
+from cbuild_config import BUILD_CFG, couchbase_core
+from lcb_version import get_lcb_min_version
 
+lcb_min_version = get_lcb_min_version()
 
-lcb_min_version = (2, 9, 0)
-
-try:
-    from lcb_version import get_lcb_min_version
-    lcb_min_version=get_lcb_min_version()
-except:
-    lcb_min_version=(2,9,0)
 if not os.path.exists("build"):
     os.mkdir("build")
 
@@ -72,18 +67,7 @@ def handle_build_type_and_gen_deps():
 
 setup_kw = handle_build_type_and_gen_deps()
 
-packages = {
-    'acouchbase',
-    'couchbase',
-    couchbase_core,
-    couchbase_core+'.views',
-    couchbase_core+'.iops',
-    couchbase_core+'.asynchronous',
-    'couchbase.management',
-    'txcouchbase',
-    'acouchbase',
-    'acouchbase.tests'
-}
+packages = {package.format(PYCBC_CORE=couchbase_core) for package in BUILD_CFG['packages']}
 
 setup(
     name = 'couchbase',
