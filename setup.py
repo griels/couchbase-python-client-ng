@@ -16,19 +16,14 @@ except ImportError:
     from distutils.core import setup, Extension
 
 import os
-import platform
 import itertools
 import pathlib
 curdir = pathlib.Path(__file__).parent
+from cbuild_config import BUILD_CFG, couchbase_core
+from lcb_version import get_lcb_min_version
 
+lcb_min_version = get_lcb_min_version()
 
-lcb_min_version = (2, 9, 0)
-
-try:
-    from lcb_version import get_lcb_min_version
-    lcb_min_version=get_lcb_min_version()
-except:
-    lcb_min_version=(2,9,0)
 if not os.path.exists("build"):
     os.mkdir("build")
 
@@ -72,22 +67,22 @@ def handle_build_type_and_gen_deps():
 
 setup_kw = handle_build_type_and_gen_deps()
 
-packages = {
-    'acouchbase',
-    'couchbase',
-    couchbase_core,
-    couchbase_core+'.views',
-    couchbase_core+'.iops',
-    couchbase_core+'.asynchronous',
-    'couchbase.management',
-    'txcouchbase',
-    'acouchbase',
-    'acouchbase.tests'
-}
+def traverse_packages(branch, prefixes=None):
+    prefixes = prefixes or []
+    if isinstance(branch, list):
+        return list(traverse_packages(entry, prefixes) for entry in branch)
+    elif isinstance(branch, dict):
+        result=[]
+        for key, value in branch.items():
+            result+=[traverse_packages(key, prefixes)]+traverse_packages(value, prefixes+[key])
+        return result
+    return '.'.join(prefixes+[branch])
+
+packages=traverse_packages(BUILD_CFG['packages'])
 
 setup(
-    name = 'couchbase',
-    version = pkgversion,
+    name='couchbase',
+    version=pkgversion,
     url="https://github.com/couchbase/couchbase-python-client",
     author="Couchbase, Inc.",
     author_email="PythonPackage@couchbase.com",
@@ -108,7 +103,7 @@ setup(
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Python Modules"],
     python_requires=">=3.5",
-    packages = list(packages),
+    packages=list(packages),
     tests_require=['utilspie','nose', 'testresources>=0.2.7', 'basictracer==2.2.0'],
     test_suite='couchbase_tests.test_sync',
     **setup_kw
