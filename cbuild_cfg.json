@@ -37,6 +37,19 @@
     "src/lcb_v4_wrapper.h",
     "src/lcb_v4_wrapper.c"
   ],
+  "packages": {
+    "acouchbase": [],
+    "couchbase": [
+      "asynchronous",
+      "management"
+    ],
+    "couchbase_core": [
+      "views",
+      "iops",
+      "asynchronous"
+    ],
+    "txcouchbase": []
+  },
   "comp_options": {
     "PYCBC_LCB_API": "0x02FF04",
     "PYCBC_CORE": "couchbase_core",
