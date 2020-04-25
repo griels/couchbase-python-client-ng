@@ -6,7 +6,7 @@ import traceback
 
 curdir = pathlib.Path(__file__).parent
 
-lcb_min_version_baseline = (2, 9, 0)
+lcb_min_version_baseline = (3, 0, 0)
 
 
 def get_lcb_min_version():
