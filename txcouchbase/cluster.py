@@ -456,6 +456,8 @@ class TxRawClientMixin(object):
         o.start()
         return o._getDeferred()
 
+    connected = CoreClient.connected
+
 
 class TxRawClientFactory(object):
     @staticmethod
