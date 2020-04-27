@@ -172,7 +172,6 @@ class _TxTestCase(TestCase):
         super(_TxTestCase, cls).tearDownClass()
         cls.tearDownTrace(cls)
 
-
 def gen_base(basecls,  # type: Type[AsyncClusterTestCase]
              timeout=5,
              factory=None  # type: Factory

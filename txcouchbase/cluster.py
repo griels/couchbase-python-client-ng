@@ -574,22 +574,24 @@ class TxBucket(TxDeferredClientMixin, V3AsyncBucket):
     def __init__(self, *args, **kwargs):
         super(TxBucket,self).__init__(collection_factory=TxCollection, *args, **kwargs)
 
-
 class TxBaseCluster(TxRawClientMixin, V3AsyncCluster):
     def bucket(self, *args, **kwargs):
+        #if self.connected:
         return super(TxBaseCluster, self).bucket(*args, **kwargs)
-
+        conn_def = self.on_connect()
+        conn_def.addCallback(lambda x: self.bucket(*args, **kwargs))
+        return conn_def
 
 class TxRawCluster(TxBaseCluster):
     def __init__(self, *args, **kwargs):
-        super(TxRawCluster, self).__init__(*args, bucket_factory=kwargs.pop('bucket_factory', TxRawBucket), **kwargs)
+        super(TxRawCluster, self).__init__(*args, bucket_factory=kwargs.pop('bucket_factory',TxRawBucket), **kwargs)
 
 
 class TxCluster(TxDeferredClientMixin, TxRawCluster):
     def __init__(self, *args, **kwargs):
-        super(TxCluster, self).__init__(*args, bucket_factory=kwargs.pop('bucket_factory', TxBucket), **kwargs)
+        super(TxCluster, self).__init__(*args, bucket_factory=kwargs.pop('bucket_factory',TxBucket), **kwargs)
 
 
 class TxSyncCluster(V3SyncCluster):
     def __init__(self, *args, **kwargs):
-        super(TxSyncCluster, self).__init__(*args, bucket_factory=kwargs.pop('bucket_factory', TxBucket), **kwargs)
+        super(TxSyncCluster, self).__init__(*args, bucket_factory=kwargs.pop('bucket_factory',TxBucket), **kwargs)
