@@ -26,10 +26,10 @@ from twisted.trial._synctest import SkipTest
 from twisted.trial.unittest import TestCase
 
 from couchbase_core.client import Client
-from couchbase_tests.base import ClusterTestCase
+from couchbase_tests.base import ClusterTestCase, AsyncClusterTestCase
 from txcouchbase.cluster import TxCluster
 
-T = TypeVar('T', bound=ClusterTestCase)
+T = TypeVar('T', bound=AsyncClusterTestCase)
 Factory = Callable[[Any], Client]
 twisted.internet.base.DelayedCall.debug = True
 
@@ -96,6 +96,7 @@ def logged_spewer(frame,  # type: FrameType
                 frame.f_lineno))
     except:
         pass
+
 
 class _TxTestCase(TestCase):
     def make_connection(self,  # type: _TxTestCase
@@ -171,12 +172,11 @@ class _TxTestCase(TestCase):
         super(_TxTestCase, cls).tearDownClass()
         cls.tearDownTrace(cls)
 
-
-def gen_base(basecls,  # type: Type[T]
+def gen_base(basecls,  # type: Type[AsyncClusterTestCase]
              timeout=5,
              factory=None  # type: Factory
              ):
-    # type: (...) -> Union[Type[_TxTestCase],Type[T]]
+    # type: (...) -> Type[AsyncClusterTestCase]
     class WrappedTest(_TxTestCase, basecls):
         @property
         @classmethod
