@@ -575,16 +575,21 @@ class TxBucket(TxDeferredClientMixin, V3AsyncBucket):
         super(TxBucket,self).__init__(collection_factory=TxCollection, *args, **kwargs)
 
 
-class TxRawCluster(TxRawClientMixin, V3AsyncCluster):
-    def __init__(self, *args, **kwargs):
-        super(TxRawCluster, self).__init__(*args, bucket_factory=TxRawBucket, **kwargs)
+class TxBaseCluster(TxRawClientMixin, V3AsyncCluster):
+    def bucket(self, *args, **kwargs):
+        return super(TxBaseCluster, self).bucket(*args, **kwargs)
 
 
-class TxCluster(TxDeferredClientMixin, V3AsyncCluster):
+class TxRawCluster(TxBaseCluster):
     def __init__(self, *args, **kwargs):
-        super(TxCluster, self).__init__(*args, bucket_factory=TxBucket, **kwargs)
+        super(TxRawCluster, self).__init__(*args, bucket_factory=kwargs.pop('bucket_factory', TxRawBucket), **kwargs)
+
+
+class TxCluster(TxDeferredClientMixin, TxRawCluster):
+    def __init__(self, *args, **kwargs):
+        super(TxCluster, self).__init__(*args, bucket_factory=kwargs.pop('bucket_factory', TxBucket), **kwargs)
 
 
 class TxSyncCluster(V3SyncCluster):
     def __init__(self, *args, **kwargs):
-        super(TxSyncCluster, self).__init__(*args, bucket_factory=TxBucket, **kwargs)
+        super(TxSyncCluster, self).__init__(*args, bucket_factory=kwargs.pop('bucket_factory', TxBucket), **kwargs)
