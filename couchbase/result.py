@@ -5,7 +5,7 @@ from couchbase_core._libcouchbase import Result as CoreResult
 
 from couchbase.diagnostics import EndpointPingReport, ServiceType
 from couchbase_core import iterable_wrapper
-from couchbase_core.result import AsyncResult
+from couchbase_core.result import AsyncResult as CoreAsyncResult
 from couchbase_core.result import MultiResult, SubdocResult
 from couchbase_core.subdocument import Spec
 from couchbase_core.supportability import internal
@@ -319,7 +319,10 @@ class GetReplicaResult(GetResult):
         raise NotImplementedError("To be implemented in final sdk3 release")
 
 
-class AsyncResult(object):
+ResultDeriv = TypeVar("ResultDeriv", bound=Result)
+
+
+class AsyncResultBase(object):
     def __init__(self,
                  core_result,
                  **kwargs):
@@ -328,7 +331,7 @@ class AsyncResult(object):
 
     @property
     def orig_class(self):
-        # type: (...) -> Result
+        # type: (...) -> Type[Result]
         pass
 
     def set_callbacks(self, on_ok_orig, on_err_orig):
@@ -347,7 +350,7 @@ class AsyncResult(object):
 class AsyncWrapper(object):
     @staticmethod
     def gen_wrapper(base):
-        class Wrapped(AsyncResult, base):
+        class Wrapped(AsyncResultBase, base):
             @property
             def orig_class(self):
                 # type: (...) -> Result
@@ -381,8 +384,13 @@ class AsyncMutationResult(AsyncWrapper.gen_wrapper(MutationResult)):
 ResultPrecursor = NamedTuple('ResultPrecursor', [('orig_result', CoreResult), ('orig_options', Mapping[str, Any])])
 
 
+def _is_async(orig_result  # type: CoreResult
+              ):
+    return issubclass(type(orig_result), CoreAsyncResult)
+
+
 def get_wrapped_get_result(x):
-    factory_class = AsyncGetResult if issubclass(type(x), AsyncResult) else GetResult
+    factory_class = AsyncGetResult if _is_async(x) else GetResult
     return factory_class(x)
 
 
@@ -403,7 +411,7 @@ def get_replica_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
                                ):
     # type: (...) -> Callable[[Any], GetResult]
     def factory_class(x):
-        factory = AsyncGetReplicaResult if issubclass(type(x), AsyncResult) else GetReplicaResult
+        factory = AsyncGetReplicaResult if _is_async(x) else GetReplicaResult
         return factory(x)
 
     @wraps(func)
@@ -439,12 +447,11 @@ class MutationToken(object):
         # type: (...) -> str
         raise NotImplementedError()
 
-
 def get_mutation_result(result  # type: CoreResult
                         ):
     # type (...)->MutationResult
     orig_result = getattr(result, 'orig_result', result)
-    factory_class = AsyncMutationResult if issubclass(type(orig_result), AsyncResult) else MutationResult
+    factory_class = AsyncMutationResult if _is_async(orig_result) else MutationResult
     return factory_class(orig_result)
 
 
@@ -502,7 +509,7 @@ class MultiResultWrapper(object):
         final_options = forward_args(kwargs, *options)
         raw_result = wrapped(target, keys, **final_options)
         orig_result = getattr(raw_result, 'orig_result', raw_result)
-        factory_class = self.async_result_type if issubclass(type(orig_result), AsyncResult) else self.orig_result_type
+        factory_class = self.async_result_type if _is_async(orig_result) else self.orig_result_type
         result = factory_class(orig_result)
         return result
 
