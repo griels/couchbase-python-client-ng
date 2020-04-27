@@ -18,20 +18,19 @@
 The contents of this module do not have a stable API and are subject to
 change
 """
-from json import JSONEncoder
 from time import time, sleep
 
 import couchbase_core._libcouchbase as LCB
-from boltons.funcutils import wraps
 
-from couchbase_core import JSON, mk_formstr
+from couchbase_core import mk_formstr
 import couchbase.exceptions as E
 from couchbase_core._pyport import basestring
 from couchbase_core.auth_domain import AuthDomain
 from couchbase_core._libcouchbase import FMT_JSON
-from couchbase_core.supportability import internal
 
 import re
+
+from supportability import internal
 
 METHMAP = {
     'GET': LCB.LCB_HTTP_METHOD_GET,
@@ -167,118 +166,6 @@ class Admin(LCB.Bucket):
     bc_defaults=dict(bucket_type='couchbase',
                   bucket_password='', replicas=0,
                   flush_enabled=False)
-
-    @internal
-    def bucket_create(self, name, **kwargs):
-        """
-        Create a new bucket
-
-        :param string name: The name of the bucket to create
-        :param string bucket_type: The type of bucket to create. This
-            can either be `couchbase` to create a couchbase_core style
-            bucket (which persists data and supports replication) or
-            `memcached` (which is memory-only and does not support
-            replication).
-            Since Couchbase version 5.0, you can also specify
-            `ephemeral`, which is a replicated bucket which does
-            not have strict disk persistence requirements
-        :param string bucket_password: The bucket password. This can be
-            empty to disable authentication. This can be changed later on
-            using :meth:`update_bucket`
-        :param int replicas: The number of replicas to use for this
-            bucket. The maximum number of replicas is currently 3.
-            This setting can be changed via :meth:`update_bucket`
-        :param int ram_quota:
-            The maximum amount of memory (per node) that this bucket
-            may use, in megabytes. The minimum for this value is 100.
-            This setting may be changed via :meth:`update_bucket`.
-        :param bool flush_enabled:
-            Whether the flush API is enabled. When the flush API is
-            enabled, any client connected to the bucket is able to
-            clear its contents. This may be useful in development but
-            not recommended in production. This setting may be changed
-            via :meth:`update_bucket`
-        :return: A :class:`~.HttpResult`
-        :raise: :exc:`~.HTTPException` if the bucket could not be created.
-        """
-        final_opts = dict(**Admin.bc_defaults)
-        final_opts.update(**{k: v for k, v in kwargs.items() if (v is not None)})
-        params = {
-            'name': name,
-            'bucketType': final_opts['bucket_type'],
-            'authType': 'sasl',
-            'saslPassword': final_opts['bucket_password'],
-            'flushEnabled': int(final_opts['flush_enabled']),
-            'ramQuotaMB': final_opts['ram_quota']
-        }
-        if final_opts['bucket_type'] in ('couchbase', 'membase', 'ephemeral'):
-            params['replicaNumber'] = final_opts['replicas']
-
-        return self.http_request(
-            path='/pools/default/buckets', method='POST',
-            content=mk_formstr(params),
-            content_type='application/x-www-form-urlencoded')
-
-    @internal
-    def bucket_remove(self, name):
-        """
-        Remove an existing bucket from the cluster
-
-        :param string name: The name of the bucket to remove
-        :return: A :class:`~.HttpResult`
-        :raise: :exc:`~HTTPException` on error
-        """
-        return self.http_request(path='/pools/default/buckets/' + name,
-                                 method='DELETE')
-
-    bucket_delete = bucket_remove
-
-    @internal
-    class BucketInfo(object):
-        """
-        Information about a bucket
-        """
-        def __init__(self,
-                     raw_json  # type: JSON
-                     ):
-            self.raw_json = raw_json
-
-        def name(self):
-            """
-            Name of the bucket.
-            :return: A :class:`str` containing the bucket name.
-            """
-            return self.raw_json.get("name")
-
-        def __str__(self):
-            return "Bucket named {}".format(self.name)
-
-    @internal
-    def buckets_list(self):
-        """
-        Retrieve the list of buckets from the server
-        :return: An iterable of :Class:`Admin.BucketInfo` objects describing
-        the buckets currently active on the cluster.
-        """
-        buckets_list = self.http_request(path='/pools/default/buckets', method='GET')
-        return map(Admin.BucketInfo, buckets_list.value)
-
-    @internal
-    def bucket_info(self, name):
-        """
-        Retrieve information about the bucket.
-
-        :param string name: The name of the bucket
-        :return: A :class:`~.HttpResult` object. The result's
-            :attr:`~.HttpResult.value` attribute contains
-            A dictionary containing the bucket's information.
-            The returned object is considered to be opaque, and is
-            intended primarily for use with :meth:`update_bucket`.
-            Currently this returns the raw decoded JSON as emitted
-            by the corresponding server-side API
-        :raise: :exc:`~.HTTPException` if the request failed
-        """
-        return self.http_request(path='/pools/default/buckets/' + name)
 
     @internal
     def wait_ready(self, name, timeout=5.0, sleep_interval=0.2):
@@ -446,3 +333,86 @@ class Admin(LCB.Bucket):
         return self.http_request(path=path,
                                  method='DELETE',
                                  **kwargs)
+
+class AdminLegacy(Admin):
+    @internal
+    def bucket_create(self, name, **kwargs):
+        """
+        Create a new bucket
+
+        :param string name: The name of the bucket to create
+        :param string bucket_type: The type of bucket to create. This
+            can either be `couchbase` to create a couchbase_core style
+            bucket (which persists data and supports replication) or
+            `memcached` (which is memory-only and does not support
+            replication).
+            Since Couchbase version 5.0, you can also specify
+            `ephemeral`, which is a replicated bucket which does
+            not have strict disk persistence requirements
+        :param string bucket_password: The bucket password. This can be
+            empty to disable authentication. This can be changed later on
+            using :meth:`update_bucket`
+        :param int replicas: The number of replicas to use for this
+            bucket. The maximum number of replicas is currently 3.
+            This setting can be changed via :meth:`update_bucket`
+        :param int ram_quota:
+            The maximum amount of memory (per node) that this bucket
+            may use, in megabytes. The minimum for this value is 100.
+            This setting may be changed via :meth:`update_bucket`.
+        :param bool flush_enabled:
+            Whether the flush API is enabled. When the flush API is
+            enabled, any client connected to the bucket is able to
+            clear its contents. This may be useful in development but
+            not recommended in production. This setting may be changed
+            via :meth:`update_bucket`
+        :return: A :class:`~.HttpResult`
+        :raise: :exc:`~.HTTPException` if the bucket could not be created.
+        """
+        final_opts = dict(**Admin.bc_defaults)
+        final_opts.update(**{k: v for k, v in kwargs.items() if (v is not None)})
+        params = {
+            'name': name,
+            'bucketType': final_opts['bucket_type'],
+            'authType': 'sasl',
+            'saslPassword': final_opts['bucket_password'],
+            'flushEnabled': int(final_opts['flush_enabled']),
+            'ramQuotaMB': final_opts['ram_quota']
+        }
+        if final_opts['bucket_type'] in ('couchbase', 'membase', 'ephemeral'):
+            params['replicaNumber'] = final_opts['replicas']
+
+        return self.http_request(
+            path='/pools/default/buckets', method='POST',
+            content=mk_formstr(params),
+            content_type='application/x-www-form-urlencoded')
+
+    @internal
+    def bucket_remove(self, name):
+        """
+        Remove an existing bucket from the cluster
+
+        :param string name: The name of the bucket to remove
+        :return: A :class:`~.HttpResult`
+        :raise: :exc:`~HTTPException` on error
+        """
+        return self.http_request(path='/pools/default/buckets/' + name,
+                                 method='DELETE')
+
+    bucket_delete =None
+
+    @internal
+    def bucket_info(self, name):
+        """
+        Retrieve information about the bucket.
+
+        :param string name: The name of the bucket
+        :return: A :class:`~.HttpResult` object. The result's
+            :attr:`~.HttpResult.value` attribute contains
+            A dictionary containing the bucket's information.
+            The returned object is considered to be opaque, and is
+            intended primarily for use with :meth:`update_bucket`.
+            Currently this returns the raw decoded JSON as emitted
+            by the corresponding server-side API
+        :raise: :exc:`~.HTTPException` if the request failed
+        """
+        return self.http_request(path='/pools/default/buckets/' + name)
