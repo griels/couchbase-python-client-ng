@@ -323,23 +323,23 @@ class AsyncWrapper(object):
     @staticmethod
     def gen_wrapper(base):
         class Wrapped(base):
-            def __init__(self,
-                         core_result,
-                         **kwargs):
-                self._original = core_result
-                self._kwargs = kwargs
+    def __init__(self,
+                 core_result,
+                 **kwargs):
+        self._original = core_result
+        self._kwargs = kwargs
 
-            def set_callbacks(self, on_ok_orig, on_err_orig):
-                def on_ok(res):
-                    on_ok_orig(base(res, **self._kwargs))
+    def set_callbacks(self, on_ok_orig, on_err_orig):
+        def on_ok(res):
+            on_ok_orig(base(res, **self._kwargs))
 
-                def on_err(res, excls, excval, exctb):
-                    on_err_orig(res, excls, excval, exctb)
+        def on_err(res, excls, excval, exctb):
+            on_err_orig(res, excls, excval, exctb)
 
-                self._original.set_callbacks(on_ok, on_err)
+        self._original.set_callbacks(on_ok, on_err)
 
-            def clear_callbacks(self, *args):
-                self._original.clear_callbacks(*args)
+    def clear_callbacks(self, *args):
+        self._original.clear_callbacks(*args)
 
         return Wrapped
 
