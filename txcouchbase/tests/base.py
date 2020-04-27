@@ -15,6 +15,7 @@
 #
 import os
 import sys
+import traceback
 from types import CodeType, FrameType
 from typing import *
 
@@ -96,91 +97,97 @@ def logged_spewer(frame,  # type: FrameType
     except:
         pass
 
+class _TxTestCase(TestCase):
+    def make_connection(self,  # type: _TxTestCase
+                        **kwargs):
+        # type: (...) -> Factory
+        ret = super(_TxTestCase, self).make_connection(**kwargs)
+        self.register_cleanup(ret)
+        return ret
+
+    def register_cleanup(self, obj):
+        d = defer.Deferred()
+        try:
+            obj.registerDeferred('_dtor', d)
+        except Exception as e:
+            raise
+
+        def cleanup(*args, **kwargs):
+            return d, None
+        self.addCleanup(cleanup)
+
+        # Add another callback (invoked _outside_ of C) to ensure
+        # the instance's destroy function is properly triggered
+        if hasattr(obj, '_async_shutdown'):
+            self.addCleanup(obj._async_shutdown)
+
+    def checkCbRefcount(self):
+        pass
+
+    @property
+    def cluster_class(self):
+        return TxCluster
+
+    def setUp(self):
+        self.setUpTrace(self)
+        super(_TxTestCase, self).setUp()
+        self.cb = None
+
+    def tearDown(self):
+        try:
+            super(_TxTestCase, self).tearDown()
+        except Exception as e:
+            raise
+        finally:
+            self.tearDownTrace(self)
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        import inspect
+        cls.setUpTrace(cls)
+        if cls.timeout:
+            for name, method in inspect.getmembers(cls,inspect.isfunction):
+                try:
+                    logging.info("Setting {} timeout to {} secs".format(name, cls.timeout))
+                    getattr(cls,name).timeout=cls.timeout
+                except:
+                    logging.error(traceback.format_exc())
+
+    @staticmethod
+    def setUpTrace(subject):
+        if os.getenv("PYCBC_DEBUG_SPEWER", "").upper() == "TRUE":
+            # enable very detailed call logging
+            subject._oldtrace = sys.gettrace()
+            sys.settrace(logged_spewer)
+
+    @staticmethod
+    def tearDownTrace(subject):
+        oldtrace = getattr(subject, '_oldtrace', None)
+        if oldtrace:
+            sys.settrace(oldtrace)
+
+    @classmethod
+    def tearDownClass(cls):
+        super(_TxTestCase, cls).tearDownClass()
+        cls.tearDownTrace(cls)
+
 
 def gen_base(basecls,  # type: Type[T]
              timeout=5,
              factory=None  # type: Factory
              ):
     # type: (...) -> Union[Type[_TxTestCase],Type[T]]
-    class _TxTestCase(basecls, TestCase):
-        def make_connection(self,  # type: _TxTestCase
-                            **kwargs):
-            # type: (...) -> Factory
-            ret = super(_TxTestCase, self).make_connection(**kwargs)
-            self.register_cleanup(ret)
-            return ret
-
-        def register_cleanup(self, obj):
-            d = defer.Deferred()
-            try:
-                obj.registerDeferred('_dtor', d)
-            except Exception as e:
-                raise
-
-            def cleanup(*args, **kwargs):
-                return d, None
-            self.addCleanup(cleanup)
-
-            # Add another callback (invoked _outside_ of C) to ensure
-            # the instance's destroy function is properly triggered
-            if hasattr(obj, '_async_shutdown'):
-                self.addCleanup(obj._async_shutdown)
-
-        def checkCbRefcount(self):
-            pass
-
+    class WrappedTest(_TxTestCase, basecls):
         @property
-        def cluster_class(self):
-            return TxCluster
+        @classmethod
+        def timeout(cls):
+            return timeout
 
         @property
         def factory(self):
             return factory or self.gen_collection
 
-        def setUp(self):
-            self.setUpTrace(self)
-            super(_TxTestCase, self).setUp()
-            self.cb = None
-
-        def tearDown(self):
-            try:
-                super(_TxTestCase, self).tearDown()
-            except Exception as e:
-                raise
-            finally:
-                self.tearDownTrace(self)
-
-        @classmethod
-        def setUpClass(cls) -> None:
-            import inspect
-            cls.setUpTrace(cls)
-            if timeout:
-                for name, method in inspect.getmembers(cls,inspect.isfunction):
-                    try:
-                        print("Setting {} timeout to 10 secs".format(name))
-                        getattr(cls,name).timeout=timeout
-                    except Exception as e:
-                        print(e)
-
-        @staticmethod
-        def setUpTrace(subject):
-            if os.getenv("PYCBC_DEBUG_SPEWER", "").upper() == "TRUE":
-                # enable very detailed call logging
-                subject._oldtrace = sys.gettrace()
-                sys.settrace(logged_spewer)
-
-        @staticmethod
-        def tearDownTrace(subject):
-            oldtrace = getattr(subject, '_oldtrace', None)
-            if oldtrace:
-                sys.settrace(oldtrace)
-
-        @classmethod
-        def tearDownClass(cls):
-            super(_TxTestCase, cls).tearDownClass()
-            cls.tearDownTrace(cls)
-
-    return _TxTestCase
+    return WrappedTest
 
 
 def skip_PYCBC_894(func):
