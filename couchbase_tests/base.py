@@ -957,7 +957,10 @@ class AsyncClusterTestCase(ClusterTestCase):
         # type: (...) -> Cluster
         args = list(args)
         connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
-        return self._instantiate_cluster(connstr_nobucket, self.cluster_class)
+        cluster=self._instantiate_cluster(connstr_nobucket, self.cluster_class)
+        if not cluster._is_6_5_plus():
+            cluster.bucket(bucket)
+        return cluster
 
     def gen_bucket(self, *args, override_bucket=None, **kwargs):
         args = list(args)
