@@ -38,16 +38,14 @@ reasons (Deferreds result in a 3x performance slowdown).
 .. class:: TxDeferredClientMixin
 
     .. automethod:: __init__
-    .. automethod:: query
-    .. automethod:: query_ex
-    .. automethod:: view_query
-    .. automethod:: view_query_ex
-    .. automethod:: analytics_query
-    .. automethod:: search_query
 
 .. class:: TxRawCluster
 
     .. automethod:: __init__
+    .. automethod:: analytics_query
+    .. automethod:: search_query
+    .. automethod:: query
+    .. automethod:: query_ex
 
 .. class:: TxCluster
 
@@ -55,21 +53,14 @@ reasons (Deferreds result in a 3x performance slowdown).
 
 .. class:: TxRawBucket
 
-    .. automethod:: __init__
-
 .. class:: TxBucket
 
-    .. automethod:: __init__
+    .. automethod:: view_query
+    .. automethod:: view_query_ex
 
 .. class:: TxRawCollection
 
-    .. automethod:: __init__
-
 .. class:: TxCollection
-
-    .. automethod:: __init__
-
-
 
 .. class:: BatchedViewResult
 
