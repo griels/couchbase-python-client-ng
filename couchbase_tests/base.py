@@ -800,7 +800,7 @@ class ClusterTestCase(CouchbaseTestCase):
                 return on_success(ret)
             except Exception as e:
                 # helpful to have this print statement when tests fail
-                logging.info("Got exception, sleeping: {}".format(traceback.format_exc()))
+                logging.error("Got exception, sleeping: {}".format(traceback.format_exc()))
                 time.sleep(seconds_between)
         return self._fail(
             "unsuccessful {} after {} times, waiting {} seconds between calls".format(func, num_times, seconds_between))
@@ -957,18 +957,23 @@ class CollectionTestCase(ClusterTestCase):
             pass
 
 
-AsyncClusterType = TypeVar('AsyncClusterType', bound=AsyncCluster)
-
-
 class AsyncClusterTestCase(ClusterTestCase):
+    AsyncClusterType = TypeVar('AsyncClusterType', bound=AsyncCluster)
 
     def gen_cluster(self,  # type: AsyncClusterTestCase
                     *args,
                     **kwargs):
         # type: (...) -> AsyncClusterType
+        cluster, bucket_name = self.instantiate_cluster_fake_gcccp(args, kwargs)
+        return cluster
+
+    def instantiate_cluster_fake_gcccp(self, args, kwargs):
         args = list(args)
-        connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
-        return self._instantiate_cluster(connstr_nobucket, self.cluster_class)
+        connstr_nobucket, bucket_name = self._get_connstr_and_bucket_name(args, kwargs)
+        cluster = self._instantiate_cluster(connstr_nobucket, self.cluster_class)
+        if not cluster._is_6_5_plus():
+            cluster.bucket(bucket_name)
+        return cluster, bucket_name
 
     def gen_bucket(self, *args, override_bucket=None, **kwargs):
         args = list(args)
@@ -985,7 +990,7 @@ class AsyncClusterTestCase(ClusterTestCase):
     @abstractmethod
     def cluster_class(self  # type: AsyncClusterTestCase
                       ):
-        # type: (...) -> Type[.AsyncClusterType]
+        # type: (...) -> Type[AsyncClusterType]
         pass
 
 
