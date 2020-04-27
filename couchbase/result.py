@@ -319,10 +319,7 @@ class GetReplicaResult(GetResult):
         raise NotImplementedError("To be implemented in final sdk3 release")
 
 
-class AsyncWrapper(object):
-    @staticmethod
-    def gen_wrapper(base):
-        class Wrapped(base):
+class AsyncResult(object):
     def __init__(self,
                  core_result,
                  **kwargs):
@@ -340,6 +337,13 @@ class AsyncWrapper(object):
 
     def clear_callbacks(self, *args):
         self._original.clear_callbacks(*args)
+
+
+class AsyncWrapper(object):
+    @staticmethod
+    def gen_wrapper(base):
+        class Wrapped(AsyncResult, base):
+            pass
 
         return Wrapped
 
