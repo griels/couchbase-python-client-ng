@@ -323,6 +323,11 @@ ResultDeriv = TypeVar("ResultDeriv", bound=Result)
 
 
 class AsyncResultBase(object):
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, 'AsyncResult_Wrapped'):
+            cls.AsyncResult_Wrapped=True
+        return super(AsyncResultBase, cls).__new__(cls, *args, **kwargs)
+
     def __init__(self,
                  core_result,
                  **kwargs):
