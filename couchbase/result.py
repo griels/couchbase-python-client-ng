@@ -323,6 +323,10 @@ ResultDeriv = TypeVar("ResultDeriv", bound=Result)
 
 
 class AsyncResultBase(object):
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, 'AsyncResult_Wrapped'):
+            cls.AsyncResult_Wrapped=True
+        return super(AsyncResultBase, cls).__new__(cls, *args, **kwargs)
     def __init__(self,
                  core_result,
                  **kwargs):
@@ -367,7 +371,7 @@ class AsyncGetResult(AsyncWrapper.gen_wrapper(GetResult)):
 
 class AsyncGetReplicaResult(AsyncWrapper.gen_wrapper(GetReplicaResult)):
     def __init__(self,
-                 sdk2_result  # type: SDK2Result
+                 sdk2_result  # type: CoreResult
                  ):
         super(AsyncGetReplicaResult, self).__init__(sdk2_result)
 
