@@ -321,10 +321,10 @@ def _dsop(create_type=None, wrap_missing_path=True):
     return real_decorator
 
 
-class CBCollectionBase(with_metaclass(ABCMeta)):
+class CBCollection(wrapt.ObjectProxy):
     def __new__(cls, *args, **kwargs):
         _wrap_collections_class(cls)
-        return super(CBCollectionBase,cls).__new__(cls, *args,**kwargs)
+        return super(CBCollection,cls).__new__(cls, *args,**kwargs)
 
     def _inject_scope_collection_kwargs(self, kwargs):
         # NOTE: BinaryCollection, for instance, contains a collection and has an interface
@@ -338,8 +338,8 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
                 kwargs['scope'] = self._self_scope.name
                 kwargs['collection'] = self._self_name
 
-    def __init__(self,  # type: CBCollectionBase
-             name = None,  # type: str
+    def __init__(self,  # type: CBCollection
+                 name = None,  # type: str
                  parent_scope = None,  # type: Scope
                  *options,
                  **kwargs
@@ -356,20 +356,29 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         :param str name: name of collection
         :param CollectionOptions options: miscellaneous options
         """
+        assert issubclass(type(parent_scope.bucket), CoreClientDatastructureWrap)
+        wrapt.ObjectProxy.__init__(self, parent_scope.bucket)
         self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
         self._self_true_collections = name and parent_scope
 
+    def __copy__(self):
+        raise NotImplementedError()
+
+    def __deepcopy__(self, memo):
+        raise NotImplementedError()
+
     @property
-    @abstractmethod
-    def bucket(self):
-        pass
+    def bucket(self  # type: CBCollection
+               ):
+        # type: (...) -> CoreClient
+        return self._self_scope.bucket
 
     def __str__(self):
-        return "CBCollectionBase of {}".format(str(self.bucket))
+        return "CBCollection of {}".format(str(self.bucket))
 
     def __repr__(self):
-        return "CBCollectionBase of {}".format(repr(self.bucket))
+        return "CBCollection of {}".format(repr(self.bucket))
 
 
     @classmethod
@@ -400,7 +409,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
               name,          # type: Optional[str]
               *options       # type: CollectionOptions
               ):
-        # type: (...) -> CBCollectionBase
+        # type: (...) -> CBCollection
         coll_args = dict(**parent_scope.bucket._bucket_args)
         coll_args.update(name=name, parent_scope=parent_scope)
         result = parent_scope.bucket._collection_factory(connection_string=parent_scope.bucket._connstr, **coll_args)
@@ -541,7 +550,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
 
     @_inject_scope_and_collection
     @volatile
-    def get_multi(self,         # type: CBCollectionBase
+    def get_multi(self,         # type: CBCollection
                   keys,         # type: Iterable[str]
                   *options,     # type: GetOptions
                   **kwargs
@@ -558,7 +567,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         return get_multi_get_result(self.bucket, _Base.get_multi, keys, *options, **kwargs)
 
     @overload
-    def upsert_multi(self,  # type: CBCollectionBase
+    def upsert_multi(self,  # type: CBCollection
                      keys,  # type: Mapping[str,Any]
                      ttl=0,  # type: int
                      format=None,  # type: int
@@ -568,7 +577,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
 
     @_inject_scope_and_collection
     @volatile
-    def upsert_multi(self,  # type: CBCollectionBase
+    def upsert_multi(self,  # type: CBCollection
                      keys,  # type: Dict[str,JSON]
                      *options,  # type: GetOptions
                      **kwargs
@@ -618,7 +627,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
 
     @_inject_scope_and_collection
     @volatile
-    def insert_multi(self,      # type: CBCollectionBase
+    def insert_multi(self,      # type: CBCollection
                      keys,      # type: Dict[str,JSON]
                      *options,  # type: GetOptions
                      **kwargs
@@ -637,7 +646,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
 
     @_inject_scope_and_collection
     @volatile
-    def remove_multi(self,      # type: CBCollectionBase
+    def remove_multi(self,      # type: CBCollection
                      keys,      # type: Iterable[str]
                      *options,  # type: GetOptions
                      **kwargs
@@ -866,7 +875,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         return ResultPrecursor(CoreClient.replace(self.bucket, key, value, **final_options), final_options)
 
     @_mutate_result_and_inject
-    def remove(self,        # type: CBCollectionBase
+    def remove(self,        # type: CBCollection
                key,         # type: str
                *options,    # type: RemoveOptions
                **kwargs
@@ -907,7 +916,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         return ResultPrecursor(CoreClient.remove(self.bucket, key, **final_options), final_options)
 
     @_inject_scope_and_collection
-    def lookup_in(self,         # type: CBCollectionBase
+    def lookup_in(self,         # type: CBCollection
                   key,          # type: str
                   spec,         # type: LookupInSpec
                   *options,     # type: LookupInOptions
@@ -943,7 +952,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
         return LookupInResult(CoreClient.lookup_in(self.bucket, key, spec, **final_options))
 
     @_inject_scope_and_collection
-    def mutate_in(self,  # type: CBCollectionBase
+    def mutate_in(self,  # type: CBCollection
                   key,  # type: str
                   spec,  # type: MutateInSpec
                   *options,  # type: MutateInOptions
@@ -1337,7 +1346,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
 
 class BinaryCollection(object):
     def __init__(self,
-                 collection  # type: CBCollectionBase
+                 collection  # type: CBCollection
                  ):
         self._collection = collection
         # The following are needed for the @_mutate_result_and_inject annotation.
@@ -1567,7 +1576,7 @@ class Scope(object):
                            *options,  # type: Any
                            **kwargs  # type: Any
                            ):
-        # type: (...) -> CBCollectionBase
+        # type: (...) -> CBCollection
         """
         Returns the default collection for this bucket.
 
@@ -1584,14 +1593,14 @@ class Scope(object):
                         collection_name,  # type: Optional[str]
                         *options  # type: CollectionOptions
                         ):
-        # type: (...) -> CBCollectionBase
-        return CBCollectionBase._cast(self, collection_name, *options)
+        # type: (...) -> CBCollection
+        return CBCollection._cast(self, collection_name, *options)
 
     def collection(self,
                         collection_name,  # type: str
                         *options  # type: CollectionOptions
                         ):
-        # type: (...) -> CBCollectionBase
+        # type: (...) -> CBCollection
         """
         Gets the named collection for this bucket.
 
@@ -1609,42 +1618,6 @@ class Scope(object):
 class CoreClientDatastructureWrap(CoreClient):
     def _wrap_dsop(self, sdres, has_value=False, **kwargs):
         return getattr(CoreClient._wrap_dsop(self,sdres, has_value), 'value')
-
-
-class CBCollection(CBCollectionBase, wrapt.ObjectProxy):
-    def __copy__(self):
-        raise NotImplementedError()
-
-    def __deepcopy__(self, memo):
-        raise NotImplementedError()
-
-    def __init__(self,  # type: CBCollection
-                 name = None,  # type: str
-                 parent_scope = None,  # type: Scope
-                 *options,
-                 **kwargs
-                 ):
-        # type: (...) -> None
-        """
-        Couchbase collection. Should only be invoked by internal API, e.g.
-        by :meth:`couchbase.collection.scope.Scope.collection` or
-        :meth:`couchbase.bucket.Bucket.default_collection`.
-
-        Args as for CoreClient, plus:
-
-        :param couchbase.collections.Scope parent: parent scope
-        :param str name: name of collection
-        :param CollectionOptions options: miscellaneous options
-        """
-        assert issubclass(type(parent_scope.bucket), CoreClientDatastructureWrap)
-        wrapt.ObjectProxy.__init__(self, parent_scope.bucket)
-        CBCollectionBase.__init__(self, name=name,  parent_scope=parent_scope, *options, **kwargs)
-
-    @property
-    def bucket(self  # type: CBCollection
-               ):
-        # type: (...) -> CoreClient
-        return self._self_scope.bucket
 
 
 class AsyncCBCollection(AsyncClientMixin, CBCollection):

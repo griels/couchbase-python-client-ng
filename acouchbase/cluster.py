@@ -123,7 +123,7 @@ def get_event_loop(evloop=None  # type: AbstractEventLoop
     Get an event loop compatible with acouchbase.
     Some Event loops, such as ProactorEventLoop (the default asyncio event
     loop for Python 3.8 on Windows) are not compatible with acouchbase as
-    they don't implement all members in the abstract base class.
+    they don't implement the necessary members in the abstract base class.
 
     :param evloop: preferred event loop
     :return: The preferred event loop, if compatible, otherwise, a compatible
