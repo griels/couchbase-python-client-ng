@@ -147,8 +147,9 @@ class AsyncClientMixin(object):
         # kwargs['unlock_gil'] = False
         # This is always set to false in connection.c
 
-        super(AsyncClientMixin, self).__init__(*args, **kwargs)
+        super(AsyncConnectorMixin, self).__init__(*args, **kwargs)
 
+class AsyncClientMixin(AsyncConnectorMixin):
     def view_query(self, *args, **kwargs):
         if not issubclass(kwargs.get('itercls', None), AsyncViewBase):
             raise InvalidArgumentException.pyexc("itercls must be defined "
