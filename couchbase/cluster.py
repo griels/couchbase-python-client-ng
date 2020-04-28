@@ -588,6 +588,9 @@ class Cluster(BaseClient):
 
     QueryResultType = TypeVar('QueryResultType', bound=QueryResult)
 
+        result = self.respond_to_value(response_holder, _6_5_responder)
+        return result
+
     QueryResultType = TypeVar('QueryResultType', bound=QueryResult)
 
     def query(self,
