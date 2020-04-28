@@ -36,6 +36,7 @@ from utilspie.collectionsutils import frozendict
 
 import couchbase
 import couchbase_core
+from acouchbase.cluster import DefaultCluster
 from couchbase.cluster import AsyncCluster
 from collections import defaultdict
 from couchbase.bucket import Bucket as V3Bucket
@@ -747,7 +748,7 @@ class ClusterTestCase(CouchbaseTestCase):
     def cluster_factory(self  # type: ClusterTestCase
                         ):
         # type: (...) -> Type[Cluster]
-        return Cluster
+        return DefaultCluster
 
     class ItemValidator(object):
         def __init__(self, parent):
@@ -843,6 +844,7 @@ class ClusterTestCase(CouchbaseTestCase):
     def setUp(self, **kwargs):
         super(ClusterTestCase, self).setUp()
         bucket_name = self.init_cluster_and_bucket(**kwargs)
+        self.cluster.wait_until_ready()
         self.bucket = self.cluster.bucket(bucket_name)
         self.bucket_name = bucket_name
         self.query_props = QueryParams('SELECT mockrow', 1) if self.is_mock else \
@@ -882,9 +884,15 @@ class ClusterTestCase(CouchbaseTestCase):
             opts = ClusterOptions(auth)
         else:
             opts['authenticator'] = auth
-        return self.try_n_times(10, 3, cluster_class.connect,
+        result = self.try_n_times(10, 3, cluster_class.connect,
                                 connection_string=str(connstr_nobucket),
                                 options=opts, **mock_hack.kwargs)
+
+        self.wait_ready(result)
+        return result
+
+    def wait_ready(self, cluster):
+        cluster.wait_until_ready()
 
     # NOTE: this really is only something you can trust in homogeneous clusters, but then again
     # this is a test suite.
@@ -974,6 +982,8 @@ AsyncClusterType = TypeVar('AsyncClusterType', bound=AsyncCluster)
 
 
 class AsyncClusterTestCase(ClusterTestCase):
+    def wait_ready(self, cluster):
+        pass
 
     def gen_cluster(self,  # type: AsyncClusterTestCase
                     *args,
