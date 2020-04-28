@@ -26,7 +26,7 @@ from six import with_metaclass
 T = TypeVar('T', bound=AsyncClientMixin)
 
 
-class AIOClientMixinBase(object):
+class AIOConnectorMixinBase(object):
     """
     AIOClientMixinBase
     """
@@ -47,7 +47,7 @@ class AIOClientMixinBase(object):
         loop = asyncio.get_event_loop()
         if connstr and 'connstr' not in kwargs:
             kwargs['connstr'] = connstr
-        super(AIOClientMixinBase, self).__init__(IOPS(loop), *args, **kwargs)
+        super(AIOConnectorMixinBase, self).__init__(IOPS(loop), *args, **kwargs)
         self._loop = loop
 
         cft = asyncio.Future(loop=loop)
@@ -72,7 +72,7 @@ class AIOClientMixinBase(object):
 Bases = TypeVar('Bases', bound=Tuple[Type,...])
 
 
-class AIOClientMixinType(type(AIOClientMixinBase)):
+class AIOClientMixinType(type(AIOConnectorMixinBase)):
     def __new__(cls,  # type: Type[AIOClientMixinType]
                 name,  # type: str
                 bases,  # type: Bases
@@ -139,6 +139,34 @@ class ABucket(with_metaclass(AIOClientMixinType, V3AsyncBucket)):
 
 
 Bucket = ABucket
+
+from couchbase.cluster import AsyncConnectingCluster
+class DefaultCluster(with_metaclass(AIOClientMixinType), AsyncConnectingCluster):
+    def __init__(self, connection_string, *options, **kwargs):
+        super(DefaultCluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
+
+
+    def _operate_on_an_open_bucket(self,
+                                   verb,
+                                   failtype,
+                                   *args,
+                                   **kwargs):
+        return super(DefaultCluster, self)._operate_on_an_open_bucket(verb, failtype, *args, **kwargs)
+
+    def _operate_on_cluster(self,
+                            verb,
+                            failtype,  # type: Type[CouchbaseException]
+                            *args,
+                            **kwargs):
+
+        return super(DefaultCluster, self)._operate_on_cluster(verb, failtype, *args, **kwargs)
+
+    # for now this just calls functions.  We can return stuff if we need it, later.
+    def _sync_operate_on_entire_cluster(self,
+                                        verb,
+                                        *args,
+                                        **kwargs):
+        return super(DefaultCluster, self)._sync_operate_on_entire_cluster(verb, *args, **kwargs)
 
 
 class ACluster(with_metaclass(AIOClientMixinType, V3AsyncCluster)):
