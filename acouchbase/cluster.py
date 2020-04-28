@@ -30,7 +30,7 @@ import boltons.funcutils
 T = TypeVar('T', bound=AsyncClientMixin)
 
 
-class AIOClientMixinBase(object):
+class AIOConnectorMixinBase(object):
     """
     AIOClientMixinBase
     """
@@ -51,7 +51,7 @@ class AIOClientMixinBase(object):
         loop = asyncio.get_event_loop()
         if connstr and 'connstr' not in kwargs:
             kwargs['connstr'] = connstr
-        super(AIOClientMixinBase, self).__init__(IOPS(loop), *args, **kwargs)
+        super(AIOConnectorMixinBase, self).__init__(IOPS(loop), *args, **kwargs)
         self._loop = loop
 
         cft = asyncio.Future(loop=loop)
@@ -76,19 +76,19 @@ class AIOClientMixinBase(object):
 Bases = TypeVar('Bases', bound=Tuple[Type,...])
 ClientType = TypeVar('ClientType', bound=AsyncClientMixin)
 
-class AIOClientMixinType(type(AIOClientMixinBase)):
+class AIOClientMixinType(type(AIOConnectorMixinBase)):
     def __new__(cls,  # type: Type[ClientType]
                 name,  # type: str
                 bases,  # type: Bases
                 namespace  # type: Dict[str, Any]
                 ):
-        # type: (...) -> Type[ClientType]
+        # type: (...) -> Type[BaseAsyncCBCollection]
         # namespace=dict(**namespace)
-        #for k, v in bases[0]._gen_memd_wrappers(AIOClientMixinType._meth_factory).items():
-        #    namespace[k]=v
+        for k, v in bases[0]._gen_memd_wrappers(AIOClientMixinType._meth_factory).items():
+            namespace[k]=v
         #namespace.update(bases[0]._gen_memd_wrappers(AIOClientMixinType._meth_factory))
-        ResultType=super(AIOClientMixinType, cls).__new__(cls, name, (AIOClientMixinBase,)+bases, namespace)
-        return ResultType
+        Final=super(AIOClientMixinType, cls).__new__(cls, name, (AIOClientMixinBase,)+bases, namespace)
+        return Final
 
     @staticmethod
     def _meth_factory(meth, _):
@@ -161,7 +161,6 @@ class Collection(with_metaclass(AIOClientMixinType, BaseAsyncCBCollection)):
     def __deepcopy__(self, memo):
         pass
 
-    get=wrap_async(CBCollection.get, 'asyncio.Future')
     #@async_kv_operation(BaseAsyncCBCollection.get, 'asyncio.Future[GetResult]')
     #def get(self, *args, **kwargs):
     #    return AIOClientMixinType._meth_factory(BaseAsyncCBCollection.get,'get')(self, *args, **kwargs)
@@ -176,6 +175,34 @@ class ABucket(with_metaclass(AIOClientMixinType, V3AsyncBucket)):
 
 
 Bucket = ABucket
+
+from couchbase.cluster import AsyncConnectingCluster
+class DefaultCluster(with_metaclass(AIOClientMixinType), AsyncConnectingCluster):
+    def __init__(self, connection_string, *options, **kwargs):
+        super(DefaultCluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
+
+
+    def _operate_on_an_open_bucket(self,
+                                   verb,
+                                   failtype,
+                                   *args,
+                                   **kwargs):
+        return super(DefaultCluster, self)._operate_on_an_open_bucket(verb, failtype, *args, **kwargs)
+
+    def _operate_on_cluster(self,
+                            verb,
+                            failtype,  # type: Type[CouchbaseException]
+                            *args,
+                            **kwargs):
+
+        return super(DefaultCluster, self)._operate_on_cluster(verb, failtype, *args, **kwargs)
+
+    # for now this just calls functions.  We can return stuff if we need it, later.
+    def _sync_operate_on_entire_cluster(self,
+                                        verb,
+                                        *args,
+                                        **kwargs):
+        return super(DefaultCluster, self)._sync_operate_on_entire_cluster(verb, *args, **kwargs)
 
 
 class ACluster(with_metaclass(AIOClientMixinType, V3AsyncCluster)):
