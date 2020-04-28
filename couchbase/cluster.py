@@ -428,6 +428,7 @@ class Cluster(CoreClient):
     def _check_for_shutdown(self):
         if not self._cluster:
             raise AlreadyShutdownException("This cluster has already been shutdown")
+        self.connected
 
     @property
     def _admin(self):

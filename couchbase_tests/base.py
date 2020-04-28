@@ -35,6 +35,7 @@ from testresources import ResourcedTestCase as ResourcedTestCaseReal, TestResour
 from utilspie.collectionsutils import frozendict
 
 import couchbase_core
+from acouchbase.cluster import DefaultCluster
 from couchbase.cluster import AsyncCluster
 from collections import defaultdict
 from couchbase.bucket import Bucket as V3Bucket
@@ -734,7 +735,7 @@ class ClusterTestCase(CouchbaseTestCase):
     def cluster_factory(self  # type: ClusterTestCase
                         ):
         # type: (...) -> Type[Cluster]
-        return Cluster
+        return DefaultCluster
 
     class ItemValidator(object):
         def __init__(self, parent):
