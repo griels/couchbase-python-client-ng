@@ -1,6 +1,6 @@
 import asyncio
 
-from couchbase_core.asynchronous.client import AsyncClientMixin
+from couchbase_core.asynchronous.client import AsyncClientMixin, AsyncConnectorMixin
 from couchbase.mutation_state import MutationState
 from couchbase.management.queries import QueryIndexManager
 from couchbase.management.search import SearchIndexManager
@@ -35,13 +35,6 @@ T = TypeVar('T')
 
 
 CallableOnOptionBlock = Callable[[OptionBlockDeriv, Any], Any]
-
-METHMAP = {
-    'GET': _LCB.LCB_HTTP_METHOD_GET,
-    'PUT': _LCB.LCB_HTTP_METHOD_PUT,
-    'POST': _LCB.LCB_HTTP_METHOD_POST,
-    'DELETE': _LCB.LCB_HTTP_METHOD_DELETE
-}
 
 
 class DiagnosticsOptions(OptionBlock):
@@ -465,6 +458,7 @@ class ClusterOptions(dict):
 
 
 class Cluster(CoreClient):
+    _MEMCACHED_NOMULTI = CoreClient._MEMCACHED_NOMULTI+('http_request',)
 
     @internal
     def __init__(self,
@@ -497,6 +491,9 @@ class Cluster(CoreClient):
         self.connstr = cluster_opts.update_connection_string(self.connstr)
         super(Cluster, self).__init__(connection_string=str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
 
+    def wait_until_ready(self):
+        pass
+
     @classmethod
     def connect(cls,
                 connection_string,  # type: str
@@ -513,6 +510,10 @@ class Cluster(CoreClient):
         :param Any kwargs: Override corresponding value in options.
         """
         return cls(connection_string, options, **kwargs)
+
+    def on_connect(self):
+        # type: (...) -> Awaitable[Cluster]
+        return self
 
     def _do_ctor_connect(self, *args, **kwargs):
         super(Cluster,self)._do_ctor_connect(*args,**kwargs)
@@ -548,6 +549,12 @@ class Cluster(CoreClient):
             self._adminopts['bucket'] = name
         return self._cluster.open_bucket(name, admin=self._admin)
 
+    def respond_to_value(self, holder, responder):
+        return responder(holder)
+
+    def respond_to_value_as_async(self, holder, responder):
+        return responder(holder)
+
     # Temporary, helpful with working around CCBC-1204
     def _is_6_5_plus(self):
         self._check_for_shutdown()
@@ -561,9 +568,15 @@ class Cluster(CoreClient):
             # the mock says "CouchbaseMock..."
             return True
 
+        result = self.respond_to_value(response_holder, _6_5_responder)
+        return result
+
+    QueryResultType = TypeVar('QueryResultType', bound=QueryResult)
+
     def query(self,
               statement,            # type: str
               *options,             # type: Union[QueryOptions,Any]
+              itercls=QueryResult,  # type: Type[Cluster.QueryResultType]
               **kwargs              # type: Any
               ):
         # type: (...) -> QueryResult
@@ -574,8 +587,9 @@ class Cluster(CoreClient):
         :param options: A QueryOptions object or the positional parameters in the query.
         :param kwargs: Override the corresponding value in the Options.  If they don't match
           any value in the options, assumed to be named parameters for the query.
+        :param itercls: type of iterator
 
-        :return: The results of the query or error message
+        :return: An object with the results of the query or error message
             if the query failed on the server.
 
         :raise: :exc:`~.exceptions.QueryException` - for errors involving the query itself.  Also any exceptions
@@ -615,10 +629,13 @@ class Cluster(CoreClient):
                                          failtype,
                                          *args,
                                          **kwargs):
-        if self._is_6_5_plus():
-            kwargs.pop('err_msg', None)
-            return self._operate_on_cluster(verb, failtype, *args, **kwargs)
-        return self._operate_on_an_open_bucket(verb, failtype, *args, **kwargs)
+        def bucket_operator(response):
+            if response:
+                kwargs.pop('err_msg', None)
+                return self._operate_on_cluster(verb, failtype, *args, **kwargs)
+            return self._operate_on_an_open_bucket(verb, failtype, *args, **kwargs)
+
+        return self.respond_to_value_as_async(self._is_6_5_plus(), bucket_operator)
 
     def _operate_on_an_open_bucket(self,
                                    verb,
@@ -685,23 +702,24 @@ class Cluster(CoreClient):
     def analytics_query(self,       # type: Cluster
                         statement,  # type: str,
                         *options,   # type: AnalyticsOptions
-                        **kwargs
+                        itercls=AnalyticsResult,  # type: Type[AnalyticsResult]
+                        **kwargs   # type: Any
                         ):
         # type: (...) -> AnalyticsResult
         """
-        Executes an Analytics query against the remote cluster and returns a AnalyticsResult with the results
+        Executes an Analytics query against the remote cluster and returns the results
         of the query.
 
         :param statement: the analytics statement to execute
         :param options: the optional parameters that the Analytics service takes based on the Analytics RFC.
-        :return: An AnalyticsResult object with the results of the query or error message if the query failed on the server.
+        :param itercls: iterable class to return
+        :return: An object with the results of the query or error message if the query failed on the server.
         :raise: :exc:`~.exceptions.AnalyticsException` errors associated with the analytics query itself.
             Also, any exceptions raised by the underlying platform - :class:`~.exceptions.TimeoutException`
             for example.
         """
         # following the query implementation, but this seems worth revisiting soon
         self._check_for_shutdown()
-        itercls = kwargs.pop('itercls', AnalyticsResult)
         opt = AnalyticsOptions()
         opts = list(options)
         for o in opts:
@@ -719,11 +737,11 @@ class Cluster(CoreClient):
                      index,     # type: str
                      query,     # type: SearchQuery
                      *options,  # type: SearchOptions
-                     **kwargs
+                     **kwargs   # type: Any
                      ):
         # type: (...) -> SearchResult
         """
-        Executes a Search or FTS query against the remote cluster and returns a SearchResult implementation with the
+        Executes a Search or FTS query against the remote cluster and returns the
         results of the query.
 
         .. code-block:: python
@@ -738,7 +756,7 @@ class Cluster(CoreClient):
         :param query: the fluent search API to construct a query for FTS.
         :param options: the options to pass to the cluster with the query.
         :param kwargs: Overrides corresponding value in options.
-        :return: A :class:`~.search.SearchResult` object with the results of the query or error message if the query
+        :return: An object with the results of the query or error message if the query
             failed on the server.
         :raise: :exc:`~.exceptions.SearchException` Errors related to the query itself.
             Also, any exceptions raised by the underlying platform - :class:`~.exceptions.TimeoutException`
@@ -784,7 +802,7 @@ class Cluster(CoreClient):
         :raise: :class:`~.exceptions.CouchbaseException` for various communication issues.
         """
 
-        bucket = self._get_an_open_bucket()
+        bucket = self._get_an_open_bucket("Ping requires an open bucket")
         if bucket:
             return PingResult(bucket.ping(*options, **kwargs))
         raise NoBucketException("ping requires a bucket be opened first")
@@ -1009,9 +1027,10 @@ class Cluster(CoreClient):
         mode = self._cntl(op=_LCB.LCB_CNTL_SSL_MODE, value_type='int')
         return mode & _LCB.LCB_SSL_ENABLED != 0
 
-
-class AsyncCluster(AsyncClientMixin, Cluster):
+class AsyncConnectingCluster(AsyncConnectorMixin, Cluster):
     @classmethod
     def connect(cls, connection_string=None, *args, **kwargs):
         return cls(connection_string=connection_string, *args, **kwargs)
 
+class AsyncCluster(AsyncClientMixin, AsyncConnectingCluster):
+    pass
