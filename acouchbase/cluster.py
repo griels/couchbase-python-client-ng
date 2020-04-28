@@ -1,5 +1,7 @@
 from asyncio import AbstractEventLoop
 
+from couchbase_core.asynchronous.client import AsyncConnectorMixin
+
 try:
     import asyncio
 except ImportError:
@@ -17,8 +19,40 @@ from couchbase.cluster import AsyncCluster as V3AsyncCluster
 
 T = TypeVar('T', bound=CoreClient)
 
+class AIOConnectorMixin(object):
+    def __init__(self, connstr=None, *args, **kwargs):
+        loop = asyncio.get_event_loop()
+        if connstr and 'connstr' not in kwargs:
+            kwargs['connstr'] = connstr
+        super(AIOConnectorMixin, self).__init__(IOPS(loop), *args, **kwargs)
+        self._loop = loop
 
-class AIOClientMixin(object):
+        cft = asyncio.Future(loop=loop)
+
+        def ftresult(err):
+            if err:
+                cft.set_exception(err)
+            else:
+                cft.set_result(True)
+
+        self._cft = cft
+        self._conncb = ftresult
+
+    def on_connect(self):
+        if not self.connected:
+            self._connect()
+            return self._cft
+
+    def wait_until_ready(self):
+        on_connect=self.on_connect()
+        if on_connect:
+            get_event_loop().run_until_complete(on_connect)
+            assert(self.connected)
+
+    connected = CoreClient.connected
+
+
+class AIOClientMixin(AIOConnectorMixin):
     def __new__(cls, *args,**kwargs):
         # type: (...) -> Type[T]
         if not hasattr(cls, "AIO_wrapped"):
@@ -104,6 +138,34 @@ class ABucket(AIOClientMixin, V3AsyncBucket):
 
 
 Bucket = ABucket
+
+from couchbase.cluster import AsyncConnectingCluster
+class DefaultCluster(AIOConnectorMixin, AsyncConnectingCluster):
+    def __init__(self, connection_string, *options, **kwargs):
+        super(DefaultCluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
+
+
+    def _operate_on_an_open_bucket(self,
+                                   verb,
+                                   failtype,
+                                   *args,
+                                   **kwargs):
+        return super(DefaultCluster, self)._operate_on_an_open_bucket(verb, failtype, *args, **kwargs)
+
+    def _operate_on_cluster(self,
+                            verb,
+                            failtype,  # type: Type[CouchbaseException]
+                            *args,
+                            **kwargs):
+
+        return super(DefaultCluster, self)._operate_on_cluster(verb, failtype, *args, **kwargs)
+
+    # for now this just calls functions.  We can return stuff if we need it, later.
+    def _sync_operate_on_entire_cluster(self,
+                                        verb,
+                                        *args,
+                                        **kwargs):
+        return super(DefaultCluster, self)._sync_operate_on_entire_cluster(verb, *args, **kwargs)
 
 
 class ACluster(AIOClientMixin, V3AsyncCluster):
