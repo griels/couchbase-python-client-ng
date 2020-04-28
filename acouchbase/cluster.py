@@ -100,6 +100,29 @@ class DefaultCluster(AIOClientMixin, V3AsyncCluster):
         super(DefaultCluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
 
 
+    def _operate_on_an_open_bucket(self,
+                                   verb,
+                                   failtype,
+                                   *args,
+                                   **kwargs):
+        return super(DefaultCluster, self)._operate_on_an_open_bucket(verb, failtype, *args, **kwargs)
+
+    def _operate_on_cluster(self,
+                            verb,
+                            failtype,  # type: Type[CouchbaseException]
+                            *args,
+                            **kwargs):
+
+        return super(DefaultCluster, self)._operate_on_cluster(verb, failtype, *args, **kwargs)
+
+    # for now this just calls functions.  We can return stuff if we need it, later.
+    def _sync_operate_on_entire_cluster(self,
+                                        verb,
+                                        *args,
+                                        **kwargs):
+        return super(DefaultCluster, self)._sync_operate_on_entire_cluster(verb, *args, **kwargs)
+
+
 class ACluster(AIOClientMixin, V3AsyncCluster):
     def __init__(self, connection_string, *options, **kwargs):
         super(ACluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
