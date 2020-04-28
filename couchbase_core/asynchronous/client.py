@@ -28,8 +28,7 @@ from typing import *
 
 T = TypeVar('T', bound=CoreClient)
 
-
-class AsyncClientMixin(object):
+class AsyncConnectorMixin(object):
     """
     This class contains the low-level async implementation of the
     :class:`~couchbase_core.client.Client` interface. **This module is not intended to be
@@ -148,8 +147,10 @@ class AsyncClientMixin(object):
         # kwargs['unlock_gil'] = False
         # This is always set to false in connection.c
 
-        super(AsyncClientMixin, self).__init__(*args, **kwargs)
+        super(AsyncConnectorMixin, self).__init__(*args, **kwargs)
 
+
+class AsyncClientMixin(AsyncConnectorMixin):
     def view_query(self, *args, **kwargs):
         """
         Reimplemented from base class.
@@ -173,14 +174,3 @@ class AsyncClientMixin(object):
         res = super(AsyncClientMixin, self).endure_multi([key], *args, **kwargs)
         res._set_single()
         return res
-
-
-class AsyncClientFactory(type):
-    @staticmethod
-    def gen_async_client(syncbase  # type: Type[T]
-                         ):
-        # type: (...) -> Type[T]
-        class AsyncClientSpecialised(AsyncClientMixin, syncbase):
-            pass
-        return AsyncClientSpecialised
-
