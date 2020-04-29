@@ -50,8 +50,9 @@ class AioBase:
             self.__accum.put_nowait(row)
 
     def on_done(self):
-        self._future.set_result(None)
-        self.__accum.put_nowait(None)
+        if not self._future.done():
+            self._future.set_result(None)
+            self.__accum.put_nowait(None)
 
     def on_error(self, ex):
         self._future.set_exception(ex)
