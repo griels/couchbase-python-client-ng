@@ -75,6 +75,9 @@ class AsyncRowsBase(object):
                 self.on_rows(rows)
             if self.raw.done:
                 self.on_done()
+        except Exception as e:
+            self.on_error(e)
+            self.on_done()
         finally:
             if self.raw.done:
                 self._clear()
