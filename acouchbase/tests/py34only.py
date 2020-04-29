@@ -1,5 +1,7 @@
 import asyncio
 
+from couchbase_core.n1ql import N1QLException
+
 from couchbase.asynchronous import AsyncSearchResult
 from couchbase.asynchronous import AsyncAnalyticsResult
 from .fixtures import asynct, AioTestCase
@@ -100,6 +102,17 @@ class AIOClusterTest(AioTestCase):
         except SearchException as e:
             if isinstance(e.inner_cause, NotSupportedException) and self.is_mock:
                 raise SkipTest("Not supported")
+
+    @asynct
+    @asyncio.coroutine
+    def test_n1ql_with_error(self):
+
+        with self.assertRaisesRegex(CouchbaseException, ".*INDEX.*"):
+            cluster = self.gen_cluster(**self.make_connargs())
+            yield from (cluster.on_connect() or asyncio.sleep(0.01))
+
+            it = cluster.query("SELECT mockrow FRM badquery")
+            yield from it.future
 
 
 class AnalyticsTest(AioTestCase):
