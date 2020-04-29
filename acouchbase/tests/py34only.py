@@ -103,6 +103,17 @@ class AIOClusterTest(AioTestCase):
             if isinstance(e.inner_cause, NotSupportedException) and self.is_mock:
                 raise SkipTest("Not supported")
 
+    @asynct
+    @asyncio.coroutine
+    def test_n1ql_with_error(self):
+
+        with self.assertRaisesRegex(CouchbaseException, ".*INDEX.*"):
+            cluster = self.gen_cluster(**self.make_connargs())
+            yield from (cluster.on_connect() or asyncio.sleep(0.01))
+
+            it = cluster.query("SELECT mockrow FRM badquery")
+            yield from it.future
+
 
 class AnalyticsTest(AioTestCase):
     def testBatchedAnalytics(self  # type: Base
