@@ -539,30 +539,10 @@ class ViewRow(object):
     id=attr.ib(default=str)
     document=attr.ib(default=object)
 
-class ViewResultProcessor(RowProcessor):
-
-    def handle_rows(self, rows, *_):
-        """
-        Preprocesses a page of rows.
-
-        :param list rows: A list of rows. Each row is a JSON object containing
-            the decoded JSON of the view as returned from the server
-        :param connection: The connection object (pass to the :class:`View`
-            constructor)
-        :param include_docs: Whether to include documents in the return value.
-            This is ``True`` or ``False`` depending on what was passed to the
-            :class:`View` constructor
-
-        :return: an iterable. When the iterable is exhausted, this method will
-            be called again with a new 'page'.
-        """
-        for row in rows:
-            yield ViewRow(row['key'], row['value'],
-                                row.get('id'), get_row_doc(row))
 
 class ViewResult(IterableWrapper, CoreView):
     def __init__(self, *args, **kwargs  # type: CoreView
                  ):
-        kwargs['row_processor'] = kwargs.pop('row_processor', ViewResultProcessor)
+        kwargs['row_processor'] = kwargs.pop('row_processor', RowProcessor(ViewRow))
         super(ViewResult, self).__init__(type(self), *args, **kwargs)
 

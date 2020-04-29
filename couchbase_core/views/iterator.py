@@ -278,9 +278,9 @@ class View(object):
 
         if not row_processor:
             if self._spatial:
-                row_processor = SpatialRowProcessor(rowclass=spatial_row_factory)
+                row_processor = SpatialRowProcessor(spatial_row_factory)
             else:
-                row_processor = RowProcessor()
+                row_processor = RowProcessor(row_factory)
         self.row_processor = row_processor
 
     @property
