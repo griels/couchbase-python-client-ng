@@ -1,17 +1,18 @@
 from typing import *
 
+import attr
 from boltons.funcutils import wraps
 from couchbase_core._libcouchbase import Result as CoreResult
 
 from couchbase.diagnostics import EndpointPingReport, ServiceType
-from couchbase_core import iterable_wrapper
+from couchbase_core import iterable_wrapper, IterableWrapper, JSON
 from couchbase_core.result import AsyncResult as CoreAsyncResult
 from couchbase_core.result import MultiResult, SubdocResult
 from couchbase_core.subdocument import Spec
 from couchbase_core.supportability import internal
 from couchbase_core.transcodable import Transcodable
-from couchbase_core.views.iterator import View as CoreView
-from .options import timedelta, forward_args
+from couchbase_core.views.iterator import View as CoreView, RowProcessor, get_row_doc
+from .options import timedelta, forward_args, UnsignedInt64
 
 Proxy_T = TypeVar('Proxy_T')
 
@@ -447,6 +448,7 @@ class MutationToken(object):
         # type: (...) -> str
         raise NotImplementedError()
 
+
 def get_mutation_result(result  # type: CoreResult
                         ):
     # type (...)->MutationResult
@@ -531,19 +533,62 @@ def _wrap_in_mutation_result(func  # type: Callable[[Any,...],CoreResult]
     return mutated
 
 
-class ViewResult(iterable_wrapper(CoreView)):
+@attr.s
+class ViewRow(object):
+    key = attr.ib()
+    value = attr.ib(default=object)
+    id = attr.ib(default=str)
+    document = attr.ib(default=object)
+
+
+class ViewMetaData(object):
+    def __init__(self,
+                 parent  # type: CoreView
+                 ):
+        self._parent = parent
+
+    def total_rows(self  # type: ViewMetaData
+                   ):
+        # type: (...) -> UnsignedInt64
+        return self._parent.rows_returned
+
+    def debug(self  # type: ViewMetaData
+              ):
+        # type: (...) -> JSON
+        return self._parent.debug
+
+
+class ViewResultRow(RowProcessor):
+    def __init__(self):
+        super(ViewResultRow, self).__init__(ViewRow)
+
+    def handle_rows(self, rows, *_):
+        """
+        Preprocesses a page of rows.
+
+        :param list rows: A list of rows. Each row is a JSON object containing
+            the decoded JSON of the view as returned from the server
+        :param connection: The connection object (pass to the :class:`View`
+            constructor)
+        :param include_docs: Whether to include documents in the return value.
+            This is ``True`` or ``False`` depending on what was passed to the
+            :class:`View` constructor
+
+        :return: an iterable. When the iterable is exhausted, this method will
+            be called again with a new 'page'.
+        """
+        for row in rows:
+            yield self.rowclass(row['key'], row['value'],
+                                row.get('id'), get_row_doc(row))
+
+
+class ViewResult(IterableWrapper, CoreView):
     def __init__(self, *args, **kwargs  # type: CoreView
                  ):
-        super(ViewResult, self).__init__(*args, **kwargs)
+        kwargs['row_processor'] = kwargs.pop('row_processor', ViewResultRow())
+        super(ViewResult, self).__init__(type(self), *args, **kwargs)
 
-    @property
-    def error(self):
-        return self.errors
-
-    @property
-    def success(self):
-        return not self.errors
-
-    @property
-    def cas(self):
-        raise NotImplementedError()
+    def metadata(self  # type: ViewResult
+                 ):
+        # type: (...) -> ViewMetaData
+        return ViewMetaData(self)

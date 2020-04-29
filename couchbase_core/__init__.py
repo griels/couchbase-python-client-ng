@@ -284,23 +284,23 @@ class IterableWrapper(object):
                  ):
         self.done = False
         self.buffered_rows = []
-        self.basecls = basecls
+        #self.basecls = basecls
         try:
-            basecls.__init__(self, *args, **kwargs)
+            super(IterableWrapper, self).__init__(*args, **kwargs)
         except Exception as e:
             raise
 
     def rows(self):
         return list(self)
 
-    def metadata(self):
-        # type: (...) -> JSON
-        return self.meta
+    #def metadata(self):
+    #    # type: (...) -> JSON
+    #    return self.meta
 
     def __iter__(self):
         for row in self.buffered_rows:
             yield row
-        parent_iter = self.basecls.__iter__(self)
+        parent_iter = super(IterableWrapper,self).__iter__()
         while not self.done:
             try:
                 next_item = next(parent_iter)
