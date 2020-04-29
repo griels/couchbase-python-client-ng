@@ -6,6 +6,7 @@ from .fixtures import asynct, AioTestCase
 from couchbase.exceptions import CouchbaseException, SearchException, NotSupportedException
 from unittest import SkipTest
 import couchbase.search as SEARCH
+from couchbase_core.n1ql import N1QLQuery, N1QLError
 
 
 class CouchbaseBeerTest(AioTestCase):
@@ -100,6 +101,18 @@ class AIOClusterTest(AioTestCase):
         except SearchException as e:
             if isinstance(e.inner_cause, NotSupportedException) and self.is_mock:
                 raise SkipTest("Not supported")
+
+    @asynct
+    @asyncio.coroutine
+    def test_n1ql_with_error(self):
+
+        with self.assertRaises(N1QLError):
+            default_bucket = self.cb
+            yield from (default_bucket.connect() or asyncio.sleep(0.01))
+
+            q = N1QLQuery("SELECT mockrow FRM badquery")
+            it = default_bucket.n1ql_query(q)
+            yield from it.future
 
 
 class AnalyticsTest(AioTestCase):
