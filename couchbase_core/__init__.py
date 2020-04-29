@@ -276,6 +276,7 @@ def recursive_reload(module, paths=None, mdict=None):
 
 
 WrappedIterable = TypeVar('T', bound=Iterable[Any])
+WrappedIterableType = TypeVar('T', bound=Type[WrappedIterable])
 
 
 class IterableWrapper(object):
@@ -300,7 +301,7 @@ class IterableWrapper(object):
     def __iter__(self):
         for row in self.buffered_rows:
             yield row
-        parent_iter = super(IterableWrapper,self).__iter__()
+        parent_iter = super(IterableWrapper, self).__iter__()
         while not self.done:
             try:
                 next_item = next(parent_iter)
@@ -311,9 +312,9 @@ class IterableWrapper(object):
                 break
 
 
-def iterable_wrapper(basecls  # type: Type[WrappedIterable]
+def iterable_wrapper(basecls  # type: WrappedIterableType
                      ):
-    # type: (...) -> Type[IterableWrapper]
+    # type: (...) -> WrappedIterableType
     class IterableWrapperSpecific(IterableWrapper, basecls):
         def __init__(self, *args, **kwargs):
             IterableWrapper.__init__(self, basecls,  *args, **kwargs)

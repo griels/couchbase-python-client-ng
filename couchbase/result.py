@@ -558,35 +558,10 @@ class ViewMetaData(object):
         return self._parent.debug
 
 
-class ViewResultRow(RowProcessor):
-    def __init__(self):
-        super(ViewResultRow, self).__init__(ViewRow)
-
-    def handle_rows(self, rows, *_):
-        """
-        Preprocesses a page of rows.
-
-        :param list rows: A list of rows. Each row is a JSON object containing
-            the decoded JSON of the view as returned from the server
-        :param connection: The connection object (pass to the :class:`View`
-            constructor)
-        :param include_docs: Whether to include documents in the return value.
-            This is ``True`` or ``False`` depending on what was passed to the
-            :class:`View` constructor
-
-        :return: an iterable. When the iterable is exhausted, this method will
-            be called again with a new 'page'.
-        """
-        for row in rows:
-            yield self.rowclass(row['key'], row['value'],
-                                row.get('id'), get_row_doc(row))
-
-
-class ViewResult(IterableWrapper, CoreView):
-    def __init__(self, *args, **kwargs  # type: CoreView
+class ViewResult(iterable_wrapper(CoreView)):
+    def __init__(self, *args, row_factory=ViewRow, **kwargs  # type: CoreView
                  ):
-        kwargs['row_processor'] = kwargs.pop('row_processor', ViewResultRow())
-        super(ViewResult, self).__init__(type(self), *args, **kwargs)
+        super(ViewResult, self).__init__(*args, row_factory=row_factory, **kwargs)
 
     def metadata(self  # type: ViewResult
                  ):
