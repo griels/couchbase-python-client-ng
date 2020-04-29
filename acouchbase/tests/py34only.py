@@ -3,10 +3,10 @@ import asyncio
 from couchbase.asynchronous import AsyncSearchResult
 from couchbase.asynchronous import AsyncAnalyticsResult
 from .fixtures import asynct, AioTestCase
-from couchbase.exceptions import CouchbaseException, SearchException, NotSupportedException
+from couchbase.exceptions import CouchbaseException, SearchException, NotSupportedException, QueryException
 from unittest import SkipTest
 import couchbase.search as SEARCH
-from couchbase_core.n1ql import N1QLQuery, N1QLError
+
 
 
 class CouchbaseBeerTest(AioTestCase):
@@ -105,13 +105,12 @@ class AIOClusterTest(AioTestCase):
     @asynct
     @asyncio.coroutine
     def test_n1ql_with_error(self):
+        cluster = self.gen_cluster(**self.make_connargs())
 
-        with self.assertRaises(N1QLError):
-            default_bucket = self.cb
-            yield from (default_bucket.connect() or asyncio.sleep(0.01))
+        with self.assertRaises(CouchbaseException):
+            yield from (cluster.on_connect() or asyncio.sleep(0.01))
 
-            q = N1QLQuery("SELECT mockrow FRM badquery")
-            it = default_bucket.n1ql_query(q)
+            it = cluster.query("SELECT mockrow FRM badquery")
             yield from it.future
 
 

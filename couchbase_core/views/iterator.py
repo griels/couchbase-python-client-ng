@@ -84,7 +84,7 @@ class RowProcessor(object):
 
         By default, the :class:`ViewRow` is used.
     """
-    def __init__(self, rowclass=ViewRow):
+    def __init__(self, rowclass):
         self.rowclass = rowclass
 
     def handle_rows(self, rows, *_):
@@ -108,7 +108,7 @@ class RowProcessor(object):
 
 
 class SpatialRowProcessor(RowProcessor):
-    def __init__(self, rowclass=SpatialRow):
+    def __init__(self, rowclass):
         super(SpatialRowProcessor, self).__init__(rowclass)
 
     def handle_rows(self, rows, *_):
@@ -134,7 +134,7 @@ def get_row_doc(row_json):
 
 class View(object):
     def __init__(self, parent, design, view, row_processor=None,
-                 include_docs=False, query=None, streaming=True, **params):
+                 include_docs=False, query=None, streaming=True, spatial_row_factory=SpatialRow, row_factory=ViewRow, **params):
         """
         Construct a iterable which can be used to iterate over view query
         results.
@@ -278,7 +278,7 @@ class View(object):
 
         if not row_processor:
             if self._spatial:
-                row_processor = SpatialRowProcessor()
+                row_processor = SpatialRowProcessor(rowclass=spatial_row_factory)
             else:
                 row_processor = RowProcessor()
         self.row_processor = row_processor
