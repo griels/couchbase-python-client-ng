@@ -23,8 +23,10 @@ from couchbase_core._libcouchbase import (FMT_JSON, FMT_AUTO,
                        FMT_BYTES, FMT_UTF8, FMT_PICKLE,
                        FMT_LEGACY_MASK, FMT_COMMON_MASK)
 
-from couchbase_core._libcouchbase import Transcoder
+from couchbase_core._libcouchbase import Transcoder as CoreTranscoder
 from couchbase_core._pyport import unicode
+from couchbase_core import ABCMeta, with_metaclass, abstractmethod
+from typing import *
 
 # Initialize our dictionary
 
@@ -170,3 +172,59 @@ class LegacyTranscoderPP(TranscoderPP):
     def encode_value(self, value, format):
         encoded, flags = super(LegacyTranscoderPP, self).encode_value(value, format)
         return encoded, flags & FMT_LEGACY_MASK
+
+
+T = TypeVar('T', bound=object)
+
+TranscoderResponse = NamedTuple('TranscoderResponse', (('bytes', bytes), ('flags', int)))
+
+
+
+class TranscoderProtocol(Protocol):
+    @abstractmethod
+    def encode(self,
+               value  # type: T
+               ):
+        # type: (...) -> TranscoderResponse
+        pass
+
+    @abstractmethod
+    def decode(self,
+               bytes,  # type: bytes
+               flags  # type: int
+               ):
+        # type: (...) -> T
+        pass
+
+
+class TranscoderProtocolKey(TranscoderProtocol):
+    def encode_key(self, key):
+        pass
+
+    def decode_key(self, key):
+        pass
+
+
+class WrappedTranscoder(CoreTranscoder):
+    def __init__(self,
+                 transcoder  # type: TranscoderProtocol
+                 ):
+        self._transcoder = transcoder
+        super(WrappedTranscoder, self).__init__()
+        self.encode_key = getattr(transcoder, 'encode_key', super(WrappedTranscoder, self).encode_key)
+        self.decode_key = getattr(transcoder, 'decode_key', super(WrappedTranscoder, self).decode_key)
+
+    def encode_value(self, value, format=None):
+        assert(not format)
+        return self._transcoder.encode(value)
+
+    def decode_value(self, value, flags):
+        return self._transcoder.decode(value, flags)
+
+
+def tc_type_to_core_tc_type(tc):
+    if isinstance(tc, type):
+        tc = tc()
+    if isinstance(tc, TranscoderProtocol):
+        tc = WrappedTranscoder(tc)
+    return tc
