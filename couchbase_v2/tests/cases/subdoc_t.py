@@ -83,13 +83,13 @@ class SubdocTest(CollectionTestCase):
         # Create deep path without create_parents
         self.assertRaises(E.PathNotFoundException,
                           cb.mutate_in, key,
-                          SD.upsert('path.with.missing.parents', 'value'))
+                          (SD.upsert('path.with.missing.parents', 'value'),))
 
         # Create deep path using create_parents
         cb.mutate_in(key,
-                     SD.upsert('new.parent.path', 'value', create_parents=True))
-        result = cb.lookup_in(key, (SD.get('new.parent',)))
-        self.assertEqual('value', result[0]['path'])
+                     (SD.upsert('new.parent.path', 'value', create_parents=True),))
+        result = cb.lookup_in(key, (SD.get('new.parent'),))
+        self.assertEqual('value', result.content_as[str](0)['path'])
 
         # Test CAS operations
         self.assertTrue(result.cas)
@@ -106,7 +106,7 @@ class SubdocTest(CollectionTestCase):
 
         # Test insert on new path, should succeed
         cb.mutate_in(key, (SD.insert('anotherDict', {}),))
-        self.assertEqual({}, cb.lookup_in(key, 'anotherDict')[0])
+        self.assertEqual({}, cb.lookup_in(key, (SD.get('anotherDict'),)).content_as[dict](0))
 
         # Test replace, should not fail
         cb.mutate_in(key, (SD.replace('newDict', {'Hello': 'World'}),))
