@@ -75,6 +75,29 @@ class ContentProxy(object):
         """
         return extract_value(self.content, get_decoder(item), self.full)
 
+class IterableContentProxy(object):
+    def __init__(self,
+                 content,  # type: SubdocResult
+                 type  # type: type
+                 ):
+        self._content=content
+        self._decoder=get_decoder(type)
+    def __call__(self, index):
+        return self._decoder(self._content[index])
+    def __iter__(self):
+        for x in self._content:
+            yield self._decoder(x)
+    def __len__(self):
+        return self._content.result_count
+
+
+class IterableContentProxyType(type):
+    def __new__(mcs, name, bases, namespace):
+        super(IterableContentProxyType, mcs).__new__(mcs, name, bases, namespace=namespace)
+    def __init__(self, name, bases, namespace):
+        super(IterableContentProxyType, self).__init__(name, bases, namespace)
+    def index_proxy(self, item, index):
+        pass
 
 class ContentProxySubdoc(object):
     """
@@ -82,11 +105,10 @@ class ContentProxySubdoc(object):
     """
 
     @internal
-    def __init__(self, content):
+    def __init__(self,
+                 content  # type: SubdocResult
+                 ):
         self.content = content
-
-    def index_proxy(self, item, index):
-        return get_decoder(item)(self.content[index])
 
     def __getitem__(self,
                     item  # type: Type[Proxy_T]
@@ -100,6 +122,8 @@ class ContentProxySubdoc(object):
         """
         return lambda index: self.index_proxy(item, index)
 
+    def __len__(self):
+        return self.content.result_count
 
 class Result(object):
     @internal
