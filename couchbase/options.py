@@ -9,6 +9,9 @@ from couchbase_core import abstractmethod, ABCMeta
 from couchbase_core._pyport import with_metaclass
 from datetime import timedelta
 from enum import IntEnum
+
+from couchbase_core.transcoder import tc_type_to_core_tc_type
+
 try:
     from typing import TypedDict
 except:
@@ -162,6 +165,7 @@ class DefaultForwarder(Forwarder):
                 'expiry': {'ttl': timedelta_as_timestamp},
                 'self': {},
                 'options': {},
+                'transcoder': {'transcoder': tc_type_to_core_tc_type},
                 'durability': {'durability_level': lambda durability: getattr(durability.get('level', None),'value', None),
                                "replicate_to": lambda client_dur: client_dur.get('replicate_to', None),
                                "persist_to": lambda client_dur: client_dur.get('persist_to', None)}}
