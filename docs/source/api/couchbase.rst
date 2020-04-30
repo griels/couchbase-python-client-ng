@@ -245,6 +245,8 @@ or duration.
 
     .. automethod:: unlock
 
+    .. automethod:: get_and_touch
+
     .. automethod:: touch
 
 
