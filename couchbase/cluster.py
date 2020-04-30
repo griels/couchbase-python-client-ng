@@ -11,7 +11,7 @@ from .management.users import UserManager
 from .management.buckets import BucketManager
 from couchbase.management.admin import Admin
 from couchbase.diagnostics import DiagnosticsResult
-from couchbase.search import SearchResult, SearchOptions
+from couchbase.search import SearchResult, SearchOptions, SearchQuery
 from .analytics import AnalyticsResult
 from .n1ql import QueryResult
 from couchbase_core.n1ql import _N1QLQuery
@@ -466,12 +466,11 @@ class Cluster(CoreClient):
         Perform a N1QL query.
 
         :param str statement: the N1QL query statement to execute
-        :param QueryOptions options: the optional parameters that the Query service takes.
-        :param Any options: if present, assumed to be the positional parameters in the query.
-        :param Any kwargs: Override the corresponding value in the Options.  If they don't match
+        :param options: if present, assumed to be the positional parameters in the query.
+        :param kwargs: Override the corresponding value in the Options.  If they don't match
           any value in the options, assumed to be named parameters for the query.
 
-        :return: An :class:`QueryResult` object with the results of the query or error message
+        :return: An object with the results of the query or error message
             if the query failed on the server.
 
         """
@@ -607,9 +606,9 @@ class Cluster(CoreClient):
 
     def search_query(self,
                      index,     # type: str
-                     query,     # type: search.SearchQuery
+                     query,     # type: SearchQuery
                      *options,  # type: SearchOptions
-                     **kwargs
+                     **kwargs   # type: Any
                      ):
         # type: (...) -> SearchResult
         """
@@ -623,8 +622,9 @@ class Cluster(CoreClient):
 
         :param str index: Name of the index to use for this query.
         :param couchbase.search.SearchQuery query: the fluent search API to construct a query for F.T.S.
-        :param QueryOptions options: the options to pass to the cluster with the query.
+        :param options: the options to pass to the cluster with the query.
         :param Any kwargs: Overrides corresponding value in options.
+
         :return: A SearchResult object with the results of the query or error message if the query failed on the server.
         Any exceptions raised by the underlying platform - HTTP_TIMEOUT for example.
         :except    ServiceNotFoundException - service does not exist or cannot be located.
