@@ -25,7 +25,7 @@ class SubdocTest(CollectionTestCase):
         })
 
         result = cb.get(key, project=['path1'])
-        self.assertEqual((0, 'value1'), result.content_as_array[0])
+        self.assertEqual((0, 'value1'), result.content[0])
         self.assertEqual((0, 'value1'), result.content['path1'])
         self.assertEqual('value1', result.content_as_array[0])
         self.assertEqual('value1', result.content['path1'])
@@ -77,37 +77,37 @@ class SubdocTest(CollectionTestCase):
         key = self.gen_key('sdstore_upsert')
         cb.upsert(key, {})
 
-        cb.mutate_in(key, SD.upsert('newDict', ['hello']))
-        result = cb.retrieve_in(key, 'newDict')
+        cb.mutate_in(key, (SD.upsert('newDict', ['hello']),))
+        result = cb.lookup_in(key, (SD.get('newDict'),))
         self.assertEqual(['hello'], result[0])
 
         # Create deep path without create_parents
         self.assertRaises(E.PathNotFoundException,
                           cb.mutate_in, key,
-                          SD.upsert('path.with.missing.parents', 'value'))
+                          (SD.upsert('path.with.missing.parents', 'value'),))
 
         # Create deep path using create_parents
         cb.mutate_in(key,
-                     SD.upsert('new.parent.path', 'value', create_parents=True))
-        result = cb.retrieve_in(key, 'new.parent')
-        self.assertEqual('value', result[0]['path'])
+                     (SD.upsert('new.parent.path', 'value', create_parents=True),))
+        result = cb.lookup_in(key, (SD.get('new.parent'),))
+        self.assertEqual('value', result.content_as[str](0)['path'])
 
         # Test CAS operations
         self.assertTrue(result.cas)
         self.assertRaises(E.DocumentExistsException, cb.mutate_in,
-                          key, SD.upsert('newDict', None), cas=result.cas+1)
+                          key, (SD.upsert('newDict', None),), cas=result.cas+1)
 
         # Try it again, using the CAS
-        result2 = cb.mutate_in(key, SD.upsert('newDict', {}), cas=result.cas)
+        result2 = cb.mutate_in(key, (SD.upsert('newDict', {}),), cas=result.cas)
         self.assertNotEqual(result.cas, result2.cas)
 
         # Test insert, should fail
         self.assertRaises(E.PathExistsException, cb.mutate_in,
-                          key, SD.insert('newDict', {}))
+                          key, (SD.insert('newDict', {}),))
 
         # Test insert on new path, should succeed
-        cb.mutate_in(key, SD.insert('anotherDict', {}))
-        self.assertEqual({}, cb.retrieve_in(key, 'anotherDict')[0])
+        cb.mutate_in(key, (SD.insert('anotherDict', {}),))
+        self.assertEqual({}, cb.lookup_in(key, (SD.get('anotherDict'),)).content_as[dict](0))
 
         # Test replace, should not fail
         cb.mutate_in(key, SD.replace('newDict', {'Hello': 'World'}))
@@ -245,13 +245,13 @@ class SubdocTest(CollectionTestCase):
         cb = self.cb
         key = self.gen_key('sditer')
         cb.upsert(key, [1, 2, 3])
-        vals = cb.retrieve_in(key, '[0]', '[1]', '[2]')
-        v1, v2, v3 = vals
+        vals = cb.lookup_in(key, (SD.get('[0]'), SD.get('[1]'), SD.get('[2]'),))
+        v1, v2, v3 = vals.content_as[str]
         self.assertEqual(1, v1)
         self.assertEqual(2, v2)
         self.assertEqual(3, v3)
 
-        vals = cb.retrieve_in(key, '[0]', '[34]', '[3]')
+        vals = cb.lookup_in(key, (SD.get('[0]'), SD.get('[34]'), SD.get('[3]')))
         # even though 34 isn't there, since it did find the
         # others, lcb says success.
         self.assertTrue(vals.success)
