@@ -702,7 +702,7 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
             match the CAS on the server (possibly because it was
             unlocked by previous call).
 
-        .. seealso:: :meth:`lock`
+        .. seealso:: :meth:`get_and_lock`
         """
         # pop the cas into the kwargs
         kwargs['cas'] = cas
