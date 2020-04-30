@@ -6,6 +6,7 @@ import couchbase.exceptions as E
 from couchbase.exceptions import NotImplementedInV3
 from couchbase_core.n1ql import _N1QLQuery, N1QLRequest
 from couchbase_core.views.iterator import View
+from couchbase_core.transcoder import TranscoderProtocol, WrappedTranscoder, tc_type_to_core_tc_type
 from .views.params import make_options_string, make_dvpath
 import couchbase_core._libcouchbase as _LCB
 from couchbase_core._libcouchbase import FMT_JSON, FMT_BYTES
@@ -135,8 +136,8 @@ class Client(_Base):
             strcntls['config_cache'] = kwargs.pop('config_cache')
 
         tc = kwargs.get('transcoder')
-        if isinstance(tc, type):
-            kwargs['transcoder'] = tc()
+        if tc:
+            kwargs['transcoder'] = tc_type_to_core_tc_type(tc)
 
         super(Client, self).__init__(*args, **kwargs)
         # Enable detailed error codes for network errors:
