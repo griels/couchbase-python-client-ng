@@ -15,7 +15,7 @@ from couchbase_core import JSON
 from couchbase_core.asynchronous.client import AsyncClientMixin
 from couchbase_core.client import Client as CoreClient
 from couchbase_core.supportability import volatile, internal
-from .options import OptionBlock, AcceptableInts
+from .options import AcceptableInts
 from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64
 from .result import GetResult, GetReplicaResult, ExistsResult, get_result_wrapper, CoreResult, ResultPrecursor, \
     LookupInResult, MutateInResult, \
@@ -451,17 +451,17 @@ class CBCollectionBase(with_metaclass(ABCMeta)):
 
     @_get_result_and_inject
     def get_and_touch(self,
-                      key,  # type: str
-                      expiry,  # type: int
-                      *options,  # type: GetAndTouchOptions
+                      key,          # type: str
+                      expiry,       # type: timedelta
+                      *options,     # type: GetAndTouchOptions
                       **kwargs
                       ):
         # type: (...) -> GetResult
         """
         Get the document with the specified key, and update the expiry.
-        :param str key: Key of document to get and touch.
-        :param timedelta expiry: New expiry for document.  Set to timedelta(seconds=0) to never expire.
-        :param GetAndTouchOptions options: Options for request.
+        :param key: Key of document to get and touch.
+        :param expiry: New expiry for document.  Set to timedelta(seconds=0) to never expire.
+        :param options: Options for request.
         :param kwargs: Override corresponding value in options.
         :return: A :class:`couchbase.result.GetResult` object representing the document for this key.
         """
