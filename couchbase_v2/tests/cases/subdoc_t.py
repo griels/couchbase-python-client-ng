@@ -46,7 +46,7 @@ class SubdocTest(CollectionTestCase):
 
         # Not found
         result = cb.lookup_in(key, SD.exists('p'))
-        self.assertEqual(E.PathNotFoundException.CODE, result.get(0)[0])
+        self.assertEqual(E.PathNotFoundException.CODE, result.content_as[str](0)[0])
 
         # Ensure that we complain about a missing path
         self.assertRaises((IndexError, KeyError), result.get, 33)
@@ -76,9 +76,9 @@ class SubdocTest(CollectionTestCase):
         key = self.gen_key('sdstore_upsert')
         cb.upsert(key, {})
 
-        cb.mutate_in(key, SD.upsert('newDict', ['hello']))
-        result = cb.retrieve_in(key, 'newDict')
-        self.assertEqual(['hello'], result[0])
+        cb.mutate_in(key, (SD.upsert('newDict', ['hello']),))
+        result = cb.lookup_in(key, (SD.get('newDict'),))
+        self.assertEqual(['hello'], result.content_as[str](0))
 
         # Create deep path without create_parents
         self.assertRaises(E.PathNotFoundException,
@@ -88,54 +88,54 @@ class SubdocTest(CollectionTestCase):
         # Create deep path using create_parents
         cb.mutate_in(key,
                      SD.upsert('new.parent.path', 'value', create_parents=True))
-        result = cb.retrieve_in(key, 'new.parent')
+        result = cb.lookup_in(key, (SD.get('new.parent',)))
         self.assertEqual('value', result[0]['path'])
 
         # Test CAS operations
         self.assertTrue(result.cas)
         self.assertRaises(E.DocumentExistsException, cb.mutate_in,
-                          key, SD.upsert('newDict', None), cas=result.cas+1)
+                          key, (SD.upsert('newDict', None),), cas=result.cas+1)
 
         # Try it again, using the CAS
-        result2 = cb.mutate_in(key, SD.upsert('newDict', {}), cas=result.cas)
+        result2 = cb.mutate_in(key, (SD.upsert('newDict', {}),), cas=result.cas)
         self.assertNotEqual(result.cas, result2.cas)
 
         # Test insert, should fail
         self.assertRaises(E.PathExistsException, cb.mutate_in,
-                          key, SD.insert('newDict', {}))
+                          key, (SD.insert('newDict', {}),))
 
         # Test insert on new path, should succeed
-        cb.mutate_in(key, SD.insert('anotherDict', {}))
-        self.assertEqual({}, cb.retrieve_in(key, 'anotherDict')[0])
+        cb.mutate_in(key, (SD.insert('anotherDict', {}),))
+        self.assertEqual({}, cb.lookup_in(key, 'anotherDict')[0])
 
         # Test replace, should not fail
-        cb.mutate_in(key, SD.replace('newDict', {'Hello': 'World'}))
-        self.assertEqual('World', cb.retrieve_in(key, 'newDict')[0]['Hello'])
+        cb.mutate_in(key, (SD.replace('newDict', {'Hello': 'World'}),))
+        self.assertEqual('World', (cb.lookup_in(key, 'newDict')).content_as[dict](0)['Hello'])
 
         # Test replace with missing value, should fail
         self.assertRaises(E.PathNotFoundException,
-                          cb.mutate_in, key, SD.replace('nonexist', {}))
+                          cb.mutate_in, key, (SD.replace('nonexist', {}),))
 
         # Test with empty string (should be OK)
         cb.mutate_in(key, SD.upsert('empty', ''))
-        self.assertEqual('', cb.retrieve_in(key, 'empty')[0])
+        self.assertEqual('', cb.lookup_in(key, (SD.get('empty'),)).content_as[str](0))
 
         # Test with null (None). Should be OK
-        cb.mutate_in(key, SD.upsert('null', None))
-        self.assertEqual(None, cb.retrieve_in(key, 'null')[0])
+        cb.mutate_in(key, (SD.upsert('null', None),))
+        self.assertEqual(None, cb.lookup_in(key, (SD.get('null'),)).content_as[object](0))
 
         # Test with empty path. Should throw some kind of error?
         self.assertRaises(
             (E.SubdocPathInvalidException),
-            cb.mutate_in, key, SD.upsert('', {}))
+            cb.mutate_in, key, (SD.upsert('', {}),))
 
-        cb.mutate_in(key, SD.upsert('array', [1, 2, 3]))
+        cb.mutate_in(key, (SD.upsert('array', [1, 2, 3]),))
         self.assertRaises(E.SubdocPathMismatchException, cb.mutate_in, key,
-                          SD.upsert('array.newKey', 'newVal'))
+                          (SD.upsert('array.newKey', 'newVal'),))
         self.assertRaises(E.SubdocPathInvalidException, cb.mutate_in, key,
-                          SD.upsert('array[0]', 'newVal'))
+                          (SD.upsert('array[0]', 'newVal'),))
         self.assertRaises(E.PathNotFoundException, cb.mutate_in, key,
-                          SD.upsert('array[3].bleh', 'newVal'))
+                          (SD.upsert('array[3].bleh', 'newVal'),))
 
     def test_counter_in(self):
         cb = self.cb
@@ -179,7 +179,7 @@ class SubdocTest(CollectionTestCase):
         })
 
         rvs = cb.lookup_in(
-            key, SD.get('field1'), SD.exists('field2'), SD.exists('field3'),
+            key, (SD.get('field1'), SD.exists('field2'), SD.exists('field3'),),
             quiet=True
         )
 
@@ -188,7 +188,7 @@ class SubdocTest(CollectionTestCase):
         # _all_ the paths.  Now, however, lcb returns success if it found
         # any of them, so...
         self.assertTrue(rvs.success)
-        self.assertEqual(3, rvs.result_count)
+        self.assertEqual(3, len(rvs))
 
         self.assertEqual((0, 'value1'), rvs.get(0))
         self.assertEqual((0, 'value1'), rvs.get('field1'))
@@ -232,7 +232,7 @@ class SubdocTest(CollectionTestCase):
 
         cb.upsert(key, {'array': []})
         cb.mutate_in(key, (SD.array_append('array', True),))
-        self.assertEqual([True], cb.get(key, project=['array'])[0])
+        self.assertEqual([True], cb.get(key, project=['array']).content_as[list][0])
 
         cb.mutate_in(key, (SD.array_append('array', 1, 2, 3),))
         self.assertEqual([True, 1, 2, 3], cb.get(key, project=['array'])[0])
@@ -245,7 +245,7 @@ class SubdocTest(CollectionTestCase):
         key = self.gen_key('sditer')
         cb.upsert(key, [1, 2, 3])
         vals = cb.lookup_in(key, (SD.get('[0]'), SD.get('[1]'), SD.get('[2]')))
-        v1, v2, v3 = vals
+        v1, v2, v3 = vals.content_as[int]
         self.assertEqual(1, v1)
         self.assertEqual(2, v2)
         self.assertEqual(3, v3)
