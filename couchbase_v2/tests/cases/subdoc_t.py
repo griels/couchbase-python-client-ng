@@ -24,11 +24,11 @@ class SubdocTest(CollectionTestCase):
             'path1': 'value1'
         })
 
-        result = cb.get(key, project=['path1'])
-        self.assertEqual((0, 'value1'), result.content_as_array[0])
-        self.assertEqual((0, 'value1'), result.content['path1'])
-        self.assertEqual('value1', result.content_as_array[0])
-        self.assertEqual('value1', result.content['path1'])
+        result = cb.lookup_in(key, (SD.get('path1'),))
+        self.assertEqual((0, 'value1'), result.content_as[dict](0))
+        self.assertEqual((0, 'value1'), result.content_as[dict](0)['path1'])
+        self.assertEqual('value1', result.content_as[dict](0).keys())
+        self.assertEqual('value1', result.content_as[dict](0)['path1'])
         self.assertTrue(result.cas)
 
         # Try when path is not found
@@ -42,12 +42,11 @@ class SubdocTest(CollectionTestCase):
 
         # Try existence
         result = cb.lookup_in(key, SD.exists('path1'))
-        self.assertTrue(result.exists('path1'))
         self.assertTrue(result.exists(0))
 
         # Not found
         result = cb.lookup_in(key, SD.exists('p'))
-        self.assertEqual(E.PathNotFoundException.CODE, result.get(0)[0])
+        self.assertEqual(E.PathNotFoundException.CODE, result.content_as[str](0)[0])
 
         # Ensure that we complain about a missing path
         self.assertRaises((IndexError, KeyError), result.get, 33)
@@ -233,7 +232,7 @@ class SubdocTest(CollectionTestCase):
 
         cb.upsert(key, {'array': []})
         cb.mutate_in(key, (SD.array_append('array', True),))
-        self.assertEqual([True], cb.get(key, project=['array']).content_as_array[0])
+        self.assertEqual([True], cb.get(key, project=['array']).content_as[list][0])
 
         cb.mutate_in(key, (SD.array_append('array', 1, 2, 3),))
         self.assertEqual([True, 1, 2, 3], cb.get(key, project=['array'])[0])
