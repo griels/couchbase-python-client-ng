@@ -542,14 +542,14 @@ class CBCollection(wrapt.ObjectProxy):
     def get_multi(self,         # type: CBCollection
                   keys,         # type: Iterable[str]
                   *options,     # type: GetOptions
-                  **kwargs
+                  **kwargs      # type: Any
                   ):
         # type: (...) -> Dict[str,GetResult]
         """
         Get multiple keys from the collection
 
         :param keys: list of keys to get
-        :type Iterable[str] keys: list of keys to get
+        :type keys: list of keys to get
         :return: a dictionary of :class:`~.GetResult` objects by key
         """
         return get_multi_get_result(self.bucket, _Base.get_multi, keys, **kwargs)
