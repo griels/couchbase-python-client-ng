@@ -293,11 +293,6 @@ class GetResult(Result):
             self._full = bool(original.get_full)
 
     @property
-    def content_as_array(self):
-        # type: (...) -> List
-        return list(self.content)
-
-    @property
     def id(self):
         # type: () -> str
         return self._id
