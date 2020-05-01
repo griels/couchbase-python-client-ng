@@ -109,6 +109,9 @@ class ContentProxySubdoc(object):
                  ):
         self.content = content
 
+    def index_proxy(self, item, index):
+        return get_decoder(item)(self.content[index])
+
     def __getitem__(self,
                     item  # type: Type[Proxy_T]
                     ):
