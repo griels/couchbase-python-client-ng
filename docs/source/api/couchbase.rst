@@ -650,26 +650,3 @@ by the library itself. The following are some influential options:
   instances of the client.
 
   If the file does not exist, it will be created.
-
-.. currentmodule:: couchbase_core.client
-.. autoclass:: Client
-    :members:
-
-.. currentmodule:: couchbase_core.views.iterator
-.. autoclass:: View
-    :members:
-
-.. currentmodule:: couchbase_v2.bucket
-.. autoclass:: Bucket
-    :members:
-
-.. currentmodule:: couchbase_v2.views
-.. autoclass:: View
-    :members:
-
-.. currentmodule:: couchbase_v2.cluster
-.. autoclass:: Cluster
-    :members:
-
-.. automodule:: couchbase_core.n1ql
-    :members:
