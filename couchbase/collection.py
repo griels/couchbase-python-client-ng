@@ -15,6 +15,7 @@ from couchbase_core import JSON
 from couchbase_core.asynchronous.client import AsyncClientMixin
 from couchbase_core.client import Client as CoreClient
 from couchbase_core.supportability import volatile, internal
+from .options import OptionBlock, AcceptableInts, default_forwarder, timedelta_as_timestamp
 from .options import AcceptableInts, OptionBlock
 from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64
 from .result import GetResult, GetReplicaResult, ExistsResult, get_result_wrapper, CoreResult, ResultPrecursor, \
