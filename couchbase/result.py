@@ -5,14 +5,14 @@ from boltons.funcutils import wraps
 from couchbase_core._libcouchbase import Result as CoreResult
 
 from couchbase.diagnostics import EndpointPingReport, ServiceType
-from couchbase_core import iterable_wrapper, IterableWrapper, JSON
+from couchbase_core import iterable_wrapper, JSON
 from couchbase_core.result import AsyncResult as CoreAsyncResult
 from couchbase_core.result import MultiResult, SubdocResult
 from couchbase_core.subdocument import Spec
 from couchbase_core.supportability import internal
 from couchbase_core.transcodable import Transcodable
-from couchbase_core.views.iterator import View as CoreView, RowProcessor, get_row_doc
-from .options import timedelta, forward_args, UnsignedInt64
+from couchbase_core.views.iterator import View as CoreView
+from .options import forward_args, UnsignedInt64
 
 Proxy_T = TypeVar('Proxy_T')
 
@@ -173,6 +173,9 @@ class LookupInResult(Result):
     def expiry(self):
         return self._original.expiry
 
+    def __len__(self):
+        return len(canonical_sdresult(self._original))
+
 
 class MutationResult(Result):
     def __init__(self,
@@ -289,6 +292,7 @@ class GetResult(Result):
             self._expiry = original.expiry
             self._full = bool(original.get_full)
 
+    @property
     def content_as_array(self):
         # type: (...) -> List
         return list(self.content)

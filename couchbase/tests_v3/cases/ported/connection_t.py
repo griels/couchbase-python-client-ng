@@ -105,12 +105,12 @@ class ConnectionTest(ClusterTestCase):
 
         cs.hosts = [ self.cluster_info.host + ':' + str(self.cluster_info.port) ]
         cs.scheme = 'http'
-        cluster = self.cluster_factory(str(cs), ClusterOptions(PasswordAuthenticator(username=self.cluster_info.bucket_username, password=self.cluster_info.bucket_password)))
+        cluster = self._instantiate_cluster(cs)
         cb = cluster.bucket(self.cluster_info.bucket_name)
         self.assertTrue(cb.upsert("foo", "bar").success)
 
         cs.hosts.insert(0, 'localhost:1')
-        cluster = self.cluster_factory(str(cs), username=self.cluster_info.bucket_username, password=self.cluster_info.bucket_password)
+        cluster = self._instantiate_cluster(cs)
         cb = cluster.bucket(self.cluster_info.bucket_name)
 
         self.assertTrue(cb.upsert("foo", "bar").success)
@@ -118,7 +118,7 @@ class ConnectionTest(ClusterTestCase):
     def test_enable_error_map(self):
         # enabled via connection string param, invalid params cause error
         conn_str = '{}://{}:{}?enable_errmap=true'.format(self.cluster_info.protocol, self.cluster_info.host, self.cluster_info.port)
-        cluster=self.cluster_factory(connection_string=conn_str, authenticator=PasswordAuthenticator(self.cluster_info.bucket_username, self.cluster_info.bucket_password))
+        cluster = self._instantiate_cluster(conn_str)
         cb =cluster.bucket(self.cluster_info.bucket_name)
         self.assertTrue(cb.upsert("foo", "bar").success)
 
