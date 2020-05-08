@@ -36,6 +36,13 @@ T = TypeVar('T')
 
 CallableOnOptionBlock = Callable[[OptionBlockDeriv, Any], Any]
 
+METHMAP = {
+    'GET': _LCB.LCB_HTTP_METHOD_GET,
+    'PUT': _LCB.LCB_HTTP_METHOD_PUT,
+    'POST': _LCB.LCB_HTTP_METHOD_POST,
+    'DELETE': _LCB.LCB_HTTP_METHOD_DELETE
+}
+
 
 class DiagnosticsOptions(OptionBlock):
 
@@ -478,10 +485,10 @@ class Cluster(CoreClient):
         self._cluster.authenticate(self._authenticator)
         credentials = self._authenticator.get_credentials()
         self._clusteropts = dict(**credentials.get('options', {}))
-        self._adminopts = dict(**self._clusteropts)
-        self._clusteropts.update(async_items)
         # TODO: eliminate the 'mock hack' and ClassicAuthenticator, then you can remove this as well.
         self._clusteropts.update(kwargs)
+        self._adminopts = dict(**self._clusteropts)
+        self._clusteropts.update(async_items)
         self._connstr_opts = cluster_opts
         self.connstr = cluster_opts.update_connection_string(self.connstr)
         super(Cluster, self).__init__(connection_string=str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
@@ -510,12 +517,81 @@ class Cluster(CoreClient):
         if not self._cluster:
             raise AlreadyShutdownException("This cluster has already been shutdown")
 
+    # NOTE: this is just copied from Admin.  Soon we should eliminate that class completely, perhaps just
+    # using the Cluster for those calls.  For now, copied just for convenience, temporarily.
+    @internal
+    def http_request(self,
+                     path,
+                     method='GET',
+                     content=None,
+                     content_type="application/json",
+                     response_format=_LCB.FMT_JSON,
+                     timeout=None):
+        """
+        Perform an administrative HTTP request. This request is sent out to
+        the administrative API interface (i.e. the "Management/REST API")
+        of the cluster.
+
+        Note that this is a fairly low level function. You should use one
+        of the helper methods in this class to perform your task, if
+        possible.
+
+        :param string path: The path portion (not including the host) of the
+          rest call to perform. This should also include any encoded arguments.
+
+        :param string method: This is the HTTP method to perform. Currently
+          supported values are `GET`, `POST`, `PUT`, and `DELETE`
+
+        :param bytes content: Content to be passed along in the request body.
+          This is only applicable on `PUT` and `POST` methods.
+
+        :param string content_type: Value for the HTTP ``Content-Type`` header.
+          Currently this is ``application-json``, and should probably not be
+          set to something else.
+
+        :param int response_format:
+          Hint about how to format the response. This goes into the
+          :attr:`~.HttpResult.value` field of the
+          :class:`~.HttpResult` object. The default is
+          :const:`~couchbase_core.FMT_JSON`.
+
+          Note that if the conversion fails, the content will be returned as
+          ``bytes``
+
+        :raise:
+          :exc:`~.InvalidArgumentException`
+            if the method supplied was incorrect.
+          :exc:`~.ConnectException`
+            if there was a problem establishing a connection.
+          :exc:`~.HTTPException`
+            if the server responded with a negative reply
+
+        :return: a :class:`~.HttpResult` object.
+
+        .. seealso:: :meth:`bucket_create`, :meth:`bucket_remove`
+        """
+        imeth = None
+        if not method in METHMAP:
+            raise E.InvalidArgumentException.pyexc("Unknown HTTP Method", method)
+
+        imeth = METHMAP[method]
+        return self._http_request(type=_LCB.LCB_HTTP_TYPE_MANAGEMENT,
+                                  path=path,
+                                  method=imeth,
+                                  content_type=content_type,
+                                  post_data=content,
+                                  response_format=response_format,
+                                  timeout=timeout)
+
     @property
     @internal
     def _admin(self):
         self._check_for_shutdown()
         if not self.__admin:
-            self.__admin = Admin(connection_string=str(self.connstr), **self._adminopts)
+            c = ConnectionString.parse(self.connstr)
+            if not c.bucket:
+                c.bucket = self._adminopts.pop('bucket', None)
+            self.__admin = Admin(connection_string=str(c), **self._adminopts)
         return self.__admin
 
     def bucket(self,
@@ -530,6 +606,8 @@ class Cluster(CoreClient):
         :raise: :exc:`~.exceptions.BucketDoesNotExistException` if the bucket has not been created on this cluster.
         """
         self._check_for_shutdown()
+        if not self.__admin:
+            self._adminopts['bucket'] = name
         return self._cluster.open_bucket(name, admin=self._admin)
 
     # Temporary, helpful with working around CCBC-1204
