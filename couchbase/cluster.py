@@ -478,10 +478,10 @@ class Cluster(CoreClient):
         self._cluster.authenticate(self._authenticator)
         credentials = self._authenticator.get_credentials()
         self._clusteropts = dict(**credentials.get('options', {}))
-        self._adminopts = dict(**self._clusteropts)
-        self._clusteropts.update(async_items)
         # TODO: eliminate the 'mock hack' and ClassicAuthenticator, then you can remove this as well.
         self._clusteropts.update(kwargs)
+        self._adminopts = dict(**self._clusteropts)
+        self._clusteropts.update(async_items)
         self._connstr_opts = cluster_opts
         self.connstr = cluster_opts.update_connection_string(self.connstr)
         super(Cluster, self).__init__(connection_string=str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
