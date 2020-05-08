@@ -478,10 +478,10 @@ class Cluster(CoreClient):
         self._cluster.authenticate(self._authenticator)
         credentials = self._authenticator.get_credentials()
         self._clusteropts = dict(**credentials.get('options', {}))
-        self._adminopts = dict(**self._clusteropts)
-        self._clusteropts.update(async_items)
         # TODO: eliminate the 'mock hack' and ClassicAuthenticator, then you can remove this as well.
         self._clusteropts.update(kwargs)
+        self._adminopts = dict(**self._clusteropts)
+        self._clusteropts.update(async_items)
         self._connstr_opts = cluster_opts
         self.connstr = cluster_opts.update_connection_string(self.connstr)
         super(Cluster, self).__init__(connection_string=str(self.connstr), _conntype=_LCB.LCB_TYPE_CLUSTER, **self._clusteropts)
@@ -515,7 +515,10 @@ class Cluster(CoreClient):
     def _admin(self):
         self._check_for_shutdown()
         if not self.__admin:
-            self.__admin = Admin(connection_string=str(self.connstr), **self._adminopts)
+            c = ConnectionString.parse(self.connstr)
+            if not c.bucket:
+                c.bucket = self._adminopts.pop('bucket', None)
+            self.__admin = Admin(connection_string=str(c), **self._adminopts)
         return self.__admin
 
     def bucket(self,
@@ -530,6 +533,8 @@ class Cluster(CoreClient):
         :raise: :exc:`~.exceptions.BucketDoesNotExistException` if the bucket has not been created on this cluster.
         """
         self._check_for_shutdown()
+        if not self.__admin:
+            self._adminopts['bucket'] = name
         return self._cluster.open_bucket(name, admin=self._admin)
 
     # Temporary, helpful with working around CCBC-1204

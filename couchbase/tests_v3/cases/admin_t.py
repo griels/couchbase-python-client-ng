@@ -32,6 +32,7 @@ class AdminSimpleTest(CouchbaseTestCase):
     def setUp(self):
         super(AdminSimpleTest, self).setUp()
         self.admin = self.make_admin_connection()
+        self.mock_hack_kwargs = self.cluster_info.mock_hack_options(self.is_mock).kwargs
 
     def tearDown(self):
         super(AdminSimpleTest, self).tearDown()
@@ -55,7 +56,7 @@ class AdminSimpleTest(CouchbaseTestCase):
         conn_str = 'http://{0}:{1}'.format(self.cluster_info.host, self.cluster_info.port)
         admin = Admin('Administrator',
                       'password',
-                      connection_string=conn_str)
+                      connection_string=conn_str, **self.mock_hack_kwargs)
         self.assertIsNotNone(admin)
 
     def test_bucket_param(self):
@@ -93,7 +94,7 @@ class AdminSimpleTest(CouchbaseTestCase):
         self.assertRaises(AuthenticationException, Admin,
                           'baduser', 'badpass',
                           host=self.cluster_info.host,
-                          port=self.cluster_info.port)
+                          port=self.cluster_info.port, **self.mock_hack_kwargs)
 
     def test_bad_host(self):
         # admin connections don't really connect until an action is performed
