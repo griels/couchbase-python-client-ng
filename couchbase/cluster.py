@@ -591,11 +591,6 @@ class Cluster(CoreClient):
             c = ConnectionString.parse(self.connstr)
             if not c.bucket:
                 c.bucket = self._adminopts.pop('bucket', None)
-            if not self._is_6_5_plus() and not c.bucket:
-                # we'd try an already open bucket, but that can't be since you need
-                # the _admin to open one.  So, we have to raise...
-                raise NoBucketException("You must open a bucket first")
-
             self.__admin = Admin(connection_string=str(c), **self._adminopts)
         return self.__admin
 
@@ -611,7 +606,6 @@ class Cluster(CoreClient):
         :raise: :exc:`~.exceptions.BucketDoesNotExistException` if the bucket has not been created on this cluster.
         """
         self._check_for_shutdown()
-        # if we are < 6.5, we need to have a bucket for the admin connection.
         if not self.__admin:
             self._adminopts['bucket'] = name
         return self._cluster.open_bucket(name, admin=self._admin)
@@ -619,7 +613,7 @@ class Cluster(CoreClient):
     # Temporary, helpful with working around CCBC-1204
     def _is_6_5_plus(self):
         self._check_for_shutdown()
-        response = self.http_request(path="/pools").value
+        response = self._admin.http_request(path="/pools").value
         v = response.get("implementationVersion")
         # lets just get first 3 characters -- the string should be X.Y.Z-XXXX-YYYY and we only care about
         # major and minor version
@@ -929,7 +923,7 @@ class Cluster(CoreClient):
     # Only useful for 6.5 DP testing
     def _is_dev_preview(self):
         self._check_for_shutdown()
-        return self.http_request(path="/pools").value.get("isDeveloperPreview", False)
+        return self._admin.http_request(path="/pools").value.get("isDeveloperPreview", False)
 
     @property
     def query_timeout(self):
