@@ -72,7 +72,7 @@ class AIOClientMixin(object):
 
     connected = CoreClient.connected
 
-    def respond_to_value(self,
+    def respond_to_value(self,  # type: AIOClientMixin
                          holder,  # type: asyncio.Future
                          responder):
         async def waiter(ft_result):
