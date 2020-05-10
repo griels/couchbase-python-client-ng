@@ -72,14 +72,14 @@ class AIOClientMixin(object):
 
     connected = CoreClient.connected
 
-    def respond_to_value(self,
+    def respond_to_value(self,  # type: AIOClientMixin
                          holder,  # type: asyncio.Future
                          responder):
         async def waiter(ft_result):
             result=await ft_result
             return responder(result)
-        return holder.add_done_callback(waiter)
-
+        holder.add_done_callback(waiter)
+        return holder
 
 class AsyncCBCollection(AIOClientMixin, BaseAsyncCBCollection):
     def __init__(self,
