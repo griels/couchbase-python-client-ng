@@ -620,6 +620,9 @@ class Cluster(CoreClient):
     def respond_to_value(self, holder, responder):
         return responder(holder)
 
+    def respond_to_value_as_async(self, holder, responder):
+        return responder(holder)
+
     # Temporary, helpful with working around CCBC-1204
     def _is_6_5_plus(self):
         self._check_for_shutdown()
@@ -635,7 +638,8 @@ class Cluster(CoreClient):
                 # the mock says "CouchbaseMock..."
                 return True
 
-        return self.respond_to_value(response_holder, _6_5_responder)
+        result= self.respond_to_value(response_holder, _6_5_responder)
+        return result
 
     def query(self,
               statement,            # type: str
@@ -691,10 +695,13 @@ class Cluster(CoreClient):
                                          failtype,
                                          *args,
                                          **kwargs):
-        if self._is_6_5_plus():
-            kwargs.pop('err_msg', None)
-            return self._operate_on_cluster(verb, failtype, *args, **kwargs)
-        return self._operate_on_an_open_bucket(verb, failtype, *args, **kwargs)
+        def bucket_operator(response):
+            if response:
+                kwargs.pop('err_msg', None)
+                return self._operate_on_cluster(verb, failtype, *args, **kwargs)
+            return self._operate_on_an_open_bucket(verb, failtype, *args, **kwargs)
+
+        return self.respond_to_value_as_async(self._is_6_5_plus(), bucket_operator)
 
     def _operate_on_an_open_bucket(self,
                                    verb,
