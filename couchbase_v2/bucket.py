@@ -81,7 +81,7 @@ class DurabilityContext(object):
 
 
 class Bucket(CoreClient):
-    _MEMCACHED_OPERATIONS = CoreClient._MEMCACHED_OPERATIONS+('endure',
+    _MEMCACHED_MULTI = CoreClient._MEMCACHED_MULTI+('endure',
                                                    'observe', 'rget', 'set', 'add', 'delete', 'counter','lock', 'append', 'prepend')
 
     def pipeline(self):

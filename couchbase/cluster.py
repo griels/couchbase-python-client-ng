@@ -461,6 +461,7 @@ class ClusterOptions(dict):
 
 
 class Cluster(CoreClient):
+    _MEMCACHED_NOMULTI = CoreClient._MEMCACHED_NOMULTI+('http_request',)
 
     @internal
     def __init__(self,
@@ -616,18 +617,25 @@ class Cluster(CoreClient):
             self._adminopts['bucket'] = name
         return self._cluster.open_bucket(name, admin=self._admin)
 
+    def respond_to_value(self, holder, responder):
+        return responder(holder)
+
     # Temporary, helpful with working around CCBC-1204
     def _is_6_5_plus(self):
         self._check_for_shutdown()
-        response = self.http_request(path="/pools").value
-        v = response.get("implementationVersion")
-        # lets just get first 3 characters -- the string should be X.Y.Z-XXXX-YYYY and we only care about
-        # major and minor version
-        try:
-            return float(v[:3]) >= 6.5
-        except ValueError:
-            # the mock says "CouchbaseMock..."
-            return True
+        response_holder = self.http_request(path="/pools")
+        def _6_5_responder(response_full_v):
+            response=response_full_v.value
+            v = response.get("implementationVersion")
+            # lets just get first 3 characters -- the string should be X.Y.Z-XXXX-YYYY and we only care about
+            # major and minor version
+            try:
+                return float(v[:3]) >= 6.5
+            except ValueError:
+                # the mock says "CouchbaseMock..."
+                return True
+
+        return self.respond_to_value(response_holder, _6_5_responder)
 
     def query(self,
               statement,            # type: str
@@ -1082,4 +1090,3 @@ class AsyncCluster(AsyncClientMixin, Cluster):
     @classmethod
     def connect(cls, connection_string=None, *args, **kwargs):
         return cls(connection_string=connection_string, *args, **kwargs)
-

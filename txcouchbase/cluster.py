@@ -23,6 +23,7 @@ from typing import *
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
+import acouchbase.cluster
 from couchbase_core.asynchronous.analytics import AsyncAnalyticsRequest
 from couchbase.asynchronous import AsyncViewResult, AsyncQueryResultBase, AsyncAnalyticsResultBase, AsyncSearchResult
 from couchbase.cluster import Cluster as V3SyncCluster, AsyncCluster as V3AsyncCluster
@@ -289,6 +290,15 @@ class TxRawClientMixin(object):
         return o._getDeferred()
 
     connected = CoreClient.connected
+
+    def respond_to_value(self,
+                         holder,  # type: Deferred
+                         responder
+                         ):
+        result = Deferred()
+        result.addCallback(responder)
+        holder.chainDeferred(result)
+        return result
 
 
 class TxDeferredClientMixin(TxRawClientMixin):
