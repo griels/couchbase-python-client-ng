@@ -13,7 +13,7 @@ from couchbase.exceptions import NotSupportedException, DocumentNotFoundExceptio
     PathExistsException, DocumentExistsException
 from couchbase_core import JSON
 from couchbase_core.asynchronous.client import AsyncClientMixin
-from couchbase_core.client import Client as CoreClient
+from couchbase_core.client import Client as CoreClient, AsyncMultiWrapperMixin, AsyncMultiWrapperKvMixin
 from couchbase_core.supportability import volatile, internal
 from .options import AcceptableInts
 from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64
@@ -287,7 +287,7 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
 
 
 def _wrap_collections_class(cls):
-    for name in cls._MEMCACHED_OPERATIONS:
+    for name in cls._MEMCACHED_OPERATIONS():
         meth = getattr(cls, name)
         if not name.startswith('_'):
             setattr(cls, name, _inject_scope_and_collection(meth))
@@ -319,7 +319,7 @@ def _dsop(create_type=None, wrap_missing_path=True):
     return real_decorator
 
 
-class CBCollection(wrapt.ObjectProxy):
+class CBCollection(wrapt.ObjectProxy, AsyncMultiWrapperKvMixin):
     def __new__(cls, *args, **kwargs):
         _wrap_collections_class(cls)
         return super(CBCollection, cls).__new__(cls, *args, **kwargs)
@@ -1319,10 +1319,9 @@ class CBCollection(wrapt.ObjectProxy):
 
     dsop_strs = tuple(map(lambda x: x.__name__, dsops))
     _MEMCACHED_NOMULTI = CoreClient._MEMCACHED_NOMULTI + dsop_strs
-    _MEMCACHED_OPERATIONS = CoreClient._MEMCACHED_OPERATIONS + dsop_strs
 
 
-class BinaryCollection(object):
+class BinaryCollection(AsyncMultiWrapperMixin):
     def __init__(self,
                  collection  # type: CBCollection
                  ):
@@ -1335,8 +1334,7 @@ class BinaryCollection(object):
         self.true_collections = self._collection.true_collections
         self._inject_scope_collection_kwargs = collection._inject_scope_collection_kwargs
 
-    _MEMCACHED_OPERATIONS = ('append', 'prepend', 'increment', 'decrement')
-    _MEMCACHED_NOMULTI = _MEMCACHED_OPERATIONS
+    _MEMCACHED_NOMULTI = ('append', 'prepend', 'increment', 'decrement')
 
     @_mutate_result_and_inject
     def append(self,
