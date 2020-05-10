@@ -36,6 +36,13 @@ T = TypeVar('T')
 
 CallableOnOptionBlock = Callable[[OptionBlockDeriv, Any], Any]
 
+METHMAP = {
+    'GET': _LCB.LCB_HTTP_METHOD_GET,
+    'PUT': _LCB.LCB_HTTP_METHOD_PUT,
+    'POST': _LCB.LCB_HTTP_METHOD_POST,
+    'DELETE': _LCB.LCB_HTTP_METHOD_DELETE
+}
+
 
 class DiagnosticsOptions(OptionBlock):
 
@@ -509,6 +516,72 @@ class Cluster(CoreClient):
     def _check_for_shutdown(self):
         if not self._cluster:
             raise AlreadyShutdownException("This cluster has already been shutdown")
+
+    # NOTE: this is just copied from Admin.  Soon we should eliminate that class completely, perhaps just
+    # using the Cluster for those calls.  For now, copied just for convenience, temporarily.
+    @internal
+    def http_request(self,
+                     path,
+                     method='GET',
+                     content=None,
+                     content_type="application/json",
+                     response_format=_LCB.FMT_JSON,
+                     timeout=None):
+        """
+        Perform an administrative HTTP request. This request is sent out to
+        the administrative API interface (i.e. the "Management/REST API")
+        of the cluster.
+
+        Note that this is a fairly low level function. You should use one
+        of the helper methods in this class to perform your task, if
+        possible.
+
+        :param string path: The path portion (not including the host) of the
+          rest call to perform. This should also include any encoded arguments.
+
+        :param string method: This is the HTTP method to perform. Currently
+          supported values are `GET`, `POST`, `PUT`, and `DELETE`
+
+        :param bytes content: Content to be passed along in the request body.
+          This is only applicable on `PUT` and `POST` methods.
+
+        :param string content_type: Value for the HTTP ``Content-Type`` header.
+          Currently this is ``application-json``, and should probably not be
+          set to something else.
+
+        :param int response_format:
+          Hint about how to format the response. This goes into the
+          :attr:`~.HttpResult.value` field of the
+          :class:`~.HttpResult` object. The default is
+          :const:`~couchbase_core.FMT_JSON`.
+
+          Note that if the conversion fails, the content will be returned as
+          ``bytes``
+
+        :raise:
+          :exc:`~.InvalidArgumentException`
+            if the method supplied was incorrect.
+          :exc:`~.ConnectException`
+            if there was a problem establishing a connection.
+          :exc:`~.HTTPException`
+            if the server responded with a negative reply
+
+        :return: a :class:`~.HttpResult` object.
+
+        .. seealso:: :meth:`bucket_create`, :meth:`bucket_remove`
+        """
+        imeth = None
+        if not method in METHMAP:
+            raise E.InvalidArgumentException.pyexc("Unknown HTTP Method", method)
+
+        imeth = METHMAP[method]
+        return self._http_request(type=_LCB.LCB_HTTP_TYPE_MANAGEMENT,
+                                  path=path,
+                                  method=imeth,
+                                  content_type=content_type,
+                                  post_data=content,
+                                  response_format=response_format,
+                                  timeout=timeout)
 
     @property
     @internal
