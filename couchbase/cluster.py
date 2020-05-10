@@ -36,6 +36,13 @@ T = TypeVar('T')
 
 CallableOnOptionBlock = Callable[[OptionBlockDeriv, Any], Any]
 
+METHMAP = {
+    'GET': _LCB.LCB_HTTP_METHOD_GET,
+    'PUT': _LCB.LCB_HTTP_METHOD_PUT,
+    'POST': _LCB.LCB_HTTP_METHOD_POST,
+    'DELETE': _LCB.LCB_HTTP_METHOD_DELETE
+}
+
 
 class DiagnosticsOptions(OptionBlock):
 
@@ -454,6 +461,7 @@ class ClusterOptions(dict):
 
 
 class Cluster(CoreClient):
+    _MEMCACHED_NOMULTI = CoreClient._MEMCACHED_NOMULTI+('http_request',)
 
     @internal
     def __init__(self,
@@ -510,6 +518,72 @@ class Cluster(CoreClient):
         if not self._cluster:
             raise AlreadyShutdownException("This cluster has already been shutdown")
 
+    # NOTE: this is just copied from Admin.  Soon we should eliminate that class completely, perhaps just
+    # using the Cluster for those calls.  For now, copied just for convenience, temporarily.
+    @internal
+    def http_request(self,
+                     path,
+                     method='GET',
+                     content=None,
+                     content_type="application/json",
+                     response_format=_LCB.FMT_JSON,
+                     timeout=None):
+        """
+        Perform an administrative HTTP request. This request is sent out to
+        the administrative API interface (i.e. the "Management/REST API")
+        of the cluster.
+
+        Note that this is a fairly low level function. You should use one
+        of the helper methods in this class to perform your task, if
+        possible.
+
+        :param string path: The path portion (not including the host) of the
+          rest call to perform. This should also include any encoded arguments.
+
+        :param string method: This is the HTTP method to perform. Currently
+          supported values are `GET`, `POST`, `PUT`, and `DELETE`
+
+        :param bytes content: Content to be passed along in the request body.
+          This is only applicable on `PUT` and `POST` methods.
+
+        :param string content_type: Value for the HTTP ``Content-Type`` header.
+          Currently this is ``application-json``, and should probably not be
+          set to something else.
+
+        :param int response_format:
+          Hint about how to format the response. This goes into the
+          :attr:`~.HttpResult.value` field of the
+          :class:`~.HttpResult` object. The default is
+          :const:`~couchbase_core.FMT_JSON`.
+
+          Note that if the conversion fails, the content will be returned as
+          ``bytes``
+
+        :raise:
+          :exc:`~.InvalidArgumentException`
+            if the method supplied was incorrect.
+          :exc:`~.ConnectException`
+            if there was a problem establishing a connection.
+          :exc:`~.HTTPException`
+            if the server responded with a negative reply
+
+        :return: a :class:`~.HttpResult` object.
+
+        .. seealso:: :meth:`bucket_create`, :meth:`bucket_remove`
+        """
+        imeth = None
+        if not method in METHMAP:
+            raise E.InvalidArgumentException.pyexc("Unknown HTTP Method", method)
+
+        imeth = METHMAP[method]
+        return self._http_request(type=_LCB.LCB_HTTP_TYPE_MANAGEMENT,
+                                  path=path,
+                                  method=imeth,
+                                  content_type=content_type,
+                                  post_data=content,
+                                  response_format=response_format,
+                                  timeout=timeout)
+
     @property
     @internal
     def _admin(self):
@@ -518,6 +592,11 @@ class Cluster(CoreClient):
             c = ConnectionString.parse(self.connstr)
             if not c.bucket:
                 c.bucket = self._adminopts.pop('bucket', None)
+            if not self._is_6_5_plus() and not c.bucket:
+                # we'd try an already open bucket, but that can't be since you need
+                # the _admin to open one.  So, we have to raise...
+                raise NoBucketException("You must open a bucket first")
+
             self.__admin = Admin(connection_string=str(c), **self._adminopts)
         return self.__admin
 
@@ -533,22 +612,30 @@ class Cluster(CoreClient):
         :raise: :exc:`~.exceptions.BucketDoesNotExistException` if the bucket has not been created on this cluster.
         """
         self._check_for_shutdown()
+        # if we are < 6.5, we need to have a bucket for the admin connection.
         if not self.__admin:
             self._adminopts['bucket'] = name
         return self._cluster.open_bucket(name, admin=self._admin)
 
+    def respond_to_value(self, holder, responder):
+        return responder(holder)
+
     # Temporary, helpful with working around CCBC-1204
     def _is_6_5_plus(self):
         self._check_for_shutdown()
-        response = self._admin.http_request(path="/pools").value
-        v = response.get("implementationVersion")
-        # lets just get first 3 characters -- the string should be X.Y.Z-XXXX-YYYY and we only care about
-        # major and minor version
-        try:
-            return float(v[:3]) >= 6.5
-        except ValueError:
-            # the mock says "CouchbaseMock..."
-            return True
+        response_holder = self.http_request(path="/pools")
+        def _6_5_responder(response_full_v):
+            response=response_full_v.value
+            v = response.get("implementationVersion")
+            # lets just get first 3 characters -- the string should be X.Y.Z-XXXX-YYYY and we only care about
+            # major and minor version
+            try:
+                return float(v[:3]) >= 6.5
+            except ValueError:
+                # the mock says "CouchbaseMock..."
+                return True
+
+        return self.respond_to_value(response_holder, _6_5_responder)
 
     def query(self,
               statement,            # type: str
@@ -850,7 +937,7 @@ class Cluster(CoreClient):
     # Only useful for 6.5 DP testing
     def _is_dev_preview(self):
         self._check_for_shutdown()
-        return self._admin.http_request(path="/pools").value.get("isDeveloperPreview", False)
+        return self.http_request(path="/pools").value.get("isDeveloperPreview", False)
 
     @property
     def query_timeout(self):
@@ -1003,4 +1090,3 @@ class AsyncCluster(AsyncClientMixin, Cluster):
     @classmethod
     def connect(cls, connection_string=None, *args, **kwargs):
         return cls(connection_string=connection_string, *args, **kwargs)
-

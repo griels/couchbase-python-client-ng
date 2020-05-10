@@ -21,13 +21,21 @@ ViewInstance = TypeVar('ViewInstance', bound=View)
 ViewSubType = TypeVar('ViewSubType', bound=Type[ViewInstance])
 
 
-class Client(_Base):
-    _MEMCACHED_NOMULTI = ('stats', 'lookup_in', 'mutate_in')
-    _MEMCACHED_OPERATIONS = ('upsert', 'get', 'insert',
-                             'replace', 'remove', 'touch',
-                             'unlock',
-                             'lookup_in', 'mutate_in')
+class AsyncMultiWrapperMixin(object):
+    @classmethod
+    def _MEMCACHED_OPERATIONS(cls):
+        return cls._MEMCACHED_NOMULTI+cls._MEMCACHED_MULTI
+    _MEMCACHED_NOMULTI = tuple()
+    _MEMCACHED_MULTI = tuple()
 
+class AsyncMultiWrapperKvMixin(AsyncMultiWrapperMixin):
+    _MEMCACHED_NOMULTI = ('lookup_in', 'mutate_in')
+    _MEMCACHED_MULTI = ('upsert', 'get', 'insert',
+                        'replace', 'remove', 'touch',
+                        'unlock')
+
+
+class Client(AsyncMultiWrapperKvMixin, _Base):
     def __init__(self, *args, **kwargs):
         """Connect to a bucket.
 
@@ -994,7 +1002,7 @@ class Client(_Base):
             wrapped functions
         """
         d = {}
-        for n in cls._MEMCACHED_OPERATIONS:
+        for n in cls._MEMCACHED_OPERATIONS():
             for variant in (n, n + "_multi"):
                 try:
                     d[variant] = factory(getattr(cls, variant), variant)

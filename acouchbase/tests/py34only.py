@@ -1,5 +1,6 @@
 import asyncio
 
+from acouchbase.cluster import Cluster
 from couchbase.asynchronous import AsyncSearchResult
 from couchbase.asynchronous import AsyncAnalyticsResult
 from .fixtures import asynct, AioTestCase
@@ -75,9 +76,8 @@ class AIOClusterTest(AioTestCase):
     @asyncio.coroutine
     def test_n1ql(self):
 
-        cluster = self.gen_cluster(**self.make_connargs())
+        cluster = self.gen_cluster(**self.make_connargs())  # type: Cluster
         yield from (cluster.on_connect() or asyncio.sleep(0.01))
-
         it = cluster.query(self.query_props.statement)
         yield from it.future
 
