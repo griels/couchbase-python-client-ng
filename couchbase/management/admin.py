@@ -60,7 +60,6 @@ class Admin(LCB.Bucket):
     This object should **not** be used to perform Key/Value operations. The
     :class:`~couchbase_core.client.Client` is used for that.
     """
-
     @internal
     def __init__(self, username, password, host='localhost', port=8091,
                  **kwargs):
