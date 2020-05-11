@@ -1,7 +1,7 @@
 from typing import *
 
 import attr
-from boltons.funcutils import wraps
+from functools import wraps
 from couchbase_core._libcouchbase import Result as CoreResult
 
 from couchbase.diagnostics import EndpointPingReport, ServiceType

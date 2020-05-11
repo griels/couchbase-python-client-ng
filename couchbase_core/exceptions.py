@@ -15,17 +15,11 @@
 # limitations under the License.
 #
 import couchbase_core._libcouchbase as C
-from collections import defaultdict
-from string import Template
-import json
 
 from couchbase_core import CompatibilityEnum
 from couchbase_core.supportability import uncommitted, volatile
 from typing import *
-import inspect
-import re
-import sys
-from boltons.funcutils import wraps
+
 try:
     from typing import TypedDict
 except:
