@@ -541,6 +541,7 @@ class CouchbaseTestCase(ResourcedTestCase):
         return self.cluster_info.make_connargs(**overrides)
 
     def make_connection(self, **kwargs):
+        kwargs.update(self.cluster_info.mock_hack_options(self.is_mock).kwargs)
         return self.cluster_info.make_connection(self.factory, **kwargs)
 
     def make_admin_connection(self):
@@ -969,6 +970,28 @@ class CollectionTestCase(ClusterTestCase):
 
 AsyncClusterType = TypeVar('AsyncClusterType', bound=AsyncCluster)
 
+from wrapt import ObjectProxy
+
+
+class HackWrapper(ObjectProxy):
+    def __init__(self, wrapped):
+        super(HackWrapper, self).__init__(wrapped)
+
+    def on_connect(self):
+        def hack_bucket(*args, **kwargs):
+            def _6_5_responder(is_6_5, *args, **kwargs):
+                if is_6_5:
+                    return self.__wrapped__.on_connect()
+                dummy_bucket = self.bucket(self.cluster_info.bucket_name)
+
+                def bucket_responder(*args, **kwargs):
+                    return self.__wrapped__.on_connect()
+
+                return self.respond_to_value(dummy_bucket.on_connect(), bucket_responder)
+            return self.respond_to_value(self._is_6_5_plus(), _6_5_responder)
+
+        return self.respond_to_value(self.__wrapped__.on_connect(), hack_bucket)
+
 
 class AsyncClusterTestCase(ClusterTestCase):
 
@@ -980,10 +1003,9 @@ class AsyncClusterTestCase(ClusterTestCase):
         connstr_nobucket, bucket = self._get_connstr_and_bucket_name(args, kwargs)
 
         cluster = self._instantiate_cluster(connstr_nobucket, self.cluster_class)
-        if not cluster._is_6_5_plus():
-            hack_bucket=cluster.bucket("default")
 
-        return cluster
+
+        return HackWrapper(cluster)
 
     def gen_bucket(self, *args, override_bucket=None, **kwargs):
         args = list(args)

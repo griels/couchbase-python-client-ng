@@ -38,7 +38,7 @@ void pycbc_httpresult_add_data_strn(pycbc_MultiResult *mres,
                                     pycbc_strn_base_const strn)
 {
     PyObject *newbuf;
-    if (!pycbc_strn_len(strn)) {
+    if (!pycbc_strn_len(strn) || !htres) {
         return;
     }
     newbuf = PyBytes_FromStringAndSize(strn.buffer, strn.length);
@@ -241,9 +241,15 @@ static void complete_callback(lcb_t instance,
     const lcb_RESPHTTP *resp = (const lcb_RESPHTTP *)rb;
     lcb_resphttp_cookie(resp, (void **)&mres);
     bucket = mres->parent;
+    if (!bucket){
+        return;
+    }
     PYCBC_CONN_THR_END(bucket);
 
     htres = (pycbc_HttpResult *)PyDict_GetItem((PyObject *)mres, Py_None);
+    if (!htres){
+        return;
+    }
     PYCBC_DEBUG_LOG_CONTEXT(PYCBC_RES_CONTEXT(htres), "HTTP callback")
     {
         pycbc_strn_base_const body = {0};

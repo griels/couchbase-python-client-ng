@@ -174,15 +174,12 @@ class _TxTestCase(TestCase):
 
 
 def gen_base(basecls,  # type: Type[AsyncClusterTestCase]
-             timeout=5,
+             timeout_specific=5,
              factory=None  # type: Factory
              ):
     # type: (...) -> Type[AsyncClusterTestCase]
     class WrappedTest(_TxTestCase, basecls):
-        @property
-        @classmethod
-        def timeout(cls):
-            return timeout
+        timeout = timeout_specific
 
         @property
         def factory(self):

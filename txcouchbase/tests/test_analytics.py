@@ -11,7 +11,7 @@ import logging
 import twisted.internet.defer
 
 
-class TxAnalyticsTest(gen_base(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase,timeout=20)):
+class TxAnalyticsTest(gen_base(couchbase.tests_v3.cases.analytics_t.AnalyticsTestCase, timeout_specific=20)):
     def setUp(self):
         if not os.getenv("PYCBC_ASYNC_ANALYTICS"):
             raise SkipTest("Async Analytics tests blocking as is")

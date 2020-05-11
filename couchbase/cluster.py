@@ -1,4 +1,5 @@
 import asyncio
+from abc import abstractmethod
 
 from couchbase_core.asynchronous.client import AsyncClientMixin
 from couchbase.mutation_state import MutationState
@@ -511,6 +512,10 @@ class Cluster(CoreClient):
         """
         return cls(connection_string, options, **kwargs)
 
+    def on_connect(self):
+        # type: (...) -> Awaitable[Cluster]
+        return self
+
     def _do_ctor_connect(self, *args, **kwargs):
         super(Cluster,self)._do_ctor_connect(*args,**kwargs)
 
@@ -624,8 +629,9 @@ class Cluster(CoreClient):
     def _is_6_5_plus(self):
         self._check_for_shutdown()
         response_holder = self.http_request(path="/pools")
+
         def _6_5_responder(response_full_v):
-            response=response_full_v.value
+            response = response_full_v.value
             v = response.get("implementationVersion")
             # lets just get first 3 characters -- the string should be X.Y.Z-XXXX-YYYY and we only care about
             # major and minor version
