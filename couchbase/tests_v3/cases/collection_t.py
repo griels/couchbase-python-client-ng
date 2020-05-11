@@ -250,7 +250,7 @@ class CollectionTests(CollectionTestCase):
 
     def test_unlock_wrong_cas(self):
         cas = self.cb.get_and_lock(self.KEY, timedelta(seconds=15)).cas
-        self.assertRaises(TemporaryFailException, self.cb.unlock, self.KEY, 100)
+        self.try_n_times_till_exception(10, 1, self.cb.unlock, self.KEY, 100, expected_exception=TemporaryFailException)
         self.cb.unlock(self.KEY, cas)
 
     def test_client_durable_upsert(self):

@@ -1,2 +1,3 @@
-from .collections import CollectionManager
-from .views import ViewIndexManager
+from __future__ import absolute_import
+from couchbase.management.collections import CollectionManager
+from couchbase.management.views import ViewIndexManager
