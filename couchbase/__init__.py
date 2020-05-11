@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import couchbase_core._bootstrap
 import couchbase_core._logutil
 
