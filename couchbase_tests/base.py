@@ -775,15 +775,19 @@ class ClusterTestCase(CouchbaseTestCase):
     def assertCas(self, item):
         self.validator.assertCas(item)
 
-    def try_n_times_till_exception(self, num_times, seconds_between, func, *args, **kwargs):
+    def try_n_times_till_exception(self, num_times, seconds_between, func, *args, expected_exception=Exception, **kwargs):
         for _ in range(num_times):
             try:
                 ret = func(*args, **kwargs)
                 time.sleep(seconds_between)
-            except Exception as e:
+            except expected_exception as e:
                 # helpful to have this print statement when tests fail
-                print("Got exception, returning: {}".format(e))
+                logging.info("Got expected exception {}, returning: {}".format(expected_exception, e))
                 return
+            except Exception as e:
+                logging.error("Got unexpected exception, raising: {}".format(e))
+                raise
+
         self.fail(
             "successful {} after {} times waiting {} seconds between calls".format(func, num_times, seconds_between))
 
