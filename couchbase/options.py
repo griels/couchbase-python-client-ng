@@ -12,12 +12,23 @@ try:
 except:
     from typing_extensions import TypedDict
 
-OptionBlockBase = dict
+OptionBlockBase = TypedDict('OptionBlockBase', {}, total=False)
 
 
 class OptionBlock(OptionBlockBase):
-    def __init__(self, *args, **kwargs):
-        # type: (*Any, **Any) -> None
+    def __init__(self,
+                 *args,  # type: Any
+                 **kwargs  # type: Any
+                 ):
+        # type: (...) -> None
+        """
+        This is a wrapper for a set of options for a Couchbase command. It can be passed
+        into the command in the 'options' parameter and overriden by parameters of the
+        same name via the following **kwargs.
+
+        :param args:
+        :param kwargs: parameters to pass in to the OptionBlock
+        """
         super(OptionBlock, self).__init__(**{k: v for k, v in kwargs.items() if v is not None})
         self._args = args
 
@@ -26,17 +37,17 @@ T = TypeVar('T', bound=OptionBlock)
 
 
 class OptionBlockTimeOut(OptionBlock):
-    @overload
     def __init__(self,
-                 timeout=None  # type: timedelta
-                 ):
-        pass
-
-    def __init__(self,
+                 timeout=None,  # type: timedelta
                  **kwargs  # type: Any
                  ):
         # type: (...) -> None
-        super(OptionBlockTimeOut, self).__init__(**kwargs)
+        """
+        An OptionBlock with a timeout
+
+        :param timeout: Timeout for an operation
+        """
+        super(OptionBlockTimeOut, self).__init__(timeout=timeout, **kwargs)
 
     def timeout(self,  # type: T
                 duration  # type: timedelta
@@ -44,18 +55,6 @@ class OptionBlockTimeOut(OptionBlock):
         # type: (...) -> T
         self['timeout'] = duration
         return self
-
-
-class Value(object):
-    def __init__(self,
-                 value,  # type: Union[str,bytes,SupportsInt]
-                 **kwargs  # type: Any
-                 ):
-        self.value = value
-        self.kwargs = kwargs
-
-    def __int__(self):
-        return self.value
 
 
 class Cardinal(IntEnum):
@@ -97,7 +96,7 @@ class Forwarder(with_metaclass(ABCMeta)):
 
 
 def timedelta_as_timestamp(duration  # type: timedelta
-                        ):
+                           ):
     # type: (...)->int
     if not isinstance(duration,timedelta):
         raise couchbase.exceptions.InvalidArgumentException("Expected timedelta instead of {}".format(duration))

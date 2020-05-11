@@ -60,18 +60,12 @@ class DeltaValue(ConstrainedInt):
 
 
 class ReplaceOptions(DurabilityOptionBlock):
-    @overload
     def __init__(self,
                  timeout=None,       # type: timedelta
                  durability=None,    # type: DurabilityType
                  cas=0               # type: int
                  ):
-        pass
-
-    def __init__(self,
-                 **kwargs
-                 ):
-        super(ReplaceOptions, self).__init__(**kwargs)
+        super(ReplaceOptions, self).__init__(timeout=timeout, durability=durability, cas=cas)
 
 
 class RemoveOptions(DurabilityOptionBlock):
@@ -101,40 +95,44 @@ class RemoveOptions(DurabilityOptionBlock):
         super(RemoveOptions, self).__init__(**kwargs)
 
 
-class PrependOptions(DurabilityOptionBlock):
-    @overload
-    def __init__(self,
-                 durability=None,   # type: DurabilityType,
+class ExtensionOptions(DurabilityOptionBlock):
+
+    def __init__(self,   # type: ExtensionOptions
                  cas=None,          # type: int
-                 timeout=None       # type: timedelta
+                 **kwargs  # type: DurabilityOptionBlock
                  ):
-        pass
+        """
+        Options for extending an item
 
-    def __init__(self, **kwargs):
-        super(PrependOptions, self).__init__(**kwargs)
+        :param cas: CAS value
+        :param kwargs: Durability options
+        """
+        kwargs['cas'] = cas
+        super(ExtensionOptions, self).__init__(**kwargs)
 
 
-class AppendOptions(PrependOptions):
+class PrependOptions(ExtensionOptions):
+    pass
+
+
+class AppendOptions(ExtensionOptions):
     pass
 
 
 class IncrementOptions(DurabilityOptionBlock):
-    @overload
-    def __init__(self,
-                 durability=None,   # type: DurabilityType,
-                 cas=None,          # type: int
-                 timeout=None,      # type: timedelta
-                 expiry=None,       # type: timedelta
+    def __init__(self,  # type: IncrementOptions
                  initial=None,      # type: SignedInt64
-                 delta=None         # type: DeltaValue
+                 delta=None,         # type: DeltaValue
+                 **kwargs    # type: DurabilityOptionBlock
                  ):
-        pass
+        """
 
-    def __init__(self, **kwargs):
+        :param initial: Initial value
+        :param delta: Variation
+        :param kwargs: Durability options
+        """
         # enforce some defaults
-        args = {"delta": DeltaValue(1), "initial": SignedInt64(0)}
-        args.update(kwargs)
-        super(IncrementOptions, self).__init__(**args)
+        super(IncrementOptions, self).__init__(delta=delta or DeltaValue(1), initial=initial or SignedInt64(0),**kwargs)
 
 
 class DecrementOptions(IncrementOptions):
