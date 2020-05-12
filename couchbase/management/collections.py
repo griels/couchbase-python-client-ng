@@ -1,12 +1,12 @@
-from couchbase.options import OptionBlockTimeOut, forward_args
-from couchbase.management.admin import Admin
+from datetime import timedelta
 from typing import *
-from .generic import GenericManager
-from couchbase_core import mk_formstr
 
 from couchbase.exceptions import ErrorMapper, NotSupportedWrapper, HTTPException, ScopeNotFoundException, \
     ScopeAlreadyExistsException, CollectionNotFoundException, CollectionAlreadyExistsException
-from datetime import timedelta
+from couchbase.management.admin import Admin
+from couchbase.options import OptionBlockTimeOut, forward_args
+from couchbase_core import mk_formstr
+from .generic import GenericManager
 
 
 class CollectionsErrorHandler(ErrorMapper):
@@ -71,9 +71,8 @@ class CollectionManager(GenericManager):
         # {'uid': '0', 'scopes': [{'name': '_default', 'uid': '0', 'collections': [{'name': '_default', 'uid': '0'}]}]}
         retval = list()
         for s in response.value['scopes']:
-            scope = ScopeSpec(s['name'], list())
-            for c in s['collections']:
-                scope.collections.append(CollectionSpec(c['name'], scope.name))
+            scope = ScopeSpec(s['name'],
+                              (CollectionSpec(c['name'], s['name']) for c in s['collections']))
             retval.append(scope)
         return retval
 
@@ -211,7 +210,7 @@ class ScopeSpec(object):
                  name,  # type : str
                  collections,  # type: Iterable[CollectionSpec]
                  ):
-        self._name, self._collections = name, collections
+        self._name, self._collections = name, list(collections)
 
     @property
     def name(self):
