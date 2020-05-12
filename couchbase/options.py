@@ -15,13 +15,14 @@ except:
 
 
 def wrap_docs(cls, **kwargs):
-    oldinit=cls.__init__
+    oldinit = cls.__init__
+
     @wraps(oldinit)
     def __init__(self, *args, **kwargs):
         super(cls, self).__init__(*args, **kwargs)
 
     __init__.__doc__ = oldinit.__doc__.format(**kwargs)
-    cls.__init__=__init__
+    cls.__init__ = __init__
     return cls
 
 
@@ -200,7 +201,7 @@ class ConstrainedInt(object):
         return str(self)
 
     def __eq__(self, other):
-        return self.value == other.value
+        return type(self)==type(other) and self.value == other.value
 
     def __gt__(self, other):
         return self.value > other.value

@@ -125,14 +125,15 @@ class AppendOptions(ExtensionOptions.wrap_docs(extending='appending')):
 
 
 class CounterOptions(DurabilityOptionBlock):
-    def __init__(self,
-                 durability=None,   # type: DurabilityType,
+    def __init__(self,  # type: CounterOptions
+                 durability=None,   # type: DurabilityType
                  cas=None,          # type: int
                  timeout=None,      # type: timedelta
                  expiry=None,       # type: timedelta
                  initial=SignedInt64(0),      # type: SignedInt64
                  delta=DeltaValue(1)         # type: DeltaValue
                  ):
+        # type: (...) -> None
         """
         Settings for {counter_type} operations
 

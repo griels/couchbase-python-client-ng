@@ -240,6 +240,7 @@ man_pages = [
     ('index', 'couchbasepythonclientlibrary', 'Couchbase Python Client Library Documentation',
      ['Couchbase, Inc.'], 1)
 ]
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 # If true, show URL addresses after external links.
 #man_show_urls = False

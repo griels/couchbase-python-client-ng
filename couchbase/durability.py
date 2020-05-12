@@ -1,5 +1,8 @@
 from functools import wraps
 from typing import *
+
+from couchbase_core.supportability import internal
+
 from .options import Cardinal, OptionBlock, OptionBlockTimeOut
 from couchbase_core.durability import Durability
 from datetime import timedelta
@@ -22,8 +25,17 @@ class DurabilityTypeBase(dict):
 
 
 class DurabilityType(dict):
-    def __init__(self, content):
-        super(DurabilityType,self).__init__(content)
+    @internal
+    def __init__(self,  # type: DurabilityType
+                 content  # type: Dict[str, Any]
+                 ):
+        # type: (...) -> None
+        """
+        Durability configuration options
+
+        :param content: dictionary passed up from subclasses
+        """
+        super(DurabilityType, self).__init__(content)
 
 
 class ClientDurability(DurabilityType):
@@ -63,11 +75,11 @@ class ServerDurability(DurabilityType):
 
 
 class ClientDurableOptionBlock(OptionBlockTimeOut):
-    @overload
-    def __init__(self,
+    def __init__(self,  # type: ClientDurableOptionBlock
                  timeout=None,       # type: timedelta
                  durability=None     # type: ClientDurability
                  ):
+        # type: (...) -> None
         """
         Options for operations with client-type durability
 
@@ -78,10 +90,11 @@ class ClientDurableOptionBlock(OptionBlockTimeOut):
 
 
 class ServerDurableOptionBlock(OptionBlockTimeOut):
-    def __init__(self,
+    def __init__(self,               # type: ServerDurableOptionBlock
                  timeout=None,       # type: timedelta
                  durability=None     # type: ServerDurability
                  ):
+        # type: (...) -> None
         """
         Options for operations with server-type durability
 
@@ -95,9 +108,9 @@ class DurabilityOptionBlock(OptionBlockTimeOut):
     def __init__(self,      # type: DurabilityOptionBlock
                  timeout=None,       # type: timedelta
                  durability=None,    # type: DurabilityType
-                 expiry=None,        # type: timedelta
-                 **kwargs
+                 expiry=None        # type: timedelta
                  ):
+        # type: (...) -> None
         """
         Options for operations with any type of durability
 
@@ -105,7 +118,7 @@ class DurabilityOptionBlock(OptionBlockTimeOut):
         :param expiry: When any mutation should expire
         :param timeout: Timeout for operation
         """
-        super(DurabilityOptionBlock, self).__init__(durability=durability, expiry=expiry, **kwargs)
+        super(DurabilityOptionBlock, self).__init__(durability=durability, expiry=expiry, timeout=timeout)
 
     @property
     def expiry(self):
