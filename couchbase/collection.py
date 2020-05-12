@@ -31,8 +31,7 @@ try:
     from typing import TypedDict
 except:
     from typing_extensions import TypedDict
-import os
-from couchbase_core import abstractmethod, ABCMeta, with_metaclass
+from couchbase_core import with_metaclass
 import wrapt
 
 import couchbase_core.subdocument as SD
@@ -329,21 +328,29 @@ def _dsop(create_type=None, wrap_missing_path=True):
     return real_decorator
 
 
-class CBCollection(wrapt.ObjectProxy):
+CBCollectionBound = TypeVar('CBCollectionBound', bound='CBCollection')
+
+
+class CBCollectionType(type):
+    def __new__(mcs,  # type: Any
+                name,  # type: str
+                bases,  # type: Tuple[Type[CBCollectionBound], ...]
+                namespace,  # type: Dict[str, Any]
+                ):
+        result = super(CBCollectionType, mcs).__new__(mcs, name, bases, namespace)
+        for name in result._MEMCACHED_OPERATIONS:
+            meth = getattr(result, name)
+            if not name.startswith('_'):
+                setattr(result, name, _inject_scope_and_collection(meth))
+        return result
+
+
+class CBCollection(with_metaclass(CBCollectionType, wrapt.ObjectProxy)):
     def __reduce_ex__(self, protocol):
         raise NotImplementedError()
 
     def __reduce__(self):
         raise NotImplementedError()
-
-    @classmethod
-    def _wrap_collections_class(cls):
-        if not hasattr(cls, 'coll_wrapped'):
-            for name in cls._MEMCACHED_OPERATIONS:
-                meth = getattr(cls, name)
-                if not name.startswith('_'):
-                    setattr(cls, name, _inject_scope_and_collection(meth))
-            cls.coll_wrapped = True
 
     def _inject_scope_collection_kwargs(self, kwargs):
         # NOTE: BinaryCollection, for instance, contains a collection and has an interface
@@ -373,7 +380,6 @@ class CBCollection(wrapt.ObjectProxy):
         :param options: miscellaneous options
         """
         assert issubclass(type(parent_scope.bucket), CoreClientDatastructureWrap)
-        self._wrap_collections_class()
         wrapt.ObjectProxy.__init__(self, parent_scope.bucket)
         self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
