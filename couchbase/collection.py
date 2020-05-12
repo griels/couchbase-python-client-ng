@@ -363,12 +363,13 @@ class CBCollection(with_metaclass(CBCollectionType, wrapt.ObjectProxy)):
                 kwargs['collection'] = self._self_name
 
     @internal
-    def __init__(self,
-                 name: str = None,
-                 parent_scope: 'Scope' = None,
+    def __init__(self,  # type: CBCollection
+                 name=None,  # type: str
+                 parent_scope=None,  # type: Scope
                  *options,
                  **kwargs
-                 ) -> None:
+                 ):
+        # type: (...) -> None
         """
         Couchbase collection.
 
@@ -1535,6 +1536,7 @@ class BinaryCollection(object):
             final_opts['delta'] = delta
         return final_opts
 
+import couchbase.bucket
 
 class Scope(object):
     def __init__(self,
@@ -1574,7 +1576,7 @@ class Scope(object):
     def _gen_collection(self,
                         collection_name: Optional[str]
                         ) -> CBCollection:
-        return CBCollection._cast(self, collection_name)
+        return self.bucket._collection_factory._cast(self, collection_name)
 
     def collection(self,
                    collection_name: str
