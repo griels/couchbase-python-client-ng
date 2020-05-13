@@ -15,10 +15,11 @@
 # limitations under the License.
 #
 
-from couchbase_v2.exceptions import (KeyExistsException, DocumentNotFoundException)
-from couchbase_tests.base import ConnectionTestCase
+from couchbase.exceptions import (DocumentExistsException, DocumentNotFoundException)
+from couchbase_tests.base import CollectionTestCase
 
-class DeleteTest(ConnectionTestCase):
+
+class DeleteTest(CollectionTestCase):
 
     def test_trivial_delete(self):
         # Try to delete a key that exists. Ensure that the operation
@@ -55,7 +56,7 @@ class DeleteTest(ConnectionTestCase):
 
         key = self.gen_key("delete_badcas")
         self.cb.upsert(key, 'bar')
-        self.assertRaises(KeyExistsException,
+        self.assertRaises(DocumentExistsException,
                 self.cb.remove, key, cas = 0xdeadbeef)
 
     def test_delete_multi(self):
@@ -116,8 +117,5 @@ class DeleteTest(ConnectionTestCase):
 
         # Set one to have a bad CAS
         cas_rvs[keys[0]] = 0xdeadbeef
-        self.assertRaises(KeyExistsException,
+        self.assertRaises(DocumentExistsException,
                           self.cb.remove_multi, cas_rvs)
-
-if __name__ == '__main__':
-    unittest.main()
