@@ -17,7 +17,7 @@ from couchbase_core.asynchronous.client import AsyncClientMixin
 from couchbase_core.client import Client as CoreClient, BaseClient
 from couchbase_core.supportability import volatile, internal
 from couchbase.result import MultiResult
-from .options import AcceptableInts
+from .options import AcceptableInts, OptionBlock
 from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64
 import couchbase.options
 from .result import GetResult, GetReplicaResult, ExistsResult, get_result_wrapper, CoreResult, ResultPrecursor, \
@@ -281,7 +281,10 @@ CoreBucketOp = TypeVar("CoreBucketOp", Callable[[Any], CoreResult], Callable[[An
 def _wrap_multi_mutation_result(wrapped: CoreBucketOp
                                 ) -> CoreBucketOp:
     import boltons.funcutils
-    def wrapper(target, keys, *options, **kwargs
+    def wrapper(target: 'CBCollection',
+                keys: Iterable[str],
+                *options: OptionBlock,
+                **kwargs: Any
                 ) -> MultiResult[MutationResult]:
         return get_multi_mutation_result(target.bucket, wrapped, keys, *options, **kwargs)
 
