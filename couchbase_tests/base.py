@@ -591,7 +591,6 @@ class CouchbaseTestCase(ResourcedTestCase):
 
 class ConnectionTestCaseBase(CouchbaseTestCase):
     def __init__(self, *args, **kwargs):
-        self.cb = None
         super(ConnectionTestCaseBase, self).__init__(*args, **kwargs)
 
     def checkCbRefcount(self):
