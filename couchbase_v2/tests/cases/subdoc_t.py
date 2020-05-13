@@ -24,11 +24,11 @@ class SubdocTest(CollectionTestCase):
             'path1': 'value1'
         })
 
-        result = cb.get(key, project=['path1'])
-        self.assertEqual((0, 'value1'), result.get(0))
-        self.assertEqual((0, 'value1'), result.get('path1'))
-        self.assertEqual('value1', result[0])
-        self.assertEqual('value1', result['path1'])
+        result = cb.lookup_in(key, (SD.get('path1'),))
+        self.assertEqual((0, 'value1'), result.content_as[object](0))
+        self.assertEqual((0, 'value1'), result.content_as[dict](0)['path1'])
+        self.assertEqual('value1', result.content_as[str](0))
+        self.assertEqual('value1', result.content_as[dict](0)['path1'])
         self.assertTrue(result.cas)
 
         # Try when path is not found
@@ -42,7 +42,6 @@ class SubdocTest(CollectionTestCase):
 
         # Try existence
         result = cb.lookup_in(key, SD.exists('path1'))
-        self.assertTrue(result.exists('path1'))
         self.assertTrue(result.exists(0))
 
         # Not found
@@ -245,13 +244,13 @@ class SubdocTest(CollectionTestCase):
         cb = self.cb
         key = self.gen_key('sditer')
         cb.upsert(key, [1, 2, 3])
-        vals = cb.retrieve_in(key, '[0]', '[1]', '[2]')
+        vals = cb.lookup_in(key, (SD.get('[0]'), SD.get('[1]'), SD.get('[2]')))
         v1, v2, v3 = vals
         self.assertEqual(1, v1)
         self.assertEqual(2, v2)
         self.assertEqual(3, v3)
 
-        vals = cb.retrieve_in(key, '[0]', '[34]', '[3]')
+        vals = cb.lookup_in(key, (SD.get('[0]'), SD.get('[34]'), SD.get('[3]')))
         # even though 34 isn't there, since it did find the
         # others, lcb says success.
         self.assertTrue(vals.success)
@@ -263,13 +262,13 @@ class SubdocTest(CollectionTestCase):
         cb = self.cb
         key = self.gen_key('non-exist')
         try:
-            cb.get(key, project=['pth1'], quiet=True)
+            cb.lookup_in(key, (SD.get('pth1'),), quiet=True)
         except E.DocumentNotFoundException as e:
             rv = e.all_results[key]
             self.assertFalse(rv.access_ok)
 
         cb.upsert(key, {'hello': 'world'})
-        rv = cb.get(key, project=['nonexist'])
+        rv = cb.lookup_in(key, (SD.get('nonexist'),))
         self.assertTrue(rv.success)
 
     def test_get_count(self):
@@ -277,7 +276,7 @@ class SubdocTest(CollectionTestCase):
         key = self.gen_key('get_count')
 
         cb.upsert(key, [1, 2, 3])
-        self.assertEqual(3, cb.get(key, project=['']).content[''][2])
+        self.assertEqual(3, cb.lookup_in(key, (SD.get(''])).content_as[dict][''][2])
 
         cb.upsert(key, {'k1': 1, 'k2': 2, 'k3': 3})
         self.assertEqual(3, cb.lookup_in(key, (SD.get_count(''),)).content_as[int](0))
