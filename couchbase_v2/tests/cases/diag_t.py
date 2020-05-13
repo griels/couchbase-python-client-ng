@@ -17,7 +17,7 @@
 import logging
 from unittest import SkipTest
 
-from couchbase_tests.base import ConnectionTestCase, PYCBC_CB_VERSION
+from couchbase_tests.base import PYCBC_CB_VERSION, ClusterTestCase
 import jsonschema
 import re
 import couchbase_core._libcouchbase as LCB
@@ -96,7 +96,7 @@ diagnostics_schema = {"type": "object",
                       }}
 
 
-class DiagnosticsTests(ConnectionTestCase):
+class DiagnosticsTests(ClusterTestCase):
 
     def setUp(self):
         super(DiagnosticsTests, self).setUp()
@@ -106,7 +106,7 @@ class DiagnosticsTests(ConnectionTestCase):
             raise SkipTest("Issue with diagnostics on external network")
         if self.is_mock:
             raise SkipTest()
-        result = self.cb.diagnostics()
+        result = self.cluster.diagnostics()
         jsonschema.validate(result, diagnostics_schema)
 
 
