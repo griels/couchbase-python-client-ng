@@ -1,30 +1,28 @@
-from couchbase.exceptions import PathNotFoundException
-
-from couchbase_tests.base import CollectionTestCase
+from couchbase_tests.base import MockTestCase
 import couchbase_core.subdocument as SD
 
 
-class XattrTest(CollectionTestCase):
+class XattrTest(MockTestCase):
     def test_xattrs_basic(self):
         cb = self.cb
         k = self.gen_key('xattrs')
         cb.upsert(k, {})
 
         # Try to upsert a single xattr
-        rv = cb.mutate_in(k, (SD.upsert('my.attr', 'value',
+        rv = cb.mutate_in(k, SD.upsert('my.attr', 'value',
                                        xattr=True,
-                                       create_parents=True),))
+                                       create_parents=True))
         self.assertTrue(rv.success)
 
         body = cb.get(k)
-        self.assertFalse('my' in body.content)
-        self.assertFalse('my.attr' in body.content)
+        self.assertFalse('my' in body.value)
+        self.assertFalse('my.attr' in body.value)
 
         # Try using lookup_in
-        rv = cb.lookup_in(k, (SD.get('my.attr'),))
-        self.assertRaises(PathNotFoundException, rv.exists, 0)
+        rv = cb.retrieve_in(k, 'my.attr')
+        self.assertFalse(rv.exists('my.attr'))
 
         # Finally, use lookup_in with 'xattrs' attribute enabled
-        rv = cb.lookup_in(k, (SD.get('my.attr', xattr=True),))
-        self.assertTrue(rv.exists(0))
-        self.assertEqual('value', rv.content_as[str](0))
+        rv = cb.lookup_in(k, SD.get('my.attr', xattr=True))
+        self.assertTrue(rv.exists('my.attr'))
+        self.assertEqual('value', rv['my.attr'])
