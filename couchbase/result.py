@@ -7,14 +7,14 @@ from functools import wraps
 from couchbase_core._libcouchbase import Result as CoreResult
 
 from couchbase.diagnostics import EndpointPingReport, ServiceType
-from couchbase_core import iterable_wrapper, IterableWrapper, JSON
+from couchbase_core import iterable_wrapper, JSON
 from couchbase_core.result import AsyncResult as CoreAsyncResult
 from couchbase_core.result import MultiResult, SubdocResult
 from couchbase_core.subdocument import Spec
 from couchbase_core.supportability import internal
 from couchbase_core.transcodable import Transcodable
-from couchbase_core.views.iterator import View as CoreView, RowProcessor, get_row_doc
-from .options import timedelta, forward_args, UnsignedInt64, default_forwarder
+from couchbase_core.views.iterator import View as CoreView
+from .options import forward_args, UnsignedInt64
 
 Proxy_T = TypeVar('Proxy_T')
 
@@ -512,9 +512,9 @@ class MultiResultWrapper(object):
         self.orig_result_type = orig_result_type
         self.async_result_type = async_result_type or AsyncWrapper.gen_wrapper(orig_result_type)
 
-    @default_forwarder
-    def get_multi_result(self, target, wrapped, keys, *_, **kwargs):
-        raw_result = wrapped(target, keys, **kwargs)
+    def get_multi_result(self, target, wrapped, keys, *options, **kwargs):
+        final_options = forward_args(kwargs, *options)
+        raw_result = wrapped(target, keys, **final_options)
         orig_result = getattr(raw_result, 'orig_result', raw_result)
         factory_class = self.async_result_type if _is_async(orig_result) else self.orig_result_type
         result = factory_class(orig_result)
