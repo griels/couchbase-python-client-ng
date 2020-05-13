@@ -16,11 +16,11 @@
 #
 import warnings
 
-from couchbase_tests.base import ConnectionTestCase
-from couchbase_v2.exceptions import DocumentNotFoundException, TemporaryFailException
+from couchbase_tests.base import CollectionTestCase
+from couchbase.exceptions import DocumentNotFoundException, TemporaryFailException
 import couchbase_core._libcouchbase as LCB
 
-class DupKeyTest(ConnectionTestCase):
+class DupKeyTest(CollectionTestCase):
     def setUp(self):
         super(DupKeyTest, self).setUp()
 
