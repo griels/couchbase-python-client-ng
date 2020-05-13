@@ -9,7 +9,7 @@ from couchbase_core.result import SubdocResult
 from mypy_extensions import VarArg, KwArg, Arg
 
 import couchbase.exceptions
-from couchbase.durability import DurabilityType, DurabilityOptionBlock
+from couchbase.durability import Durability, DurabilityType, DurabilityOptionBlock
 from couchbase.exceptions import NotSupportedException, DocumentNotFoundException, PathNotFoundException, QueueEmpty, \
     PathExistsException, DocumentExistsException
 from couchbase_core import JSON
@@ -17,7 +17,7 @@ from couchbase_core.asynchronous.client import AsyncClientMixin
 from couchbase_core.client import Client as CoreClient, BaseClient
 from couchbase_core.supportability import volatile, internal
 from couchbase.result import MultiResult
-from .options import AcceptableInts, OptionBlock
+from .options import OptionBlock, AcceptableInts, default_forwarder, timedelta_as_timestamp
 from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64
 import couchbase.options
 from .result import GetResult, GetReplicaResult, ExistsResult, get_result_wrapper, CoreResult, ResultPrecursor, \
