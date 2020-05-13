@@ -17,7 +17,7 @@ from couchbase_core.asynchronous.client import AsyncClientMixin
 from couchbase_core.client import Client as CoreClient, BaseClient
 from couchbase_core.supportability import volatile, internal
 from couchbase.result import MultiResult
-from .options import AcceptableInts
+from .options import AcceptableInts, OptionBlock
 from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64
 import couchbase.options
 from .result import GetResult, GetReplicaResult, ExistsResult, get_result_wrapper, CoreResult, ResultPrecursor, \
@@ -281,8 +281,11 @@ CoreBucketOp = TypeVar("CoreBucketOp", Callable[[Any], CoreResult], Callable[[An
 def _wrap_multi_mutation_result(wrapped: CoreBucketOp
                                 ) -> CoreBucketOp:
     import boltons.funcutils
-    def wrapper(target, keys, *options, **kwargs
-                ) -> MultiResult[MutationResult]:
+    def wrapper(target: 'CBCollection',
+                keys: Iterable[str],
+                *options: OptionBlock,
+                **kwargs: Any
+                ) -> 'MultiResult[MutationResult]':
         return get_multi_mutation_result(target.bucket, wrapped, keys, *options, **kwargs)
 
     return _inject_scope_and_collection(wrapper)
@@ -570,7 +573,7 @@ class CBCollection(wrapt.ObjectProxy):
                      ttl: int = 0,
                      format: int = None,
                      durability: DurabilityType = None
-                     ) -> MultiResult[MutationResult]:
+                     ) -> 'MultiResult[MutationResult]':
         pass
 
     @_inject_scope_and_collection
@@ -579,7 +582,7 @@ class CBCollection(wrapt.ObjectProxy):
                      keys: Dict[str,JSON],
                      *options: GetOptions,
                      **kwargs: Any
-                     ) -> MultiResult[MutationResult]:
+                     ) -> 'MultiResult[MutationResult]':
         """
         Write multiple items to the cluster. Multi version of :meth:`upsert`
 
@@ -626,7 +629,7 @@ class CBCollection(wrapt.ObjectProxy):
                      keys: Dict[str,JSON],
                      *options: GetOptions,
                      **kwargs: Any
-                     ) -> MultiResult[MutationResult]:
+                     ) -> 'MultiResult[MutationResult]':
         """
         Insert multiple items into the collection.
 
@@ -643,7 +646,7 @@ class CBCollection(wrapt.ObjectProxy):
                      keys: Iterable[str],
                      *options: GetOptions,
                      **kwargs: Any
-                     ) -> MultiResult[MutationResult]:
+                     ) -> 'MultiResult[MutationResult]':
         """
         Remove multiple items from the collection.
 
