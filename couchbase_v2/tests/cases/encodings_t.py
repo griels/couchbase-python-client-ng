@@ -15,16 +15,17 @@
 # limitations under the License.
 #
 
-from couchbase_v2 import (
+from couchbase_core._libcouchbase import (
     FMT_BYTES, FMT_JSON, FMT_PICKLE, FMT_UTF8,
     FMT_LEGACY_MASK)
-from couchbase_v2.exceptions import ValueFormatException, CouchbaseException
-from couchbase_tests.base import ConnectionTestCase
+from couchbase.exceptions import ValueFormatException, CouchbaseException
+from couchbase_tests.base import CollectionTestCase
 from couchbase_core.transcoder import TranscoderPP, LegacyTranscoderPP
 
 BLOB_ORIG =  b'\xff\xfe\xe9\x05\xdc\x05\xd5\x05\xdd\x05'
 
-class EncodingTest(ConnectionTestCase):
+
+class EncodingTest(CollectionTestCase):
 
     def test_default_format(self):
         self.assertEqual(self.cb.default_format, FMT_JSON)
@@ -33,7 +34,7 @@ class EncodingTest(ConnectionTestCase):
         txt = BLOB_ORIG.decode('utf-16')
         for f in (FMT_BYTES, FMT_PICKLE):
             cas = self.cb.upsert(txt, txt.encode('utf-16'), format=f).cas
-            server_val = self.cb.get(txt).value
+            server_val = self.cb.get(txt).content
             self.assertEqual(server_val, BLOB_ORIG)
 
     def test_json_unicode(self):
@@ -42,8 +43,8 @@ class EncodingTest(ConnectionTestCase):
         rv = self.cb.upsert(uc, uc)
         self.assertTrue(rv.success)
         rv = self.cb.get(uc)
-        self.assertEqual(rv.value, uc)
-        self.assertEqual(rv.key, uc)
+        self.assertEqual(rv.content, uc)
+        self.assertEqual(rv.id, uc)
 
     def test_json_compact(self):
         # This ensures our JSON encoder doesn't store huge blobs of data in the
@@ -56,7 +57,7 @@ class EncodingTest(ConnectionTestCase):
         rv = self.cb.get(key)
 
         expected = '"'.encode('utf-8') + uc.encode('utf-8') + '"'.encode('utf-8')
-        self.assertEqual(expected, rv.value)
+        self.assertEqual(expected, rv.content)
 
         self.cb.data_passthrough = 0
 
@@ -65,14 +66,14 @@ class EncodingTest(ConnectionTestCase):
         for f in (FMT_BYTES, FMT_PICKLE):
             cas = self.cb.upsert("key", blob, format=f).cas
             self.assertTrue(cas)
-            rv = self.cb.get("key").value
+            rv = self.cb.get("key").content
             self.assertEqual(rv, blob)
 
     def test_bytearray(self):
         ba = bytearray(b"Hello World")
         self.cb.upsert("key", ba, format=FMT_BYTES)
         rv = self.cb.get("key")
-        self.assertEqual(ba, rv.value)
+        self.assertEqual(ba, rv.content)
 
     def test_passthrough(self):
         self.cb.data_passthrough = True
@@ -81,8 +82,8 @@ class EncodingTest(ConnectionTestCase):
         rv = self.cb.get("malformed")
 
         self.assertTrue(rv.success)
-        self.assertEqual(rv.flags, FMT_JSON)
-        self.assertEqual(rv.value, b'"some json"blobs')
+        self.assertEqual(rv._original.flags, FMT_JSON)
+        self.assertEqual(rv.content, b'"some json"blobs')
 
         self.cb.data_passthrough = False
         self.assertRaises(ValueFormatException, self.cb.get, "malformed")
@@ -91,7 +92,7 @@ class EncodingTest(ConnectionTestCase):
         rv = self.cb.upsert("key", b"", format=FMT_BYTES)
         self.assertTrue(rv.success)
         rv = self.cb.get("key")
-        self.assertEqual(rv.value, b"")
+        self.assertEqual(rv.content, b"")
 
         self.assertRaises(CouchbaseException, self.cb.upsert, "", "value")
 
@@ -115,14 +116,14 @@ class EncodingTest(ConnectionTestCase):
         self.cb.upsert('foo', { 'foo': 'bar' }) # JSON
         self.cb.transcoder = LegacyTranscoderPP()
         rv = self.cb.get('foo')
-        self.assertIsInstance(rv.value, dict)
+        self.assertIsInstance(rv.content, dict)
 
         # Set it back now
         self.cb.upsert('foo', { 'foo': 'bar' })
         self.cb.transcoder = TranscoderPP()
         rv = self.cb.get('foo')
-        self.assertIsInstance(rv.value, dict)
-        self.assertEqual(rv.flags, FMT_JSON & FMT_LEGACY_MASK)
+        self.assertIsInstance(rv.content, dict)
+        self.assertEqual(rv._original.flags, FMT_JSON & FMT_LEGACY_MASK)
 
 
         ## Try with Bytes
@@ -130,13 +131,13 @@ class EncodingTest(ConnectionTestCase):
         self.cb.upsert('bytesval', 'Hello World'.encode('utf-8'), format=FMT_BYTES)
         self.cb.transcoder = LegacyTranscoderPP()
         rv = self.cb.get('bytesval')
-        self.assertEqual(FMT_BYTES, rv.flags)
-        self.assertEqual('Hello World'.encode('utf-8'), rv.value)
+        self.assertEqual(FMT_BYTES, rv._original.flags)
+        self.assertEqual('Hello World'.encode('utf-8'), rv.content)
 
         # Set it back
         self.cb.transcoder = LegacyTranscoderPP()
         self.cb.upsert('bytesval', 'Hello World'.encode('utf-8'), format=FMT_BYTES)
         self.cb.transcoder = TranscoderPP()
         rv = self.cb.get('bytesval')
-        self.assertEqual(FMT_BYTES & FMT_LEGACY_MASK, rv.flags)
-        self.assertEqual('Hello World'.encode('utf-8'), rv.value)
+        self.assertEqual(FMT_BYTES & FMT_LEGACY_MASK, rv._original.flags)
+        self.assertEqual('Hello World'.encode('utf-8'), rv.content)
