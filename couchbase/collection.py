@@ -1,8 +1,10 @@
 import copy
 from datetime import timedelta
-from functools import wraps
+import functools
+
 from typing import *
 
+from couchbase.result import MultiMutationResult
 from couchbase_core._libcouchbase import Bucket as _Base
 from couchbase_core._libcouchbase import FMT_UTF8
 from mypy_extensions import VarArg, KwArg, Arg
@@ -247,7 +249,7 @@ def _mutate_result_and_inject(func  # type: RawCollectionMethod
 def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
                                  ):
     # type: (...) -> RawCollectionMethod
-    @wraps(func)
+    @functools.wraps(func)
     def wrapped(self,  # type: CBCollection
                 *args,  # type: Any
                 **kwargs  # type:  Any
@@ -269,7 +271,7 @@ CoreBucketOpRead = TypeVar("CoreBucketOpRead", Callable[[Any], CoreResult], Call
 def _wrap_get_result(func  # type: CoreBucketOpRead
                      ):
     # type: (...) -> CoreBucketOpRead
-    @wraps(func)
+    @functools.wraps(func)
     def wrapped(self,  # type: CBCollection
                 *args,  # type: Any
                 **kwargs  # type:  Any
@@ -289,23 +291,24 @@ class LookupInOptions(OptionBlockTimeOut):
 
 
 CoreBucketOp = TypeVar("CoreBucketOp", Callable[[Any], CoreResult], Callable[[Any], MutationResult])
+CoreBucketWrappedOp = TypeVar("CoreBucketWrappedOp", Callable[[Any], CoreResult], Callable[[Any], MultiMutationResult])
 
 
 def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
                                 ):
-    # type: (...) -> CoreBucketOp
-    @wraps(wrapped)
-    def wrapper(target, keys, *options, **kwargs
+    # type: (...) -> CoreBucketWrappedOp
+    def wrapper(target,    # type: CBCollection
+                keys,      # type: Iterable[str]
+                *options,  # type: OptionBlock
+                **kwargs   # type: Any
                 ):
+        # type: (...) -> MultiMutationResult
         return get_multi_mutation_result(target.bucket, wrapped, keys, *options, **kwargs)
-
+    functools.update_wrapper(wrapper, wrapped, list(set(functools.WRAPPER_ASSIGNMENTS)-{'__annotations__'}))
     return _inject_scope_and_collection(wrapper)
 
 
-
 def _dsop(create_type=None, wrap_missing_path=True):
-    import functools
-
     def real_decorator(fn):
         @functools.wraps(fn)
         def newfn(self, key, *args, **kwargs):
@@ -659,7 +662,7 @@ class CBCollection(wrapt.ObjectProxy):
                      *options,  # type: GetOptions
                      **kwargs
                      ):
-        # type: (...) -> Dict[str, MutationResult]
+        # type: (...) -> MultiMutationResult
         """
         Remove multiple items from the collection.
 
