@@ -154,7 +154,7 @@ def real_or_placeholder(cls, name):
     return result
 
 
-class CompatibilityEnumMixin(object):
+class CompatibilityEnum(enum.Enum):
     @classmethod
     def prefix(cls):
         return ""
@@ -165,14 +165,6 @@ class CompatibilityEnumMixin(object):
 
     def __int__(self):
         return self.value
-
-
-class CompatibilityEnum(CompatibilityEnumMixin, enum.Enum):
-    pass
-
-
-class CompatibilityIntEnum(CompatibilityEnumMixin, enum.IntEnum):
-    pass
 
 
 T = TypeVar('T', bound=str)
