@@ -292,7 +292,10 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
                                 ):
     # type: (...) -> CoreBucketOp
     import boltons.funcutils
-    def wrapper(target, keys, *options, **kwargs
+    def wrapper(target,    # type: CBCollection
+                keys,      # type: Iterable[str]
+                *options,  # type: OptionBlock
+                **kwargs   # type: Any
                 ):
         # type: (...) -> MultiResult[MutationResult]
         return get_multi_mutation_result(target.bucket, wrapped, keys, *options, **kwargs)
