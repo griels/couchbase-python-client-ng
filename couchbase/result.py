@@ -15,9 +15,10 @@ from couchbase_core.result import MultiResult, SubdocResult
 from couchbase_core.subdocument import Spec
 from couchbase_core.supportability import internal
 from couchbase_core.transcodable import Transcodable
-from couchbase_core.views.iterator import View as CoreView
 from .options import forward_args, UnsignedInt64
-
+from collections import defaultdict
+from couchbase_core.views.iterator import View as CoreView, RowProcessor, get_row_doc
+from .options import timedelta, forward_args, UnsignedInt64, default_forwarder
 
 Proxy_T = TypeVar('Proxy_T')
 
@@ -545,9 +546,10 @@ class MultiResultWrapper(object):
         # type: (...) -> None
         self.orig_result_type = MultiResultBase._gen_result_class(orig_result_type)
 
-    def __call__(self, target, wrapped, keys, *options, **kwargs):
+    @default_forwarder
+    def __call__(self, target, wrapped, keys, *_, **kwargs):
         # type: (...) -> Type[MultiResultBase]
-        raw_result = wrapped(target, keys, **forward_args(kwargs, *options))
+        raw_result = wrapped(target, keys, **kwargs)
         return self.orig_result_type._from_raw(getattr(raw_result, 'orig_result', raw_result))
 
 
