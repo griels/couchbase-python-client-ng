@@ -16,7 +16,7 @@
 #
 from unittest import SkipTest
 
-from couchbase_tests.base import ConnectionTestCase
+from couchbase_tests.base import CollectionTestCase
 import codecs
 import couchbase.exceptions
 from couchbase.exceptions import CryptoProviderKeySizeException
@@ -68,25 +68,17 @@ class ROT13PythonCryptoProvider(PythonCryptoProvider):
         encoded = codecs.encode(codecs.decode(input,'utf-8'), 'rot_13')
         return encoded
 
-    if _LCB.PYCBC_CRYPTO_VERSION<1:
-        def encrypt(self, input, key, iv):
-            return self.encrypt_real(input, iv)
+    def encrypt(self, input, iv):
+        return self.encrypt_real(input, iv)
 
-        def decrypt(self, input, key, iv):
-            return self.decrypt_real(input, iv)
-
-    else:
-        def encrypt(self, input, iv):
-            return self.encrypt_real(input, iv)
-
-        def decrypt(self, input, iv):
-            return self.decrypt_real(input, iv)
+    def decrypt(self, input, iv):
+        return self.decrypt_real(input, iv)
 
     def get_key_id(self):
         return 'key'
 
 
-class FieldEncryptionTests(ConnectionTestCase):
+class FieldEncryptionTests(CollectionTestCase):
     def setUp(self, **kwargs):
         super(FieldEncryptionTests,self).setUp(**kwargs)
 
@@ -137,6 +129,7 @@ class FieldEncryptionTests(ConnectionTestCase):
             self.assertNotEqual(rv.value["crypto_sensitive"], "secret")
 
     def test_pure_python_encryption(self):
+        raise SkipTest("To be updated for SDK3")
         # create key store & encryption provider
         document, fieldspec, provider = self._setup_encryption()
         # encrypt document
@@ -201,6 +194,8 @@ class FieldEncryptionTests(ConnectionTestCase):
         return document, fieldspec, provider
 
     def test_encryption_exceptions(self):
+        raise SkipTest("To be updated for SDK3")
+
         # encrypt document
         for name, rcs in  _LCB.CRYPTO_EXCEPTIONS.items():
             exceptions = list(type(couchbase.exceptions.exc_from_rc(rc)) for rc in rcs)
