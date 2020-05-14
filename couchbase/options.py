@@ -15,13 +15,26 @@ except:
 from enum import IntEnum
 from couchbase_core._libcouchbase import LOCKMODE_EXC, LOCKMODE_NONE, LOCKMODE_WAIT
 
-OptionBlockBase = dict
+
+class OptionBlockRealBase(dict):
+    pass
+
+
+class OptionBlockBase(type(OptionBlockRealBase)):
+    def __new__(mcs, name, bases, namespace):
+        # type: (...) -> Type[Mapping[str, Any]]
+        result = super(OptionBlockBase, mcs).__new__(mcs, name, bases, namespace)
+        return result
 
 
 T = TypeVar('T', bound=OptionBlockBase)
 
 
-class OptionBlock(OptionBlockBase):
+class OptionBlock(OptionBlockRealBase, dataclass):
+    @classmethod
+    def wrap_docs(cls, **kwargs):
+        return wrap_docs(cls, **kwargs)
+
     def __init__(self,
                  *args,  # type: Any
                  **kwargs  # type: Any
