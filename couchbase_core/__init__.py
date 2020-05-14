@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 #
 # Copyright 2013, Couchbase, Inc.
 # All Rights Reserved

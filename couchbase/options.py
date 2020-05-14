@@ -38,8 +38,8 @@ class OptionBlock(OptionBlockBase):
         self._args = args
 
     @classmethod
-    def _wrap_docs(cls,  # type: T
-                   **kwargs  # type: Any
+    def _wrap_docs(cls,  # type: Type[T]
+                   **doc_params  # type: Any
                    ):
         # type: (...) -> Type[T]
         class DocWrapper(cls):
@@ -54,7 +54,7 @@ class OptionBlock(OptionBlockBase):
                 except Exception as e:
                     raise
 
-            __init__.__doc__ = cls.__init__.__doc__.format(**kwargs)
+            __init__.__doc__ = cls.__init__.__doc__.format(**doc_params)
         return DocWrapper
 
 
