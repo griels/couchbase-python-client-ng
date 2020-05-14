@@ -117,11 +117,11 @@ class ExtensionOptions(DurabilityOptionBlock):
         super(ExtensionOptions, self).__init__(cas=cas, timeout=timeout, durability=durability)
 
 
-class PrependOptions(ExtensionOptions.wrap_docs(extending='prepending')):
+class PrependOptions(ExtensionOptions._wrap_docs(extending='prepending')):
     pass
 
 
-class AppendOptions(ExtensionOptions.wrap_docs(extending='appending')):
+class AppendOptions(ExtensionOptions._wrap_docs(extending='appending')):
     pass
 
 
@@ -148,11 +148,11 @@ class CounterOptions(DurabilityOptionBlock):
         super(CounterOptions, self).__init__(durability=durability, cas=cas, timeout=timeout, expiry=expiry, delta=delta, initial=initial)
 
 
-class IncrementOptions(CounterOptions.wrap_docs(counter_type='increment')):
+class IncrementOptions(CounterOptions._wrap_docs(counter_type='increment')):
     pass
 
 
-class DecrementOptions(CounterOptions.wrap_docs(counter_type='decrement')):
+class DecrementOptions(CounterOptions._wrap_docs(counter_type='decrement')):
     pass
 
 

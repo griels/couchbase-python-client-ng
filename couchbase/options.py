@@ -14,37 +14,13 @@ try:
 except:
     from typing_extensions import TypedDict
 
-
-def wrap_docs(cls, **kwargs):
-    class DocWrapper(cls):
-        @wraps(cls.__init__)
-        def __init__(self, *args, **kwargs):
-            try:
-                super(DocWrapper, self).__init__(self, *args, **kwargs)
-            except Exception as e:
-                raise
-
-        __init__.__doc__ = cls.__init__.__doc__.format(**kwargs)
-    return DocWrapper
-
-class OptionBlockRealBase(dict):
-    pass
-
-class OptionBlockBase(type(OptionBlockRealBase)):
-    def __new__(mcs, name, bases, namespace):
-        # type: (...) -> Type[Mapping[str, Any]]
-        result = super(OptionBlockBase, mcs).__new__(mcs, name, bases, namespace)
-        return result
-    @classmethod
-    def wrap_docs(cls, **kwargs):
-        return wrap_docs(cls, **kwargs)
+OptionBlockBase = dict
 
 
-class OptionBlock(OptionBlockRealBase, dataclass):
-    @classmethod
-    def wrap_docs(cls, **kwargs):
-        return wrap_docs(cls, **kwargs)
+T = TypeVar('T', bound=OptionBlockBase)
 
+
+class OptionBlock(OptionBlockBase):
     def __init__(self,
                  *args,  # type: Any
                  **kwargs  # type: Any
@@ -61,8 +37,25 @@ class OptionBlock(OptionBlockRealBase, dataclass):
         super(OptionBlock, self).__init__(**{k: v for k, v in kwargs.items() if v is not None})
         self._args = args
 
+    @classmethod
+    def _wrap_docs(cls,  # type: T
+                   **kwargs  # type: Any
+                   ):
+        # type: (...) -> Type[T]
+        class DocWrapper(cls):
+            @wraps(cls.__init__)
+            def __init__(self,  # type: DocWrapper
+                         *args,  # type: Any
+                         **kwargs  # type: Any
+                         ):
+                # type: (...) -> None
+                try:
+                    super(DocWrapper, self).__init__(self, *args, **kwargs)
+                except Exception as e:
+                    raise
 
-T = TypeVar('T', bound=OptionBlock)
+            __init__.__doc__ = cls.__init__.__doc__.format(**kwargs)
+        return DocWrapper
 
 
 class OptionBlockTimeOut(OptionBlock):
