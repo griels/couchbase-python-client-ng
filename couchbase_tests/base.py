@@ -793,7 +793,7 @@ class ClusterTestCase(CouchbaseTestCase):
                 logging.info("Got one of expected exceptions {}, returning: {}".format(expected_exceptions, e))
                 return
             except Exception as e:
-                logging.error("Got unexpected exception, raising: {}".format(e))
+                logging.info("Got unexpected exception, raising: {}".format(e))
                 raise
 
         self.fail(
