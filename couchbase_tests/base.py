@@ -80,7 +80,7 @@ from typing import *
 if os.environ.get("PYCBC_TRACE_GC") in ['FULL', 'STATS_LEAK_ONLY']:
     gc.set_debug(gc.DEBUG_STATS | gc.DEBUG_LEAK)
 
-SLOWCONNECT_PATTERN = re.compile(r'.*centos8.*')
+SLOWCONNECT_PATTERN = re.compile(r'.*centos.*')
 
 
 class FlakyCounter(object):
