@@ -1,4 +1,5 @@
 import copy
+from dataclasses import dataclass
 from functools import wraps
 from typing import *
 
@@ -26,14 +27,20 @@ def wrap_docs(cls, **kwargs):
         __init__.__doc__ = cls.__init__.__doc__.format(**kwargs)
     return DocWrapper
 
+class OptionBlockRealBase(dict):
+    pass
 
-class OptionBlockBase(type):
+class OptionBlockBase(type(OptionBlockRealBase)):
     def __new__(mcs, name, bases, namespace):
+        # type: (...) -> Type[Mapping[str, Any]]
         result = super(OptionBlockBase, mcs).__new__(mcs, name, bases, namespace)
         return result
+    @classmethod
+    def wrap_docs(cls, **kwargs):
+        return wrap_docs(cls, **kwargs)
 
 
-class OptionBlock(with_metaclass(OptionBlockBase, dict)):
+class OptionBlock(OptionBlockRealBase, dataclass):
     @classmethod
     def wrap_docs(cls, **kwargs):
         return wrap_docs(cls, **kwargs)
@@ -91,7 +98,7 @@ OptionBlockDeriv = TypeVar('OptionBlockDeriv', bound=OptionBlock)
 
 class Forwarder(with_metaclass(ABCMeta)):
     def forward_args(self, arg_vars,  # type: Optional[Dict[str,Any]]
-                     *options  # type: Tuple[OptionBlockDeriv,...]
+                     *options  # type: OptionBlockDeriv
                      ):
         # type: (...) -> OptionBlockDeriv[str,Any]
         arg_vars = copy.copy(arg_vars) if arg_vars else {}
