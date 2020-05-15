@@ -188,7 +188,8 @@ def gen_cmake_build(extoptions, pkgdata):
         """
         def __init__(self, cmdclass_real):
             self.cmdclass_real=cmdclass_real
-
+            self.build_ext=self.cmdclass_real
+            super(LazyCommandClass, self).__init__()
         def __contains__(self, key):
             return (
                     key == 'build_ext'

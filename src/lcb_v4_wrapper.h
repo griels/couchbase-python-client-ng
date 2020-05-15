@@ -20,8 +20,7 @@
 #include "../build/lcb_min_version.h"
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
-#pragma message "Got LCB_VERSION " STR(LCB_VERSION)
-#if LCB_VERSION && LCB_VERSION < LCB_MIN_VERSION
+#if defined(LCB_VERSION) && LCB_VERSION > 0x000000 && LCB_VERSION < LCB_MIN_VERSION
 #pragma message "Couchbase Python SDK requires libcouchbase " LCB_MIN_VERSION_TEXT " or greater but found" STR(LCB_VERSION)
 #error "Please upgrade libcouchbase accordingly"
 #endif
