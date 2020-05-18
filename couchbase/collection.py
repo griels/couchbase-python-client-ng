@@ -1565,7 +1565,7 @@ class Scope(object):
         self._name = name
         self.bucket = parent
 
-    def __deepcopy__(self, memodict={}):
+    def __deepcopy__(self, memodict=None):
         result = copy.copy(self)
         return result
 
@@ -1613,7 +1613,11 @@ class CoreClientDatastructureWrap(CoreClient):
 
 
 class AsyncCBCollection(AsyncClientMixin, CBCollection):
-    pass
+    def __copy__(self):
+        raise NotImplementedError()
+
+    def __deepcopy__(self, memo):
+        raise NotImplementedError()
 
 
 Collection = CBCollection
