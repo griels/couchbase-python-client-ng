@@ -39,4 +39,5 @@ CouchbaseMock.jar
 /make.sh
 html
 latex
+results.json
 
