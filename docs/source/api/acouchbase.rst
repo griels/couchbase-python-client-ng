@@ -22,7 +22,9 @@ function identially to their synchronous conterparts documented in the
 :class:`~couchbase.cluster.Cluster` :class:`~couchbase.bucket.Bucket`,
 and :class:`~couchbase.collection.Collection` classes.
 
-.. class:: AIOClientMixin
+.. py:class:: IterableClass
+
+.. class:: AIOClientMixinBase
 
     .. automethod:: __init__
     .. automethod:: on_connect
@@ -39,9 +41,9 @@ and :class:`~couchbase.collection.Collection` classes.
 
     .. automethod:: view_query
 
-.. class:: Collection
-
-    .. automethod:: __init__
+.. autoclass:: Collection
+    :members:
+    :inherited-members:
 
 .. currentmodule:: acouchbase.iterator
 
