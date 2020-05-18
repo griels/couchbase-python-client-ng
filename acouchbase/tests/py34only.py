@@ -1,5 +1,7 @@
 import asyncio
 
+from acouchbase.cluster import ABucket, ACluster
+
 from couchbase.asynchronous import AsyncSearchResult
 from couchbase.asynchronous import AsyncAnalyticsResult
 from .fixtures import asynct, AioTestCase
@@ -39,7 +41,7 @@ class CouchbaseBeerViewTest(CouchbaseBeerTest):
     @asyncio.coroutine
     def test_query(self):
 
-        beer_bucket = self.gen_cluster(**self.make_connargs()).bucket('beer-sample')
+        beer_bucket = self.gen_cluster(**self.make_connargs()).bucket('beer-sample')  # type: ABucket
 
         yield from (beer_bucket.on_connect() or asyncio.sleep(0.01))
         viewiter = beer_bucket.view_query("beer", "brewery_beers", limit=10)
@@ -75,7 +77,7 @@ class AIOClusterTest(AioTestCase):
     @asyncio.coroutine
     def test_n1ql(self):
 
-        cluster = self.gen_cluster(**self.make_connargs())
+        cluster = self.gen_cluster(**self.make_connargs())  # type: ACluster
         yield from (cluster.on_connect() or asyncio.sleep(0.01))
 
         it = cluster.query(self.query_props.statement)
