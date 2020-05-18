@@ -294,7 +294,7 @@ CoreBucketOp = TypeVar("CoreBucketOp", Callable[[Any], CoreResult], Callable[[An
 def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
                                 ):
     # type: (...) -> CoreBucketOp
-    @wraps(wrapped)
+    import boltons.funcutils
     def wrapper(target, keys, *options, **kwargs
                 ):
         return get_multi_mutation_result(target.bucket, wrapped, keys, *options, **kwargs)
@@ -521,8 +521,8 @@ class CBCollection(wrapt.ObjectProxy):
 
     @_inject_scope_and_collection
     @get_replica_result_wrapper
-    def get_any_replica(self,
-                        key,  # type: str
+    def get_any_replica(self,      # type: CBCollection
+                        key,       # type: str
                         *options,  # type: GetFromReplicaOptions
                         **kwargs
                         ):
@@ -543,8 +543,8 @@ class CBCollection(wrapt.ObjectProxy):
 
     @_inject_scope_and_collection
     @get_replica_result_wrapper
-    def get_all_replicas(self,
-                         key,  # type: str
+    def get_all_replicas(self,      # type: CBCollection
+                         key,       # type: str
                          *options,  # type: GetAllReplicasOptions
                          **kwargs  # type: Any
                          ):
@@ -831,11 +831,12 @@ class CBCollection(wrapt.ObjectProxy):
         return ResultPrecursor(CoreClient.upsert(self.bucket, key, value, **final_options), final_options)
 
     @_mutate_result_and_inject
-    def insert(self,
-               key,  # type: str
-               value,  # type: Any
-               *options,  # type InsertOptions
-               **kwargs):
+    def insert(self,      # type: CBCollection
+               key,       # type: str
+               value,     # type: Any
+               *options,  # type: InsertOptions
+               **kwargs   # type: Any
+               ):
         # type: (...) -> MutationResult
         """Store an object in Couchbase unless it already exists.
 
@@ -1565,7 +1566,7 @@ class Scope(object):
         self._name = name
         self.bucket = parent
 
-    def __deepcopy__(self, memodict={}):
+    def __deepcopy__(self, memodict=None):
         result = copy.copy(self)
         return result
 
@@ -1613,7 +1614,11 @@ class CoreClientDatastructureWrap(CoreClient):
 
 
 class AsyncCBCollection(AsyncClientMixin, CBCollection):
-    pass
+    def __copy__(self):
+        raise NotImplementedError()
+
+    def __deepcopy__(self, memo):
+        raise NotImplementedError()
 
 
 Collection = CBCollection
