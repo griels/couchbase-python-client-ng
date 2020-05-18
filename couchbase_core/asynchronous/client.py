@@ -47,13 +47,13 @@ class AsyncClientMixin(object):
         such, the interface is subject to change.
 
 
-    An asynchronous bucket must be wired to a so-called `IOPS`
+    An asynchronous client must be wired to a so-called `IOPS`
     implementation (see :class:`~couchbase.iops.base.IOPS`). The
     purpose of the `IOPS` class is to provide the basic I/O wiring
     between the module and the underlying event system.
 
     In non-asynchronous use modes (e.g. the normal asynchronous
-    `Bucket`), the wiring is done internally within the C library
+    `Client`), the wiring is done internally within the C library
     via an event loop that is "run" for each operation and is
     "stopped" whenever all operations complete.
 
@@ -95,27 +95,27 @@ class AsyncClientMixin(object):
 
     Several known subclasses exist:
 
-    * :class:`acouchbase.bucket.Bucket` - this is the Python3/Tulip
+    * :class:`acouchbase.cluster.AIOClientMixin' - this is the Python3/Tulip
       based implementation, and uses a hybrid callback/implicit
       yield functionality (by returning "future" objects).
-    * :class:`txcouchbase.bucket.RawBucket` - this is a thin wrapper
+    * :class:`txcouchbase.cluster.TxRawClientMixin` - this is a thin wrapper
       around this class, which returns :class:`~.AsyncResult` objects:
       Since Twisted is callback-based, it is possible to return these
       raw objects and still remain somewhat idiomatic.
-    * :class:`txcouchbase.bucket.Bucket` - this wraps the `RawBucket`
+    * :class:`txcouchbase.cluster.TxDeferredClientMixin` - this wraps the `TxRawClientMixin`
       class (above) and returns Deferred objects.
 
     """
 
     def __init__(self, iops=None, *args, **kwargs):
         """
-        Create a new Async Bucket. An async Bucket is an object
-        which functions like a normal synchronous bucket connection,
+        Create a new Async Client. An async Client is an object
+        which functions like a normal synchronous client connection,
         except that it returns future objects
         (i.e. :class:`~couchbase.result.AsyncResult`
         objects) instead of :class:`~couchbase.result.Result`.
-        These objects are actually :class:`~couchbase.result.MultiResult`
-        objects which are empty upon retun. As operations complete, this
+        These objects are actually :class:`~couchbase_core.result.MultiResult`
+        objects which are empty upon return. As operations complete, this
         object becomes populated with the relevant data.
 
         Note that the AsyncResult object must currently have valid
@@ -131,7 +131,7 @@ class AsyncClientMixin(object):
           instances, and is owned by the connection object.
 
         :param kwargs: Additional arguments to pass to
-          the :class:`~couchbase_v2.bucket.Bucket` constructor
+          the :class:`~couchbase_core.client.Client` constructor
         """
         if not iops:
             raise ValueError("Must have IOPS")
@@ -167,10 +167,7 @@ class AsyncClientMixin(object):
             raise InvalidArgumentException.pyexc("itercls must be defined "
                                                  "and must be derived from AsyncViewBase")
 
-        try:
-            return super(AsyncClientMixin, self).view_query(*args, **kwargs)
-        except Exception as e:
-            raise
+        return super(AsyncClientMixin, self).view_query(*args, **kwargs)
 
     def endure(self, key, *args, **kwargs):
         res = super(AsyncClientMixin, self).endure_multi([key], *args, **kwargs)
