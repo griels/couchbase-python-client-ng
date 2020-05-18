@@ -1,5 +1,7 @@
 from asyncio import AbstractEventLoop
 
+from couchbase.asynchronous import wrap_async_decorator, wrap_async
+
 try:
     import asyncio
 except ImportError:
@@ -19,13 +21,16 @@ T = TypeVar('T', bound=CoreClient)
 
 
 class AIOClientMixin(object):
-    def __new__(cls, *args,**kwargs):
-        # type: (...) -> Type[T]
-        if not hasattr(cls, "AIO_wrapped"):
-            for k, method in cls._gen_memd_wrappers(AIOClientMixin._meth_factory).items():
-                setattr(cls, k, method)
-            cls.AIO_wrapped = True
-        return super(AIOClientMixin, cls).__new__(cls, *args, **kwargs)
+    @classmethod
+    def gen_client(cls, base):
+        class Result(AIOClientMixin, base):
+            def __init__(self, *args, **kwargs):
+                super(Result, self).__init__(*args, **kwargs)
+
+        for k, method in base._gen_memd_wrappers(AIOClientMixin._meth_factory).items():
+            setattr(Result, k, method)
+
+        return Result
 
     @staticmethod
     def _meth_factory(meth, _):
@@ -45,7 +50,7 @@ class AIOClientMixin(object):
             rv.set_callbacks(on_ok, on_err)
             return ft
 
-        return ret
+        return wrap_async_decorator(meth)(ret)
 
     def __init__(self, connstr=None, *args, **kwargs):
         loop = asyncio.get_event_loop()
@@ -73,47 +78,46 @@ class AIOClientMixin(object):
     connected = CoreClient.connected
 
 
-class AsyncCBCollection(AIOClientMixin, BaseAsyncCBCollection):
+class Collection(AIOClientMixin.gen_client(BaseAsyncCBCollection)):
     def __init__(self,
                  *args,
                  **kwargs
                  ):
         super(AsyncCBCollection, self).__init__(*args, **kwargs)
 
+    @wrap_async_decorator(BaseAsyncCBCollection.upsert)
+    def upsert(self, *args, **kwargs):
+        super(Collection, self).upsert(*args, **kwargs)
 
-Collection = AsyncCBCollection
+
+AsyncCBCollection = Collection
 
 
-class ABucket(AIOClientMixin, V3AsyncBucket):
+class ABucket(AIOClientMixin.gen_client(V3AsyncBucket)):
     def __init__(self, *args, **kwargs):
         super(ABucket,self).__init__(collection_factory=AsyncCBCollection, *args, **kwargs)
 
-    def view_query(self, *args, **kwargs):
-        if "itercls" not in kwargs:
-            kwargs["itercls"] = AViewResult
-        return super(ABucket, self).view_query(*args, **kwargs)
+    view_query = wrap_async(V3AsyncBucket.view_query, AViewResult)
 
 
 Bucket = ABucket
 
 
-class ACluster(AIOClientMixin, V3AsyncCluster):
+class ACluster(AIOClientMixin.gen_client(V3AsyncCluster)):
     def __init__(self, connection_string, *options, **kwargs):
         super(ACluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
 
+    @wrap_async_decorator(V3AsyncCluster.query, AQueryResult)
     def query(self, *args, **kwargs):
-        if "itercls" not in kwargs:
-            kwargs["itercls"] = AQueryResult
         return super(ACluster, self).query(*args, **kwargs)
 
+    @wrap_async_decorator(V3AsyncCluster.search_query, ASearchResult)
     def search_query(self, *args, **kwargs):
-        if "itercls" not in kwargs:
-            kwargs["itercls"] = ASearchResult
         return super(ACluster, self).search_query(*args, **kwargs)
 
+    @wrap_async_decorator(V3AsyncCluster.analytics_query, AAnalyticsResult)
     def analytics_query(self, *args, **kwargs):
-        return super(ACluster, self).analytics_query(*args, itercls=kwargs.pop('itercls', AAnalyticsResult),
-                                                           **kwargs)
+        return super(ACluster, self).analytics_query(*args, **kwargs)
 
 
 Cluster = ACluster
