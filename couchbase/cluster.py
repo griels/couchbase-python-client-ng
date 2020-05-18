@@ -553,12 +553,15 @@ class Cluster(CoreClient):
             # the mock says "CouchbaseMock..."
             return True
 
+    QueryResultType = TypeVar('QueryResultType', bound=QueryResult)
+
     def query(self,
               statement,            # type: str
               *options,             # type: Union[QueryOptions,Any]
+              itercls=QueryResult,  # type: Type[Cluster.QueryResultType]
               **kwargs              # type: Any
               ):
-        # type: (...) -> QueryResult
+        # type: (...) -> QueryResultType
         """
         Perform a N1QL query.
 
@@ -566,6 +569,7 @@ class Cluster(CoreClient):
         :param options: A QueryOptions object or the positional parameters in the query.
         :param kwargs: Override the corresponding value in the Options.  If they don't match
           any value in the options, assumed to be named parameters for the query.
+        :param itercls: type of iterator
 
         :return: The results of the query or error message
             if the query failed on the server.
@@ -578,7 +582,6 @@ class Cluster(CoreClient):
         # a QueryOptions.  Note if multiple QueryOptions are passed in for some strange reason,
         # all but the last are ignored.
         self._check_for_shutdown()
-        itercls = kwargs.pop('itercls', QueryResult)
         opt = QueryOptions()
         opts = list(options)
         for o in opts:
@@ -677,6 +680,7 @@ class Cluster(CoreClient):
     def analytics_query(self,       # type: Cluster
                         statement,  # type: str,
                         *options,   # type: AnalyticsOptions
+                        itercls=AnalyticsResult,  # type: Type[AnalyticsResult]
                         **kwargs
                         ):
         # type: (...) -> AnalyticsResult
@@ -686,14 +690,13 @@ class Cluster(CoreClient):
 
         :param statement: the analytics statement to execute
         :param options: the optional parameters that the Analytics service takes based on the Analytics RFC.
-        :return: An AnalyticsResult object with the results of the query or error message if the query failed on the server.
+        :return: An object with the results of the query or error message if the query failed on the server.
         :raise: :exc:`~.exceptions.AnalyticsException` errors associated with the analytics query itself.
             Also, any exceptions raised by the underlying platform - :class:`~.exceptions.TimeoutException`
             for example.
         """
         # following the query implementation, but this seems worth revisiting soon
         self._check_for_shutdown()
-        itercls = kwargs.pop('itercls', AnalyticsResult)
         opt = AnalyticsOptions()
         opts = list(options)
         for o in opts:

@@ -1,5 +1,7 @@
 from asyncio import AbstractEventLoop
 
+from couchbase_core import IterableClass
+
 try:
     import asyncio
 except ImportError:
@@ -14,18 +16,69 @@ from couchbase_core.client import Client as CoreClient
 from couchbase.bucket import AsyncBucket as V3AsyncBucket
 from typing import *
 from couchbase.cluster import AsyncCluster as V3AsyncCluster
+import boltons.funcutils
 
 T = TypeVar('T', bound=CoreClient)
+iterable_producer = TypeVar('iterable_producer', bound=Callable)
+
+
+def wrap_async_decorator(method,   # type: iterable_producer
+               default_iterator  # type: Type[IterableClass]
+               ):
+    # type: (...) -> iterable_producer
+    import functools
+
+    def wrap(func):
+        @functools.wraps(method)
+        def wrapper(self, *args, **kwargs):
+            return func(self, *args, **kwargs)
+        wrapper.__annotations__=method.__annotations__
+        wrapper.__annotations__['itercls'] = Type[default_iterator]
+        wrapper.__annotations__['return'] = default_iterator
+        return wrapper
+    return boltons.funcutils.partial(wrap)
 
 
 class AIOClientMixin(object):
-    def __new__(cls, *args,**kwargs):
+    def __new__(cls, *args, **kwargs):
         # type: (...) -> Type[T]
         if not hasattr(cls, "AIO_wrapped"):
             for k, method in cls._gen_memd_wrappers(AIOClientMixin._meth_factory).items():
                 setattr(cls, k, method)
             cls.AIO_wrapped = True
         return super(AIOClientMixin, cls).__new__(cls, *args, **kwargs)
+
+    @classmethod
+    def wrap_async(cls,  # type: Type[AIOClientMixin]
+                   method,  # type: iterable_producer
+                   default_iterator  # type: Type[IterableClass]
+                   ):
+        # type: (...) -> iterable_producer
+        import functools
+
+        #@boltons.funcutils.wraps(method)
+        @functools.wraps(method)
+        def wrapper_raw(self,
+                        *args,
+                        **kwargs
+                        ):
+            return method(self, *args, itercls=kwargs.pop('itercls',default_iterator),**kwargs)
+
+        fresh = boltons.funcutils.FunctionBuilder.from_func(method)
+        try:
+            fresh.remove_arg('itercls')
+        except ValueError:
+            pass
+        fresh.add_arg('itercls', default_iterator, kwonly=True)
+        method_with_itercls = fresh.get_func()
+        method_with_itercls.__annotations__['itercls'] = Type[default_iterator]
+        method_with_itercls.__annotations__['return'] = default_iterator
+        wrapper = boltons.funcutils.update_wrapper(wrapper_raw, method_with_itercls)
+        wrapper.__annotations__ = method.__annotations__
+        wrapper.__doc__ += """
+        :param itercls: type of the iterable class to be returned, :class:`{}` by default""".format(
+            default_iterator.__name__)
+        return wrapper
 
     @staticmethod
     def _meth_factory(meth, _):
@@ -88,10 +141,7 @@ class ABucket(AIOClientMixin, V3AsyncBucket):
     def __init__(self, *args, **kwargs):
         super(ABucket,self).__init__(collection_factory=AsyncCBCollection, *args, **kwargs)
 
-    def view_query(self, *args, **kwargs):
-        if "itercls" not in kwargs:
-            kwargs["itercls"] = AViewResult
-        return super(ABucket, self).view_query(*args, **kwargs)
+    view_query = AIOClientMixin.wrap_async(V3AsyncBucket.view_query, AViewResult)
 
 
 Bucket = ABucket
@@ -101,19 +151,12 @@ class ACluster(AIOClientMixin, V3AsyncCluster):
     def __init__(self, connection_string, *options, **kwargs):
         super(ACluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
 
-    def query(self, *args, **kwargs):
-        if "itercls" not in kwargs:
-            kwargs["itercls"] = AQueryResult
-        return super(ACluster, self).query(*args, **kwargs)
-
-    def search_query(self, *args, **kwargs):
-        if "itercls" not in kwargs:
-            kwargs["itercls"] = ASearchResult
-        return super(ACluster, self).search_query(*args, **kwargs)
-
-    def analytics_query(self, *args, **kwargs):
-        return super(ACluster, self).analytics_query(*args, itercls=kwargs.pop('itercls', AAnalyticsResult),
-                                                           **kwargs)
+    import functools
+    @wrap_async_decorator(V3AsyncCluster.query, AQueryResult)
+    def query(self, *args, itercls=AQueryResult, **kwargs):
+        return super(ACluster, self).query(*args, itercls=itercls, **kwargs)
+    search_query = AIOClientMixin.wrap_async(V3AsyncCluster.search_query, ASearchResult)
+    analytics_query = AIOClientMixin.wrap_async(V3AsyncCluster.analytics_query, AAnalyticsResult)
 
 
 Cluster = ACluster
