@@ -1,4 +1,5 @@
-from asyncio import AbstractEventLoop
+from asyncio import AbstractEventLoop, Future
+
 
 try:
     import asyncio
@@ -16,6 +17,8 @@ from typing import *
 from couchbase.cluster import AsyncCluster as V3AsyncCluster
 
 T = TypeVar('T', bound=CoreClient)
+itercls_type = TypeVar('itercls_type', bound=Iterable)
+import boltons.funcutils
 
 
 class AIOClientMixin(object):
@@ -26,6 +29,55 @@ class AIOClientMixin(object):
                 setattr(cls, k, method)
             cls.AIO_wrapped = True
         return super(AIOClientMixin, cls).__new__(cls, *args, **kwargs)
+
+    @classmethod
+    def wrap_async(cls,  # type: ACluster
+                   method,
+                   default_iterator
+                   ):
+        import wrapt
+        import inspect
+        from boltons.funcutils import wraps
+        from boltons.funcutils import update_wrapper
+        # def argspec_factory(wrapped):
+        #     argspec = inspect.getfullargspec(wrapped)
+        #
+        #
+        #     argspec.kwonlyargs+
+        #     argspec.kwonlydefaults['itercls']=default_iterator.__name__
+        #     return inspect.FullArgSpec()
+        #wrapt.decorator(adapter=argspec_factory(method))
+        import functools
+        #wrapped_method=boltons.funcutils.FunctionBuilder.from_func(method)
+        #wrapped_method.add_arg('itercls', default_iterator, kwonly=True)
+        #wrapper=wrapped_method.get_func(add_source=True)
+        #@boltons.funcutils.wraps(method)#, expected=[('itercls', default_iterator)])
+        def wrapper_raw(self,
+                    *args,
+                    **kwargs
+                    ):
+            return method(self, *args, itercls=kwargs.pop('itercls', default_iterator), **kwargs)
+
+        fresh=boltons.funcutils.FunctionBuilder.from_func(method)
+        fresh.add_arg('itercls', default_iterator, kwonly=True)
+        method_with_itercls=fresh.get_func()
+        method_with_itercls.__annotations__['itercls'] = Type[itercls_type]
+        method_with_itercls.__annotations__['return'] = itercls_type
+        wrapper=update_wrapper(wrapper_raw, method_with_itercls)
+        #wrapper=update_wrapper(wrapper_raw, func=method)
+        #wrapper=wrapper_raw
+        import typing
+        type_hints=typing.get_type_hints(method)
+
+        rtype=type_hints.get('return', Any)
+        wrapper.__annotations__=method.__annotations__
+        wrapper.__doc__=method.__doc__.replace(getattr(rtype,'__name__','NOT_APPLICABLE'), "itercls_type")
+        wrapper.__doc__+="""
+        :param itercls: type of the iterable class to be returned
+
+        As for the parent method {} but returns a result of type itercls instead ({}) by default """.format(method, default_iterator)
+
+        return wrapper
 
     @staticmethod
     def _meth_factory(meth, _):
@@ -101,19 +153,9 @@ class ACluster(AIOClientMixin, V3AsyncCluster):
     def __init__(self, connection_string, *options, **kwargs):
         super(ACluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
 
-    def query(self, *args, **kwargs):
-        if "itercls" not in kwargs:
-            kwargs["itercls"] = AQueryResult
-        return super(ACluster, self).query(*args, **kwargs)
-
-    def search_query(self, *args, **kwargs):
-        if "itercls" not in kwargs:
-            kwargs["itercls"] = ASearchResult
-        return super(ACluster, self).search_query(*args, **kwargs)
-
-    def analytics_query(self, *args, **kwargs):
-        return super(ACluster, self).analytics_query(*args, itercls=kwargs.pop('itercls', AAnalyticsResult),
-                                                           **kwargs)
+    query = AIOClientMixin.wrap_async(V3AsyncCluster.query, AQueryResult)
+    search_query = AIOClientMixin.wrap_async(V3AsyncCluster.search_query, ASearchResult)
+    analytics_query = AIOClientMixin.wrap_async(V3AsyncCluster.analytics_query, AAnalyticsResult)
 
 
 Cluster = ACluster

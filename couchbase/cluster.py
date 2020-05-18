@@ -693,7 +693,7 @@ class Cluster(CoreClient):
 
         :param statement: the analytics statement to execute
         :param options: the optional parameters that the Analytics service takes based on the Analytics RFC.
-        :return: An AnalyticsResult object with the results of the query or error message if the query failed on the server.
+        :return: An object with the results of the query or error message if the query failed on the server.
         :raise: :exc:`~.exceptions.AnalyticsException` errors associated with the analytics query itself.
             Also, any exceptions raised by the underlying platform - :class:`~.exceptions.TimeoutException`
             for example.
