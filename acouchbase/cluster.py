@@ -18,6 +18,7 @@ from couchbase.cluster import AsyncCluster as V3AsyncCluster
 
 T = TypeVar('T', bound=CoreClient)
 itercls_type = TypeVar('itercls_type', bound=Iterable)
+import boltons.funcutils
 
 
 class AIOClientMixin(object):
@@ -37,7 +38,7 @@ class AIOClientMixin(object):
         import wrapt
         import inspect
         from boltons.funcutils import wraps
-
+        from boltons.funcutils import update_wrapper
         # def argspec_factory(wrapped):
         #     argspec = inspect.getfullargspec(wrapped)
         #
@@ -47,30 +48,34 @@ class AIOClientMixin(object):
         #     return inspect.FullArgSpec()
         #wrapt.decorator(adapter=argspec_factory(method))
         import functools
-        import boltons.funcutils
         #wrapped_method=boltons.funcutils.FunctionBuilder.from_func(method)
         #wrapped_method.add_arg('itercls', default_iterator, kwonly=True)
         #wrapper=wrapped_method.get_func(add_source=True)
-        @functools.wraps(method)
-        def wrapper(self,
+        #@boltons.funcutils.wraps(method)#, expected=[('itercls', default_iterator)])
+        def wrapper_raw(self,
                     *args,
                     **kwargs
                     ):
-            return method(self, *args, itercls=default_iterator, **kwargs)
-        #wrapper=(wrapper_raw, func=method)
+            return method(self, *args, itercls=kwargs.pop('itercls', default_iterator), **kwargs)
+
+        fresh=boltons.funcutils.FunctionBuilder.from_func(method)
+        fresh.add_arg('itercls', default_iterator, kwonly=True)
+        method_with_itercls=fresh.get_func()
+        method_with_itercls.__annotations__['itercls'] = Type[itercls_type]
+        method_with_itercls.__annotations__['return'] = itercls_type
+        wrapper=update_wrapper(wrapper_raw, method_with_itercls)
+        #wrapper=update_wrapper(wrapper_raw, func=method)
         #wrapper=wrapper_raw
-        # import typing
-        # type_hints=typing.get_type_hints(method)
-        #
-        # rtype=type_hints.get('return', Any)
-        # wrapper.__annotations__=method.__annotations__
-        # wrapper.__doc__=method.__doc__.replace(getattr(rtype,'__name__','NOT_APPLICABLE'), "itercls_type")
-        # wrapper.__doc__+="""
-        # :param itercls: type of the iterable class to be returned
-        #
-        # As for the parent method {} but returns a result of type itercls instead ({}) by default """.format(method, default_iterator)
-        # wrapper.__annotations__['itercls'] = Type[itercls_type]
-        # wrapper.__annotations__['return'] = itercls_type
+        import typing
+        type_hints=typing.get_type_hints(method)
+
+        rtype=type_hints.get('return', Any)
+        wrapper.__annotations__=method.__annotations__
+        wrapper.__doc__=method.__doc__.replace(getattr(rtype,'__name__','NOT_APPLICABLE'), "itercls_type")
+        wrapper.__doc__+="""
+        :param itercls: type of the iterable class to be returned
+
+        As for the parent method {} but returns a result of type itercls instead ({}) by default """.format(method, default_iterator)
 
         return wrapper
 
