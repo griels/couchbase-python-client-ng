@@ -118,3 +118,4 @@ Result Objects
 .. autoclass:: ViewRow
    :show-inheritance:
    :members:
+
