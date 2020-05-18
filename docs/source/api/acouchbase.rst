@@ -22,6 +22,8 @@ function identially to their synchronous conterparts documented in the
 :class:`~couchbase.cluster.Cluster` :class:`~couchbase.bucket.Bucket`,
 and :class:`~couchbase.collection.Collection` classes.
 
+.. py:class:: IterableClass
+
 .. class:: AIOClientMixin
 
     .. automethod:: __init__
