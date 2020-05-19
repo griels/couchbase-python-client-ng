@@ -34,6 +34,7 @@ else()
         set(PYCBC_C_MOD_NAME "_libcouchbase")
         set(PYCBC_C_MOD_SUFFIX ".so")
     endif()
+
 endif()
 if (FORCE_DEBUG OR (CMAKE_BUILD_TYPE MATCHES DEBUG))
     set(RELEASE_TYPE Debug)
