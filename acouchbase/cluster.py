@@ -22,7 +22,7 @@ T = TypeVar('T', bound=CoreClient)
 iterable_producer = TypeVar('iterable_producer', bound=Callable)
 
 
-def wrap_async(method,   # type: iterable_producer
+def wrap_async_decorator(method,   # type: iterable_producer
                default_iterator  # type: Type[IterableClass]
                ):
     # type: (...) -> iterable_producer
@@ -152,8 +152,7 @@ class ACluster(AIOClientMixin, V3AsyncCluster):
         super(ACluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
 
     import functools
-    @wrap_async(V3AsyncCluster.query, AQueryResult)
-    #@functools.wraps(V3AsyncCluster.query)
+    @wrap_async_decorator(V3AsyncCluster.query, AQueryResult)
     def query(self, *args, itercls=AQueryResult, **kwargs):
         return super(ACluster, self).query(*args, itercls=itercls, **kwargs)
     search_query = AIOClientMixin.wrap_async(V3AsyncCluster.search_query, ASearchResult)
