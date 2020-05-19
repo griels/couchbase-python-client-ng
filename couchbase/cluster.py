@@ -572,11 +572,11 @@ class Cluster(CoreClient):
         """
         Perform a N1QL query.
 
-        :param itercls: type of iterator
         :param statement: the N1QL query statement to execute
         :param options: A QueryOptions object or the positional parameters in the query.
         :param kwargs: Override the corresponding value in the Options.  If they don't match
           any value in the options, assumed to be named parameters for the query.
+        :param itercls: type of iterator
 
         :return: The results of the query or error message
             if the query failed on the server.
