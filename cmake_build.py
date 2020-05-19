@@ -134,9 +134,12 @@ class CMakeBuild(cbuild_config.CBuildCommon):
                 '-DPYTHON_VERSION_EXACT={}'.format('.'.join(map(str, sys.version_info[0:2])))] if python_libdir else []
             build_args = ['--config', cfg]
             if platform.system() == "Windows":
+                ssl_root_dir = os.getenv("OPENSSL_ROOT_DIR", r'..\install\openssl-1.1.1d-cb1')
+                if ssl_root_dir:
+                    cmake_args += ['-DOPENSSL_ROOT_DIR={}'.format(ssl_root_dir)]
                 cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(
                     cfg.upper(),
-                    extdir), '-DLCB_NO_MOCK=1', '-DLCB_NO_SSL=1']
+                    extdir), '-DLCB_NO_MOCK=1']
                 if sys.maxsize > 2 ** 32:
                     cmake_args += ['-A', 'x64']
                 build_args += ['--', '/m']
