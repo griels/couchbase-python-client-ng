@@ -17,26 +17,33 @@ from couchbase.bucket import AsyncBucket as V3AsyncBucket
 from typing import *
 from couchbase.cluster import AsyncCluster as V3AsyncCluster
 import boltons.funcutils
+import functools
 
 T = TypeVar('T', bound=CoreClient)
 iterable_producer = TypeVar('iterable_producer', bound=Callable)
+
+def wrapper_func(func):
+    def wrapper(self, *args, **kwargs):
+        return func(self, *args, **kwargs)
+    return wrapper
+
+def wrap(method, default_iterator):
+    def async_decorator(func):
+        #wrapper=functools.wraps(method)(orig_func or func)
+        wrapper=functools.update_wrapper(func, method)
+        wrapper.__annotations__=method.__annotations__
+        wrapper.__annotations__['itercls'] = Type[default_iterator]
+        wrapper.__annotations__['return'] = default_iterator
+        return wrapper
+    return async_decorator
 
 
 def wrap_async_decorator(method,   # type: iterable_producer
                default_iterator  # type: Type[IterableClass]
                ):
     # type: (...) -> iterable_producer
-    import functools
 
-    def wrap(func):
-        @functools.wraps(method)
-        def wrapper(self, *args, **kwargs):
-            return func(self, *args, **kwargs)
-        wrapper.__annotations__=method.__annotations__
-        wrapper.__annotations__['itercls'] = Type[default_iterator]
-        wrapper.__annotations__['return'] = default_iterator
-        return wrapper
-    return boltons.funcutils.partial(wrap)
+    return boltons.funcutils.partial(wrap(method, default_iterator))
 
 
 class AIOClientMixin(object):
@@ -155,7 +162,7 @@ class ACluster(AIOClientMixin, V3AsyncCluster):
     @wrap_async_decorator(V3AsyncCluster.query, AQueryResult)
     def query(self, *args, itercls=AQueryResult, **kwargs):
         return super(ACluster, self).query(*args, itercls=itercls, **kwargs)
-    search_query = AIOClientMixin.wrap_async(V3AsyncCluster.search_query, ASearchResult)
+    search_query = wrap(V3AsyncCluster.search_query, ASearchResult)
     analytics_query = AIOClientMixin.wrap_async(V3AsyncCluster.analytics_query, AAnalyticsResult)
 
 
