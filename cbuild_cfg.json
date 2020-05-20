@@ -40,10 +40,16 @@
   "comp_options": {
     "PYCBC_LCB_API": "0x02FF04",
     "PYCBC_CORE": "couchbase_core",
+    "repo": {
+      "git": {
+        "url": "http://review.couchbase.org/libcouchbase"
+      }
+    },
     "patches": {
       "git": {
-        "repo": "http://review.couchbase.org/libcouchbase",
-        "ref": "refs/changes/41/128241/2"
+        "ref": "refs/changes/41/128241/2",
+        "type": "cherry-pick",
+        "sha": "71d4cb095701b5d95e0acdabfd4196450fa642c6"
       }
     },
     "lcb_tag": "master",
