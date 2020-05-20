@@ -16,9 +16,9 @@
 #
 from unittest import SkipTest
 
-from couchbase_tests.base import CouchbaseTestCase
+from couchbase_tests.base import CouchbaseTestCase, ClusterTestCase
 from couchbase_core.connstr import ConnectionString
-from couchbase_core.cluster import _Cluster as Cluster
+from couchbase.cluster import Cluster, ClusterOptions
 from couchbase.auth import MixedAuthException, PasswordAuthenticator, ClassicAuthenticator, CertAuthenticator
 
 import os
@@ -29,19 +29,20 @@ from couchbase.exceptions import NetworkException, CouchbaseFatalException, Couc
 CERT_PATH = os.getenv("PYCBC_CERT_PATH")
 
 
-class ClusterTest(CouchbaseTestCase):
+class ClusterTest(ClusterTestCase):
 
     def _create_cluster(self):
         connargs = self.make_connargs()
         connstr = ConnectionString.parse(str(connargs.pop('connection_string')))
         connstr.clear_option('username')
-        bucket = connstr.bucket
         connstr.bucket = None
+
+        bucket = self.cluster_info.bucket_name
         password = connargs.get('password', '')
 
         # Can I open a new bucket via open_bucket?
-        cluster = Cluster(connstr, bucket_factory=self.factory)
-        cluster.authenticate(ClassicAuthenticator(buckets={bucket: password},cluster_password=self.cluster_info.admin_password, cluster_username=self.cluster_info.admin_username))
+        self._instantiate_cluster()
+        cluster = Cluster(connstr, ClusterOptions(ClassicAuthenticator(buckets={bucket: password},cluster_password=self.cluster_info.admin_password, cluster_username=self.cluster_info.admin_username)),bucket_factory=self.factory)
         return cluster, bucket
 
     def test_cluster(self):
