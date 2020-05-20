@@ -898,7 +898,7 @@ class ClusterTestCase(CouchbaseTestCase):
         else:
             opts['authenticator'] = auth
         if SLOWCONNECT_PATTERN.match(platform.platform()):
-            default_timeout_options = ClusterTimeoutOptions(config_total_timeout=timedelta(seconds=30))
+            default_timeout_options = ClusterTimeoutOptions(config_total_timeout=timedelta(seconds=120))
             default_timeout_options.update(opts.get('timeout_options', {}))
             opts['timeout_options'] = default_timeout_options
         return self.try_n_times(10, 3, cluster_class.connect,
