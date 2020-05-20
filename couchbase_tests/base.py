@@ -45,7 +45,7 @@ from couchbase.cluster import Cluster, ClusterOptions, ClusterTracingOptions, \
 from couchbase.auth import PasswordAuthenticator, ClassicAuthenticator, Authenticator
 from couchbase.collection import CBCollection
 from couchbase.exceptions import CollectionAlreadyExistsException, ScopeAlreadyExistsException, NotSupportedException, \
-    CouchbaseException
+    CouchbaseException, TimeoutException
 from couchbase.management.analytics import CreateDatasetOptions
 from couchbase.management.collections import CollectionSpec
 from couchbase_core.client import Client as CoreClient
@@ -861,7 +861,7 @@ class ClusterTestCase(CouchbaseTestCase):
     def setUp(self, **kwargs):
         super(ClusterTestCase, self).setUp()
         bucket_name = self.init_cluster_and_bucket(**kwargs)
-        self.bucket = self.cluster.bucket(bucket_name)
+        self.bucket = self.try_n_times(10, 3, self.cluster.bucket, bucket_name, expected_exceptions=(TimeoutException,))
         self.bucket_name = bucket_name
         self.try_n_times(20, 3, self.is_ready)
         self.query_props = QueryParams('SELECT mockrow', 1) if self.is_mock else \
