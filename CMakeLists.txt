@@ -134,7 +134,6 @@ if (NOT LCB_TAG)
     message("using default tag(${LCB_TAG})")
 endif()
 message("lcb_tag: ${LCB_TAG}")
-set(REF_CMDS echo "no ref required")
 
 function(make_dir path)
     file(MAKE_DIRECTORY ${path})
@@ -147,7 +146,6 @@ endif()
 
 set(LCB_SRC TRUE)
 if (LCB_SRC)
-    set (REF_CMDS echo "no ref required")
 
     message("got build_cfg ${build_cfg}")
     message("got build_cfg.patches.git ${build_cfg.patches.git.repo} ${build_cfg.patches.git.ref}")
@@ -158,7 +156,10 @@ if (LCB_SRC)
         set(PATCH_REPO ${build_cfg.comp_options.repo.git.url})
     endif()
     set(PATCH_REF ${build_cfg.comp_options.patches.git.ref})
-
+    set(PATCH_SHA ${build_cfg.comp_options.patches.git.sha})
+    if (NOT PATCH_SHA)
+        set(PATCH_SHA FETCH_HEAD)
+    endif()
     if (PATCH_REF)
         set (PATCH_TYPE ${build_cfg.patches.git.type})
         if (NOT PATCH_TYPE)
@@ -174,7 +175,7 @@ if (LCB_SRC)
                 && git fetch ${PATCH_REPO} ${PATCH_REF}
                 && git reset --hard
                 && git clean -f
-                && git ${PATCH_TYPE} FETCH_HEAD)
+                && git ${PATCH_TYPE} ${PATCH_SHA})
     else()
         set (PATCH_COMMAND echo "no patch required")
     endif()
@@ -206,7 +207,6 @@ if (LCB_SRC)
             PATCH_COMMAND ${PATCH_COMMAND}
             CONFIGURE_COMMAND ${CMAKE_COMMAND} -E make_directory ${LCB_BUILD_DIR}
             COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/install
-            COMMAND cd <SOURCE_DIR> && ${REF_CMDS}
 
             COMMAND cd ${LCB_BUILD_DIR} && echo "in ${LCB_BUILD_DIR}" && cmake -DLCB_NO_PLUGINS=1  -B . -G ${WIN_PLATFORM} ${LCB_CMAKE_ARGS} -S <SOURCE_DIR>
             BUILD_COMMAND cd ${LCB_BUILD_DIR} && cmake --build ${LCB_BUILD_DIR} --config Release
@@ -260,7 +260,6 @@ if (LCB_SRC)
 
                 COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/install
 
-                COMMAND cd <SOURCE_DIR> && ${REF_CMDS}
                 COMMAND cd ${LCB_SELECTED_BUILD_DIR} && ${LCB_CMAKE_CONFIG_CMD}
                         -DCMAKE_BUILD_TYPE=${RELEASE_TYPE} -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>/${RELEASE_TYPE}
 
