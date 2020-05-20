@@ -153,11 +153,10 @@ if (LCB_SRC)
             set(WIN_PLATFORM "Visual Studio 14 2015")
         endif()
         if (OPENSSL_ROOT_DIR)
-            message("Found OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}"
+            message("Found OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}")
             set (LCB_SSL_OPTS -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR})
         else()
-            message("Found no OPENSSL_ROOT_DIR, but not disabling SSL"
-            #set (LCB_SSL_OPTS -DLCB_NO_SSL=1)
+            message("Found no OPENSSL_ROOT_DIR")
         endif()
         set(LCB_CMAKE_ARGS ${LCB_CMAKE_ARGS} -DLCB_NO_MOCK=1 ${LCB_SSL_OPTS})
         SET(LIBCOUCHBASE_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Release/${LIBCOUCHBASE_LIBRARY_NAME}")
