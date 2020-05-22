@@ -43,6 +43,7 @@ and :class:`~couchbase.collection.Collection` classes.
 
 .. autoclass:: Collection
     :members:
+    :inherited-members:
 
 .. currentmodule:: acouchbase.iterator
 
