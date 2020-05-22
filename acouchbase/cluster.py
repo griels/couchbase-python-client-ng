@@ -21,6 +21,7 @@ from couchbase.bucket import AsyncBucket as V3AsyncBucket
 from typing import *
 from couchbase.cluster import AsyncCluster as V3AsyncCluster
 from couchbase_core.asynchronous.client import AsyncClientMixin
+from six import with_metaclass
 
 T = TypeVar('T', bound=AsyncClientMixin)
 
@@ -68,18 +69,20 @@ class AIOClientMixinBase(object):
     connected = CoreClient.connected
 
 
-class AIOClientMixinType(type(AIOClientMixinBase)):
-    @classmethod
-    def gen_client(cls,  # type: Type[AIOClientMixinType]
-                   base  # type: Type[T]
-                   ):
-        # type: (...) -> Type[T]
-        class Result(AIOClientMixinBase, base):
-            def __init__(self, *args, **kwargs):
-                super(Result, self).__init__(*args, **kwargs)
-            locals().update(base._gen_memd_wrappers(AIOClientMixinType._meth_factory))
+Bases = TypeVar('Bases', bound=Tuple[Type,...])
 
-        return Result
+
+class AIOClientMixinType(type(AIOClientMixinBase)):
+    def __new__(cls,  # type: Type[AIOClientMixinType]
+                name,  # type: str
+                bases,  # type: Bases
+                namespace  # type: Dict[str, Any]
+                ):
+        # type: (...) -> Type[AsyncCBCollection]
+        namespace=dict(**namespace)
+        namespace.update(bases[0]._gen_memd_wrappers(AIOClientMixinType._meth_factory))
+        Final=super(AIOClientMixinType, cls).__new__(cls, name, (AIOClientMixinBase,)+bases, namespace)
+        return Final
 
     @staticmethod
     def _meth_factory(meth, _):
@@ -141,7 +144,7 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
         return ret#return async_kv_operation(meth, )(ret)
 
 
-class Collection(AIOClientMixinType.gen_client(BaseAsyncCBCollection)):
+class Collection(with_metaclass(AIOClientMixinType, BaseAsyncCBCollection)):
     def __copy__(self):
         pass
 
@@ -154,7 +157,7 @@ class Collection(AIOClientMixinType.gen_client(BaseAsyncCBCollection)):
 AsyncCBCollection = Collection
 
 
-class ABucket(AIOClientMixinType.gen_client(V3AsyncBucket)):
+class ABucket(with_metaclass(AIOClientMixinType, V3AsyncBucket)):
     def __init__(self, *args, **kwargs):
         super(ABucket,self).__init__(collection_factory=AsyncCBCollection, *args, **kwargs)
 
@@ -164,7 +167,7 @@ class ABucket(AIOClientMixinType.gen_client(V3AsyncBucket)):
 Bucket = ABucket
 
 
-class ACluster(AIOClientMixinType.gen_client(V3AsyncCluster)):
+class ACluster(with_metaclass(AIOClientMixinType, V3AsyncCluster)):
     def __init__(self, connection_string, *options, **kwargs):
         super(ACluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
 
