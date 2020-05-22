@@ -42,7 +42,7 @@ and :class:`~couchbase.collection.Collection` classes.
     .. automethod:: view_query
 
 .. autoclass:: Collection
-    :inherited-members:
+    :members:
 
 .. currentmodule:: acouchbase.iterator
 
