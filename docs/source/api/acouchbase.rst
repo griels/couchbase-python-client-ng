@@ -24,7 +24,7 @@ and :class:`~couchbase.collection.Collection` classes.
 
 .. py:class:: IterableClass
 
-.. class:: AIOClientMixin
+.. class:: AIOClientMixinBase
 
     .. automethod:: __init__
     .. automethod:: on_connect
@@ -43,7 +43,6 @@ and :class:`~couchbase.collection.Collection` classes.
 
 .. autoclass:: Collection
     :members:
-    :inherited-members:
 
 .. currentmodule:: acouchbase.iterator
 
