@@ -16,47 +16,26 @@ from couchbase_core.client import Client as CoreClient
 from couchbase.bucket import AsyncBucket as V3AsyncBucket
 from typing import *
 from couchbase.cluster import AsyncCluster as V3AsyncCluster
+from six import with_metaclass
 
 T = TypeVar('T', bound=CoreClient)
 
-
-class AIOClientMixin(object):
-    def __new__(cls, *args, **kwargs):
-        # type: (...) -> Type[T]
-        if not hasattr(cls, "AIO_wrapped"):
-            for k, method in cls._gen_memd_wrappers(AIOClientMixin._meth_factory).items():
-                setattr(cls, k, method)
-            cls.AIO_wrapped = True
-        return super(AIOClientMixin, cls).__new__(cls, *args, **kwargs)
-
-    @staticmethod
-    def _meth_factory(meth, _):
-        #import functools
-        #@functools.wraps(meth)
-        def ret(self, *args, **kwargs):
-            rv = meth(self, *args, **kwargs)
-            ft = asyncio.Future()
-
-            def on_ok(res):
-                ft.set_result(res)
-                rv.clear_callbacks()
-
-            def on_err(_, excls, excval, __):
-                err = excls(excval)
-                ft.set_exception(err)
-                rv.clear_callbacks()
-
-            rv.set_callbacks(on_ok, on_err)
-            return ft
-
-        #ret.__annotations__['return']="asyncio.futures.Future[{}]".format()
-        return wrap_async_decorator(meth)(ret)
-
+class AIOClientMixinBase(object):
+    """
+    AIOClientMixinBase
+    """
     def __init__(self, connstr=None, *args, **kwargs):
+        """
+        AIOClientMixinBase
+
+        :param connstr:
+        :param args:
+        :param kwargs:
+        """
         loop = asyncio.get_event_loop()
         if connstr and 'connstr' not in kwargs:
             kwargs['connstr'] = connstr
-        super(AIOClientMixin, self).__init__(IOPS(loop), *args, **kwargs)
+        super(AIOClientMixinBase, self).__init__(IOPS(loop), *args, **kwargs)
         self._loop = loop
 
         cft = asyncio.Future(loop=loop)
@@ -77,8 +56,42 @@ class AIOClientMixin(object):
 
     connected = CoreClient.connected
 
+Bases = TypeVar('Bases', bound=Tuple[Type,...])
+class AIOClientMixinType(type(AIOClientMixinBase)):
+    def __new__(cls,  # type: Type[AIOClientMixinType]
+                name,  # type: str
+                bases,  # type: Bases
+                namespace  # type: Dict[str, Any]
+                ):
+        # type: (...) -> Type[AsyncCBCollection]
+        bases=(AIOClientMixinBase,)+bases
+        Final=super(AIOClientMixinType, cls).__new__(cls, name, bases, namespace)
+        for k, method in Final._gen_memd_wrappers(AIOClientMixinType._meth_factory).items():
+            setattr(Final, k, method)
+        return Final
 
-class Collection(AIOClientMixin, BaseAsyncCBCollection):
+    @staticmethod
+    def _meth_factory(meth, _):
+        def ret(self, *args, **kwargs):
+            rv = meth(self, *args, **kwargs)
+            ft = asyncio.Future()
+
+            def on_ok(res):
+                ft.set_result(res)
+                rv.clear_callbacks()
+
+            def on_err(_, excls, excval, __):
+                err = excls(excval)
+                ft.set_exception(err)
+                rv.clear_callbacks()
+
+            rv.set_callbacks(on_ok, on_err)
+            return ft
+
+        return wrap_async_decorator(meth)(ret)
+
+
+class Collection(BaseAsyncCBCollection, metaclass=AIOClientMixinType):
     def __init__(self,
                  *args,
                  **kwargs
@@ -89,11 +102,11 @@ class Collection(AIOClientMixin, BaseAsyncCBCollection):
     def upsert(self, *args, **kwargs):
         super(Collection, self).upsert(*args, **kwargs)
 
-
 AsyncCBCollection = Collection
+Collection.on_connect
 
 
-class ABucket(AIOClientMixin, V3AsyncBucket):
+class ABucket(with_metaclass(AIOClientMixinType, V3AsyncBucket)):
     def __init__(self, *args, **kwargs):
         super(ABucket,self).__init__(collection_factory=AsyncCBCollection, *args, **kwargs)
 
@@ -103,7 +116,7 @@ class ABucket(AIOClientMixin, V3AsyncBucket):
 Bucket = ABucket
 
 
-class ACluster(AIOClientMixin, V3AsyncCluster):
+class ACluster(with_metaclass(AIOClientMixinType, V3AsyncCluster)):
     def __init__(self, connection_string, *options, **kwargs):
         super(ACluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
 
