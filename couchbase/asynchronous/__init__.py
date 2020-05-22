@@ -75,12 +75,17 @@ def wrap_async_decorator(method,  # type: iterable_producer
 
     def wrap(func):
         if default_iterator:
-            @functools.wraps(method)
+            #@functools.wraps(method)
             def wrapper(self, *args, **kwargs):
                 return func(self, *args, itercls=kwargs.pop('itercls', default_iterator), **kwargs)
         else:
-            wrapper = functools.wraps(method)(func)
-
+            def wrapper(self, *args, **kwargs):
+                return func(self, *args, **kwargs)
+        try:
+            wrapper.__annotations__=typing.get_type_hints(method)
+        except:
+            wrapper.__annotations__=dict(**method.__annotations__)
+        #wrapper=functools.update_wrapper(wrapper, method, assigned='__annotations__',updated=tuple())
         if default_iterator:
             wrapper.__annotations__['itercls'] = Type[default_iterator]
             wrapper.__annotations__['return'] = default_iterator
