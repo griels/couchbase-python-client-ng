@@ -16,18 +16,59 @@ from couchbase_core.client import Client as CoreClient
 from couchbase.bucket import AsyncBucket as V3AsyncBucket
 from typing import *
 from couchbase.cluster import AsyncCluster as V3AsyncCluster
+from six import with_metaclass
 
 T = TypeVar('T', bound=CoreClient)
 
+class AIOClientMixinBase(object):
+    """
+    AIOClientMixinBase
+    """
+    def __init__(self, connstr=None, *args, **kwargs):
+        """
+        AIOClientMixinBase
 
-class AIOClientMixin(object):
-    def __new__(cls, *args, **kwargs):
-        # type: (...) -> Type[T]
-        if not hasattr(cls, "AIO_wrapped"):
-            for k, method in cls._gen_memd_wrappers(AIOClientMixin._meth_factory).items():
-                setattr(cls, k, method)
-            cls.AIO_wrapped = True
-        return super(AIOClientMixin, cls).__new__(cls, *args, **kwargs)
+        :param connstr:
+        :param args:
+        :param kwargs:
+        """
+        loop = asyncio.get_event_loop()
+        if connstr and 'connstr' not in kwargs:
+            kwargs['connstr'] = connstr
+        super(AIOClientMixinBase, self).__init__(IOPS(loop), *args, **kwargs)
+        self._loop = loop
+
+        cft = asyncio.Future(loop=loop)
+
+        def ftresult(err):
+            if err:
+                cft.set_exception(err)
+            else:
+                cft.set_result(True)
+
+        self._cft = cft
+        self._conncb = ftresult
+
+    def on_connect(self):
+        if not self.connected:
+            self._connect()
+            return self._cft
+
+    connected = CoreClient.connected
+
+Bases = TypeVar('Bases', bound=Tuple[Type,...])
+class AIOClientMixinType(type(AIOClientMixinBase)):
+    def __new__(cls,  # type: Type[AIOClientMixinType]
+                name,  # type: str
+                bases,  # type: Bases
+                namespace  # type: Dict[str, Any]
+                ):
+        # type: (...) -> Type[AsyncCBCollection]
+        bases=(AIOClientMixinBase,)+bases
+        Final=super(AIOClientMixinType, cls).__new__(cls, name, bases, namespace)
+        for k, method in Final._gen_memd_wrappers(AIOClientMixinType._meth_factory).items():
+            setattr(Final, k, method)
+        return Final
 
     @staticmethod
     def _meth_factory(meth, _):
@@ -49,33 +90,8 @@ class AIOClientMixin(object):
 
         return wrap_async_decorator(meth)(ret)
 
-    def __init__(self, connstr=None, *args, **kwargs):
-        loop = asyncio.get_event_loop()
-        if connstr and 'connstr' not in kwargs:
-            kwargs['connstr'] = connstr
-        super(AIOClientMixin, self).__init__(IOPS(loop), *args, **kwargs)
-        self._loop = loop
 
-        cft = asyncio.Future(loop=loop)
-
-        def ftresult(err):
-            if err:
-                cft.set_exception(err)
-            else:
-                cft.set_result(True)
-
-        self._cft = cft
-        self._conncb = ftresult
-
-    def on_connect(self):
-        if not self.connected:
-            self._connect()
-            return self._cft
-
-    connected = CoreClient.connected
-
-
-class Collection(AIOClientMixin, BaseAsyncCBCollection):
+class Collection(BaseAsyncCBCollection, metaclass=AIOClientMixinType):
     def __init__(self,
                  *args,
                  **kwargs
@@ -86,11 +102,11 @@ class Collection(AIOClientMixin, BaseAsyncCBCollection):
     def upsert(self, *args, **kwargs):
         super(Collection, self).upsert(*args, **kwargs)
 
-
 AsyncCBCollection = Collection
+Collection.on_connect
 
 
-class ABucket(AIOClientMixin, V3AsyncBucket):
+class ABucket(with_metaclass(AIOClientMixinType, V3AsyncBucket)):
     def __init__(self, *args, **kwargs):
         super(ABucket,self).__init__(collection_factory=AsyncCBCollection, *args, **kwargs)
 
@@ -100,7 +116,7 @@ class ABucket(AIOClientMixin, V3AsyncBucket):
 Bucket = ABucket
 
 
-class ACluster(AIOClientMixin, V3AsyncCluster):
+class ACluster(with_metaclass(AIOClientMixinType, V3AsyncCluster)):
     def __init__(self, connection_string, *options, **kwargs):
         super(ACluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
 
