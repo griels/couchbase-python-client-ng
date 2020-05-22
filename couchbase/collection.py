@@ -542,7 +542,7 @@ class CBCollection(wrapt.ObjectProxy):
     def get_all_replicas(self,      # type: CBCollection
                          key,       # type: str
                          *options,  # type: GetAllReplicasOptions
-                         **kwargs  # type: Any
+                         **kwargs   # type: Any
                          ):
         # type: (...) -> Iterable[GetReplicaResult]
         """Obtain an object stored in Couchbase by given key, from every replica.
@@ -585,8 +585,8 @@ class CBCollection(wrapt.ObjectProxy):
 
     @_inject_scope_and_collection
     @volatile
-    def upsert_multi(self,  # type: CBCollection
-                     keys,  # type: Dict[str,JSON]
+    def upsert_multi(self,      # type: CBCollection
+                     keys,      # type: Dict[str,JSON]
                      *options,  # type: GetOptions
                      **kwargs   # type: Any
                      ):
