@@ -102,6 +102,7 @@ class Collection(BaseAsyncCBCollection, metaclass=AIOClientMixinType):
     def upsert(self, *args, **kwargs):
         super(Collection, self).upsert(*args, **kwargs)
 
+
 AsyncCBCollection = Collection
 Collection.on_connect
 
