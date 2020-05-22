@@ -571,7 +571,7 @@ class Cluster(CoreClient):
           any value in the options, assumed to be named parameters for the query.
         :param itercls: type of iterator
 
-        :return: The results of the query or error message
+        :return: An object with the results of the query or error message
             if the query failed on the server.
 
         :raise: :exc:`~.exceptions.QueryException` - for errors involving the query itself.  Also any exceptions
@@ -681,15 +681,16 @@ class Cluster(CoreClient):
                         statement,  # type: str,
                         *options,   # type: AnalyticsOptions
                         itercls=AnalyticsResult,  # type: Type[AnalyticsResult]
-                        **kwargs
+                        **kwargs   # type: Any
                         ):
         # type: (...) -> AnalyticsResult
         """
-        Executes an Analytics query against the remote cluster and returns a AnalyticsResult with the results
+        Executes an Analytics query against the remote cluster and returns the results
         of the query.
 
         :param statement: the analytics statement to execute
         :param options: the optional parameters that the Analytics service takes based on the Analytics RFC.
+        :param itercls: iterable class to return
         :return: An object with the results of the query or error message if the query failed on the server.
         :raise: :exc:`~.exceptions.AnalyticsException` errors associated with the analytics query itself.
             Also, any exceptions raised by the underlying platform - :class:`~.exceptions.TimeoutException`
@@ -714,11 +715,11 @@ class Cluster(CoreClient):
                      index,     # type: str
                      query,     # type: SearchQuery
                      *options,  # type: SearchOptions
-                     **kwargs
+                     **kwargs   # type: Any
                      ):
         # type: (...) -> SearchResult
         """
-        Executes a Search or FTS query against the remote cluster and returns a SearchResult implementation with the
+        Executes a Search or FTS query against the remote cluster and returns the
         results of the query.
 
         .. code-block:: python
@@ -733,7 +734,7 @@ class Cluster(CoreClient):
         :param query: the fluent search API to construct a query for FTS.
         :param options: the options to pass to the cluster with the query.
         :param kwargs: Overrides corresponding value in options.
-        :return: A :class:`~.search.SearchResult` object with the results of the query or error message if the query
+        :return: An object with the results of the query or error message if the query
             failed on the server.
         :raise: :exc:`~.exceptions.SearchException` Errors related to the query itself.
             Also, any exceptions raised by the underlying platform - :class:`~.exceptions.TimeoutException`

@@ -25,7 +25,6 @@ from couchbase.exceptions import InvalidArgumentException
 from couchbase_core.client import Client as CoreClient
 from typing import *
 
-
 T = TypeVar('T', bound=CoreClient)
 
 
@@ -150,8 +149,6 @@ class AsyncClientMixin(object):
 
         super(AsyncClientMixin, self).__init__(*args, **kwargs)
 
-    import boltons.funcutils
-    #@boltons.funcutils.wraps(couchbase_core.client.Client.view_query)
     def view_query(self, *args, **kwargs):
         if not issubclass(kwargs.get('itercls', None), AsyncViewBase):
             raise InvalidArgumentException.pyexc("itercls must be defined "
@@ -166,14 +163,3 @@ class AsyncClientMixin(object):
         res = super(AsyncClientMixin, self).endure_multi([key], *args, **kwargs)
         res._set_single()
         return res
-
-
-class AsyncClientFactory(type):
-    @staticmethod
-    def gen_async_client(syncbase  # type: Type[T]
-                         ):
-        # type: (...) -> Type[T]
-        class AsyncClientSpecialised(AsyncClientMixin, syncbase):
-            pass
-        return AsyncClientSpecialised
-
