@@ -41,9 +41,8 @@ and :class:`~couchbase.collection.Collection` classes.
 
     .. automethod:: view_query
 
-.. class:: Collection
-
-    .. automethod:: get
+.. autoclass:: Collection
+    :members:
 
 .. currentmodule:: acouchbase.iterator
 
@@ -67,8 +66,3 @@ and :class:`~couchbase.collection.Collection` classes.
     .. automethod:: __iter__
     .. automethod:: __init__
 
-.. module:: couchbase_core.asynchronous.client
-
-.. class:: AsyncClientMixin
-
-    .. automethod:: view_query
