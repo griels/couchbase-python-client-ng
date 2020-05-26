@@ -50,8 +50,11 @@ class UserManagementTests(CollectionTestCase):
             self.um.upsert_group(Group('qweqwe', roles={Role.of(name='admin')}))
 
     def tearDown(self):
-        if self.supports_groups():
-            self.um.drop_group('qweqwe')
+        try:
+            if self.supports_groups():
+                self.um.drop_group('qweqwe')
+        except GroupNotFoundException:
+            pass
 
     def test_create_list_get_remove_internal_user(self):
 
