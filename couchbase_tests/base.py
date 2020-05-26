@@ -270,10 +270,10 @@ class ClusterInformation(object):
 
         return MockHackArgs(ClassicAuthenticator,{'bucket': self.bucket_name}) if is_mock else MockHackArgs(PasswordAuthenticator, {})
 
-    def make_admin_connection(self, is_mock):
+    def make_admin_connection(self, **kwargs):
 
         return Admin(self.admin_username, self.admin_password,
-                     self.host, self.port, ipv6=self.ipv6, **self.mock_hack_options(is_mock).kwargs)
+                     self.host, self.port, ipv6=self.ipv6, **kwargs)
 
 
 class ConnectionConfiguration(object):
@@ -544,7 +544,8 @@ class CouchbaseTestCase(ResourcedTestCase):
         return self.cluster_info.make_connection(self.factory, **kwargs)
 
     def make_admin_connection(self):
-        return self.cluster_info.make_admin_connection(self.is_mock)
+        mock_hack = {'bucket': self.cluster_info.bucket_name} if self.is_mock else {}
+        return self.cluster_info.make_admin_connection(**mock_hack)
 
     def gen_key(self, prefix=None):
         if not prefix:
@@ -872,16 +873,20 @@ class ClusterTestCase(CouchbaseTestCase):
                              opts=None  # type: Any
                              ):
         # type: (...) -> ClusterTestCase.T
+        # FIXME: we should not be using classic here!  But, somewhere in the tests, we need
+        # this for hitting the mock, it seems
         cluster_class = cluster_class or self.cluster_factory
-        mock_hack = self.cluster_info.mock_hack_options(self.is_mock)
-        auth = mock_hack.auth(self.cluster_info.admin_username, self.cluster_info.admin_password)
+        auth_type = ClassicAuthenticator if self.is_mock else PasswordAuthenticator
+        # hack because the Mock seems to want a bucket name for cluster connections, odd
+        mock_hack = {'bucket': self.cluster_info.bucket_name} if self.is_mock else {}
+        auth = auth_type(self.cluster_info.admin_username, self.cluster_info.admin_password)
         if not opts:
             opts = ClusterOptions(auth)
         else:
             opts['authenticator'] = auth
         return self.try_n_times(10, 3, cluster_class.connect,
                                 connection_string=str(connstr_nobucket),
-                                options=opts, **mock_hack.kwargs)
+                                options=opts, **mock_hack)
 
     # NOTE: this really is only something you can trust in homogeneous clusters, but then again
     # this is a test suite.
