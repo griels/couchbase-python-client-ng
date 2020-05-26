@@ -87,9 +87,10 @@ class Admin(LCB.Bucket):
         if not connection_string:
             connection_string = ConnectionString(hosts=["{0}:{1}".format(host, port)],
                                                  scheme=kwargs.get('scheme', 'http'), bucket=kwargs.get('bucket', None))
-            ipv6 = kwargs.pop('ipv6', None)
-            if ipv6:
-                connection_string.set_option('ipv6', ipv6)
+        if not isinstance(connection_string, ConnectionString):
+            connection_string=ConnectionString.parse(connection_string)
+        ipv6 = kwargs.pop('ipv6', connection_string.get_option('ipv6', 'disabled'))
+        connection_string.set_option('ipv6', ipv6)
 
         kwargs.update({
             'username': username,
