@@ -2,26 +2,28 @@ import os
 from unittest import SkipTest
 from functools import wraps
 
-from flaky import flaky
-
 from couchbase.exceptions import InvalidArgumentException
 from couchbase.management.users import User, Role, Group, RawRole, GroupNotFoundException, UserNotFoundException
 from couchbase.auth import AuthDomain
 from couchbase_tests.base import CollectionTestCase
 from couchbase.exceptions import  NotSupportedException
-from typing import *
 import re
 from datetime import timedelta
+from flaky import flaky
+
 
 UG_WORKING = os.getenv("PYCBC_UPSERT_GROUP_WORKING")
 
+
 def skip_if_no_groups(func):
-  @wraps(func)
-  def wrap(self, *args, **kwargs):
-    if not self.supports_groups():
-      raise SkipTest('groups not supported (server < 6.5?)')
-    func(self, *args, **kwargs)
-  return wrap
+    @wraps(func)
+    def wrap(self, *args, **kwargs):
+        if not self.supports_groups():
+            raise SkipTest('groups not supported (server < 6.5?)')
+        func(self, *args, **kwargs)
+
+    return wrap
+
 
 class UserManagementTests(CollectionTestCase):
 
@@ -42,10 +44,12 @@ class UserManagementTests(CollectionTestCase):
         if self.supports_groups():
           self.um.upsert_group(Group('qweqwe', roles={Role.of(name='admin')}))
 
-
     def tearDown(self):
-      if self.supports_groups():
-        self.um.drop_group('qweqwe')
+        try:
+            if self.supports_groups():
+                self.um.drop_group('qweqwe')
+        except GroupNotFoundException:
+            pass
 
     def test_create_list_get_remove_internal_user(self):
 
@@ -100,7 +104,7 @@ class UserManagementTests(CollectionTestCase):
         except:
             pass
 
-    @flaky(10,1)
+    @flaky(10, 1)
     def test_user_api_aliases(self):
 
         userid = 'custom-user'

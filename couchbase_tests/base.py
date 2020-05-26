@@ -45,7 +45,7 @@ from couchbase.cluster import Cluster, ClusterOptions, ClusterTracingOptions, \
 from couchbase.auth import PasswordAuthenticator, ClassicAuthenticator, Authenticator
 from couchbase.collection import CBCollection
 from couchbase.exceptions import CollectionAlreadyExistsException, ScopeAlreadyExistsException, NotSupportedException, \
-    CouchbaseException
+    CouchbaseException, TimeoutException
 from couchbase.management.analytics import CreateDatasetOptions
 from couchbase.management.collections import CollectionSpec
 from couchbase_core.client import Client as CoreClient
@@ -858,7 +858,7 @@ class ClusterTestCase(CouchbaseTestCase):
     def setUp(self, **kwargs):
         super(ClusterTestCase, self).setUp()
         bucket_name = self.init_cluster_and_bucket(**kwargs)
-        self.bucket = self.cluster.bucket(bucket_name)
+        self.bucket = self.try_n_times(20, 3, self.cluster.bucket, bucket_name, expected_exceptions=(TimeoutException,))
         self.bucket_name = bucket_name
         self.query_props = QueryParams('SELECT mockrow', 1) if self.is_mock else \
             QueryParams("SELECT * FROM `beer-sample` LIMIT 2", 2)  # type: QueryParams
@@ -898,7 +898,7 @@ class ClusterTestCase(CouchbaseTestCase):
         else:
             opts['authenticator'] = auth
         if SLOWCONNECT_PATTERN.match(platform.platform()):
-            default_timeout_options = ClusterTimeoutOptions(config_total_timeout=timedelta(seconds=30))
+            default_timeout_options = ClusterTimeoutOptions(config_total_timeout=timedelta(seconds=120))
             default_timeout_options.update(opts.get('timeout_options', {}))
             opts['timeout_options'] = default_timeout_options
         return self.try_n_times(10, 3, cluster_class.connect,
@@ -1017,7 +1017,7 @@ class AsyncClusterTestCase(ClusterTestCase):
     @abstractmethod
     def cluster_class(self  # type: AsyncClusterTestCase
                       ):
-        # type: (...) -> Type[.AsyncClusterType]
+        # type: (...) -> Type[AsyncClusterType]
         pass
 
 
