@@ -59,7 +59,10 @@ class AIOClientMixinBase(object):
 
 class AIOClientMixinType(type(AIOClientMixinBase)):
     @classmethod
-    def gen_client(cls, base):
+    def gen_client(cls,  # type: Type[AIOClientMixinType]
+                   base  # type: Type[BaseAsyncCBCollection]
+                   ):
+        # type: (...) -> Type[BaseAsyncCBCollection]
         class Result(AIOClientMixinBase, base):
             def __init__(self, *args, **kwargs):
                 super(Result, self).__init__(*args, **kwargs)
