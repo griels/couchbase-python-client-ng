@@ -2,8 +2,6 @@ import os
 from unittest import SkipTest
 from functools import wraps
 
-from flaky import flaky
-
 from couchbase.exceptions import InvalidArgumentException
 from couchbase.management.users import User, Role, Group, RawRole, GroupNotFoundException, UserNotFoundException
 from couchbase.auth import AuthDomain
@@ -44,11 +42,8 @@ class UserManagementTests(CollectionTestCase):
 
 
     def tearDown(self):
-        try:
           if self.supports_groups():
             self.um.drop_group('qweqwe')
-        except GroupNotFoundException:
-            pass
 
     def test_create_list_get_remove_internal_user(self):
 
@@ -103,7 +98,6 @@ class UserManagementTests(CollectionTestCase):
         except:
             pass
 
-    @flaky(10,1)
     def test_user_api_aliases(self):
 
         userid = 'custom-user'
