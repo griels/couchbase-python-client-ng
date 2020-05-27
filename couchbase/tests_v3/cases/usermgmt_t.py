@@ -42,8 +42,11 @@ class UserManagementTests(CollectionTestCase):
 
 
     def tearDown(self):
+        try:
           if self.supports_groups():
             self.um.drop_group('qweqwe')
+        except GroupNotFoundException:
+            pass
 
     def test_create_list_get_remove_internal_user(self):
 
@@ -98,6 +101,7 @@ class UserManagementTests(CollectionTestCase):
         except:
             pass
 
+    @flaky(10,1)
     def test_user_api_aliases(self):
 
         userid = 'custom-user'
