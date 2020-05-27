@@ -294,7 +294,7 @@ CoreBucketOp = TypeVar("CoreBucketOp", Callable[[Any], CoreResult], Callable[[An
 def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
                                 ):
     # type: (...) -> CoreBucketOp
-    @wraps(wrapped)
+    import boltons.funcutils
     def wrapper(target, keys, *options, **kwargs
                 ):
         return get_multi_mutation_result(target.bucket, wrapped, keys, *options, **kwargs)
@@ -447,7 +447,7 @@ class CBCollection(wrapt.ObjectProxy):
         return ResultPrecursor(x, options)
 
     @_get_result_and_inject
-    def get(self,
+    def get(self,       # type: CBCollection
             key,        # type: str
             *options,   # type: GetOptions
             **kwargs    # type: Any
@@ -457,8 +457,8 @@ class CBCollection(wrapt.ObjectProxy):
 
         :param key: The key to fetch. The type of key is the same
             as mentioned in :meth:`upsert`
-        :param: GetOptions options: The options to use for this get request.
-        :param: Any kwargs: Override corresponding value in options.
+        :param options: The options to use for this get request.
+        :param kwargs: Override corresponding value in options.
 
         :raise: :exc:`.DocumentNotFoundException` if the key does not exist
 
@@ -482,7 +482,7 @@ class CBCollection(wrapt.ObjectProxy):
                       key,          # type: str
                       expiry,       # type: timedelta
                       *options,     # type: GetAndTouchOptions
-                      **kwargs
+                      **kwargs      # type: Any
                       ):
         # type: (...) -> GetResult
         """
@@ -499,11 +499,11 @@ class CBCollection(wrapt.ObjectProxy):
         return self._get_generic(key, kwargs, options)
 
     @_get_result_and_inject
-    def get_and_lock(self,
+    def get_and_lock(self,      # type: CBCollection
                      key,       # type: str
                      expiry,    # type: timedelta
                      *options,  # type: GetAndLockOptions
-                     **kwargs
+                     **kwargs   # type: Any
                      ):
         # type: (...) -> GetResult
         """
@@ -521,18 +521,18 @@ class CBCollection(wrapt.ObjectProxy):
 
     @_inject_scope_and_collection
     @get_replica_result_wrapper
-    def get_any_replica(self,
+    def get_any_replica(self,      # type: CBCollection
                         key,       # type: str
                         *options,  # type: GetFromReplicaOptions
-                        **kwargs
+                        **kwargs   # type: Any
                         ):
         # type: (...) -> GetReplicaResult
         """Obtain an object stored in Couchbase by given key, from a replica.
 
         :param key: The key to fetch. The type of key is the same
             as mentioned in :meth:`upsert`
-        :param: GetFromReplicaOptions options: The options to use for this get request.
-        :param: Any kwargs: Override corresponding value in options.
+        :param options The options to use for this get request.
+        :param kwargs Override corresponding value in options.
 
         :raise: :exc:`.DocumentNotFoundException` if the key does not exist
                 :exc:`.DocumentUnretrievableException` if no replicas exist
@@ -543,7 +543,7 @@ class CBCollection(wrapt.ObjectProxy):
 
     @_inject_scope_and_collection
     @get_replica_result_wrapper
-    def get_all_replicas(self,
+    def get_all_replicas(self,      # type: CBCollection
                          key,       # type: str
                          *options,  # type: GetAllReplicasOptions
                          **kwargs   # type: Any
@@ -553,8 +553,8 @@ class CBCollection(wrapt.ObjectProxy):
 
         :param key: The key to fetch. The type of key is the same
             as mentioned in :meth:`upsert`
-        :param: options: The options to use for this get request.
-        :param: kwargs: Override corresponding value in options.
+        :param options: The options to use for this get request.
+        :param kwargs: Override corresponding value in options.
 
         :raise: :exc:`.DocumentNotFoundException` if the key does not exist
               :exc:`.DocumentUnretrievableException` if no replicas exist
@@ -592,7 +592,7 @@ class CBCollection(wrapt.ObjectProxy):
     def upsert_multi(self,      # type: CBCollection
                      keys,      # type: Dict[str,JSON]
                      *options,  # type: GetOptions
-                     **kwargs
+                     **kwargs   # type: Any
                      ):
         # type: (...) -> Dict[str,MutationResult]
         """
@@ -640,7 +640,7 @@ class CBCollection(wrapt.ObjectProxy):
     def insert_multi(self,      # type: CBCollection
                      keys,      # type: Dict[str,JSON]
                      *options,  # type: GetOptions
-                     **kwargs
+                     **kwargs   # type: Any
                      ):
         # type: (...) -> Dict[str, MutationResult]
         """
@@ -658,7 +658,7 @@ class CBCollection(wrapt.ObjectProxy):
     def remove_multi(self,      # type: CBCollection
                      keys,      # type: Iterable[str]
                      *options,  # type: GetOptions
-                     **kwargs
+                     **kwargs   # type: Any
                      ):
         # type: (...) -> Dict[str, MutationResult]
         """
@@ -689,7 +689,8 @@ class CBCollection(wrapt.ObjectProxy):
               key,          # type: str
               expiry,       # type: timedelta
               *options,     # type: TouchOptions
-              **kwargs):
+              **kwargs      # type: Any
+              ):
         # type: (...) -> MutationResult
         """Update a key's expiry time
 
@@ -710,7 +711,7 @@ class CBCollection(wrapt.ObjectProxy):
         return CoreClient.touch(self.bucket, key, **forward_args(kwargs, *options))
 
     @_mutate_result_and_inject
-    def unlock(self,
+    def unlock(self,        # type: CBCollection
                key,         # type: str
                cas,         # type: int
                *options,    # type: UnlockOptions
@@ -831,11 +832,12 @@ class CBCollection(wrapt.ObjectProxy):
         return ResultPrecursor(CoreClient.upsert(self.bucket, key, value, **final_options), final_options)
 
     @_mutate_result_and_inject
-    def insert(self,
+    def insert(self,      # type: CBCollection
                key,       # type: str
                value,     # type: Any
-               *options,  # type InsertOptions
-               **kwargs):
+               *options,  # type: InsertOptions
+               **kwargs   # type: Any
+               ):
         # type: (...) -> MutationResult
         """Store an object in Couchbase unless it already exists.
 
@@ -860,7 +862,7 @@ class CBCollection(wrapt.ObjectProxy):
         return CoreClient.insert(self.bucket, key, value, **final_options)
 
     @_mutate_result_and_inject
-    def replace(self,
+    def replace(self,       # type: CBCollection
                 key,        # type: str
                 value,      # type: Any
                 *options,   # type: ReplaceOptions
@@ -889,7 +891,7 @@ class CBCollection(wrapt.ObjectProxy):
     def remove(self,        # type: CBCollection
                key,         # type: str
                *options,    # type: RemoveOptions
-               **kwargs
+               **kwargs     # type: Any
                ):
         # type: (...) -> MutationResult
         """Remove the key-value entry for a given key in Couchbase.

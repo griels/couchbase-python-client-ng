@@ -1,5 +1,7 @@
 from asyncio import AbstractEventLoop
 
+from couchbase_core.supportability import internal
+
 from couchbase.asynchronous import wrap_async_decorator, wrap_async
 
 try:
@@ -25,13 +27,19 @@ class AIOClientMixinBase(object):
     """
     AIOClientMixinBase
     """
-    def __init__(self, connstr=None, *args, **kwargs):
+    @internal
+    def __init__(self,  # type: AIOClientMixinBase
+                 connstr=None,  # type: str
+                 *args,  # type: Any
+                 **kwargs  # type: Any
+                 ):
+        # type: (...) -> None
         """
         AIOClientMixinBase
 
-        :param connstr:
-        :param args:
-        :param kwargs:
+        :param connstr: Connection string
+        :param args: to be passed through to superconstructor
+        :param kwargs: to be passed through to superconstructor
         """
         loop = asyncio.get_event_loop()
         if connstr and 'connstr' not in kwargs:
@@ -95,12 +103,12 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
         return wrap_async_decorator(meth)(ret)
 
 
-class Collection(AIOClientMixinType.gen_client(BaseAsyncCBCollection)):
-    def __init__(self,
-                 *args,
-                 **kwargs
-                 ):
-        super(Collection, self).__init__(*args, **kwargs)
+class Collection(with_metaclass(AIOClientMixinType, BaseAsyncCBCollection)):
+    def __copy__(self):
+        pass
+
+    def __deepcopy__(self, memo):
+        pass
 
     @wrap_async_decorator(BaseAsyncCBCollection.upsert)
     def upsert(self, *args, **kwargs):
