@@ -70,35 +70,53 @@ def get_return_type(method):
     return type_comment
 
 
-def wrap_async_decorator(method,  # type: iterable_producer
-                         default_iterator=None  # type: Type[IterableClass]
-                         ):
-    # type: (...) -> iterable_producer
+class AsyncDecorator(functools.partial):
+    @staticmethod
+    def __new__(cls, method, *args, **kwargs):
+        return super(AsyncDecorator, cls).__new__(cls, method, *args, **kwargs)
 
-    def wrap(func):
-        if default_iterator:
-            @functools.wraps(method)
-            def wrapper(self, *args, **kwargs):
-                return func(self, *args, itercls=kwargs.pop('itercls', default_iterator), **kwargs)
-        else:
-            @functools.wraps(method)
-            def wrapper(self, *args, **kwargs):
-                return func(self, *args, **kwargs)
-        if default_iterator:
-            wrapper.__annotations__['itercls'] = Type[default_iterator]
-            wrapper.__annotations__['return'] = default_iterator
-        else:
-            rtype_name = get_return_type(method)
-            try:
-                logging.error("wrapping rtype for {} - got {}".format(method, rtype_name))
-                wrapper.__annotations__['return'] = 'asyncio.futures.Future[{}]'.format(rtype_name)
-            except Exception as e:
-                raise
-        wrapper.__doc__ = """{} version of `{}`. {}""".format('asyncio', getattr(method, '__module__', '~') + "." + method.__qualname__, method.__doc__)
+
+# noinspection PyPep8Naming
+class async_iterable(AsyncDecorator):
+    @staticmethod
+    def __new__(cls, method,  # type: iterable_producer
+                 default_iterator  # type: Type[IterableClass]
+                 ):
+        result=super(async_iterable, cls).__new__(cls, method)
+        result._default_iterator=default_iterator
+        return result
+
+    def __call__(self,  # type: async_iterable
+                 func, *args, **kwargs):
+        # type: (...) -> iterable_producer
+        def_iterator=self._default_iterator
+        @functools.wraps(self.func)
+        def wrapper(self, *args, **kwargs):
+            return func(self, *args, itercls=kwargs.pop('itercls', def_iterator), **kwargs)
+        wrapper.__annotations__['itercls'] = Type[self._default_iterator]
+        wrapper.__annotations__['return'] = self._default_iterator
         return wrapper
 
-    return boltons.funcutils.partial(wrap)
 
+# noinspection PyPep8Naming
+class async_kv_operation(AsyncDecorator):
+    @staticmethod
+    def __new__(cls, method):
+        return super(async_kv_operation, cls).__new__(cls, method)
+
+    def __call__(self,  # type: async_iterable
+                 func, *args, **kwargs):
+        @functools.wraps(self.func)
+        def wrapper(self, *args, **kwargs):
+            return func(self, *args, **kwargs)
+        rtype_name = get_return_type(self.func)
+
+        try:
+            logging.error("wrapping rtype for {} - got {}".format(self.func, rtype_name))
+            wrapper.__annotations__['return'] = 'asyncio.futures.Future[{}]'.format(rtype_name)
+        except Exception as e:
+            raise
+        return wrapper
 
 def wrap_async(method,  # type: iterable_producer
                default_iterator  # type: Type[IterableClass]
