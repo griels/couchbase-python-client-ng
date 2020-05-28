@@ -4,31 +4,6 @@ Result Objects
 
 .. currentmodule:: couchbase.result
 
-.. autoclass:: AsyncGetReplicaResult
-   :show-inheritance:
-   :members:
-
-
-.. autoclass:: AsyncGetResult
-   :show-inheritance:
-   :members:
-
-
-.. autoclass:: AsyncMultiGetResult
-   :show-inheritance:
-   :members:
-
-
-.. autoclass:: AsyncMultiMutationResult
-   :show-inheritance:
-   :members:
-
-
-.. autoclass:: AsyncMutationResult
-   :show-inheritance:
-   :members:
-
-
 .. autoclass:: AsyncResult
    :show-inheritance:
    :members:
@@ -69,19 +44,10 @@ Result Objects
    :members:
 
 
-.. autoclass:: MultiGetResult
-   :show-inheritance:
-   :members:
-
-
-.. autoclass:: MultiMutationResult
-   :show-inheritance:
-   :members:
-
-
 .. autoclass:: MultiResult
    :show-inheritance:
    :members:
+
 
 .. autoclass:: MutateInResult
    :show-inheritance:
@@ -118,3 +84,4 @@ Result Objects
 .. autoclass:: ViewRow
    :show-inheritance:
    :members:
+
