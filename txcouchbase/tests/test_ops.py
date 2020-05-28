@@ -19,8 +19,9 @@ from typing import *
 from twisted.trial.unittest import TestCase
 
 from couchbase.exceptions import DocumentNotFoundException
-from couchbase.result import GetResult, MutationResult, MultiMutationResult
+from couchbase.result import GetResult, MutationResult
 from couchbase_tests.base import AsyncClusterTestCase
+from couchbase.result import MultiResult
 from txcouchbase.tests.base import gen_base
 from txcouchbase.tests.base import skip_PYCBC_894
 
@@ -68,7 +69,7 @@ class OperationTestCase(Base):
         kvs = self.gen_kv_dict(prefix="test_multi_set")
         d_set = cb.upsert_multi(kvs)
 
-        def t(ret  # type: MultiMutationResult
+        def t(ret  # type: MultiResult[MutationResult]
               ):
             self.assertEqual(len(ret), len(kvs))
             self.assertEqual(ret.keys(), kvs.keys())
