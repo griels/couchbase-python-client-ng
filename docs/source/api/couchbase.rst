@@ -337,6 +337,10 @@ Retrieving Data
 
     .. automethod:: get
 
+    .. automethod:: get_any_replica
+
+    .. automethod:: get_all_replicas
+
 Modifying Data
 --------------
 
