@@ -11,3 +11,5 @@ pyrsistent>=0.15.2
 attrs>=19.1.0; python_version>"3.5"
 attrs==19.1.0; python_version<="3.5"
 wrapt>=1.11.2
+boltons>=20.1.0
+
