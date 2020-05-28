@@ -1,4 +1,9 @@
+from abc import abstractmethod
 from typing import *
+
+from six import with_metaclass
+
+from couchbase_core._pyport import Protocol
 
 import attr
 import datetime
@@ -9,12 +14,13 @@ from couchbase_core._libcouchbase import Result as CoreResult
 from couchbase.diagnostics import EndpointPingReport, ServiceType
 from couchbase_core import iterable_wrapper, JSON
 from couchbase_core.result import AsyncResult as CoreAsyncResult
-from couchbase_core.result import MultiResult, SubdocResult
+from couchbase_core.result import MultiResult as CoreMultiResult, SubdocResult as CoreSubdocResult
 from couchbase_core.subdocument import Spec
 from couchbase_core.supportability import internal
 from couchbase_core.transcodable import Transcodable
 from couchbase_core.views.iterator import View as CoreView
 from .options import forward_args, UnsignedInt64
+
 
 Proxy_T = TypeVar('Proxy_T')
 
@@ -38,9 +44,9 @@ def canonical_sdresult(content, full=False):
 # get the results of the get_full().  Special case for a get where
 # with_expiry=True.  Also this is a hack.
 def extract_value(content, decode_canonical, full=False):
-    if isinstance(content, MultiResult):
+    if isinstance(content, CoreMultiResult):
         return {k: decode_canonical(content[k].value) for k, v, in content}
-    elif isinstance(content, SubdocResult):
+    elif isinstance(content, CoreSubdocResult):
         return decode_canonical(canonical_sdresult(content, full))
     return decode_canonical(content.value)
 
@@ -134,9 +140,45 @@ class Result(object):
     TracingOutput = Dict[str, Any]
 
     @property
-    def _tracing_output(self):
+    def _tracing_output(self  # type: Result
+                        ):
         # type: () -> TracingOutput
         return self._original.tracing_output
+
+    __async_map = {}
+
+    @classmethod
+    def _async(cls  # type: Type[Result]
+               ):
+        # type: (...) -> AsyncResult
+        return Result._async_retarget(cls)
+
+    @staticmethod
+    def _async_retarget(cls  # type: Type[ResultDeriv]
+                        ):
+        # type: (...) -> Type[AsyncResult]
+        result = Result.__async_map.get(cls, None)
+        if not result:
+            class WrappedFinal(with_metaclass(AsyncWrapper, cls)):
+                pass
+            result = WrappedFinal
+            result.__name__= cls.__name__
+            Result.__async_map[cls] = result
+        return result
+
+    @classmethod
+    def _from_raw(cls,  # type: Type[Result]
+                  orig_value  # type: CoreResult
+                  ):
+        # type: (...) -> Result
+        return Result._from_raw_retarget(cls, orig_value)
+
+    @staticmethod
+    def _from_raw_retarget(cls,  # type: Type[ResultDeriv]
+                           orig_value  # type: CoreResult
+                           ):
+        # type: (...) -> ResultDeriv
+        return (cls._async() if _is_async(orig_value) else cls)(orig_value)
 
 
 class LookupInResult(Result):
@@ -183,6 +225,7 @@ class MutationResult(Result):
     def __init__(self,
                  original  # type: CoreResult
                  ):
+        # type: (...) -> None
         super(MutationResult, self).__init__(original)
         mutinfo = getattr(original, '_mutinfo', None)
         muttoken = MutationToken(mutinfo) if mutinfo else None
@@ -264,6 +307,14 @@ class PingResult(object):
     def version(self):
         return self._version
 
+    @classmethod
+    def _async(cls):
+        return Result._async_retarget(cls)
+
+    @classmethod
+    def _from_raw(cls, orig_value):
+        return Result._from_raw_retarget(cls, orig_value)
+
 
 class ExistsResult(Result):
     @internal
@@ -290,7 +341,7 @@ class GetResult(Result):
         self._original = original
         self._full = False
         self._expiry = None
-        if isinstance(original, SubdocResult):
+        if isinstance(original, CoreSubdocResult):
             self._expiry = original.expiry
             self._full = bool(original.get_full)
 
@@ -325,7 +376,74 @@ class GetReplicaResult(GetResult):
         raise NotImplementedError("To be implemented in final sdk3 release")
 
 
-ResultDeriv = TypeVar("ResultDeriv", bound=Result)
+class MultiResult(dict):
+    single_result_type = None  # type: Type[ResultDeriv]
+
+    @property
+    def all_ok(self):
+        return self._raw_result.all_ok
+
+    def __init__(self, raw_result):
+        self._raw_result = raw_result
+        super(MultiResult, self).__init__({k: self.single_result_type._from_raw(v) for k, v in raw_result.items()})
+
+    @classmethod
+    def _async(cls):
+        return Result._async_retarget(cls)
+
+    @classmethod
+    def _from_raw(cls, orig_value):
+        return Result._from_raw_retarget(cls, orig_value)
+
+    @classmethod
+    def _gen_result_class(cls,  # type: Type[MultiResult]
+                          item  # type: Type[ResultDeriv]
+                          ):
+        # type: (...) -> Type[MultiResult]
+        class Result(MultiResult):
+            single_result_type = item
+        return Result
+
+    def __class_getitem__(cls,   # type: Type[MultiResult]
+                          item   # type: Type[ResultDeriv]
+                          ):
+        # type: (...) -> Type[MultiResult]
+        return cls._gen_result_class(item)
+
+
+ResultDeriv = TypeVar('ResultDeriv', bound=Union[Result, MultiResult, PingResult])
+R = TypeVar('R', bound=ResultDeriv)
+
+
+class SyncOperation(Protocol):
+    _rtype = None
+
+    def __call__(self,
+                 target,  # type: Any
+                 *args,  # type: Any
+                 **kwargs  # type: Any
+                 ):
+        # type: (...) -> int
+        pass
+
+
+def sync_op(rtype  # type: Type[ResultDeriv]
+            ):
+    class SyncOperationSpecific(SyncOperation):
+        _rtype = rtype
+
+        def __call__(self,
+                     target,  # type: Any
+                     *args,  # type: Any
+                     **kwargs  # type: Any
+                     ):
+            # type: (...) -> ResultDeriv
+            pass
+    return SyncOperationSpecific
+
+
+MutationResultOp = sync_op(MutationResult)
+GetResultOp = sync_op(GetResult)
 
 
 class AsyncResult(object):
@@ -336,8 +454,9 @@ class AsyncResult(object):
         self._kwargs = kwargs
 
     @property
+    @abstractmethod
     def orig_class(self):
-        # type: (...) -> Type[Result]
+        # type: (...) -> Type[ResultDeriv]
         pass
 
     def set_callbacks(self, on_ok_orig, on_err_orig):
@@ -353,37 +472,22 @@ class AsyncResult(object):
         self._original.clear_callbacks(*args)
 
 
-class AsyncWrapper(object):
+class AsyncWrapper(type(AsyncResult)):
+    def __new__(cls,  # type: Type[AsyncWrapper]
+                name, bases, namespace):
+        result=super(AsyncWrapper, cls).__new__(cls, name, (AsyncResult,)+bases, namespace)
+        result.orig_class = bases[0]
+        result.__name__=result.orig_class.__name__
+
+        return result
+
     @staticmethod
-    def gen_wrapper(base):
+    def gen_wrapper(base  # type: Type[ResultDeriv]
+                    ):
+        # type: (...) -> Type[Union[ResultDeriv, AsyncResult]]
         class Wrapped(AsyncResult, base):
-            @property
-            def orig_class(self):
-                # type: (...) -> Result
-                return base
+            orig_class = base
         return Wrapped
-
-
-class AsyncGetResult(AsyncWrapper.gen_wrapper(GetResult)):
-    def __init__(self,
-                 core_result  # type: CoreResult
-                 ):
-        super(AsyncGetResult, self).__init__(core_result)
-
-
-class AsyncGetReplicaResult(AsyncWrapper.gen_wrapper(GetReplicaResult)):
-    def __init__(self,
-                 sdk2_result  # type: CoreResult
-                 ):
-        super(AsyncGetReplicaResult, self).__init__(sdk2_result)
-
-
-class AsyncMutationResult(AsyncWrapper.gen_wrapper(MutationResult)):
-    def __init__(self,
-                 core_result  # type: CoreResult
-                 ):
-        # type (...)->None
-        super(AsyncMutationResult, self).__init__(core_result)
 
 
 # TODO: eliminate the options shortly.  They serve no purpose
@@ -392,12 +496,11 @@ ResultPrecursor = NamedTuple('ResultPrecursor', [('orig_result', CoreResult), ('
 
 def _is_async(orig_result  # type: CoreResult
               ):
-    return issubclass(type(orig_result), CoreAsyncResult)
+    return _is_async_type(type(orig_result))
 
 
-def get_wrapped_get_result(x):
-    factory_class = AsyncGetResult if _is_async(x) else GetResult
-    return factory_class(x)
+def _is_async_type(res_type):
+    return issubclass(res_type, CoreAsyncResult)
 
 
 def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
@@ -405,30 +508,26 @@ def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
     # type: (...) -> Callable[[Any], GetResult]
     @wraps(func)
     def wrapped(*args, **kwargs):
-        x, options = func(*args, **kwargs)
-        return get_wrapped_get_result(x)
+        return GetResult._from_raw(next(iter(func(*args, **kwargs))))
 
-    wrapped.__name__ = func.__name__
-    wrapped.__doc__ = func.__name__
     return wrapped
 
 
 def get_replica_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
                                ):
-    # type: (...) -> Callable[[Any], GetResult]
-    def factory_class(x):
-        factory = AsyncGetReplicaResult if _is_async(x) else GetReplicaResult
-        return factory(x)
+    # type: (...) -> Callable[[Any], Iterable[GetReplicaResult]]
 
     @wraps(func)
-    def wrapped(*args, **kwargs):
-        x = list(map(factory_class, func(*args, **kwargs)))
+    def wrapped(*args,  # type: Any
+                **kwargs  # type: Any
+                ):
+        # type: (...) -> Iterable[GetReplicaResult]
+        x = list(map(GetReplicaResult._from_raw, func(*args, **kwargs)))
         if len(x) > 1:
             return x
         return x[0]
 
-    wrapped.__name__ = func.__name__
-    wrapped.__doc__ = func.__name__
+    wrapped.__annotations__['return'] = Iterable[GetReplicaResult]
     return wrapped
 
 
@@ -454,75 +553,21 @@ class MutationToken(object):
         raise NotImplementedError()
 
 
-def get_mutation_result(result  # type: CoreResult
-                        ):
-    # type (...)->MutationResult
-    orig_result = getattr(result, 'orig_result', result)
-    factory_class = AsyncMutationResult if _is_async(orig_result) else MutationResult
-    return factory_class(orig_result)
-
-
-class MultiResultBase(dict):
-    def converter(self, value):
-        pass
-
-    @property
-    def all_ok(self):
-        return self._raw_result.all_ok
-
-    def __init__(self, raw_result):
-        self._raw_result = raw_result
-        super(MultiResultBase, self).__init__({k: self.converter(v) for k, v in raw_result.items()})
-
-
-class MultiGetResult(MultiResultBase):
-    def converter(self, raw_value):
-        return get_wrapped_get_result(raw_value)
-
-    def __init__(self, *args, **kwargs):
-        super(MultiGetResult, self).__init__(*args, **kwargs)
-
-
-class MultiMutationResult(MultiResultBase):
-    def converter(self, raw_value):
-        return get_mutation_result(raw_value)
-
-    def __init__(self, *args, **kwargs):
-        super(MultiMutationResult, self).__init__(*args, **kwargs)
-
-
-class AsyncMultiMutationResult(AsyncWrapper.gen_wrapper(MultiMutationResult)):
-    def __init__(self,
-                 *args, **kwargs  # type: CoreResult
-                 ):
-        # type (...)->None
-        super(AsyncMultiMutationResult, self).__init__(*args, **kwargs)
-
-
-class AsyncMultiGetResult(AsyncWrapper.gen_wrapper(MultiGetResult)):
-    def __init__(self,
-                 *args, **kwargs  # type: CoreResult
-                 ):
-        # type (...)->None
-        super(AsyncMultiGetResult, self).__init__(*args, **kwargs)
-
-
 class MultiResultWrapper(object):
-    def __init__(self, orig_result_type, async_result_type=None):
-        self.orig_result_type = orig_result_type
-        self.async_result_type = async_result_type or AsyncWrapper.gen_wrapper(orig_result_type)
+    def __init__(self,  # type: MultiResultWrapper
+                 orig_result_type  # type: Type[ResultDeriv]
+                 ):
+        # type: (...) -> None
+        self.orig_result_type = MultiResult._gen_result_class(orig_result_type)
 
-    def get_multi_result(self, target, wrapped, keys, *options, **kwargs):
-        final_options = forward_args(kwargs, *options)
-        raw_result = wrapped(target, keys, **final_options)
-        orig_result = getattr(raw_result, 'orig_result', raw_result)
-        factory_class = self.async_result_type if _is_async(orig_result) else self.orig_result_type
-        result = factory_class(orig_result)
-        return result
+    def __call__(self, target, wrapped, keys, *options, **kwargs):
+        # type: (...) -> Type[MultiResult]
+        raw_result = wrapped(target, keys, **forward_args(kwargs, *options))
+        return self.orig_result_type._from_raw(getattr(raw_result, 'orig_result', raw_result))
 
 
-get_multi_mutation_result = MultiResultWrapper(MultiMutationResult, AsyncMultiMutationResult).get_multi_result
-get_multi_get_result = MultiResultWrapper(MultiGetResult, AsyncMultiGetResult).get_multi_result
+get_multi_mutation_result = MultiResultWrapper(MutationResult)
+get_multi_get_result = MultiResultWrapper(GetResult)
 
 
 def _wrap_in_mutation_result(func  # type: Callable[[Any,...],CoreResult]
@@ -531,10 +576,8 @@ def _wrap_in_mutation_result(func  # type: Callable[[Any,...],CoreResult]
     @wraps(func)
     def mutated(*args, **kwargs):
         result = func(*args, **kwargs)
-        return get_mutation_result(result)
+        return MutationResult._from_raw(getattr(result, 'orig_result', result))
 
-    mutated.__name__ = func.__name__
-    mutated.__doc__ = func.__doc__
     return mutated
 
 
@@ -572,3 +615,4 @@ class ViewResult(iterable_wrapper(CoreView)):
                  ):
         # type: (...) -> ViewMetaData
         return ViewMetaData(self)
+
