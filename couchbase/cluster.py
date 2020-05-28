@@ -588,6 +588,8 @@ class Cluster(BaseClient):
 
     QueryResultType = TypeVar('QueryResultType', bound=QueryResult)
 
+    QueryResultType = TypeVar('QueryResultType', bound=QueryResult)
+
     def query(self,
               statement,            # type: str
               *options,             # type: Union[QueryOptions,Any]
