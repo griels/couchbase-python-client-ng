@@ -2,7 +2,8 @@ from asyncio import AbstractEventLoop
 
 from couchbase_core.supportability import internal
 
-from couchbase.asynchronous import wrap_async_decorator, wrap_async
+from couchbase.asynchronous import async_kv_operation, wrap_async, async_iterable
+from couchbase.result import ResultDeriv
 
 try:
     import asyncio
@@ -81,7 +82,10 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
 
     @staticmethod
     def _meth_factory(meth, _):
-        def ret(self, *args, **kwargs):
+        def ret(self,
+                *args,
+                **kwargs):
+            # type: (...) -> asyncio.Future[]
             rv = meth(self, *args, **kwargs)
             ft = asyncio.Future()
 
@@ -97,7 +101,7 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
             rv.set_callbacks(on_ok, on_err)
             return ft
 
-        return wrap_async_decorator(meth)(ret)
+        return KvDecorator(meth)(ret)
 
 
 class Collection(AIOClientMixinType.gen_client(BaseAsyncCBCollection)):
@@ -125,15 +129,15 @@ class ACluster(AIOClientMixinType.gen_client(V3AsyncCluster)):
     def __init__(self, connection_string, *options, **kwargs):
         super(ACluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
 
-    @wrap_async_decorator(V3AsyncCluster.query, AQueryResult)
+    @DefIterator(V3AsyncCluster.query, AQueryResult)
     def query(self, *args, **kwargs):
         return super(ACluster, self).query(*args, **kwargs)
 
-    @wrap_async_decorator(V3AsyncCluster.search_query, ASearchResult)
+    @DefIterator(V3AsyncCluster.search_query, ASearchResult)
     def search_query(self, *args, **kwargs):
         return super(ACluster, self).search_query(*args, **kwargs)
 
-    @wrap_async_decorator(V3AsyncCluster.analytics_query, AAnalyticsResult)
+    @DefIterator(V3AsyncCluster.analytics_query, AAnalyticsResult)
     def analytics_query(self, *args, **kwargs):
         return super(ACluster, self).analytics_query(*args, **kwargs)
 
