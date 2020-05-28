@@ -5,6 +5,7 @@ enum34==1.1.8 ; python_version<"3.5"
 typing; python_version<"3.7"
 typing-extensions; python_version<"3.8"
 mypy_extensions
+typed_ast; python_version<"3.8"
 
 # Prevent installation of Python < 3 package on Windows.
 pip>=20.0; sys_platform=="win32" and python_version<="2.7"
@@ -13,3 +14,5 @@ pip>=20.0; sys_platform=="win32" and python_version<="2.7"
 pyrsistent>=0.15.2
 attrs>=19.1.0
 wrapt>=1.11.2
+boltons>=20.1.0
+
