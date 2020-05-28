@@ -1,3 +1,5 @@
+from abc import ABC
+
 from couchbase.result import ViewResult
 from couchbase.n1ql import QueryResult
 from couchbase.analytics import AnalyticsResult
@@ -7,9 +9,7 @@ from couchbase.asynchronous.search import AsyncSearchRequest
 from couchbase_core.asynchronous.rowsbase import AsyncRowsBase
 
 
-
-
-class AsyncViewResult(AsyncViewBase, ViewResult):
+class AsyncViewResult(AsyncViewBase, ViewResult, ABC):
     def __init__(self, *args, **kwargs):
         """
         Initialize a new AsyncViewBase object. This is intended to be
@@ -24,12 +24,12 @@ class AsyncViewResult(AsyncViewBase, ViewResult):
         ViewResult.__init__(self, *args, **kwargs)
 
 
-class AsyncQueryResult(AsyncRowsBase, QueryResult):
+class AsyncQueryResult(AsyncRowsBase, QueryResult, ABC):
     def __init__(self, *args, **kwargs):
         QueryResult.__init__(self, *args, **kwargs)
 
 
-class AsyncQueryResultBase(AsyncQueryResult, QueryResult):
+class AsyncQueryResultBase(AsyncQueryResult, QueryResult, ABC):
     def __init__(self, *args, **kwargs):
         """
         Initialize a new AsyncViewBase object. This is intended to be
@@ -44,12 +44,12 @@ class AsyncQueryResultBase(AsyncQueryResult, QueryResult):
         QueryResult.__init__(self, *args, **kwargs)
 
 
-class AsyncAnalyticsResult(AsyncRowsBase, AnalyticsResult):
+class AsyncAnalyticsResult(AsyncRowsBase, AnalyticsResult, ABC):
     def __init__(self, *args, **kwargs):
         AnalyticsResult.__init__(self, *args, **kwargs)
 
 
-class AsyncAnalyticsResultBase(AsyncAnalyticsResult, AnalyticsResult):
+class AsyncAnalyticsResultBase(AsyncAnalyticsResult, AnalyticsResult, ABC):
     def __init__(self, *args, **kwargs):
         """
         Initialize a new AsyncViewBase object. This is intended to be
@@ -64,7 +64,7 @@ class AsyncAnalyticsResultBase(AsyncAnalyticsResult, AnalyticsResult):
         AnalyticsResult.__init__(self, *args, **kwargs)
 
 
-class AsyncSearchResult(AsyncSearchRequest, SearchResult):
+class AsyncSearchResult(AsyncSearchRequest, SearchResult, ABC):
     def __init__(self, *args, **kwargs):
         """
         Initialize a new AsyncViewBase object. This is intended to be
