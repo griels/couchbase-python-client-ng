@@ -5,6 +5,7 @@ from typing import *
 
 from couchbase_core._libcouchbase import Bucket as _Base
 from couchbase_core._libcouchbase import FMT_UTF8
+from couchbase_core.result import SubdocResult
 from mypy_extensions import VarArg, KwArg, Arg
 
 import couchbase.exceptions
@@ -230,19 +231,13 @@ RawCollectionMethodSpecial = TypeVar('RawCollectionMethodSpecial', bound=RawColl
 def _get_result_and_inject(func  # type: RawCollectionMethod
                            ):
     # type: (...) ->RawCollectionMethod
-    result = _inject_scope_and_collection(get_result_wrapper(func))
-    result.__doc__ = func.__doc__
-    result.__name__ = func.__name__
-    return result
+    return wraps(func)(_inject_scope_and_collection(get_result_wrapper(func)))
 
 
 def _mutate_result_and_inject(func  # type: RawCollectionMethod
                               ):
     # type: (...) ->RawCollectionMethod
-    result = _inject_scope_and_collection(_wrap_in_mutation_result(func))
-    result.__doc__ = func.__doc__
-    result.__name__ = func.__name__
-    return result
+    return wraps(func)(_inject_scope_and_collection(_wrap_in_mutation_result(func)))
 
 
 def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial

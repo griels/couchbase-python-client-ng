@@ -4,31 +4,6 @@ Result Objects
 
 .. currentmodule:: couchbase.result
 
-.. autoclass:: AsyncGetReplicaResult
-   :show-inheritance:
-   :members:
-
-
-.. autoclass:: AsyncGetResult
-   :show-inheritance:
-   :members:
-
-
-.. autoclass:: AsyncMultiGetResult
-   :show-inheritance:
-   :members:
-
-
-.. autoclass:: AsyncMultiMutationResult
-   :show-inheritance:
-   :members:
-
-
-.. autoclass:: AsyncMutationResult
-   :show-inheritance:
-   :members:
-
-
 .. autoclass:: AsyncResult
    :show-inheritance:
    :members:
