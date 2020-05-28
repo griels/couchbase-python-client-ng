@@ -22,11 +22,18 @@ ViewSubType = TypeVar('ViewSubType', bound=Type[ViewInstance])
 
 
 class Client(_Base):
-    _MEMCACHED_NOMULTI = ('stats', 'lookup_in', 'mutate_in')
-    _MEMCACHED_OPERATIONS = ('upsert', 'get', 'insert',
+    _MEMCACHED_NOMULTI = ('lookup_in', 'mutate_in')
+    _MEMCACHED_MULTI = ('upsert', 'get', 'insert',
                              'replace', 'remove', 'touch',
-                             'unlock',
-                             'lookup_in', 'mutate_in')
+                             'unlock')
+
+    @classmethod
+    def _memcached_operations(cls):
+        return Client._memcached_operations_retarget(cls)
+
+    @staticmethod
+    def _memcached_operations_retarget(cls):
+        return cls._MEMCACHED_NOMULTI + cls._MEMCACHED_MULTI
 
     def __init__(self, *args, **kwargs):
         """Connect to a bucket.
@@ -994,7 +1001,7 @@ class Client(_Base):
             wrapped functions
         """
         d = {}
-        for n in cls._MEMCACHED_OPERATIONS:
+        for n in cls._memcached_operations():
             for variant in (n, n + "_multi"):
                 try:
                     d[variant] = factory(getattr(cls, variant), variant)
