@@ -16,6 +16,7 @@ from couchbase_core.supportability import internal
 from couchbase_core.transcodable import Transcodable
 from couchbase_core.views.iterator import View as CoreView
 from .options import forward_args, UnsignedInt64
+from collections import defaultdict
 
 Proxy_T = TypeVar('Proxy_T')
 
@@ -139,9 +140,23 @@ class Result(object):
         # type: () -> TracingOutput
         return self._original.tracing_output
 
+    __async_map = defaultdict(lambda cls: AsyncWrapper.gen_wrapper(cls))
+
     @classmethod
     def _async(cls):
-        return AsyncWrapper.gen_wrapper(cls)
+        return Result._async_retarget(cls)
+
+    @staticmethod
+    def _async_retarget(cls):
+        return Result.__async_map[cls]
+
+    @classmethod
+    def _from_raw(cls, orig_value):
+        return Result._from_raw_retarget(cls, orig_value)
+
+    @staticmethod
+    def _from_raw_retarget(cls, orig_value):
+        return (cls._async if _is_async(orig_value) else cls)(orig_value)
 
 
 class LookupInResult(Result):
@@ -196,10 +211,6 @@ class MutationResult(Result):
     def mutation_token(self):
         # type: () -> MutationToken
         return self.mutationToken
-
-    @classmethod
-    def _async(cls):
-        return AsyncMutationResult
 
 
 class MutateInResult(MutationResult):
@@ -275,7 +286,11 @@ class PingResult(object):
 
     @classmethod
     def _async(cls):
-        return AsyncWrapper.gen_wrapper(cls)
+        return Result._async_retarget(cls)
+
+    @classmethod
+    def _from_raw(cls, orig_value):
+        return Result._from_raw_retarget(cls, orig_value)
 
 
 class ExistsResult(Result):
@@ -346,7 +361,28 @@ class GetReplicaResult(GetResult):
         return AsyncGetReplicaResult
 
 
-ResultDeriv = TypeVar("ResultDeriv", bound=Result)
+class MultiResultBase(dict):
+    def converter(self, value):
+        pass
+
+    @property
+    def all_ok(self):
+        return self._raw_result.all_ok
+
+    def __init__(self, raw_result):
+        self._raw_result = raw_result
+        super(MultiResultBase, self).__init__({k: self.converter(v) for k, v in raw_result.items()})
+
+    @classmethod
+    def _async(cls):
+        return Result._async_retarget(cls)
+
+    @classmethod
+    def _from_raw(cls, orig_value):
+        return Result._from_raw_retarget(cls, orig_value)
+
+
+ResultDeriv = TypeVar('ResultDeriv', bound=Union[Result, MultiResultBase, PingResult])
 
 
 class AsyncResult(object):
@@ -359,7 +395,7 @@ class AsyncResult(object):
     @property
     @abstractmethod
     def orig_class(self):
-        # type: (...) -> Type[Result]
+        # type: (...) -> Type[ResultDeriv]
         pass
 
     def set_callbacks(self, on_ok_orig, on_err_orig):
@@ -375,35 +411,15 @@ class AsyncResult(object):
         self._original.clear_callbacks(*args)
 
 
-class MultiResultBase(dict):
-    def converter(self, value):
-        pass
-
-    @property
-    def all_ok(self):
-        return self._raw_result.all_ok
-
-    def __init__(self, raw_result):
-        self._raw_result = raw_result
-        super(MultiResultBase, self).__init__({k: self.converter(v) for k, v in raw_result.items()})
-
-    @classmethod
-    def _async(cls):
-        return AsyncWrapper.gen_wrapper(cls)
-
-
-T = TypeVar('T', bound=Union[Result, MultiResultBase, PingResult])
-
-
 class AsyncWrapper(object):
     @staticmethod
-    def gen_wrapper(base  # type: Type[T]
+    def gen_wrapper(base  # type: Type[ResultDeriv]
                     ):
-        # type: (...) -> Type[Union[T, AsyncResult]]
+        # type: (...) -> Type[Union[ResultDeriv, AsyncResult]]
         class Wrapped(AsyncResult, base):
             @property
             def orig_class(self):
-                # type: (...) -> Type[T]
+                # type: (...) -> Type[ResultDeriv]
                 return base
         return Wrapped
 
@@ -508,7 +524,7 @@ def get_mutation_result(result  # type: CoreResult
 
 class MultiGetResult(MultiResultBase):
     def converter(self, raw_value):
-        return get_wrapped_get_result(raw_value)
+        return GetResult._from_raw(raw_value)
 
     def __init__(self, *args, **kwargs):
         super(MultiGetResult, self).__init__(*args, **kwargs)
@@ -520,7 +536,7 @@ class MultiGetResult(MultiResultBase):
 
 class MultiMutationResult(MultiResultBase):
     def converter(self, raw_value):
-        return get_mutation_result(raw_value)
+        return GetResult._from_raw(raw_value)
 
     def __init__(self, *args, **kwargs):
         super(MultiMutationResult, self).__init__(*args, **kwargs)
