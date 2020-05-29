@@ -3,6 +3,7 @@ from asyncio import AbstractEventLoop
 from couchbase_core.supportability import internal
 
 from couchbase.asynchronous import wrap_async_decorator, wrap_async
+from couchbase.result import ResultDeriv
 
 try:
     import asyncio
@@ -81,7 +82,10 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
 
     @staticmethod
     def _meth_factory(meth, _):
-        def ret(self, *args, **kwargs):
+        def ret(self,
+                *args,
+                **kwargs):
+            # type: (...) -> asyncio.Future[]
             rv = meth(self, *args, **kwargs)
             ft = asyncio.Future()
 
