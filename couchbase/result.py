@@ -350,20 +350,11 @@ class GetResult(Result):
         # type: (...) -> Any
         return extract_value(self._original, lambda x: x, self._full)
 
-    @classmethod
-    def _async(cls):
-        return AsyncGetResult
-
 
 class GetReplicaResult(GetResult):
     @property
     def is_replica(self):
         raise NotImplementedError("To be implemented in final sdk3 release")
-
-    @classmethod
-    def _async(cls):
-        return AsyncGetReplicaResult
-
 
 class MultiResultBase(dict):
     single_result_type = None  # type: Type[ResultDeriv]
@@ -436,18 +427,6 @@ class AsyncWrapper(object):
         return Wrapped
 
 
-class AsyncGetResult(AsyncWrapper.gen_wrapper(GetResult)):
-    pass
-
-
-class AsyncGetReplicaResult(AsyncWrapper.gen_wrapper(GetReplicaResult)):
-    pass
-
-
-class AsyncMutationResult(AsyncWrapper.gen_wrapper(MutationResult)):
-    pass
-
-
 # TODO: eliminate the options shortly.  They serve no purpose
 ResultPrecursor = NamedTuple('ResultPrecursor', [('orig_result', CoreResult), ('orig_options', Mapping[str, Any])])
 
@@ -466,8 +445,7 @@ def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
     # type: (...) -> Callable[[Any], GetResult]
     @wraps(func)
     def wrapped(*args, **kwargs):
-        x, options = func(*args, **kwargs)
-        return GetResult._from_raw(x)
+        return GetResult._from_raw(next(iter(func(*args, **kwargs))))
 
     return wrapped
 
@@ -508,20 +486,8 @@ class MutationToken(object):
         raise NotImplementedError()
 
 
-def get_mutation_result(result  # type: CoreResult
-                        ):
-    # type (...)->MutationResult
-    orig_result = getattr(result, 'orig_result', result)
-    factory_class = AsyncMutationResult if _is_async(orig_result) else MutationResult
-    return factory_class(orig_result)
-
-
-class MultiGetResult(MultiResultBase):
-    def converter(self, raw_value):
-        return GetResult._from_raw(raw_value)
-
-    def __init__(self, *args, **kwargs):
-        super(MultiGetResult, self).__init__(*args, **kwargs)
+class MultiGetResult(MultiResultBase._gen_result_class(GetResult)):
+    pass
 
 
 class MultiMutationResult(MultiResultBase._gen_result_class(MutationResult)):
@@ -536,7 +502,7 @@ class MultiResultWrapper(object):
         self.orig_result_type = orig_result_type
 
     def __call__(self, target, wrapped, keys, *options, **kwargs):
-        # type: (...) ->
+        # type: (...) -> Type[MultiResultBase]
         final_options = forward_args(kwargs, *options)
         raw_result = wrapped(target, keys, **final_options)
         orig_result = getattr(raw_result, 'orig_result', raw_result)
@@ -555,7 +521,7 @@ def _wrap_in_mutation_result(func  # type: Callable[[Any,...],CoreResult]
     @wraps(func)
     def mutated(*args, **kwargs):
         result = func(*args, **kwargs)
-        return get_mutation_result(result)
+        return MutationResult._from_raw(getattr(result, 'orig_result', result))
 
     return mutated
 
