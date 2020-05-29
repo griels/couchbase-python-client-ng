@@ -140,7 +140,7 @@ class Result(object):
         # type: () -> TracingOutput
         return self._original.tracing_output
 
-    __async_map = defaultdict(lambda cls: AsyncWrapper.gen_wrapper(cls))
+    __async_map = {}
 
     @classmethod
     def _async(cls):
@@ -148,7 +148,11 @@ class Result(object):
 
     @staticmethod
     def _async_retarget(cls):
-        return Result.__async_map[cls]
+        result = Result.__async_map.get(cls, None)
+        if not result:
+            result = AsyncWrapper.gen_wrapper(cls)
+            Result.__async_map[cls] = result
+        return result
 
     @classmethod
     def _from_raw(cls, orig_value):
@@ -362,8 +366,7 @@ class GetReplicaResult(GetResult):
 
 
 class MultiResultBase(dict):
-    def converter(self, value):
-        pass
+    single_result_type = None  # type: Type[ResultDeriv]
 
     @property
     def all_ok(self):
@@ -371,7 +374,7 @@ class MultiResultBase(dict):
 
     def __init__(self, raw_result):
         self._raw_result = raw_result
-        super(MultiResultBase, self).__init__({k: self.converter(v) for k, v in raw_result.items()})
+        super(MultiResultBase, self).__init__({k: self.single_result_type._from_raw(v) for k, v in raw_result.items()})
 
     @classmethod
     def _async(cls):
@@ -380,6 +383,15 @@ class MultiResultBase(dict):
     @classmethod
     def _from_raw(cls, orig_value):
         return Result._from_raw_retarget(cls, orig_value)
+
+    @classmethod
+    def _gen_result_class(cls,  # type: Type[MultiResultBase]
+                          item  # type: Type[ResultDeriv]
+                          ):
+        # type: (...) -> Type[MultiResultBase]
+        class Result(MultiResultBase):
+            single_result_type = item
+        return Result
 
 
 ResultDeriv = TypeVar('ResultDeriv', bound=Union[Result, MultiResultBase, PingResult])
@@ -425,25 +437,15 @@ class AsyncWrapper(object):
 
 
 class AsyncGetResult(AsyncWrapper.gen_wrapper(GetResult)):
-    def __init__(self,
-                 core_result  # type: CoreResult
-                 ):
-        super(AsyncGetResult, self).__init__(core_result)
+    pass
 
 
 class AsyncGetReplicaResult(AsyncWrapper.gen_wrapper(GetReplicaResult)):
-    def __init__(self,
-                 sdk2_result  # type: CoreResult
-                 ):
-        super(AsyncGetReplicaResult, self).__init__(sdk2_result)
+    pass
 
 
 class AsyncMutationResult(AsyncWrapper.gen_wrapper(MutationResult)):
-    def __init__(self,
-                 core_result  # type: CoreResult
-                 ):
-        # type (...)->None
-        super(AsyncMutationResult, self).__init__(core_result)
+    pass
 
 
 # TODO: eliminate the options shortly.  They serve no purpose
@@ -534,32 +536,18 @@ class MultiGetResult(MultiResultBase):
         return AsyncMultiGetResult
 
 
-class MultiMutationResult(MultiResultBase):
-    def converter(self, raw_value):
-        return GetResult._from_raw(raw_value)
-
-    def __init__(self, *args, **kwargs):
-        super(MultiMutationResult, self).__init__(*args, **kwargs)
-
+class MultiMutationResult(MultiResultBase._gen_result_class(MutationResult)):
     @classmethod
     def _async(cls):
         return AsyncMultiMutationResult
 
 
-class AsyncMultiMutationResult(AsyncWrapper.gen_wrapper(MultiMutationResult)):
-    def __init__(self,
-                 *args, **kwargs  # type: CoreResult
-                 ):
-        # type (...)->None
-        super(AsyncMultiMutationResult, self).__init__(*args, **kwargs)
+class AsyncMultiMutationResult(MultiResultBase._gen_result_class(MutationResult)._async()):
+    pass
 
 
-class AsyncMultiGetResult(AsyncWrapper.gen_wrapper(MultiGetResult)):
-    def __init__(self,
-                 *args, **kwargs  # type: CoreResult
-                 ):
-        # type (...)->None
-        super(AsyncMultiGetResult, self).__init__(*args, **kwargs)
+class AsyncMultiGetResult(MultiResultBase._gen_result_class(GetResult)._async()):
+    pass
 
 
 class MultiResultWrapper(object):
