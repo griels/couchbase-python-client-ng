@@ -356,6 +356,7 @@ class GetReplicaResult(GetResult):
     def is_replica(self):
         raise NotImplementedError("To be implemented in final sdk3 release")
 
+
 class MultiResultBase(dict):
     single_result_type = None  # type: Type[ResultDeriv]
 
@@ -386,6 +387,17 @@ class MultiResultBase(dict):
 
 
 ResultDeriv = TypeVar('ResultDeriv', bound=Union[Result, MultiResultBase, PingResult])
+R = TypeVar('R', bound=ResultDeriv)
+
+
+class SyncOperation(Protocol[R]):
+    def __call__(self,
+                 target,  # type: CoreClient
+                 *args,  # type: Any
+                 **kwargs  # type: Any
+                 ):
+        # type: (...) -> R
+        pass
 
 
 class AsyncResult(object):
@@ -556,3 +568,4 @@ class ViewResult(iterable_wrapper(CoreView)):
                  ):
         # type: (...) -> ViewMetaData
         return ViewMetaData(self)
+
