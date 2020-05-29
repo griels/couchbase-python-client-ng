@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from typing import *
+from couchbase_core._pyport import Protocol
 
 import attr
 import datetime
@@ -16,7 +17,7 @@ from couchbase_core.supportability import internal
 from couchbase_core.transcodable import Transcodable
 from couchbase_core.views.iterator import View as CoreView
 from .options import forward_args, UnsignedInt64
-from collections import defaultdict
+
 
 Proxy_T = TypeVar('Proxy_T')
 
@@ -136,18 +137,23 @@ class Result(object):
     TracingOutput = Dict[str, Any]
 
     @property
-    def _tracing_output(self):
+    def _tracing_output(self  # type: Result
+                        ):
         # type: () -> TracingOutput
         return self._original.tracing_output
 
     __async_map = {}
 
     @classmethod
-    def _async(cls):
+    def _async(cls  # type: Type[Result]
+               ):
+        # type: (...) -> AsyncResult
         return Result._async_retarget(cls)
 
     @staticmethod
-    def _async_retarget(cls):
+    def _async_retarget(cls  # type: Type[ResultDeriv]
+                        ):
+        # type: (...) -> Type[AsyncResult]
         result = Result.__async_map.get(cls, None)
         if not result:
             result = AsyncWrapper.gen_wrapper(cls)
@@ -155,11 +161,17 @@ class Result(object):
         return result
 
     @classmethod
-    def _from_raw(cls, orig_value):
+    def _from_raw(cls,  # type: Type[Result]
+                  orig_value  # type: CoreResult
+                  ):
+        # type: (...) -> Result
         return Result._from_raw_retarget(cls, orig_value)
 
     @staticmethod
-    def _from_raw_retarget(cls, orig_value):
+    def _from_raw_retarget(cls,  # type: Type[ResultDeriv]
+                           orig_value  # type: CoreResult
+                           ):
+        # type: (...) -> ResultDeriv
         return (cls._async() if _is_async(orig_value) else cls)(orig_value)
 
 
@@ -207,6 +219,7 @@ class MutationResult(Result):
     def __init__(self,
                  original  # type: CoreResult
                  ):
+        # type: (...) -> None
         super(MutationResult, self).__init__(original)
         mutinfo = getattr(original, '_mutinfo', None)
         muttoken = MutationToken(mutinfo) if mutinfo else None
@@ -356,6 +369,7 @@ class GetReplicaResult(GetResult):
     def is_replica(self):
         raise NotImplementedError("To be implemented in final sdk3 release")
 
+
 class MultiResultBase(dict):
     single_result_type = None  # type: Type[ResultDeriv]
 
@@ -384,8 +398,46 @@ class MultiResultBase(dict):
             single_result_type = item
         return Result
 
+    def __class_getitem__(cls,   # type: Type[MultiResultBase]
+                          item   # type: Type[ResultDeriv]
+                          ):
+        # type: (...) -> Type[MultiResultBase]
+        return cls._gen_result_class(item)
+
 
 ResultDeriv = TypeVar('ResultDeriv', bound=Union[Result, MultiResultBase, PingResult])
+R = TypeVar('R', bound=ResultDeriv)
+
+
+class SyncOperation(Protocol):
+    _rtype = None
+
+    def __call__(self,
+                 target,  # type: Any
+                 *args,  # type: Any
+                 **kwargs  # type: Any
+                 ):
+        # type: (...) -> int
+        pass
+
+
+def sync_op(rtype  # type: Type[ResultDeriv]
+            ):
+    class SyncOperationSpecific(SyncOperation):
+        _rtype = rtype
+
+        def __call__(self,
+                     target,  # type: Any
+                     *args,  # type: Any
+                     **kwargs  # type: Any
+                     ):
+            # type: (...) -> ResultDeriv
+            pass
+    return SyncOperationSpecific
+
+
+MutationResultOp = sync_op(MutationResult)
+GetResultOp = sync_op(GetResult)
 
 
 class AsyncResult(object):
@@ -486,20 +538,12 @@ class MutationToken(object):
         raise NotImplementedError()
 
 
-class MultiGetResult(MultiResultBase._gen_result_class(GetResult)):
-    pass
-
-
-class MultiMutationResult(MultiResultBase._gen_result_class(MutationResult)):
-    pass
-
-
 class MultiResultWrapper(object):
     def __init__(self,  # type: MultiResultWrapper
-                 orig_result_type  # type: Type[MultiResultBase]
+                 orig_result_type  # type: Type[ResultDeriv]
                  ):
         # type: (...) -> None
-        self.orig_result_type = orig_result_type
+        self.orig_result_type = MultiResultBase._gen_result_class(orig_result_type)
 
     def __call__(self, target, wrapped, keys, *options, **kwargs):
         # type: (...) -> Type[MultiResultBase]
@@ -507,8 +551,8 @@ class MultiResultWrapper(object):
         return self.orig_result_type._from_raw(getattr(raw_result, 'orig_result', raw_result))
 
 
-get_multi_mutation_result = MultiResultWrapper(MultiMutationResult)
-get_multi_get_result = MultiResultWrapper(MultiGetResult)
+get_multi_mutation_result = MultiResultWrapper(MutationResult)
+get_multi_get_result = MultiResultWrapper(GetResult)
 
 
 def _wrap_in_mutation_result(func  # type: Callable[[Any,...],CoreResult]
@@ -556,3 +600,4 @@ class ViewResult(iterable_wrapper(CoreView)):
                  ):
         # type: (...) -> ViewMetaData
         return ViewMetaData(self)
+
