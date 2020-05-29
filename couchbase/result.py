@@ -405,18 +405,36 @@ class MultiResultBase(dict):
 
 
 ResultDeriv = TypeVar('ResultDeriv', bound=Union[Result, MultiResultBase, PingResult])
-R = TypeVar('R', bound=ResultDeriv)
+R = TypeVar('R')#, bound=ResultDeriv)
 
 
-class SyncOperation(Protocol[R]):
+
+class SyncOperation(Protocol):
+    _rtype = None
     def __call__(self,
-                 target,  # type: CoreClient
+                 target,  # type: Any
                  *args,  # type: Any
                  **kwargs  # type: Any
                  ):
-        # type: (...) -> R
+        # type: (...) -> int
         pass
 
+
+def sync_op(rtype  # type: Type[ResultDeriv]
+            ):
+    class SyncOperationSpecific(SyncOperation):
+        _rtype = rtype
+        def __call__(self,
+                     target,  # type: Any
+                     *args,  # type: Any
+                     **kwargs  # type: Any
+                     ):
+            # type: (...) -> ResultDeriv
+            pass
+    return SyncOperationSpecific
+
+MutationResultOp = sync_op(MutationResult)
+GetResultOp = sync_op(GetResult)
 
 class AsyncResult(object):
     def __init__(self,

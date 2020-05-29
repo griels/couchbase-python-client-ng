@@ -21,7 +21,7 @@ from twisted.trial.unittest import TestCase
 from couchbase.exceptions import DocumentNotFoundException
 from couchbase.result import GetResult, MutationResult
 from couchbase_tests.base import AsyncClusterTestCase
-from result import MultiResultBase
+from couchbase.result import MultiResultBase
 from txcouchbase.tests.base import gen_base
 from txcouchbase.tests.base import skip_PYCBC_894
 
