@@ -503,12 +503,8 @@ class MultiResultWrapper(object):
 
     def __call__(self, target, wrapped, keys, *options, **kwargs):
         # type: (...) -> Type[MultiResultBase]
-        final_options = forward_args(kwargs, *options)
-        raw_result = wrapped(target, keys, **final_options)
-        orig_result = getattr(raw_result, 'orig_result', raw_result)
-        factory_class = (self.orig_result_type._async() if _is_async(orig_result) else self.orig_result_type)
-        result = factory_class(orig_result)
-        return result
+        raw_result = wrapped(target, keys, **forward_args(kwargs, *options))
+        return self.orig_result_type._from_raw(getattr(raw_result, 'orig_result', raw_result))
 
 
 get_multi_mutation_result = MultiResultWrapper(MultiMutationResult)
