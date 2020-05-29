@@ -160,7 +160,7 @@ class Result(object):
 
     @staticmethod
     def _from_raw_retarget(cls, orig_value):
-        return (cls._async if _is_async(orig_value) else cls)(orig_value)
+        return (cls._async() if _is_async(orig_value) else cls)(orig_value)
 
 
 class LookupInResult(Result):
@@ -461,32 +461,24 @@ def _is_async_type(res_type):
     return issubclass(res_type, CoreAsyncResult)
 
 
-def get_wrapped_get_result(x):
-    factory_class = AsyncGetResult if _is_async(x) else GetResult
-    return factory_class(x)
-
-
 def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
                        ):
     # type: (...) -> Callable[[Any], GetResult]
     @wraps(func)
     def wrapped(*args, **kwargs):
         x, options = func(*args, **kwargs)
-        return get_wrapped_get_result(x)
+        return GetResult._from_raw(x)
 
     return wrapped
 
 
 def get_replica_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
                                ):
-    # type: (...) -> Callable[[Any], GetResult]
-    def factory_class(x):
-        factory = AsyncGetReplicaResult if _is_async(x) else GetReplicaResult
-        return factory(x)
+    # type: (...) -> Callable[[Any], GetReplicaResult]
 
     @wraps(func)
     def wrapped(*args, **kwargs):
-        x = list(map(factory_class, func(*args, **kwargs)))
+        x = list(map(GetReplicaResult._from_raw, func(*args, **kwargs)))
         if len(x) > 1:
             return x
         return x[0]
@@ -531,22 +523,8 @@ class MultiGetResult(MultiResultBase):
     def __init__(self, *args, **kwargs):
         super(MultiGetResult, self).__init__(*args, **kwargs)
 
-    @classmethod
-    def _async(cls):
-        return AsyncMultiGetResult
-
 
 class MultiMutationResult(MultiResultBase._gen_result_class(MutationResult)):
-    @classmethod
-    def _async(cls):
-        return AsyncMultiMutationResult
-
-
-class AsyncMultiMutationResult(MultiResultBase._gen_result_class(MutationResult)._async()):
-    pass
-
-
-class AsyncMultiGetResult(MultiResultBase._gen_result_class(GetResult)._async()):
     pass
 
 
