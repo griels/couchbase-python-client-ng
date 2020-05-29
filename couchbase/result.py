@@ -136,18 +136,23 @@ class Result(object):
     TracingOutput = Dict[str, Any]
 
     @property
-    def _tracing_output(self):
+    def _tracing_output(self  # type: Result
+                        ):
         # type: () -> TracingOutput
         return self._original.tracing_output
 
     __async_map = {}
 
     @classmethod
-    def _async(cls):
+    def _async(cls  # type: Type[Result]
+               ):
+        # type: (...) -> AsyncResult
         return Result._async_retarget(cls)
 
     @staticmethod
-    def _async_retarget(cls):
+    def _async_retarget(cls  # type: Type[ResultDeriv]
+                        ):
+        # type: (...) -> Type[AsyncResult]
         result = Result.__async_map.get(cls, None)
         if not result:
             result = AsyncWrapper.gen_wrapper(cls)
@@ -155,11 +160,17 @@ class Result(object):
         return result
 
     @classmethod
-    def _from_raw(cls, orig_value):
+    def _from_raw(cls,  # type: Type[Result]
+                  orig_value  # type: CoreResult
+                  ):
+        # type: (...) -> Result
         return Result._from_raw_retarget(cls, orig_value)
 
     @staticmethod
-    def _from_raw_retarget(cls, orig_value):
+    def _from_raw_retarget(cls,  # type: Type[ResultDeriv]
+                           orig_value  # type: CoreResult
+                           ):
+        # type: (...) -> ResultDeriv
         return (cls._async() if _is_async(orig_value) else cls)(orig_value)
 
 
@@ -207,6 +218,7 @@ class MutationResult(Result):
     def __init__(self,
                  original  # type: CoreResult
                  ):
+        # type: (...) -> None
         super(MutationResult, self).__init__(original)
         mutinfo = getattr(original, '_mutinfo', None)
         muttoken = MutationToken(mutinfo) if mutinfo else None
@@ -385,6 +397,12 @@ class MultiResultBase(dict):
             single_result_type = item
         return Result
 
+    def __class_getitem__(cls,   # type: Type[MultiResultBase]
+                          item   # type: Type[ResultDeriv]
+                          ):
+        # type: (...) -> Type[MultiResultBase]
+        return cls._gen_result_class(item)
+
 
 ResultDeriv = TypeVar('ResultDeriv', bound=Union[Result, MultiResultBase, PingResult])
 R = TypeVar('R', bound=ResultDeriv)
@@ -498,20 +516,12 @@ class MutationToken(object):
         raise NotImplementedError()
 
 
-class MultiGetResult(MultiResultBase._gen_result_class(GetResult)):
-    pass
-
-
-class MultiMutationResult(MultiResultBase._gen_result_class(MutationResult)):
-    pass
-
-
 class MultiResultWrapper(object):
     def __init__(self,  # type: MultiResultWrapper
-                 orig_result_type  # type: Type[MultiResultBase]
+                 orig_result_type  # type: Type[ResultDeriv]
                  ):
         # type: (...) -> None
-        self.orig_result_type = orig_result_type
+        self.orig_result_type = MultiResultBase._gen_result_class(orig_result_type)
 
     def __call__(self, target, wrapped, keys, *options, **kwargs):
         # type: (...) -> Type[MultiResultBase]
@@ -519,8 +529,8 @@ class MultiResultWrapper(object):
         return self.orig_result_type._from_raw(getattr(raw_result, 'orig_result', raw_result))
 
 
-get_multi_mutation_result = MultiResultWrapper(MultiMutationResult)
-get_multi_get_result = MultiResultWrapper(MultiGetResult)
+get_multi_mutation_result = MultiResultWrapper(MutationResult)
+get_multi_get_result = MultiResultWrapper(GetResult)
 
 
 def _wrap_in_mutation_result(func  # type: Callable[[Any,...],CoreResult]
