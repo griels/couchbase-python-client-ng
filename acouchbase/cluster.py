@@ -101,7 +101,7 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
             rv.set_callbacks(on_ok, on_err)
             return ft
 
-        return KvDecorator(meth)(ret)
+        return async_kv_operation(meth)(ret)
 
 
 class Collection(AIOClientMixinType.gen_client(BaseAsyncCBCollection)):
@@ -129,15 +129,15 @@ class ACluster(AIOClientMixinType.gen_client(V3AsyncCluster)):
     def __init__(self, connection_string, *options, **kwargs):
         super(ACluster, self).__init__(connection_string=connection_string, *options, bucket_factory=Bucket, **kwargs)
 
-    @DefIterator(V3AsyncCluster.query, AQueryResult)
+    @async_iterable(V3AsyncCluster.query, AQueryResult)
     def query(self, *args, **kwargs):
         return super(ACluster, self).query(*args, **kwargs)
 
-    @DefIterator(V3AsyncCluster.search_query, ASearchResult)
+    @async_iterable(V3AsyncCluster.search_query, ASearchResult)
     def search_query(self, *args, **kwargs):
         return super(ACluster, self).search_query(*args, **kwargs)
 
-    @DefIterator(V3AsyncCluster.analytics_query, AAnalyticsResult)
+    @async_iterable(V3AsyncCluster.analytics_query, AAnalyticsResult)
     def analytics_query(self, *args, **kwargs):
         return super(ACluster, self).analytics_query(*args, **kwargs)
 
