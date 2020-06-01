@@ -335,7 +335,7 @@ class CBCollection(wrapt.ObjectProxy):
     @classmethod
     def _wrap_collections_class(cls):
         if not hasattr(cls, 'coll_wrapped'):
-            for name in cls._MEMCACHED_OPERATIONS:
+            for name in cls._memcached_operations():
                 meth = getattr(cls, name)
                 if not name.startswith('_'):
                     setattr(cls, name, _inject_scope_and_collection(meth))
@@ -1338,9 +1338,13 @@ class CBCollection(wrapt.ObjectProxy):
              set_remove,
              set_size)
 
-    dsop_strs = tuple(map(lambda x: x.__name__, dsops))
-    _MEMCACHED_NOMULTI = CoreClient._MEMCACHED_NOMULTI + dsop_strs
-    _MEMCACHED_OPERATIONS = CoreClient._MEMCACHED_OPERATIONS + dsop_strs
+    # noinspection PyProtectedMember
+    _MEMCACHED_NOMULTI = CoreClient._MEMCACHED_NOMULTI + \
+        tuple(x.__name__ for x in dsops + (get_all_replicas, get_and_lock, get_and_touch,
+                                           get_any_replica, exists))
+
+    # noinspection PyProtectedMember
+    _memcached_operations = CoreClient._memcached_operations
 
 
 class BinaryCollection(object):
@@ -1356,8 +1360,9 @@ class BinaryCollection(object):
         self.true_collections = self._collection.true_collections
         self._inject_scope_collection_kwargs = collection._inject_scope_collection_kwargs
 
-    _MEMCACHED_OPERATIONS = ('append', 'prepend', 'increment', 'decrement')
-    _MEMCACHED_NOMULTI = _MEMCACHED_OPERATIONS
+    # noinspection PyProtectedMember
+    _memcached_operations = CoreClient._memcached_operations
+    _MEMCACHED_NOMULTI = ('append', 'prepend', 'increment', 'decrement')
 
     @_mutate_result_and_inject
     def append(self,
