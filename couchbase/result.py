@@ -1,5 +1,8 @@
 from abc import abstractmethod
 from typing import *
+
+from six import with_metaclass
+
 from couchbase_core._pyport import Protocol
 
 import attr
@@ -156,7 +159,10 @@ class Result(object):
         # type: (...) -> Type[AsyncResult]
         result = Result.__async_map.get(cls, None)
         if not result:
-            result = AsyncWrapper.gen_wrapper(cls)
+            class WrappedFinal(with_metaclass(AsyncWrapper, cls)):
+                pass
+            result = WrappedFinal
+            result.__name__='AsyncResult[{}]'.format(cls.__name__)
             Result.__async_map[cls] = result
         return result
 
@@ -466,7 +472,15 @@ class AsyncResult(object):
         self._original.clear_callbacks(*args)
 
 
-class AsyncWrapper(object):
+class AsyncWrapper(type(AsyncResult)):
+    def __new__(cls,  # type: Type[AsyncWrapper]
+                name, bases, namespace):
+        result=super(AsyncWrapper, cls).__new__(cls, name, (AsyncResult,)+bases, namespace)
+        result.orig_class = bases[0]
+        result.__name__='AsyncResult[{}]'.format(str(bases[0]))
+
+        return result
+
     @staticmethod
     def gen_wrapper(base  # type: Type[ResultDeriv]
                     ):
