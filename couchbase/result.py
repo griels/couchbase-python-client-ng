@@ -162,7 +162,7 @@ class Result(object):
             class WrappedFinal(with_metaclass(AsyncWrapper, cls)):
                 pass
             result = WrappedFinal
-            result.__name__='AsyncResult[{}]'.format(cls.__name__)
+            result.__name__= cls.__name__
             Result.__async_map[cls] = result
         return result
 
@@ -477,7 +477,7 @@ class AsyncWrapper(type(AsyncResult)):
                 name, bases, namespace):
         result=super(AsyncWrapper, cls).__new__(cls, name, (AsyncResult,)+bases, namespace)
         result.orig_class = bases[0]
-        result.__name__='AsyncResult[{}]'.format(str(bases[0]))
+        result.__name__=result.orig_class.__name__
 
         return result
 
@@ -515,15 +515,19 @@ def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
 
 def get_replica_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
                                ):
-    # type: (...) -> Callable[[Any], GetReplicaResult]
+    # type: (...) -> Callable[[Any], Iterable[GetReplicaResult]]
 
     @wraps(func)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args,  # type: Any
+                **kwargs  # type: Any
+                ):
+        # type: (...) -> Iterable[GetReplicaResult]
         x = list(map(GetReplicaResult._from_raw, func(*args, **kwargs)))
         if len(x) > 1:
             return x
         return x[0]
 
+    wrapped.__annotations__['return'] = Iterable[GetReplicaResult]
     return wrapped
 
 
