@@ -114,6 +114,7 @@ class async_kv_operation(AsyncDecorator):
 
         return wrapper
 
+
 def wrap_async(method,  # type: iterable_producer
                default_iterator  # type: Type[IterableClass]
                ):
