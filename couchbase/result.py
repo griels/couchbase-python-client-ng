@@ -472,10 +472,7 @@ class AsyncWrapper(object):
                     ):
         # type: (...) -> Type[Union[ResultDeriv, AsyncResult]]
         class Wrapped(AsyncResult, base):
-            @property
-            def orig_class(self):
-                # type: (...) -> Type[ResultDeriv]
-                return base
+            orig_class = base
         return Wrapped
 
 
