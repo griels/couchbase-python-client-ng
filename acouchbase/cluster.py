@@ -3,7 +3,8 @@ from asyncio import AbstractEventLoop
 from couchbase_core.supportability import internal
 
 from couchbase.asynchronous import async_kv_operation, wrap_async, async_iterable
-from couchbase.result import ResultDeriv
+from couchbase.result import ResultDeriv, Result
+from couchbase.result import AsyncResult
 
 try:
     import asyncio
@@ -82,10 +83,14 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
 
     @staticmethod
     def _meth_factory(meth, _):
-        def ret(self,
-                *args,
-                **kwargs):
-            # type: (...) -> asyncio.Future[]
+        import functools
+
+        @functools.wraps(meth)
+        def ret(self,  # type: AsyncCBCollection
+                *args,  # type: Any
+                **kwargs  # type: Any
+                ):
+            # type: (...) -> asyncio.Future[AsyncResult]
             rv = meth(self, *args, **kwargs)
             ft = asyncio.Future()
 
@@ -101,6 +106,15 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
             rv.set_callbacks(on_ok, on_err)
             return ft
 
+        from couchbase.asynchronous import get_return_type
+        # noinspection PyProtectedMember
+        try:
+            sync_rtype = get_return_type(meth)
+            rtype=sync_rtype._async()
+        except Exception as e:
+            rtype = AsyncResult
+
+        ret.__annotations__['return'] = 'asyncio.Future[{}]'.format(rtype.__name__)
         return async_kv_operation(meth)(ret)
 
 
