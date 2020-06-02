@@ -2,9 +2,8 @@ from abc import ABC
 
 import inspect
 import sys
-from typing import TypeVar, Callable, Type
+from typing import TypeVar, Callable
 
-from couchbase.result import ViewResult
 from couchbase.n1ql import QueryResult
 from couchbase.analytics import AnalyticsResult
 from couchbase.search import SearchResult
@@ -15,7 +14,6 @@ from couchbase_core.asynchronous.rowsbase import AsyncRowsBase
 
 import functools
 import boltons.funcutils
-import typing
 import logging
 import textwrap
 import re
@@ -25,27 +23,26 @@ iterable_producer = TypeVar('iterable_producer', bound=Callable)
 _type_pattern = re.compile(r'.*\(\.\.\.\)\s\-\>\s*(.*?)$')
 
 
-def get_return_type(method):
-    try:
-        hints = typing.get_type_hints(method)
-    except Exception as e:
-        return "object"
-    rtype = hints.get('return', None)
-    if rtype:
-        return str(rtype)
-    type_comment = "object"
+def get_type_hints_comments(method):
     parse_kwargs = {}
     if sys.version_info < (3, 8):
         try:
             import typed_ast.ast3 as ast
         except ImportError:
-            return 'object'
+            return None
     else:
         import ast
         parse_kwargs = {'type_comments': True}
     try:
-        obj_ast = ast.parse(textwrap.dedent(inspect.getsource(method)), **parse_kwargs)
+        return ast.parse(textwrap.dedent(inspect.getsource(method)), **parse_kwargs)
     except (OSError, TypeError):
+        return None
+
+
+def get_return_type_str(method):
+
+    obj_ast = get_type_hints_comments(method)
+    if not obj_ast:
         return "object"
 
     def _one_child(module):
@@ -59,16 +56,20 @@ def get_return_type(method):
         return children[0]
 
     obj_ast = _one_child(obj_ast)
-    if obj_ast is None:
-        pass
 
     try:
         matches = _type_pattern.search(obj_ast.type_comment).groups('object')
-        type_comment = matches[0]
+        return matches[0]
     except Exception as e:
-        pass
-    return type_comment
+        return None
 
+
+from couchbase.result import *
+def get_return_type(func):
+    rtype_str=get_return_type_str(func)
+    co_obj=compile("{}".format(rtype_str), '<string>', 'eval')
+    result = eval(co_obj, globals(), locals())
+    return result
 
 class AsyncDecorator(functools.partial):
     @staticmethod
@@ -87,7 +88,8 @@ class async_iterable(AsyncDecorator):
         return result
 
     def __call__(self,  # type: async_iterable
-                 func, *args, **kwargs):
+                 func,  # type: iterable_producer
+                 *args, **kwargs):
         # type: (...) -> iterable_producer
         def_iterator=self._default_iterator
         @functools.wraps(self.func)
@@ -109,13 +111,7 @@ class async_kv_operation(AsyncDecorator):
         @functools.wraps(self.func)
         def wrapper(self, *args, **kwargs):
             return func(self, *args, **kwargs)
-        rtype_name = get_return_type(self.func)
 
-        try:
-            logging.error("wrapping rtype for {} - got {}".format(self.func, rtype_name))
-            wrapper.__annotations__['return'] = 'asyncio.futures.Future[{}]'.format(rtype_name)
-        except Exception as e:
-            raise
         return wrapper
 
 def wrap_async(method,  # type: iterable_producer
