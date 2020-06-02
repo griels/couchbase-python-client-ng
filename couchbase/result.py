@@ -1,5 +1,8 @@
 from abc import abstractmethod
 from typing import *
+
+from six import with_metaclass
+
 from couchbase_core._pyport import Protocol
 
 import attr
@@ -11,7 +14,7 @@ from couchbase_core._libcouchbase import Result as CoreResult
 from couchbase.diagnostics import EndpointPingReport, ServiceType
 from couchbase_core import iterable_wrapper, JSON
 from couchbase_core.result import AsyncResult as CoreAsyncResult
-from couchbase_core.result import MultiResult, SubdocResult
+from couchbase_core.result import MultiResult as CoreMultiResult, SubdocResult as CoreSubdocResult
 from couchbase_core.subdocument import Spec
 from couchbase_core.supportability import internal
 from couchbase_core.transcodable import Transcodable
@@ -41,9 +44,9 @@ def canonical_sdresult(content, full=False):
 # get the results of the get_full().  Special case for a get where
 # with_expiry=True.  Also this is a hack.
 def extract_value(content, decode_canonical, full=False):
-    if isinstance(content, MultiResult):
+    if isinstance(content, CoreMultiResult):
         return {k: decode_canonical(content[k].value) for k, v, in content}
-    elif isinstance(content, SubdocResult):
+    elif isinstance(content, CoreSubdocResult):
         return decode_canonical(canonical_sdresult(content, full))
     return decode_canonical(content.value)
 
@@ -156,7 +159,10 @@ class Result(object):
         # type: (...) -> Type[AsyncResult]
         result = Result.__async_map.get(cls, None)
         if not result:
-            result = AsyncWrapper.gen_wrapper(cls)
+            class WrappedFinal(with_metaclass(AsyncWrapper, cls)):
+                pass
+            result = WrappedFinal
+            result.__name__= cls.__name__
             Result.__async_map[cls] = result
         return result
 
@@ -335,7 +341,7 @@ class GetResult(Result):
         self._original = original
         self._full = False
         self._expiry = None
-        if isinstance(original, SubdocResult):
+        if isinstance(original, CoreSubdocResult):
             self._expiry = original.expiry
             self._full = bool(original.get_full)
 
@@ -370,7 +376,7 @@ class GetReplicaResult(GetResult):
         raise NotImplementedError("To be implemented in final sdk3 release")
 
 
-class MultiResultBase(dict):
+class MultiResult(dict):
     single_result_type = None  # type: Type[ResultDeriv]
 
     @property
@@ -379,7 +385,7 @@ class MultiResultBase(dict):
 
     def __init__(self, raw_result):
         self._raw_result = raw_result
-        super(MultiResultBase, self).__init__({k: self.single_result_type._from_raw(v) for k, v in raw_result.items()})
+        super(MultiResult, self).__init__({k: self.single_result_type._from_raw(v) for k, v in raw_result.items()})
 
     @classmethod
     def _async(cls):
@@ -390,22 +396,22 @@ class MultiResultBase(dict):
         return Result._from_raw_retarget(cls, orig_value)
 
     @classmethod
-    def _gen_result_class(cls,  # type: Type[MultiResultBase]
+    def _gen_result_class(cls,  # type: Type[MultiResult]
                           item  # type: Type[ResultDeriv]
                           ):
-        # type: (...) -> Type[MultiResultBase]
-        class Result(MultiResultBase):
+        # type: (...) -> Type[MultiResult]
+        class Result(MultiResult):
             single_result_type = item
         return Result
 
-    def __class_getitem__(cls,   # type: Type[MultiResultBase]
+    def __class_getitem__(cls,   # type: Type[MultiResult]
                           item   # type: Type[ResultDeriv]
                           ):
-        # type: (...) -> Type[MultiResultBase]
+        # type: (...) -> Type[MultiResult]
         return cls._gen_result_class(item)
 
 
-ResultDeriv = TypeVar('ResultDeriv', bound=Union[Result, MultiResultBase, PingResult])
+ResultDeriv = TypeVar('ResultDeriv', bound=Union[Result, MultiResult, PingResult])
 R = TypeVar('R', bound=ResultDeriv)
 
 
@@ -466,16 +472,21 @@ class AsyncResult(object):
         self._original.clear_callbacks(*args)
 
 
-class AsyncWrapper(object):
+class AsyncWrapper(type(AsyncResult)):
+    def __new__(cls,  # type: Type[AsyncWrapper]
+                name, bases, namespace):
+        result=super(AsyncWrapper, cls).__new__(cls, name, (AsyncResult,)+bases, namespace)
+        result.orig_class = bases[0]
+        result.__name__=result.orig_class.__name__
+
+        return result
+
     @staticmethod
     def gen_wrapper(base  # type: Type[ResultDeriv]
                     ):
         # type: (...) -> Type[Union[ResultDeriv, AsyncResult]]
         class Wrapped(AsyncResult, base):
-            @property
-            def orig_class(self):
-                # type: (...) -> Type[ResultDeriv]
-                return base
+            orig_class = base
         return Wrapped
 
 
@@ -504,15 +515,19 @@ def get_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
 
 def get_replica_result_wrapper(func  # type: Callable[[Any], ResultPrecursor]
                                ):
-    # type: (...) -> Callable[[Any], GetReplicaResult]
+    # type: (...) -> Callable[[Any], Iterable[GetReplicaResult]]
 
     @wraps(func)
-    def wrapped(*args, **kwargs):
+    def wrapped(*args,  # type: Any
+                **kwargs  # type: Any
+                ):
+        # type: (...) -> Iterable[GetReplicaResult]
         x = list(map(GetReplicaResult._from_raw, func(*args, **kwargs)))
         if len(x) > 1:
             return x
         return x[0]
 
+    wrapped.__annotations__['return'] = Iterable[GetReplicaResult]
     return wrapped
 
 
@@ -543,10 +558,10 @@ class MultiResultWrapper(object):
                  orig_result_type  # type: Type[ResultDeriv]
                  ):
         # type: (...) -> None
-        self.orig_result_type = MultiResultBase._gen_result_class(orig_result_type)
+        self.orig_result_type = MultiResult._gen_result_class(orig_result_type)
 
     def __call__(self, target, wrapped, keys, *options, **kwargs):
-        # type: (...) -> Type[MultiResultBase]
+        # type: (...) -> Type[MultiResult]
         raw_result = wrapped(target, keys, **forward_args(kwargs, *options))
         return self.orig_result_type._from_raw(getattr(raw_result, 'orig_result', raw_result))
 
