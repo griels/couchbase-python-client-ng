@@ -1345,9 +1345,11 @@ class CBCollection(wrapt.ObjectProxy):
     _MEMCACHED_NOMULTI = CoreClient._MEMCACHED_NOMULTI + \
         tuple(x.__name__ for x in dsops + (get_all_replicas, get_and_lock, get_and_touch,
                                            get_any_replica, exists))
-
+    _MEMCACHED_MULTI = CoreClient._MEMCACHED_MULTI
     # noinspection PyProtectedMember
-    _memcached_operations = CoreClient._memcached_operations
+    @classmethod
+    def _memcached_operations(cls):
+        return CoreClient._memcached_operations_retarget(cls)
 
 
 class BinaryCollection(object):
