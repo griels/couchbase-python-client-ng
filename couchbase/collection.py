@@ -16,6 +16,7 @@ from couchbase_core import JSON
 from couchbase_core.asynchronous.client import AsyncClientMixin
 from couchbase_core.client import Client as CoreClient
 from couchbase_core.supportability import volatile, internal
+from couchbase.result import MultiResult
 from .options import AcceptableInts
 from .options import forward_args, OptionBlockTimeOut, OptionBlockDeriv, ConstrainedInt, SignedInt64
 import couchbase.options
@@ -293,6 +294,7 @@ def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
     import boltons.funcutils
     def wrapper(target, keys, *options, **kwargs
                 ):
+        # type: (...) -> MultiResult[MutationResult]
         return get_multi_mutation_result(target.bucket, wrapped, keys, *options, **kwargs)
 
     return _inject_scope_and_collection(wrapper)
@@ -581,6 +583,7 @@ class CBCollection(wrapt.ObjectProxy):
                      format=None,  # type: int
                      durability=None  # type: DurabilityType
                      ):
+        # type: (...) -> MultiResult[MutationResult]
         pass
 
     @_inject_scope_and_collection
@@ -590,7 +593,7 @@ class CBCollection(wrapt.ObjectProxy):
                      *options,  # type: GetOptions
                      **kwargs   # type: Any
                      ):
-        # type: (...) -> Dict[str,MutationResult]
+        # type: (...) -> MultiResult[MutationResult]
         """
         Write multiple items to the cluster. Multi version of :meth:`upsert`
 
@@ -638,7 +641,7 @@ class CBCollection(wrapt.ObjectProxy):
                      *options,  # type: GetOptions
                      **kwargs   # type: Any
                      ):
-        # type: (...) -> Dict[str, MutationResult]
+        # type: (...) -> MultiResult[MutationResult]
         """
         Insert multiple items into the collection.
 
@@ -656,7 +659,7 @@ class CBCollection(wrapt.ObjectProxy):
                      *options,  # type: GetOptions
                      **kwargs   # type: Any
                      ):
-        # type: (...) -> Dict[str, MutationResult]
+        # type: (...) -> MultiResult[MutationResult]
         """
         Remove multiple items from the collection.
 
@@ -1342,9 +1345,11 @@ class CBCollection(wrapt.ObjectProxy):
     _MEMCACHED_NOMULTI = CoreClient._MEMCACHED_NOMULTI + \
         tuple(x.__name__ for x in dsops + (get_all_replicas, get_and_lock, get_and_touch,
                                            get_any_replica, exists))
-
+    _MEMCACHED_MULTI = CoreClient._MEMCACHED_MULTI
     # noinspection PyProtectedMember
-    _memcached_operations = CoreClient._memcached_operations
+    @classmethod
+    def _memcached_operations(cls):
+        return CoreClient._memcached_operations_retarget(cls)
 
 
 class BinaryCollection(object):

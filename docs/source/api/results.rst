@@ -44,19 +44,10 @@ Result Objects
    :members:
 
 
-.. autoclass:: MultiGetResult
-   :show-inheritance:
-   :members:
-
-
-.. autoclass:: MultiMutationResult
-   :show-inheritance:
-   :members:
-
-
 .. autoclass:: MultiResult
    :show-inheritance:
    :members:
+
 
 .. autoclass:: MutateInResult
    :show-inheritance:
