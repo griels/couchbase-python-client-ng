@@ -29,6 +29,10 @@ class Client(_Base):
 
     @classmethod
     def _memcached_operations(cls):
+        return Client._memcached_operations_retarget(cls)
+
+    @staticmethod
+    def _memcached_operations_retarget(cls):
         return cls._MEMCACHED_NOMULTI + cls._MEMCACHED_MULTI
 
     def __init__(self, *args, **kwargs):
