@@ -47,9 +47,32 @@ sbeParseJson(openssl_cfg OPENSSLCFG)
 message("Need to find OpenSSL ${openssl_cfg.major} from\n${OPENSSLCFG}")
 
 find_package(
-        OpenSSL
-        PATHS ${openssl_cfg.ssl_root_dir}
+        OpenSSL ${openssl_cfg.raw_version_info}
 )
+include(ExternalProject)
+
+if (NOT OpenSSL_DIR)
+    set (OpenSSL_DIR ${openssl_cfg.ssl_root_dir})
+
+    ExternalProject_Add(OpenSSL
+        URL "https://github.com/python/cpython-bin-deps/archive/openssl-bin-${openssl_cfg.major}.zip"
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+            TEST_COMMAND ""
+
+            )
+    ExternalProject_Get_Property(OpenSSL source_dir)
+    set(OpenSSL_DIR source_dir)
+else()
+    ExternalProject_Add(OpenSSL
+            SOURCE_DIR ${OpenSSL_DIR}
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+            TEST_COMMAND ""
+            )
+endif()
 
 if (FORCE_DEBUG OR (CMAKE_BUILD_TYPE MATCHES DEBUG))
     set(RELEASE_TYPE Debug)
@@ -88,7 +111,6 @@ if ("$PYCBC_USE_CONAN")
             BUILD missing)
 endif()
 
-include(ExternalProject)
 
 
 set(CMAKE_MACOSX_RPATH 1)
