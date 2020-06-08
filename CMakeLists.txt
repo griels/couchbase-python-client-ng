@@ -45,14 +45,20 @@ execute_process(
 file(READ ${OPENSSLCFG_FILE} OPENSSLCFG)
 sbeParseJson(openssl_cfg OPENSSLCFG)
 message("Need to find OpenSSL ${openssl_cfg.major} from\n${OPENSSLCFG}")
+if (NOT OPENSSL_ROOT_DIR)
+    set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
+endif()
 
-find_package(
-        OpenSSL ${openssl_cfg.raw_version_info}
-)
 include(ExternalProject)
 
-if (WIN32)
-    if (NOT OpenSSL_DIR)
+if (WIN32 AND NOT EXISTS ${OPENSSL_ROOT_DIR})
+    message("${OPENSSL_ROOT_DIR} does not exist, trying to find subdir matching")
+    find_package(
+            OpenSSL
+            PATHS ${OPENSSL_ROOT_DIR}
+    )
+    if (NOT OpenSSL_DIR OR NOT EXISTS ${OpenSSL_DIR})
+        message("Can't find relevant OpenSSL, downloading instead")
         set (OpenSSL_DIR ${openssl_cfg.ssl_root_dir})
 
         ExternalProject_Add(OpenSSL
@@ -64,8 +70,16 @@ if (WIN32)
 
                 )
         ExternalProject_Get_Property(OpenSSL source_dir)
-        set(OpenSSL_DIR source_dir)
+        if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+            MESSAGE("++ 64 bit architecture")
+            set(PKGARCH "amd64")
+        else()
+            MESSAGE("++ 32 bit architecture")
+            set(PKGARCH "win32")
+        endif()
+        set(OpenSSL_DIR ${source_dir}/${PKGARCH})
     else()
+        message("Found relevant OpenSSL ${OpenSSL_DIR}")
         ExternalProject_Add(OpenSSL
                 SOURCE_DIR ${OpenSSL_DIR}
                 CONFIGURE_COMMAND ""
@@ -75,6 +89,7 @@ if (WIN32)
                 )
     endif()
 endif()
+message("Got OpenSSL_DIR ${OpenSSL_DIR}")
 
 if (FORCE_DEBUG OR (CMAKE_BUILD_TYPE MATCHES DEBUG))
     set(RELEASE_TYPE Debug)
@@ -192,13 +207,13 @@ if (LCB_SRC)
             set(WIN_PLATFORM "Visual Studio 14 2015")
         endif()
         if (NOT OPENSSL_ROOT_DIR)
-            set(OPENSSL_ROOT_DIR OpenSSL_DIR)
+            set(OPENSSL_ROOT_DIR ${OpenSSL_DIR})
         endif()
-        if (OPENSSL_ROOT_DIR)
+        if (OPENSSL_ROOT_DIR AND EXISTS ${OPENSSL_ROOT_DIR})
             message("Found OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}")
             set (LCB_SSL_OPTS -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR})
         else()
-            message("Found no OPENSSL_ROOT_DIR")
+            message("Found no existent OPENSSL_ROOT_DIR")
         endif()
         set(LCB_CMAKE_ARGS ${LCB_CMAKE_ARGS} -DLCB_NO_MOCK=1 ${LCB_SSL_OPTS})
         SET(LIBCOUCHBASE_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Release/${LIBCOUCHBASE_LIBRARY_NAME}")
