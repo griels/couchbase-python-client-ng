@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 from couchbase_tests.base import CollectionTestCase
+from couchbase.cluster import Cluster, ClusterOptions, ClassicAuthenticator, PasswordAuthenticator
 from couchbase.collection import GetOptions, UpsertOptions, ReplaceOptions, InsertOptions, \
     RemoveOptions
 from couchbase.durability import ServerDurability, ClientDurability, Durability, PersistTo, ReplicateTo
@@ -137,7 +138,7 @@ class CollectionTests(CollectionTestCase):
     def test_get_with_expiry(self):
         if self.is_mock:
             raise SkipTest("mock will not return the expiry in the xaddrs")
-        cas = self.coll.upsert(self.KEY, self.CONTENT, UpsertOptions(expiry=timedelta(seconds=100))).cas
+        cas = self.coll.upsert(self.KEY, self.CONTENT, UpsertOptions(expiry=timedelta(seconds=1000))).cas
 
         def cas_matches(c, new_cas):
             r = c.get(self.KEY, GetOptions(with_expiry=True))
@@ -148,7 +149,7 @@ class CollectionTests(CollectionTestCase):
         self.assertIsNotNone(result.expiry)
         self.assertDictEqual(self.CONTENT, result.content_as[dict])
         expires_in = (result.expiry - datetime.now()).total_seconds()
-        self.assertTrue(100 >= expires_in > 0, msg="Expected expires_in {} to be between 100 and 0")
+        self.assertTrue(1000 >= expires_in > 0, msg="Expected expires_in {} to be between 100 and 0")
 
     def test_project(self):
         content = {"a": "aaa", "b": "bbb", "c": "ccc"}
@@ -226,6 +227,35 @@ class CollectionTests(CollectionTestCase):
         self.cb.touch(self.KEY, timedelta(seconds=3))
         self.try_n_times_till_exception(10, 3, self.cb.get, self.KEY)
         self.assertRaises(DocumentNotFoundException, self.cb.get, self.KEY)
+
+    def _authenticator(self):
+        if self.is_mock:
+            return ClassicAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password)
+        return PasswordAuthenticator(self.cluster_info.admin_username, self.cluster_info.admin_password)
+
+    def _create_cluster_opts(self, **kwargs):
+        return ClusterOptions(self._authenticator(), **kwargs)
+
+    def _mock_hack(self):
+        if self.is_mock:
+            return {'bucket': self.bucket_name}
+        return {}
+
+    def test_naked_touch(self):
+        # some reports of immediate touch after creating a cluster will give TimeoutException
+        if self.is_mock:
+            raise SkipTest("this times out against the mock")
+        raise SkipTest("This also times out against the server - related to https://issues.couchbase.com/browse/CCBC-1192")
+        # TODO: reenable - see https://issues.couchbase.com/browse/PYCBC-946
+        cluster = Cluster.connect(self.cluster.connstr, self._create_cluster_opts(), **self._mock_hack())
+        b = cluster.bucket(self.bucket_name)
+        if self.cb._self_true_collections and self.cb._self_scope and self.cb._self_name:
+            coll = b.scope(self.coll._self_scope.name).collection(self.coll._self_name)
+        else:
+            coll = b.default_collection()
+        coll.touch(self.KEY, timedelta(seconds=3))
+        self.try_n_times_till_exception(10, 3, coll.get, self.KEY)
+        self.assertRaises(DocumentNotFoundException, coll.get, self.KEY)
 
     def test_get_and_touch(self):
         self.cb.get_and_touch(self.KEY, timedelta(seconds=3))
