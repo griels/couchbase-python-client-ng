@@ -28,6 +28,7 @@ from setuptools import Extension
 from setuptools.command.build_ext import build_ext
 
 import cbuild_config
+from gen_config import win_cmake_path
 from cbuild_config import couchbase_core, build_type
 
 
@@ -72,7 +73,7 @@ class CMakeBuild(cbuild_config.CBuildCommon):
 
     @staticmethod
     def requires():
-        return "" if CMakeBuild.check_for_cmake() else ["cmake"]
+        return ["PyGithub","conan"] +([] if CMakeBuild.check_for_cmake() else ["cmake"])
 
     def prep_build(self, ext):
         if not CMakeBuild.hasbuilt:
@@ -134,9 +135,9 @@ class CMakeBuild(cbuild_config.CBuildCommon):
                 '-DPYTHON_VERSION_EXACT={}'.format('.'.join(map(str, sys.version_info[0:2])))] if python_libdir else []
             build_args = ['--config', cfg]
             if platform.system() == "Windows":
-                import gen_config
-                if gen_config.ssl_root_dir:
-                    cmake_args += ['-DOPENSSL_ROOT_DIR={}'.format(gen_config.ssl_root_dir)]
+                #import gen_config
+                #if self.ssl_config['ssl_root_dir'] and False:
+                #    cmake_args += ['-DOPENSSL_ROOT_DIR={}'.format(gen_config.ssl_root_dir)]
                 cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(
                     cfg.upper(),
                     extdir), '-DLCB_NO_MOCK=1']
@@ -146,9 +147,37 @@ class CMakeBuild(cbuild_config.CBuildCommon):
             else:
                 cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg.upper()]
                 build_args += ['--', '-j2']
-
             env = os.environ.copy()
-            cmake_args += ['-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON']
+            import posixpath
+            python_executable=posixpath.normpath(sys.executable).replace('\\','/')
+            try:
+                import gen_config
+                openssl_cfg=gen_config.gen_config(temp_build_dir=self.build_temp)
+                install_params = [
+                         'install',
+                         'openssl/{major}@'.format(**openssl_cfg),
+                         '--generator','cmake',
+                         '--build=missing',
+                         '--install-folder',
+                         '{ssl_root_dir}'.format(**openssl_cfg),
+                         '--options:build', 'Pkg:shared=True'
+                         ]
+                print('install_params {}'.format(install_params))
+                import conans.conan
+                env['PATH']=env['PATH']+";{}".format(os.path.dirname(conans.conan.__file__))
+                #conans.conan.main(install_params)
+                env['PYTHONPATH']=';'.join(sys.path)
+                os.makedirs(self.build_temp,exist_ok=True)
+                #subprocess.check_call([sys.executable,'-m','conans.conan']+install_params, stdout=sys.stdout, stderr=sys.stdout,
+                #                      cwd=win_cmake_path(os.path.abspath(self.build_temp)), env=env)
+
+            except Exception as e:
+                import logging
+                import traceback
+                logging.error("Cannot find conan : {}".format(traceback.format_exc()))
+                extrapaths=""
+                conan_path=""
+            cmake_args += ['--trace-source=CMakeLists.txt','--trace-expand','-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON', '-DPYTHON_EXECUTABLE={}'.format(python_executable)]
             cxx_compile_args=filter(re.compile(r'^(?!-std\s*=\s*c(11|99)).*').match, ext.extra_compile_args)
             env['CXXFLAGS'] = '{} {} -DVERSION_INFO=\\"{}\\"'.format(
                 env.get('CXXFLAGS', ''), ' '.join(cxx_compile_args),
@@ -184,33 +213,10 @@ class CMakeBuild(cbuild_config.CBuildCommon):
 def gen_cmake_build(extoptions, pkgdata):
     from cmake_build import CMakeExtension, CMakeBuild
 
-    class LazyCommandClass(dict):
-        """
-        Lazy command class that defers operations requiring given cmdclass until
-        they've actually been downloaded and installed by setup_requires.
-        """
-        def __init__(self, cmdclass_real):
-            self.cmdclass_real=cmdclass_real
-
-        def __contains__(self, key):
-            return (
-                    key == 'build_ext'
-                    or super(LazyCommandClass, self).__contains__(key)
-            )
-
-        def __setitem__(self, key, value):
-            if key == 'build_ext':
-                raise AssertionError("build_ext overridden!")
-            super(LazyCommandClass, self).__setitem__(key, value)
-
-        def __getitem__(self, key):
-            if key != 'build_ext':
-                return super(LazyCommandClass, self).__getitem__(key)
-            return self.cmdclass_real
 
     CMakeBuild.hybrid = build_type in ['CMAKE_HYBRID']
     CMakeBuild.setup_build_info(extoptions, pkgdata)
     e_mods = [CMakeExtension(str(couchbase_core+'._libcouchbase'), '', **extoptions)]
-    return e_mods, CMakeBuild.requires(), LazyCommandClass(CMakeBuild)
+    return e_mods, CMakeBuild.requires(), cbuild_config.LazyCommandClass(CMakeBuild)
 
 
