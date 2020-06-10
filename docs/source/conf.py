@@ -27,9 +27,9 @@ sys.path.insert(0, os.path.abspath('../../build/lib.%s-%s' % (get_platform(), sy
 
 import couchbase_version
 try:
-    import gen_config
+    import lcb_version
 
-    libcouchbase_version=gen_config.get_lcb_min_version()
+    libcouchbase_version=lcb_version.get_lcb_min_version()
 except:
     libcouchbase_version=(3,0,0)
 # -- General configuration -----------------------------------------------------
