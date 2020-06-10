@@ -6,6 +6,11 @@ import couchbase_version
 from cbuild_config import get_ext_options, couchbase_core, build_type
 from cmodule import gen_distutils_build
 from cmake_build import gen_cmake_build
+import gen_config
+import itertools
+import pathlib
+
+gen_config.__main__()
 
 try:
     if os.environ.get('PYCBC_NO_DISTRIBUTE'):
@@ -15,27 +20,7 @@ try:
 except ImportError:
     from distutils.core import setup, Extension
 
-import os
-import itertools
-import pathlib
 curdir = pathlib.Path(__file__).parent
-
-
-lcb_min_version = (2, 9, 0)
-
-try:
-    from lcb_version import get_lcb_min_version
-    lcb_min_version=get_lcb_min_version()
-except:
-    lcb_min_version=(2,9,0)
-if not os.path.exists("build"):
-    os.mkdir("build")
-
-with open(str(curdir.joinpath("build/lcb_min_version.h")), "w+") as LCB_MIN_VERSION:
-    LCB_MIN_VERSION.write('\n'.join(
-        ["#define LCB_MIN_VERSION 0x{}".format(''.join(map(lambda x: "{0:02d}".format(x), lcb_min_version))),
-         '#define LCB_MIN_VERSION_TEXT "{}"'.format('.'.join(map(str, lcb_min_version))),
-         '#define PYCBC_PACKAGE_NAME "{}"'.format(couchbase_core)]))
 
 try:
     couchbase_version.gen_version()
