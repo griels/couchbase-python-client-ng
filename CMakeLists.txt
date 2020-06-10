@@ -6,12 +6,15 @@ set(LCBCXX_ROOT libcouchbase-cxx-prefix/src/libcouchbase-cxx)
 set(LCB_ROOT ${THIRDPARTY_LCB_ROOT}/src/libcouchbase_src)
 set(PYCBC_CMAKE_CPYTHON_WRAPPER 1)
 cmake_policy(SET CMP0054 NEW)
+include(cmake/json-cmake/JSONParser.cmake)
+include(FindPythonInterp)
+include(FindPythonLibs)
+include(ExternalProject)
+
 if(HYBRID_BUILD)
     set(PYCBC_C_MOD_NAME "_dummy")
     set(PYCBC_C_MOD_SUFFIX ".so")
 else()
-    include(FindPythonInterp)
-    include(FindPythonLibs)
 
     if (PYTHON_LIBDIR)
         set(PYTHON_LIBDIR_HINT HINTS ${PYTHON_LIBDIR})
@@ -35,6 +38,19 @@ else()
         set(PYCBC_C_MOD_SUFFIX ".so")
     endif()
 endif()
+set (OPENSSLCFG_FILE ${CMAKE_CURRENT_BINARY_DIR}/openssl_version.json)
+
+execute_process(
+   COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py
+)
+file(READ ${OPENSSLCFG_FILE} OPENSSLCFG)
+sbeParseJson(openssl_cfg OPENSSLCFG)
+message("Need to find OpenSSL ${openssl_cfg.major} from\n${OPENSSLCFG}")
+
+find_package(
+        OpenSSL ${openssl_cfg.raw_version_info}
+)
+
 if (FORCE_DEBUG OR (CMAKE_BUILD_TYPE MATCHES DEBUG))
     set(RELEASE_TYPE Debug)
 else()
@@ -72,13 +88,11 @@ if ("$PYCBC_USE_CONAN")
             BUILD missing)
 endif()
 
-include(ExternalProject)
 
 
 set(CMAKE_MACOSX_RPATH 1)
 
 set(BUILD_CFG_FILE cbuild_cfg.json)
-include(cmake/json-cmake/JSONParser.cmake)
 file(READ ${BUILD_CFG_FILE} BUILDCFG)
 sbeParseJson(build_cfg BUILDCFG)
 message("environment LCB_TAG: $ENV{LCB_TAG}")
@@ -152,7 +166,16 @@ if (LCB_SRC)
         else()
             set(WIN_PLATFORM "Visual Studio 14 2015")
         endif()
-        set(LCB_CMAKE_ARGS ${LCB_CMAKE_ARGS} -DLCB_NO_SSL=1 -DLCB_NO_MOCK=1)
+        if (NOT OPENSSL_ROOT_DIR)
+            set(OPENSSL_ROOT_DIR OpenSSL_DIR)
+        endif()
+        if (OPENSSL_ROOT_DIR)
+            message("Found OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}")
+            set (LCB_SSL_OPTS -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR})
+        else()
+            message("Found no OPENSSL_ROOT_DIR")
+        endif()
+        set(LCB_CMAKE_ARGS ${LCB_CMAKE_ARGS} -DLCB_NO_MOCK=1 ${LCB_SSL_OPTS})
         SET(LIBCOUCHBASE_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Release/${LIBCOUCHBASE_LIBRARY_NAME}")
         SET(LIBCOUCHBASE_DBG_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Debug/${LIBCOUCHBASE_DBG_LIBRARY_NAME}")
         ExternalProject_Add(libcouchbase_src
