@@ -10,8 +10,6 @@ import gen_config
 import itertools
 import pathlib
 
-gen_config.__main__()
-
 try:
     if os.environ.get('PYCBC_NO_DISTRIBUTE'):
         raise ImportError()
