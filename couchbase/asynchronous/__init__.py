@@ -17,7 +17,8 @@ import boltons.funcutils
 import logging
 import textwrap
 import re
-
+import os
+import sys
 iterable_producer = TypeVar('iterable_producer', bound=Callable)
 
 _type_pattern = re.compile(r'.*\(\.\.\.\)\s\-\>\s*(.*?)$')
