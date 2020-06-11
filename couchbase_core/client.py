@@ -24,10 +24,41 @@ class BaseClient(_Base):
     @classmethod
     def _memcached_operations(cls):
         return Client._memcached_operations_retarget(cls)
+    _MEMCACHED_NOMULTI = ()
+    _MEMCACHED_MULTI = ()
 
     @staticmethod
     def _memcached_operations_retarget(cls):
         return cls._MEMCACHED_NOMULTI + cls._MEMCACHED_MULTI
+
+    @classmethod
+    def _gen_memd_wrappers(cls, factory):
+        return Client._gen_memd_wrappers_retarget(cls, factory)
+
+    @staticmethod
+    def _gen_memd_wrappers_retarget(cls, factory):
+        """Generates wrappers for all the memcached operations.
+        :param factory: A function to be called to return the wrapped
+            method. It will be called with two arguments; the first is
+            the unbound method being wrapped, and the second is the name
+            of such a method.
+
+          The factory shall return a new unbound method
+
+        :return: A dictionary of names mapping the API calls to the
+            wrapped functions
+        """
+        d = {}
+        for n in cls._memcached_operations():
+            for variant in (n, n + "_multi"):
+                try:
+                    d[variant] = factory(getattr(cls, variant), variant)
+                except AttributeError:
+                    if n in cls._MEMCACHED_NOMULTI:
+                        continue
+                    raise
+        return d
+
     def __init__(self, *args, **kwargs):
         """Connect to a bucket.
 
@@ -331,164 +362,6 @@ class BaseClient(_Base):
     def closed(self):
         """Returns True if the object has been closed with :meth:`_close`"""
         return self._privflags & _LCB.PYCBC_CONN_F_CLOSED
-
-class Client(BaseClient):
-    _MEMCACHED_NOMULTI = ('lookup_in', 'mutate_in')
-    _MEMCACHED_MULTI = ('upsert', 'get', 'insert',
-                             'replace', 'remove', 'touch',
-                             'unlock')
-
-
-
-    def mutate_in(self, key, specs, **kwargs):
-        """Perform multiple atomic modifications within a document.
-
-        :param key: The key of the document to modify
-        :param specs: A list of specs (See :mod:`.couchbase_core.subdocument`)
-        :param bool create_doc:
-            Whether the document should be create if it doesn't exist
-        :param bool insert_doc: If the document should be created anew, and the
-            operations performed *only* if it does not exist.
-        :param bool upsert_doc: If the document should be created anew if it
-            does not exist. If it does exist the commands are still executed.
-        :param kwargs: CAS, etc.
-        :return: A :class:`~.couchbase_core.result.SubdocResult` object.
-
-        Here's an example of adding a new tag to a "user" document
-        and incrementing a modification counter::
-
-            import couchbase_core.subdocument as SD
-            # ....
-            cb.mutate_in('user',
-                         SD.array_addunique('tags', 'dog'),
-                         SD.counter('updates', 1))
-
-        .. note::
-
-            The `insert_doc` and `upsert_doc` options are mutually exclusive.
-            Use `insert_doc` when you wish to create a new document with
-            extended attributes (xattrs).
-
-        .. seealso:: :mod:`.couchbase_core.subdocument`
-        """
-
-        # Note we don't verify the validity of the options. lcb does that for
-        # us.
-        sdflags = kwargs.pop('_sd_doc_flags', 0)
-
-        if kwargs.pop('insert_doc', False):
-            sdflags |= _P.CMDSUBDOC_F_INSERT_DOC
-        if kwargs.pop('upsert_doc', False):
-            sdflags |= _P.CMDSUBDOC_F_UPSERT_DOC
-
-        # TODO: find a way of supporting this with LCB V4 API - PYCBC-584
-        kwargs['_sd_doc_flags'] = sdflags
-        return super(Client, self).mutate_in(key, tuple(specs), **kwargs)
-
-    def lookup_in(self, key, specs, **kwargs):
-        """Atomically retrieve one or more paths from a document.
-
-        :param key: The key of the document to lookup
-        :param spec: A list of specs (see :mod:`.couchbase_core.subdocument`)
-        :return: A :class:`.couchbase_core.result.SubdocResult` object.
-            This object contains the results and any errors of the
-            operation.
-
-        Example::
-
-            import couchbase_core.subdocument as SD
-            rv = cb.lookup_in('user',
-                              SD.get('email'),
-                              SD.get('name'),
-                              SD.exists('friends.therock'))
-
-            email = rv[0]
-            name = rv[1]
-            friend_exists = rv.exists(2)
-
-        .. seealso:: :meth:`retrieve_in` which acts as a convenience wrapper
-        """
-        return super(Client, self).lookup_in({key: tuple(specs)}, **kwargs)
-
-    def get(self, *args, **kwargs):
-        return super(Client, self).get(*args,**kwargs)
-
-    def rget(self, key, replica_index=None, quiet=None, **kwargs):
-        """Get an item from a replica node
-
-        :param string key: The key to fetch
-        :param int replica_index: The replica index to fetch.
-            If this is ``None`` then this method will return once any
-            replica responds. Use :attr:`configured_replica_count` to
-            figure out the upper bound for this parameter.
-
-            The value for this parameter must be a number between 0 and
-            the value of :attr:`configured_replica_count`-1.
-        :param boolean quiet: Whether to suppress errors when the key is
-            not found
-
-        This method (if `replica_index` is not supplied) functions like
-        the :meth:`get` method that has been passed the `replica`
-        parameter::
-
-            c.get(key, replica=True)
-
-        .. seealso:: :meth:`get` :meth:`rget_multi`
-        """
-        if replica_index is not None:
-            return _Base._rgetix(self, key, replica=replica_index, **kwargs)
-        else:
-            return _Base._rget(self, key, **kwargs)
-
-    def rgetall(self, key, **kwargs):
-      return _Base._rgetall(self, key, **kwargs)
-
-    def rget_multi(self, keys, replica_index=None, quiet=None):
-        if replica_index is not None:
-            return _Base._rgetix_multi(self, keys,
-                                       replica=replica_index, quiet=quiet)
-        else:
-            return _Base._rget_multi(self, keys, quiet=quiet)
-
-    def query(self, query, *args, **kwargs):
-        """
-        Execute a N1QL query.
-
-        This method is mainly a wrapper around the :class:`~._N1QLQuery`
-        and :class:`~.N1QLRequest` objects, which contain the inputs
-        and outputs of the query.
-
-        Using an explicit :class:`~._N1QLQuery`::
-
-            query = _N1QLQuery(
-                'SELECT airportname FROM `travel-sample` WHERE city=$1', "Reno")
-            # Use this option for often-repeated queries
-            query.adhoc = False
-            for row in cb.n1ql_query(query):
-                print 'Name: {0}'.format(row['airportname'])
-
-        Using an implicit :class:`~._N1QLQuery`::
-
-            for row in cb.n1ql_query(
-                'SELECT airportname, FROM `travel-sample` WHERE city="Reno"'):
-                print 'Name: {0}'.format(row['airportname'])
-
-        With the latter form, *args and **kwargs are forwarded to the
-        N1QL Request constructor, optionally selected in kwargs['iterclass'],
-        otherwise defaulting to :class:`~.N1QLRequest`.
-
-        :param query: The query to execute. This may either be a
-            :class:`._N1QLQuery` object, or a string (which will be
-            implicitly converted to one).
-        :param kwargs: Arguments for :class:`.N1QLRequest`.
-        :return: An iterator which yields rows. Each row is a dictionary
-            representing a single result
-        """
-        if not isinstance(query, _N1QLQuery):
-            query = _N1QLQuery(query)
-
-        return query.gen_iter(self, **kwargs)
-
     @staticmethod
     def _mk_devmode(n, use_devmode):
         if n.startswith('dev_') or not use_devmode:
@@ -631,6 +504,217 @@ class Client(BaseClient):
             query.update(*args, **kwargs)
 
         return query.gen_iter(self, itercls)
+
+
+    def add_bucket_creds(self, bucket, password):
+        if not bucket or not password:
+            raise ValueError('Bucket and password must be nonempty')
+        return _Base._add_creds(self, bucket, password)
+
+    def register_crypto_provider(self, name, provider):
+        """
+        Registers the crypto provider used to encrypt and decrypt document fields.
+        :param name: The name of the provider.
+        :param provider: The provider implementation. // reference LCB type?
+        """
+        _Base.register_crypto_provider(self, name, provider)
+
+    def unregister_crypto_provider(self, name):
+        """
+        Unregisters the crypto provider used to encrypt and decrypt document fields.
+        :param name: The name of the provider.
+        """
+        _Base.unregister_crypto_provider(self, name)
+
+    def encrypt_fields(self, document, fieldspec, prefix):
+        """
+        Encrypt a document using the registered encryption providers.
+        :param document: The document body.
+        :param fieldspec: A list of field specifications, each of which is
+        a dictionary as follows:
+            {
+                'alg' : registered algorithm name,
+                'kid' : key id to use to encrypt with,
+                'name' : field name
+            }
+        :param prefix: Prefix for encrypted field names. Default is None.
+        :return: Encrypted document.
+        """
+        json_encoded = json.dumps(document)
+        encrypted_string = _Base.encrypt_fields(self, json_encoded, fieldspec, prefix)
+        if not encrypted_string:
+            raise E.CouchbaseException("Encryption failed")
+        return json.loads(encrypted_string)
+
+    def decrypt_fields_real(self, document, *args):
+        json_decoded = json.dumps(document)
+        decrypted_string = _Base.decrypt_fields(self, json_decoded, *args)
+        if not decrypted_string:
+            raise E.CouchbaseException("Decryption failed")
+        return json.loads(decrypted_string)
+
+    def decrypt_fields(self, document, prefix):
+        """
+        Decrypts a document using the registered encryption providers.
+        :param document: The document body.
+        :param prefix: Prefix for encrypted field names. Default is None.
+        :return:
+        """
+        return self.decrypt_fields_real(document, prefix)
+
+class Client(BaseClient):
+    _MEMCACHED_NOMULTI = ('lookup_in', 'mutate_in')
+    _MEMCACHED_MULTI = ('upsert', 'get', 'insert',
+                             'replace', 'remove', 'touch',
+                             'unlock')
+
+
+
+    def mutate_in(self, key, specs, **kwargs):
+        """Perform multiple atomic modifications within a document.
+
+        :param key: The key of the document to modify
+        :param specs: A list of specs (See :mod:`.couchbase_core.subdocument`)
+        :param bool create_doc:
+            Whether the document should be create if it doesn't exist
+        :param bool insert_doc: If the document should be created anew, and the
+            operations performed *only* if it does not exist.
+        :param bool upsert_doc: If the document should be created anew if it
+            does not exist. If it does exist the commands are still executed.
+        :param kwargs: CAS, etc.
+        :return: A :class:`~.couchbase_core.result.SubdocResult` object.
+
+        Here's an example of adding a new tag to a "user" document
+        and incrementing a modification counter::
+
+            import couchbase_core.subdocument as SD
+            # ....
+            cb.mutate_in('user',
+                         SD.array_addunique('tags', 'dog'),
+                         SD.counter('updates', 1))
+
+        .. note::
+
+            The `insert_doc` and `upsert_doc` options are mutually exclusive.
+            Use `insert_doc` when you wish to create a new document with
+            extended attributes (xattrs).
+
+        .. seealso:: :mod:`.couchbase_core.subdocument`
+        """
+
+        # Note we don't verify the validity of the options. lcb does that for
+        # us.
+        sdflags = kwargs.pop('_sd_doc_flags', 0)
+
+        if kwargs.pop('insert_doc', False):
+            sdflags |= _P.CMDSUBDOC_F_INSERT_DOC
+        if kwargs.pop('upsert_doc', False):
+            sdflags |= _P.CMDSUBDOC_F_UPSERT_DOC
+
+        # TODO: find a way of supporting this with LCB V4 API - PYCBC-584
+        kwargs['_sd_doc_flags'] = sdflags
+        return super(Client, self).mutate_in(key, tuple(specs), **kwargs)
+
+    def lookup_in(self, key, specs, **kwargs):
+        """Atomically retrieve one or more paths from a document.
+
+        :param key: The key of the document to lookup
+        :param spec: A list of specs (see :mod:`.couchbase_core.subdocument`)
+        :return: A :class:`.couchbase_core.result.SubdocResult` object.
+            This object contains the results and any errors of the
+            operation.
+
+        Example::
+
+            import couchbase_core.subdocument as SD
+            rv = cb.lookup_in('user',
+                              SD.get('email'),
+                              SD.get('name'),
+                              SD.exists('friends.therock'))
+
+            email = rv[0]
+            name = rv[1]
+            friend_exists = rv.exists(2)
+
+        .. seealso:: :meth:`retrieve_in` which acts as a convenience wrapper
+        """
+        return super(Client, self).lookup_in({key: tuple(specs)}, **kwargs)
+
+    def rget(self, key, replica_index=None, quiet=None, **kwargs):
+        """Get an item from a replica node
+
+        :param string key: The key to fetch
+        :param int replica_index: The replica index to fetch.
+            If this is ``None`` then this method will return once any
+            replica responds. Use :attr:`configured_replica_count` to
+            figure out the upper bound for this parameter.
+
+            The value for this parameter must be a number between 0 and
+            the value of :attr:`configured_replica_count`-1.
+        :param boolean quiet: Whether to suppress errors when the key is
+            not found
+
+        This method (if `replica_index` is not supplied) functions like
+        the :meth:`get` method that has been passed the `replica`
+        parameter::
+
+            c.get(key, replica=True)
+
+        .. seealso:: :meth:`get` :meth:`rget_multi`
+        """
+        if replica_index is not None:
+            return _Base._rgetix(self, key, replica=replica_index, **kwargs)
+        else:
+            return _Base._rget(self, key, **kwargs)
+
+    def rgetall(self, key, **kwargs):
+      return _Base._rgetall(self, key, **kwargs)
+
+    def rget_multi(self, keys, replica_index=None, quiet=None):
+        if replica_index is not None:
+            return _Base._rgetix_multi(self, keys,
+                                       replica=replica_index, quiet=quiet)
+        else:
+            return _Base._rget_multi(self, keys, quiet=quiet)
+
+    def query(self, query, *args, **kwargs):
+        """
+        Execute a N1QL query.
+
+        This method is mainly a wrapper around the :class:`~._N1QLQuery`
+        and :class:`~.N1QLRequest` objects, which contain the inputs
+        and outputs of the query.
+
+        Using an explicit :class:`~._N1QLQuery`::
+
+            query = _N1QLQuery(
+                'SELECT airportname FROM `travel-sample` WHERE city=$1', "Reno")
+            # Use this option for often-repeated queries
+            query.adhoc = False
+            for row in cb.n1ql_query(query):
+                print 'Name: {0}'.format(row['airportname'])
+
+        Using an implicit :class:`~._N1QLQuery`::
+
+            for row in cb.n1ql_query(
+                'SELECT airportname, FROM `travel-sample` WHERE city="Reno"'):
+                print 'Name: {0}'.format(row['airportname'])
+
+        With the latter form, *args and **kwargs are forwarded to the
+        N1QL Request constructor, optionally selected in kwargs['iterclass'],
+        otherwise defaulting to :class:`~.N1QLRequest`.
+
+        :param query: The query to execute. This may either be a
+            :class:`._N1QLQuery` object, or a string (which will be
+            implicitly converted to one).
+        :param kwargs: Arguments for :class:`.N1QLRequest`.
+        :return: An iterator which yields rows. Each row is a dictionary
+            representing a single result
+        """
+        if not isinstance(query, _N1QLQuery):
+            query = _N1QLQuery(query)
+
+        return query.gen_iter(self, **kwargs)
 
     @overload
     def upsert_multi(self,  # type: Client
@@ -983,87 +1067,3 @@ class Client(BaseClient):
         """
         return _Base.counter_multi(self, kvs, initial=initial, delta=delta,
                                    ttl=ttl, durability_level=durability_level.value)
-
-    @classmethod
-    def _gen_memd_wrappers(cls, factory):
-        return Client._gen_memd_wrappers_retarget(cls, factory)
-
-    @staticmethod
-    def _gen_memd_wrappers_retarget(cls, factory):
-        """Generates wrappers for all the memcached operations.
-        :param factory: A function to be called to return the wrapped
-            method. It will be called with two arguments; the first is
-            the unbound method being wrapped, and the second is the name
-            of such a method.
-
-          The factory shall return a new unbound method
-
-        :return: A dictionary of names mapping the API calls to the
-            wrapped functions
-        """
-        d = {}
-        for n in cls._memcached_operations():
-            for variant in (n, n + "_multi"):
-                try:
-                    d[variant] = factory(getattr(cls, variant), variant)
-                except AttributeError:
-                    if n in cls._MEMCACHED_NOMULTI:
-                        continue
-                    raise
-        return d
-
-    def add_bucket_creds(self, bucket, password):
-        if not bucket or not password:
-            raise ValueError('Bucket and password must be nonempty')
-        return _Base._add_creds(self, bucket, password)
-
-    def register_crypto_provider(self, name, provider):
-        """
-        Registers the crypto provider used to encrypt and decrypt document fields.
-        :param name: The name of the provider.
-        :param provider: The provider implementation. // reference LCB type?
-        """
-        _Base.register_crypto_provider(self, name, provider)
-
-    def unregister_crypto_provider(self, name):
-        """
-        Unregisters the crypto provider used to encrypt and decrypt document fields.
-        :param name: The name of the provider.
-        """
-        _Base.unregister_crypto_provider(self, name)
-
-    def encrypt_fields(self, document, fieldspec, prefix):
-        """
-        Encrypt a document using the registered encryption providers.
-        :param document: The document body.
-        :param fieldspec: A list of field specifications, each of which is
-        a dictionary as follows:
-            {
-                'alg' : registered algorithm name,
-                'kid' : key id to use to encrypt with,
-                'name' : field name
-            }
-        :param prefix: Prefix for encrypted field names. Default is None.
-        :return: Encrypted document.
-        """
-        json_encoded = json.dumps(document)
-        encrypted_string = _Base.encrypt_fields(self, json_encoded, fieldspec, prefix)
-        if not encrypted_string:
-            raise E.CouchbaseException("Encryption failed")
-        return json.loads(encrypted_string)
-
-    def decrypt_fields_real(self, document, *args):
-        json_decoded = json.dumps(document)
-        decrypted_string = _Base.decrypt_fields(self, json_decoded, *args)
-        if not decrypted_string:
-            raise E.CouchbaseException("Decryption failed")
-        return json.loads(decrypted_string)
-
-    def decrypt_fields(self, document, prefix):
-        """
-        Decrypts a document using the registered encryption providers.
-        :param document: The document body.
-        :param prefix: Prefix for encrypted field names. Default is None.
-        :return:
-        """
-        return self.decrypt_fields_real(document, prefix)
