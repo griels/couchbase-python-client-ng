@@ -40,9 +40,8 @@ import couchbase_core.subdocument as SD
 
 class DeltaValue(ConstrainedInt):
     def __init__(self,
-                 value  # type: AcceptableInts
-                 ):
-        # type: (...) -> None
+                 value: AcceptableInts
+                 ) -> None:
         """
         A non-negative integer between 0 and +0x7FFFFFFFFFFFFFFF inclusive.
         Used as an argument for :meth:`Collection.increment` and :meth:`Collection.decrement`
@@ -64,9 +63,9 @@ class DeltaValue(ConstrainedInt):
 
 class ReplaceOptions(DurabilityOptionBlock):
     def __init__(self,
-                 timeout=None,       # type: timedelta
-                 durability=None,    # type: DurabilityType
-                 cas=0               # type: int
+                 timeout: timedelta = None,
+                 durability: DurabilityType = None,
+                 cas: int = 0
                  ):
         """
 
@@ -80,8 +79,8 @@ class ReplaceOptions(DurabilityOptionBlock):
 class RemoveOptions(DurabilityOptionBlock):
     @overload
     def __init__(self,
-                 durability=None,  # type: DurabilityType
-                 cas=0,            # type: int
+                 durability: DurabilityType = None,
+                 cas: int = 0,
                  **kwargs):
         """
         Remove Options
@@ -105,10 +104,10 @@ class RemoveOptions(DurabilityOptionBlock):
 
 
 class ExtensionOptions(DurabilityOptionBlock):
-    def __init__(self,  # type: ExtensionOptions
-                 durability=None,   # type: DurabilityType,
-                 cas=None,          # type: int
-                 timeout=None       # type: timedelta
+    def __init__(self,
+                 durability: DurabilityType = None,
+                 cas: int = None,
+                 timeout: timedelta = None
                  ):
         """
         Options for {extending} an item
@@ -129,15 +128,14 @@ class AppendOptions(ExtensionOptions._wrap_docs(extending='appending')):
 
 
 class CounterOptions(DurabilityOptionBlock):
-    def __init__(self,  # type: CounterOptions
-                 durability=None,   # type: DurabilityType
-                 cas=None,          # type: int
-                 timeout=None,      # type: timedelta
-                 expiry=None,       # type: timedelta
-                 initial=SignedInt64(0),      # type: SignedInt64
-                 delta=DeltaValue(1)         # type: DeltaValue
-                 ):
-        # type: (...) -> None
+    def __init__(self,
+                 durability: DurabilityType = None,
+                 cas: int = None,
+                 timeout: timedelta = None,
+                 expiry: timedelta = None,
+                 initial: SignedInt64 = SignedInt64(0),
+                 delta: DeltaValue = DeltaValue(1)
+                 ) -> None:
         """
         Settings for {counter_type} operations
 
@@ -170,9 +168,9 @@ class ExistsOptions(OptionBlockTimeOut):
 class GetOptions(OptionBlockTimeOut):
     @overload
     def __init__(self,
-                 timeout=None,  # type: timedelta
-                 with_expiry=None,  # type: bool
-                 project=None  # type: Iterable[str]
+                 timeout: timedelta = None,
+                 with_expiry: bool = None,
+                 project: Iterable[str] = None
                  ):
         pass
 
@@ -183,13 +181,11 @@ class GetOptions(OptionBlockTimeOut):
         super(GetOptions, self).__init__(**kwargs)
 
     @property
-    def with_expiry(self):
-        # type: (...) -> bool
+    def with_expiry(self) -> bool:
         return self.get('with_expiry', False)
 
     @property
-    def project(self):
-        # type: (...) -> Iterable[str]
+    def project(self) -> Iterable[str]:
         return self.get('project', [])
 
 
@@ -229,27 +225,23 @@ RawCollectionMethod = Union[RawCollectionMethodDefault, RawCollectionMethodInt]
 RawCollectionMethodSpecial = TypeVar('RawCollectionMethodSpecial', bound=RawCollectionMethod)
 
 
-def _get_result_and_inject(func  # type: RawCollectionMethod
-                           ):
-    # type: (...) ->RawCollectionMethod
+def _get_result_and_inject(func: RawCollectionMethod
+                           ) -> RawCollectionMethod:
     return wraps(func)(_inject_scope_and_collection(get_result_wrapper(func)))
 
 
-def _mutate_result_and_inject(func  # type: RawCollectionMethod
-                              ):
-    # type: (...) ->RawCollectionMethod
+def _mutate_result_and_inject(func: RawCollectionMethod
+                              ) -> RawCollectionMethod:
     return wraps(func)(_inject_scope_and_collection(_wrap_in_mutation_result(func)))
 
 
-def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
-                                 ):
-    # type: (...) -> RawCollectionMethod
+def _inject_scope_and_collection(func: RawCollectionMethodSpecial
+                                 ) -> RawCollectionMethod:
     @wraps(func)
-    def wrapped(self,  # type: CBCollection
-                *args,  # type: Any
-                **kwargs  # type:  Any
-                ):
-        # type: (...)->Any
+    def wrapped(self: 'CBCollection',
+                *args: Any,
+                **kwargs: Any
+                ) -> Any:
         self._inject_scope_collection_kwargs(kwargs)
         return func(self, *args, **kwargs)
 
@@ -263,15 +255,13 @@ def _inject_scope_and_collection(func  # type: RawCollectionMethodSpecial
 CoreBucketOpRead = TypeVar("CoreBucketOpRead", Callable[[Any], CoreResult], Callable[[Any], GetResult])
 
 
-def _wrap_get_result(func  # type: CoreBucketOpRead
-                     ):
-    # type: (...) -> CoreBucketOpRead
+def _wrap_get_result(func: CoreBucketOpRead
+                     ) -> CoreBucketOpRead:
     @wraps(func)
-    def wrapped(self,  # type: CBCollection
-                *args,  # type: Any
-                **kwargs  # type:  Any
-                ):
-        # type: (...)->Any
+    def wrapped(self: 'CBCollection',
+                *args: Any,
+                **kwargs: Any
+                ) -> Any:
         return _inject_scope_and_collection(get_result_wrapper(func))(self, *args, **kwargs)
 
     return wrapped
@@ -288,13 +278,11 @@ class LookupInOptions(OptionBlockTimeOut):
 CoreBucketOp = TypeVar("CoreBucketOp", Callable[[Any], CoreResult], Callable[[Any], MutationResult])
 
 
-def _wrap_multi_mutation_result(wrapped  # type: CoreBucketOp
-                                ):
-    # type: (...) -> CoreBucketOp
+def _wrap_multi_mutation_result(wrapped: CoreBucketOp
+                                ) -> CoreBucketOp:
     import boltons.funcutils
     def wrapper(target, keys, *options, **kwargs
-                ):
-        # type: (...) -> MultiResult[MutationResult]
+                ) -> MultiResult[MutationResult]:
         return get_multi_mutation_result(target.bucket, wrapped, keys, *options, **kwargs)
 
     return _inject_scope_and_collection(wrapper)
@@ -359,13 +347,12 @@ class CBCollection(wrapt.ObjectProxy):
                 kwargs['collection'] = self._self_name
 
     @internal
-    def __init__(self,  # type: CBCollection
-                 name=None,  # type: str
-                 parent_scope=None,  # type: Scope
+    def __init__(self,
+                 name: str = None,
+                 parent_scope: 'Scope' = None,
                  *options,
                  **kwargs
-                 ):
-        # type: (...) -> None
+                 ) -> None:
         """
         Couchbase collection.
 
@@ -382,6 +369,8 @@ class CBCollection(wrapt.ObjectProxy):
             pass
         self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
+        self._self_scope: Scope = parent_scope
+        self._self_name: Optional[str] = name
         self._self_true_collections = name and parent_scope
 
     def __copy__(self):
@@ -391,9 +380,8 @@ class CBCollection(wrapt.ObjectProxy):
         raise NotImplementedError()
 
     @property
-    def bucket(self  # type: CBCollection
-               ):
-        # type: (...) -> CoreClient
+    def bucket(self
+               ) -> CoreClient:
         return self._self_scope.bucket
 
     def __str__(self):
@@ -414,7 +402,7 @@ class CBCollection(wrapt.ObjectProxy):
         return getattr(result, '_original', result)
 
     def _wrap_dsop(self,
-                   sdres,  # type: SubdocResult
+                   sdres: SubdocResult,
                    has_value=False, **kwargs):
         from couchbase_core.items import Item
         sdres = self._get_content(sdres)
@@ -426,10 +414,9 @@ class CBCollection(wrapt.ObjectProxy):
 
     @classmethod
     def _cast(cls,
-              parent_scope,  # type: Scope
-              name           # type: Optional[str]
-              ):
-        # type: (...) -> CBCollection
+              parent_scope: 'Scope',
+              name: Optional[str]
+              ) -> 'CBCollection':
         coll_args = dict(**parent_scope.bucket._bucket_args)
         coll_args.update(name=name, parent_scope=parent_scope)
         result = parent_scope.bucket._collection_factory(connection_string=parent_scope.bucket._connstr, **coll_args)
@@ -452,12 +439,11 @@ class CBCollection(wrapt.ObjectProxy):
         return ResultPrecursor(x, options)
 
     @_get_result_and_inject
-    def get(self,       # type: CBCollection
-            key,        # type: str
-            *options,   # type: GetOptions
-            **kwargs    # type: Any
-            ):
-        # type: (...) -> GetResult
+    def get(self,
+            key: str,
+            *options: GetOptions,
+            **kwargs: Any
+            ) -> GetResult:
         """Obtain an object stored in Couchbase by given key.
 
         :param key: The key to fetch. The type of key is the same
@@ -483,13 +469,12 @@ class CBCollection(wrapt.ObjectProxy):
         return self._get_generic(key, kwargs, options)
 
     @_get_result_and_inject
-    def get_and_touch(self,         # type: CBCollection
-                      key,          # type: str
-                      expiry,       # type: timedelta
-                      *options,     # type: GetAndTouchOptions
-                      **kwargs      # type: Any
-                      ):
-        # type: (...) -> GetResult
+    def get_and_touch(self,
+                      key: str,
+                      expiry: timedelta,
+                      *options: GetAndTouchOptions,
+                      **kwargs: Any
+                      ) -> GetResult:
         """
         Get the document with the specified key, and update the expiry.
 
@@ -504,13 +489,12 @@ class CBCollection(wrapt.ObjectProxy):
         return self._get_generic(key, kwargs, options)
 
     @_get_result_and_inject
-    def get_and_lock(self,      # type: CBCollection
-                     key,       # type: str
-                     expiry,    # type: timedelta
-                     *options,  # type: GetAndLockOptions
-                     **kwargs   # type: Any
-                     ):
-        # type: (...) -> GetResult
+    def get_and_lock(self,
+                     key: str,
+                     expiry: timedelta,
+                     *options: GetAndLockOptions,
+                     **kwargs: Any
+                     ) -> GetResult:
         """
         Get a document with the specified key, locking it from mutation.
 
@@ -526,12 +510,11 @@ class CBCollection(wrapt.ObjectProxy):
 
     @_inject_scope_and_collection
     @get_replica_result_wrapper
-    def get_any_replica(self,      # type: CBCollection
-                        key,       # type: str
-                        *options,  # type: GetFromReplicaOptions
-                        **kwargs   # type: Any
-                        ):
-        # type: (...) -> GetReplicaResult
+    def get_any_replica(self,
+                        key: str,
+                        *options: GetAnyReplicaOptions,
+                        **kwargs: Any
+                        ) -> GetReplicaResult:
         """Obtain an object stored in Couchbase by given key, from a replica.
 
         :param key: The key to fetch. The type of key is the same
@@ -548,12 +531,11 @@ class CBCollection(wrapt.ObjectProxy):
 
     @_inject_scope_and_collection
     @get_replica_result_wrapper
-    def get_all_replicas(self,      # type: CBCollection
-                         key,       # type: str
-                         *options,  # type: GetAllReplicasOptions
-                         **kwargs   # type: Any
-                         ):
-        # type: (...) -> Iterable[GetReplicaResult]
+    def get_all_replicas(self,
+                         key: str,
+                         *options: GetAllReplicasOptions,
+                         **kwargs: Any
+                         ) -> Iterable[GetReplicaResult]:
         """Obtain an object stored in Couchbase by given key, from every replica.
 
         :param key: The key to fetch. The type of key is the same
@@ -568,12 +550,11 @@ class CBCollection(wrapt.ObjectProxy):
 
     @_inject_scope_and_collection
     @volatile
-    def get_multi(self,         # type: CBCollection
-                  keys,         # type: Iterable[str]
-                  *options,     # type: GetOptions
-                  **kwargs      # type: Any
-                  ):
-        # type: (...) -> Dict[str,GetResult]
+    def get_multi(self,
+                  keys: Iterable[str],
+                  *options: GetOptions,
+                  **kwargs: Any
+                  ) -> Dict[str,GetResult]:
         """
         Get multiple keys from the collection
 
@@ -584,23 +565,21 @@ class CBCollection(wrapt.ObjectProxy):
         return get_multi_get_result(self.bucket, _Base.get_multi, keys, **kwargs)
 
     @overload
-    def upsert_multi(self,  # type: CBCollection
-                     keys,  # type: Mapping[str,Any]
-                     ttl=0,  # type: int
-                     format=None,  # type: int
-                     durability=None  # type: DurabilityType
-                     ):
-        # type: (...) -> MultiResult[MutationResult]
+    def upsert_multi(self,
+                     keys: Mapping[str,Any],
+                     ttl: int = 0,
+                     format: int = None,
+                     durability: DurabilityType = None
+                     ) -> MultiResult[MutationResult]:
         pass
 
     @_inject_scope_and_collection
     @volatile
-    def upsert_multi(self,      # type: CBCollection
-                     keys,      # type: Dict[str,JSON]
-                     *options,  # type: GetOptions
-                     **kwargs   # type: Any
-                     ):
-        # type: (...) -> MultiResult[MutationResult]
+    def upsert_multi(self,
+                     keys: Dict[str,JSON],
+                     *options: GetOptions,
+                     **kwargs: Any
+                     ) -> MultiResult[MutationResult]:
         """
         Write multiple items to the cluster. Multi version of :meth:`upsert`
 
@@ -643,12 +622,11 @@ class CBCollection(wrapt.ObjectProxy):
 
     @_inject_scope_and_collection
     @volatile
-    def insert_multi(self,      # type: CBCollection
-                     keys,      # type: Dict[str,JSON]
-                     *options,  # type: GetOptions
-                     **kwargs   # type: Any
-                     ):
-        # type: (...) -> MultiResult[MutationResult]
+    def insert_multi(self,
+                     keys: Dict[str,JSON],
+                     *options: GetOptions,
+                     **kwargs: Any
+                     ) -> MultiResult[MutationResult]:
         """
         Insert multiple items into the collection.
 
@@ -661,12 +639,11 @@ class CBCollection(wrapt.ObjectProxy):
 
     @_inject_scope_and_collection
     @volatile
-    def remove_multi(self,      # type: CBCollection
-                     keys,      # type: Iterable[str]
-                     *options,  # type: GetOptions
-                     **kwargs   # type: Any
-                     ):
-        # type: (...) -> MultiResult[MutationResult]
+    def remove_multi(self,
+                     keys: Iterable[str],
+                     *options: GetOptions,
+                     **kwargs: Any
+                     ) -> MultiResult[MutationResult]:
         """
         Remove multiple items from the collection.
 
@@ -691,13 +668,12 @@ class CBCollection(wrapt.ObjectProxy):
     prepend_multi = _wrap_multi_mutation_result(_Base.prepend_multi)
 
     @_inject_scope_and_collection
-    def touch(self,         # type: CBCollection
-              key,          # type: str
-              expiry,       # type: timedelta
-              *options,     # type: TouchOptions
-              **kwargs      # type: Any
-              ):
-        # type: (...) -> MutationResult
+    def touch(self,
+              key: str,
+              expiry: timedelta,
+              *options: TouchOptions,
+              **kwargs: Any
+              ) -> MutationResult:
         """Update a key's expiry time
 
         :param key: The key whose expiry time should be
@@ -717,13 +693,12 @@ class CBCollection(wrapt.ObjectProxy):
         return CoreClient.touch(self.bucket, key, **forward_args(kwargs, *options))
 
     @_mutate_result_and_inject
-    def unlock(self,        # type: CBCollection
-               key,         # type: str
-               cas,         # type: int
-               *options,    # type: UnlockOptions
-               **kwargs     # type: Any
-               ):
-        # type: (...) -> MutationResult
+    def unlock(self,
+               key: str,
+               cas: int,
+               *options: UnlockOptions,
+               **kwargs: Any
+               ) -> MutationResult:
         """Unlock a Locked Key in Couchbase.
 
         This unlocks an item previously locked by :meth:`lock`
@@ -746,12 +721,11 @@ class CBCollection(wrapt.ObjectProxy):
         return CoreClient.unlock(self.bucket, key, **forward_args(kwargs, *options))
 
     @_inject_scope_and_collection
-    def exists(self,      # type: CBCollection
-               key,       # type: str
-               *options,  # type: ExistsOptions
-               **kwargs   # type: Any
-               ):
-        # type: (...) -> ExistsResult
+    def exists(self,
+               key: str,
+               *options: ExistsOptions,
+               **kwargs: Any
+               ) -> ExistsResult:
         """Check to see if a key exists in this collection.
 
         :param key: the id of the document.
@@ -762,13 +736,12 @@ class CBCollection(wrapt.ObjectProxy):
         return ExistsResult(CoreClient.exists(self.bucket, key, **forward_args(kwargs, *options)))
 
     @_mutate_result_and_inject
-    def upsert(self,        # type: CBCollection
-               key,         # type: str
-               value,       # type: Any
-               *options,    # type: UpsertOptions
-               **kwargs     # type: Any
-               ):
-        # type: (...) -> MutationResult
+    def upsert(self,
+               key: str,
+               value: Any,
+               *options: UpsertOptions,
+               **kwargs: Any
+               ) -> MutationResult:
         """Unconditionally store the object in Couchbase.
 
         :param key:
@@ -838,13 +811,12 @@ class CBCollection(wrapt.ObjectProxy):
         return ResultPrecursor(CoreClient.upsert(self.bucket, key, value, **final_options), final_options)
 
     @_mutate_result_and_inject
-    def insert(self,      # type: CBCollection
-               key,       # type: str
-               value,     # type: Any
-               *options,  # type: InsertOptions
-               **kwargs   # type: Any
-               ):
-        # type: (...) -> MutationResult
+    def insert(self,
+               key: str,
+               value: Any,
+               *options: InsertOptions,
+               **kwargs: Any
+               ) -> MutationResult:
         """Store an object in Couchbase unless it already exists.
 
         Follows the same conventions as :meth:`upsert` but the value is
@@ -868,13 +840,12 @@ class CBCollection(wrapt.ObjectProxy):
         return CoreClient.insert(self.bucket, key, value, **final_options)
 
     @_mutate_result_and_inject
-    def replace(self,       # type: CBCollection
-                key,        # type: str
-                value,      # type: Any
-                *options,   # type: ReplaceOptions
-                **kwargs    # type: Any
-                ):
-        # type: (...) -> MutationResult
+    def replace(self,
+                key: str,
+                value: Any,
+                *options: ReplaceOptions,
+                **kwargs: Any
+                ) -> MutationResult:
         """Store an object in Couchbase only if it already exists.
 
            Follows the same conventions as :meth:`upsert`, but the value is
@@ -894,12 +865,11 @@ class CBCollection(wrapt.ObjectProxy):
         return ResultPrecursor(CoreClient.replace(self.bucket, key, value, **final_options), final_options)
 
     @_mutate_result_and_inject
-    def remove(self,        # type: CBCollection
-               key,         # type: str
-               *options,    # type: RemoveOptions
-               **kwargs     # type: Any
-               ):
-        # type: (...) -> MutationResult
+    def remove(self,
+               key: str,
+               *options: RemoveOptions,
+               **kwargs: Any
+               ) -> MutationResult:
         """Remove the key-value entry for a given key in Couchbase.
 
         :param key: A string which is the key to remove. The format and
@@ -934,13 +904,12 @@ class CBCollection(wrapt.ObjectProxy):
         return ResultPrecursor(CoreClient.remove(self.bucket, key, **final_options), final_options)
 
     @_inject_scope_and_collection
-    def lookup_in(self,         # type: CBCollection
-                  key,          # type: str
-                  spec,         # type: LookupInSpec
-                  *options,     # type: LookupInOptions
-                  **kwargs      # type: Any
-                  ):
-        # type: (...) -> LookupInResult
+    def lookup_in(self,
+                  key: str,
+                  spec: LookupInSpec,
+                  *options: LookupInOptions,
+                  **kwargs: Any
+                  ) -> LookupInResult:
 
         """Atomically retrieve one or more paths from a document.
 
@@ -970,13 +939,12 @@ class CBCollection(wrapt.ObjectProxy):
         return LookupInResult(CoreClient.lookup_in(self.bucket, key, spec, **final_options))
 
     @_inject_scope_and_collection
-    def mutate_in(self,  # type: CBCollection
-                  key,  # type: str
-                  spec,  # type: MutateInSpec
-                  *options,  # type: MutateInOptions
-                  **kwargs  # type: Any
-                  ):
-        # type: (...) -> MutateInResult
+    def mutate_in(self,
+                  key: str,
+                  spec: MutateInSpec,
+                  *options: MutateInOptions,
+                  **kwargs: Any
+                  ) -> MutateInResult:
         """Perform multiple atomic modifications within a document.
 
         :param key: The key of the document to modify
@@ -1004,8 +972,7 @@ class CBCollection(wrapt.ObjectProxy):
         final_options = forward_args(kwargs, *options)
         return MutateInResult(CoreClient.mutate_in(self.bucket, key, spec, **final_options), **final_options)
 
-    def binary(self):
-        # type: (...) -> BinaryCollection
+    def binary(self) -> 'BinaryCollection':
         return BinaryCollection(self)
 
     @_dsop(create_type=dict)
@@ -1361,7 +1328,7 @@ class CBCollection(wrapt.ObjectProxy):
 
 class BinaryCollection(object):
     def __init__(self,
-                 collection  # type: CBCollection
+                 collection: CBCollection
                  ):
         self._collection = collection
         # The following are needed for the @_mutate_result_and_inject annotation.
@@ -1378,12 +1345,11 @@ class BinaryCollection(object):
 
     @_mutate_result_and_inject
     def append(self,
-               key,         # type: str
-               value,       # type: Union[str|bytes]
-               *options,    # type: AppendOptions
-               **kwargs     # type: Any
-               ):
-        # type: (...) -> MutationResult
+               key: str,
+               value: Union[str, bytes],
+               *options: AppendOptions,
+               **kwargs: Any
+               ) -> MutationResult:
         """Append a string to an existing value in Couchbase.
 
         Other parameters follow the same conventions as :meth:`upsert`.
@@ -1417,12 +1383,11 @@ class BinaryCollection(object):
 
     @_mutate_result_and_inject
     def prepend(self,
-                key,  # type: str
-                value,  # type: str
-                *options,  # type: PrependOptions
-                **kwargs  # type: Any
-                ):
-        # type: (...) -> MutationResult
+                key: str,
+                value: str,
+                *options: PrependOptions,
+                **kwargs: Any
+                ) -> MutationResult:
         """Prepend a string to an existing value in Couchbase.
 
         :param key: Key for the value to append
@@ -1439,11 +1404,10 @@ class BinaryCollection(object):
 
     @_mutate_result_and_inject
     def increment(self,
-                  key,  # type: str
-                  *options,  # type: IncrementOptions
+                  key: str,
+                  *options: IncrementOptions,
                   **kwargs
-                  ):
-        # type: (...) -> MutationResult
+                  ) -> MutationResult:
         """Increment the numeric value of an item.
 
         This method instructs the server to treat the item stored under
@@ -1487,11 +1451,10 @@ class BinaryCollection(object):
 
     @_mutate_result_and_inject
     def decrement(self,
-                  key,          # type: str
-                  *options,     # type: IncrementOptions
+                  key: str,
+                  *options: IncrementOptions,
                   **kwargs
-                  ):
-        # type: (...) -> MutationResult
+                  ) -> MutationResult:
         """Decrement the numeric value of an item.
 
         This method instructs the server to treat the item stored under
@@ -1565,11 +1528,10 @@ class BinaryCollection(object):
 
 
 class Scope(object):
-    def __init__(self,  # type: Scope
-                 parent,  # type: couchbase.bucket.Bucket
-                 name=None  # type: str
-                 ):
-        # type: (...) -> None
+    def __init__(self,
+                 parent: 'couchbase.bucket.Bucket',
+                 name: str = None
+                 ) -> None:
         """
         Collection scope representation.
         Constructor should only be invoked internally.
@@ -1593,8 +1555,7 @@ class Scope(object):
         """
         return self._name
 
-    def default_collection(self):
-        # type: (...) -> CBCollection
+    def default_collection(self) -> CBCollection:
         """
         Returns the default collection for this bucket.
         :return: A :class:`.Collection` for a collection with the given name.
@@ -1602,15 +1563,13 @@ class Scope(object):
         return self._gen_collection(None)
 
     def _gen_collection(self,
-                        collection_name  # type: Optional[str]
-                        ):
-        # type: (...) -> CBCollection
+                        collection_name: Optional[str]
+                        ) -> CBCollection:
         return CBCollection._cast(self, collection_name)
 
     def collection(self,
-                   collection_name  # type: str
-                   ):
-        # type: (...) -> CBCollection
+                   collection_name: str
+                   ) -> CBCollection:
         """
         Gets the named collection for this bucket.
 
