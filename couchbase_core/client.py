@@ -20,13 +20,7 @@ from datetime import timedelta
 ViewInstance = TypeVar('ViewInstance', bound=View)
 ViewSubType = TypeVar('ViewSubType', bound=Type[ViewInstance])
 
-
-class Client(_Base):
-    _MEMCACHED_NOMULTI = ('lookup_in', 'mutate_in')
-    _MEMCACHED_MULTI = ('upsert', 'get', 'insert',
-                             'replace', 'remove', 'touch',
-                             'unlock')
-
+class BaseClient(_Base):
     @classmethod
     def _memcached_operations(cls):
         return Client._memcached_operations_retarget(cls)
@@ -34,7 +28,6 @@ class Client(_Base):
     @staticmethod
     def _memcached_operations_retarget(cls):
         return cls._MEMCACHED_NOMULTI + cls._MEMCACHED_MULTI
-
     def __init__(self, *args, **kwargs):
         """Connect to a bucket.
 
@@ -145,7 +138,7 @@ class Client(_Base):
         if isinstance(tc, type):
             kwargs['transcoder'] = tc()
 
-        super(Client, self).__init__(*args, **kwargs)
+        super(BaseClient, self).__init__(*args, **kwargs)
         # Enable detailed error codes for network errors:
         self._cntlstr("detailed_errcodes", "1")
 
@@ -177,7 +170,7 @@ class Client(_Base):
     def __repr__(self):
         return ('<{modname}.{cls} bucket={bucket}, nodes={nodes} at 0x{oid:x}>'
                 ).format(modname=__name__, cls=self.__class__.__name__,
-                         nodes=self.server_nodes, bucket=super(Client, self).bucket,
+                         nodes=self.server_nodes, bucket=super(BaseClient, self).bucket,
                          oid=id(self))
 
     def _get_timeout_common(self, op):
@@ -338,6 +331,14 @@ class Client(_Base):
     def closed(self):
         """Returns True if the object has been closed with :meth:`_close`"""
         return self._privflags & _LCB.PYCBC_CONN_F_CLOSED
+
+class Client(BaseClient):
+    _MEMCACHED_NOMULTI = ('lookup_in', 'mutate_in')
+    _MEMCACHED_MULTI = ('upsert', 'get', 'insert',
+                             'replace', 'remove', 'touch',
+                             'unlock')
+
+
 
     def mutate_in(self, key, specs, **kwargs):
         """Perform multiple atomic modifications within a document.
