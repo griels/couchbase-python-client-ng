@@ -129,12 +129,12 @@ class Result(object):
 
     @property
     def error(self):
-        # type: () -> int
+        # type: (...) -> int
         return self._original.rc
 
     @property
     def success(self):
-        # type: () -> bool
+        # type: (...) -> bool
         return not self.error
 
     TracingOutput = Dict[str, Any]
@@ -142,7 +142,7 @@ class Result(object):
     @property
     def _tracing_output(self  # type: Result
                         ):
-        # type: () -> TracingOutput
+        # type: (...) -> TracingOutput
         return self._original.tracing_output
 
     __async_map = {}
