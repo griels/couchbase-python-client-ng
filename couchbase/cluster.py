@@ -1,5 +1,6 @@
 import asyncio
 
+from couchbase_core.client import BaseClient
 from couchbase_core.asynchronous.client import AsyncClientMixin
 from couchbase.mutation_state import MutationState
 from couchbase.management.queries import QueryIndexManager
@@ -457,7 +458,7 @@ class ClusterOptions(dict):
         return opts
 
 
-class Cluster(CoreClient):
+class Cluster(BaseClient):
 
     @internal
     def __init__(self,
