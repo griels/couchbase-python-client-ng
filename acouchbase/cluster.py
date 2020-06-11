@@ -2,10 +2,11 @@ from asyncio import AbstractEventLoop
 
 from couchbase_core.supportability import internal
 
-from couchbase.asynchronous import wrap_async, async_iterable
+from couchbase.asynchronous import async_kv_operation, wrap_async, async_iterable, get_return_type
+from couchbase.result import ResultDeriv, Result, GetResult
+from couchbase.result import AsyncResult
 import logging
 import traceback
-from couchbase.result import AsyncResult
 
 try:
     import asyncio
@@ -23,6 +24,8 @@ from typing import *
 from couchbase.cluster import AsyncCluster as V3AsyncCluster
 from couchbase_core.asynchronous.client import AsyncClientMixin
 from six import with_metaclass
+import functools
+import boltons.funcutils
 
 T = TypeVar('T', bound=AsyncClientMixin)
 
@@ -79,7 +82,7 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
                 bases,  # type: Bases
                 namespace  # type: Dict[str, Any]
                 ):
-        # type: (...) -> Type[AsyncCBCollection]
+        # type: (...) -> Type[BaseAsyncCBCollection]
         namespace=dict(**namespace)
         namespace.update(bases[0]._gen_memd_wrappers(AIOClientMixinType._meth_factory))
         Final=super(AIOClientMixinType, cls).__new__(cls, name, (AIOClientMixinBase,)+bases, namespace)
@@ -110,7 +113,9 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
             return ft
 
         meth_annotations = get_type_hints(meth)
+
         try:
+            # noinspection PyProtectedMember
             fresh_ann=wrapped_raw.__annotations__
         except:
             fresh_ann=dict()
