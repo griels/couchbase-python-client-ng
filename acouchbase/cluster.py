@@ -136,7 +136,7 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
         except Exception as e:
             logging.error("Prolbmes {}".format(traceback.format_exc()))
         logging.error("Wrapped {} as {}".format(meth, ret))
-        return ret#return async_kv_operation(meth, )(ret)
+        return ret
 
 
 class Collection(with_metaclass(AIOClientMixinType, BaseAsyncCBCollection)):
