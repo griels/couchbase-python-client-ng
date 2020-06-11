@@ -79,10 +79,9 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
                 namespace  # type: Dict[str, Any]
                 ):
         # type: (...) -> Type[AsyncCBCollection]
-        bases=(AIOClientMixinBase,)+bases
-        Final=super(AIOClientMixinType, cls).__new__(cls, name, bases, namespace)
-        for k, method in Final._gen_memd_wrappers(AIOClientMixinType._meth_factory).items():
-            setattr(Final, k, method)
+        namespace=dict(**namespace)
+        namespace.update(bases[0]._gen_memd_wrappers(AIOClientMixinType._meth_factory))
+        Final=super(AIOClientMixinType, cls).__new__(cls, name, (AIOClientMixinBase,)+bases, namespace)
         return Final
 
     @staticmethod
