@@ -3,7 +3,7 @@ from asyncio import AbstractEventLoop
 from couchbase_core.supportability import internal
 
 from couchbase.asynchronous import async_kv_operation, wrap_async, async_iterable
-from couchbase.result import ResultDeriv, Result
+from couchbase.result import ResultDeriv, Result, GetResult
 from couchbase.result import AsyncResult
 
 try:
@@ -84,8 +84,9 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
     @staticmethod
     def _meth_factory(meth, _):
         import functools
-
-        @functools.wraps(meth)
+        import boltons.funcutils
+        #, assigned=set(functools.WRAPPER_ASSIGNMENTS)-{'__annotations__'},
+                         #updated=set(functools.WRAPPER_UPDATES).union({'__annotations__'}))
         def ret(self,  # type: AsyncCBCollection
                 *args,  # type: Any
                 **kwargs  # type: Any
@@ -108,13 +109,36 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
 
         from couchbase.asynchronous import get_return_type
         # noinspection PyProtectedMember
+
+        import logging
+        import traceback
+        try:
+            ret=boltons.funcutils.wraps(meth)(ret)
+                                         #meth)
+#                                         assigned=list(set(functools.WRAPPER_ASSIGNMENTS)-{'__annotations__'}),
+#                                         updated=list(set(functools.WRAPPER_UPDATES).union({'__annotations__'})))
+        except Exception as e:
+            logging.error("Problesm {}".format(traceback.format_exc()))
+            try:
+                ret=functools.wraps(meth)(ret)
+            except:
+                pass
+
         try:
             sync_rtype = get_return_type(meth)
             rtype=sync_rtype._async()
         except Exception as e:
             rtype = AsyncResult
-
-        return async_kv_operation(meth, 'asyncio.Future[{}]'.format(rtype.__name__))(ret)
+        try:
+            fresh_ann=ret.__annotations__#dict(**ret.__annotations__)
+            #ret.__doc__="flibble"
+            fresh_ann['return']='asyncio.Future[{}]'.format(rtype.__name__)
+            ret.__qualname__='AsyncCBCollection.{}'.format(ret.__name__)
+            setattr(ret,'__annotations__',fresh_ann)
+        except Exception as e:
+            logging.error("Prolbmes {}".format(traceback.format_exc()))
+        logging.error("Wrapped {} as {}".format(meth, ret))
+        return ret#return async_kv_operation(meth, )(ret)
 
 
 class Collection(AIOClientMixinType.gen_client(BaseAsyncCBCollection)):
@@ -124,7 +148,9 @@ class Collection(AIOClientMixinType.gen_client(BaseAsyncCBCollection)):
     def __deepcopy__(self, memo):
         pass
 
-
+    #@async_kv_operation(BaseAsyncCBCollection.get, 'asyncio.Future[GetResult]')
+    #def get(self, *args, **kwargs):
+    #    return AIOClientMixinType._meth_factory(BaseAsyncCBCollection.get,'get')(self, *args, **kwargs)
 AsyncCBCollection = Collection
 
 
