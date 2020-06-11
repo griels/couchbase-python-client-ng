@@ -95,7 +95,7 @@ class AsyncDecorator(object):
             except:
                 pass
         import copy
-        wrapper.__annotations__ =copy.deepcopy(type_annotations)
+        wrapper.__annotations__ =copy.copy(type_annotations)
 
         wrapper.__annotations__['return'] = self.rtype
         wrapper.__annotations__.update(**kwargs)
