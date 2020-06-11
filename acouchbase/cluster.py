@@ -114,8 +114,7 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
         except Exception as e:
             rtype = AsyncResult
 
-        ret.__annotations__['return'] = 'asyncio.Future[{}]'.format(rtype.__name__)
-        return async_kv_operation(meth)(ret)
+        return async_kv_operation(meth, 'asyncio.Future[{}]'.format(rtype.__name__))(ret)
 
 
 class Collection(AIOClientMixinType.gen_client(BaseAsyncCBCollection)):

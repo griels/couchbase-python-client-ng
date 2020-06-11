@@ -65,46 +65,59 @@ def get_return_type_str(method):
 
 
 from couchbase.result import *
+
+
 def get_return_type(func):
-    rtype_str=get_return_type_str(func)
-    co_obj=compile("{}".format(rtype_str), '<string>', 'eval')
+    rtype_str = get_return_type_str(func)
+    co_obj = compile("{}".format(rtype_str), '<string>', 'eval')
     result = eval(co_obj, globals(), locals())
     return result
 
-class AsyncDecorator(functools.partial):
+
+class AsyncDecorator(object):
     @staticmethod
-    def __new__(cls, method, *args, **kwargs):
-        return super(AsyncDecorator, cls).__new__(cls, method, *args, **kwargs)
+    def __new__(cls, method, rtype, *args, **kwargs):
+        result = super(AsyncDecorator, cls).__new__(cls, *args, **kwargs)
+        result.func = method
+        result.rtype = rtype
+        return result
+
+    def update_wrapper(self, wrapper, **kwargs):
+        type_annotations = get_type_hints(self.func)
+        import copy
+        wrapper.__annotations__ = copy.deepcopy(type_annotations)
+        wrapper.__annotations__['return'] = self.rtype
+        wrapper.__annotations__.update(**kwargs)
+        return wrapper
 
 
 # noinspection PyPep8Naming
 class async_iterable(AsyncDecorator):
     @staticmethod
     def __new__(cls, method,  # type: iterable_producer
-                 default_iterator  # type: Type[IterableClass]
-                 ):
-        result=super(async_iterable, cls).__new__(cls, method)
-        result._default_iterator=default_iterator
+                default_iterator  # type: Type[IterableClass]
+                ):
+        result = super(async_iterable, cls).__new__(cls, method, default_iterator)
         return result
 
     def __call__(self,  # type: async_iterable
                  func,  # type: iterable_producer
                  *args, **kwargs):
         # type: (...) -> iterable_producer
-        def_iterator=self._default_iterator
+        def_iterator = self.rtype
+
         @functools.wraps(self.func)
         def wrapper(self, *args, **kwargs):
             return func(self, *args, itercls=kwargs.pop('itercls', def_iterator), **kwargs)
-        wrapper.__annotations__['itercls'] = Type[self._default_iterator]
-        wrapper.__annotations__['return'] = self._default_iterator
-        return wrapper
+
+        return self.update_wrapper(wrapper, itercls=Type[self.rtype])
 
 
 # noinspection PyPep8Naming
 class async_kv_operation(AsyncDecorator):
     @staticmethod
-    def __new__(cls, method):
-        return super(async_kv_operation, cls).__new__(cls, method)
+    def __new__(cls, method, rtype):
+        return super(async_kv_operation, cls).__new__(cls, method, rtype)
 
     def __call__(self,  # type: async_iterable
                  func, *args, **kwargs):
@@ -112,7 +125,7 @@ class async_kv_operation(AsyncDecorator):
         def wrapper(self, *args, **kwargs):
             return func(self, *args, **kwargs)
 
-        return wrapper
+        return self.update_wrapper(wrapper)
 
 
 def wrap_async(method,  # type: iterable_producer
