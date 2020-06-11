@@ -14,7 +14,7 @@ from couchbase.exceptions import NotSupportedException, DocumentNotFoundExceptio
     PathExistsException, DocumentExistsException
 from couchbase_core import JSON
 from couchbase_core.asynchronous.client import AsyncClientMixin
-from couchbase_core.client import Client as CoreClient
+from couchbase_core.client import Client as CoreClient, BaseClient
 from couchbase_core.supportability import volatile, internal
 from couchbase.result import MultiResult
 from .options import AcceptableInts
@@ -1615,7 +1615,7 @@ class Scope(object):
         return self._gen_collection(collection_name)
 
 
-class CoreClientDatastructureWrap(CoreClient):
+class CoreClientDatastructureWrap(BaseClient):
     def _wrap_dsop(self, sdres, has_value=False, **kwargs):
         return getattr(CoreClient._wrap_dsop(self, sdres, has_value), 'value')
 
