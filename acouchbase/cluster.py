@@ -124,15 +124,18 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
                     rtype=sync_rtype._async()
                 except Exception as e:
                     rtype = AsyncResult
-                fresh_ann=dict(**getattr(ret,'__annotations__'))#{})#dict(**ret.__annotations__)
+                orig_ann=getattr(ret,'__annotations__',None)
+                import copy
+                fresh_ann=copy.copy(orig_ann)#dict(**getattr(ret,'__annotations__'))#{})#dict(**ret.__annotations__)
                 #ret.__doc__="flibble"
+                ret.__doc__="The asyncio version of {}. {}".format(getattr(meth,'__qualname__',meth.__name__), meth.__doc__)
                 fresh_ann['return']='asyncio.Future[{}]'.format(rtype.__name__)
                 ret.__qualname__='AsyncCBCollection.{}'.format(ret.__name__)
                 setattr(ret,'__annotations__',fresh_ann)
             except Exception as e:
                 logging.error("Prolbmes {}".format(traceback.format_exc()))
         logging.error("Wrapped {} as {}".format(meth, ret))
-        return ret#return async_kv_operation(meth, )(ret)
+        return ret
 
 
 class Collection(with_metaclass(AIOClientMixinType, BaseAsyncCBCollection)):
