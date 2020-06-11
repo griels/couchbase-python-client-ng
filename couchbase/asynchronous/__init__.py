@@ -86,16 +86,16 @@ class AsyncDecorator(object):
     def update_wrapper(self, wrapper, **kwargs):
         import copy
         type_annotations = getattr(wrapper, '__annotations__', {})
-        if type_annotations:
+        if not type_annotations:
             try:
                 #type_annotations = th.get_all_type_hints(self.func, self.func.__name__)
                 type_annotations = get_type_hints(wrapper)
                 #get_type_hints(self.func)
                 logging.error("type annotations for {} wrapper {} : {}".format(self.func, wrapper, type_annotations))
-            except:
+            except Exception as e:
                 pass
         import copy
-        wrapper.__annotations__ =copy.copy(type_annotations)
+        #wrapper.__annotations__ = dict(**type_annotations)
 
         wrapper.__annotations__['return'] = self.rtype
         wrapper.__annotations__.update(**kwargs)
