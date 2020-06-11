@@ -2,8 +2,9 @@ from asyncio import AbstractEventLoop
 
 from couchbase_core.supportability import internal
 
-from couchbase.asynchronous import async_kv_operation, wrap_async, async_iterable
-from couchbase.result import ResultDeriv, Result
+from couchbase.asynchronous import wrap_async, async_iterable
+import logging
+import traceback
 from couchbase.result import AsyncResult
 
 try:
@@ -84,8 +85,7 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
     @staticmethod
     def _meth_factory(meth, _):
         import functools
-
-        @functools.wraps(meth)
+        import boltons.funcutils
         def ret(self,  # type: AsyncCBCollection
                 *args,  # type: Any
                 **kwargs  # type: Any
@@ -108,13 +108,30 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
 
         from couchbase.asynchronous import get_return_type
         # noinspection PyProtectedMember
+
+        try:
+            ret=boltons.funcutils.wraps(meth)(ret)
+        except Exception as e:
+            logging.error("Problesm {}".format(traceback.format_exc()))
+            try:
+                ret=functools.wraps(meth)(ret)
+            except:
+                pass
+
         try:
             sync_rtype = get_return_type(meth)
             rtype=sync_rtype._async()
         except Exception as e:
             rtype = AsyncResult
-
-        return async_kv_operation(meth, 'asyncio.Future[{}]'.format(rtype.__name__))(ret)
+        try:
+            fresh_ann=ret.__annotations__
+            fresh_ann['return']='asyncio.Future[{}]'.format(rtype.__name__)
+            ret.__qualname__='AsyncCBCollection.{}'.format(ret.__name__)
+            setattr(ret,'__annotations__',fresh_ann)
+        except Exception as e:
+            logging.error("Prolbmes {}".format(traceback.format_exc()))
+        logging.error("Wrapped {} as {}".format(meth, ret))
+        return ret#return async_kv_operation(meth, )(ret)
 
 
 class Collection(AIOClientMixinType.gen_client(BaseAsyncCBCollection)):
@@ -123,7 +140,6 @@ class Collection(AIOClientMixinType.gen_client(BaseAsyncCBCollection)):
 
     def __deepcopy__(self, memo):
         pass
-
 
 AsyncCBCollection = Collection
 
