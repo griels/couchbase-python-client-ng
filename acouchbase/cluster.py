@@ -2,7 +2,7 @@ from asyncio import AbstractEventLoop
 
 from couchbase_core.supportability import internal
 
-from couchbase.asynchronous import async_kv_operation, wrap_async, async_iterable, get_return_type
+from couchbase.asynchronous import async_kv_operation, wrap_async, async_iterable, get_return_type, wrap_async_kv
 from couchbase.result import ResultDeriv, Result, GetResult
 from couchbase.result import AsyncResult
 import logging
@@ -74,10 +74,10 @@ class AIOClientMixinBase(object):
 
 
 Bases = TypeVar('Bases', bound=Tuple[Type,...])
-
+ClientType = TypeVar('ClientType', bound=AsyncClientMixin)
 
 class AIOClientMixinType(type(AIOClientMixinBase)):
-    def __new__(cls,  # type: Type[AIOClientMixinType]
+    def __new__(cls,  # type: Type[ClientType]
                 name,  # type: str
                 bases,  # type: Bases
                 namespace  # type: Dict[str, Any]
@@ -136,12 +136,38 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
             fresh_ann['return']='asyncio.Future[{}]'.format(rtype.__name__)
             ret.__qualname__='AsyncCBCollection.{}'.format(ret.__name__)
             setattr(ret,'__annotations__',fresh_ann)
+            # noinspection PyProtectedMember
+            fresh = boltons.funcutils.FunctionBuilder.from_func(meth)
+            try:
+                fresh.remove_arg('itercls')
+            except ValueError:
+                pass
+            ##fresh.add_arg('bogus', 'test', kwonly=True)
+            method_with_itercls = fresh.get_func()#with_dict=dict(__annotations__=dict(**meth.__annotations__)))
+            #method_with_itercls.__annotations__['bogus'] = str
+            method_with_itercls.__annotations__['return'] = rtype
+            wrapper = boltons.funcutils.update_wrapper(wrapper_raw, method_with_itercls)
+            wrapper.__doc__="The asyncio version of {}. {}".format(getattr(meth,'__qualname__',meth.__name__), meth.__doc__)
+            wrapper.__annotations__ = meth.__annotations__
         except Exception as e:
-            logging.error("Prolbmes {}".format(traceback.format_exc()))
-        logging.error("Wrapped {} as {}".format(meth, ret))
-        return ret
+            logging.error(traceback.format_exc())
+            return wrapped_raw
+        return wrapper
+        # return wrap_async_kv(meth, ret, rtype)
+        # import copy
+        # fresh = boltons.funcutils.FunctionBuilder.from_func(ret)
+        # ret = fresh.get_func()
+        # orig_ann=ret.__annotations__#get_type_hints(meth)
+        # fresh_ann=orig_ann#copy.copy(orig_ann)#copy.copy(orig_ann)#dict(**getattr(ret,'__annotations__'))#{})#dict(**ret.__annotations__)
+        # # #ret.__doc__="flibble"
+        # fresh_ann['return']='asyncio.Future[{}]'.format(rtype.__name__)
+        # # ret.__qualname__='AsyncCBCollection.{}'.format(ret.__name__)
+        # setattr(ret,'__annotations__',fresh_ann)
+        # #
+        # # logging.error("Wrapped {} as {}, annotations {}".format(meth, ret, fresh_ann))
+        # return ret
 
-
+from couchbase.collection import Collection as CBCollection
 class Collection(with_metaclass(AIOClientMixinType, BaseAsyncCBCollection)):
     def __copy__(self):
         pass
