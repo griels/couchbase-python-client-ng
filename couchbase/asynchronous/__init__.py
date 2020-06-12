@@ -138,7 +138,17 @@ class async_kv_operation(AsyncDecorator):
 
         return self.update_wrapper(wrapper)
 
+def wrap_async_kv(method, wrapper_raw,  # type: iterable_producer
+               rtype):
+    # type: (...) -> iterable_producer
 
+
+    fresh = boltons.funcutils.FunctionBuilder.from_func(method)
+    method_with_itercls = fresh.get_func()
+    method_with_itercls.__annotations__['return'] = rtype
+    wrapper = boltons.funcutils.update_wrapper(wrapper_raw, method_with_itercls)
+    wrapper.__annotations__ = method.__annotations__
+    return wrapper
 def wrap_async(method,  # type: iterable_producer
                default_iterator  # type: Type[IterableClass]
                ):
@@ -161,10 +171,11 @@ def wrap_async(method,  # type: iterable_producer
     method_with_itercls.__annotations__['itercls'] = Type[default_iterator]
     method_with_itercls.__annotations__['return'] = default_iterator
     wrapper = boltons.funcutils.update_wrapper(wrapper_raw, method_with_itercls)
-    wrapper.__annotations__ = method.__annotations__
+    wrapper.__annotations__['return']=default_iterator
+    #wrapper.__annotations__ = method.__annotations__
     wrapper.__doc__ += """
     :param itercls: type of the iterable class to be returned, :class:`{}` by default""".format(
-        default_iterator.__name__)
+        getattr(default_iterator,'__name__',str(default_iterator)))
     return wrapper
 
 
