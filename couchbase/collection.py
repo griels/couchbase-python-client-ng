@@ -342,7 +342,10 @@ class CBCollection(wrapt.ObjectProxy):
                 if not name.startswith('_'):
                     setattr(cls, name, _inject_scope_and_collection(meth))
             cls.coll_wrapped = True
-
+        try:
+            del cls.view_query
+        except:
+            pass
     def _inject_scope_collection_kwargs(self, kwargs):
         # NOTE: BinaryCollection, for instance, contains a collection and has an interface
         # which uses this annotation.  So -- anything this depends on must be supported by
@@ -373,6 +376,10 @@ class CBCollection(wrapt.ObjectProxy):
         assert issubclass(type(parent_scope.bucket), CoreClientDatastructureWrap)
         self._wrap_collections_class()
         wrapt.ObjectProxy.__init__(self, parent_scope.bucket)
+        try:
+            del self.view_query
+        except:
+            pass
         self._self_scope = parent_scope  # type: Scope
         self._self_name = name  # type: Optional[str]
         self._self_true_collections = name and parent_scope
