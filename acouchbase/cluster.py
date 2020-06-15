@@ -109,14 +109,7 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
         from couchbase.asynchronous import get_return_type
         # noinspection PyProtectedMember
 
-        try:
-            ret=boltons.funcutils.wraps(meth)(ret)
-        except Exception as e:
-            logging.error("Problesm {}".format(traceback.format_exc()))
-            try:
-                ret=functools.wraps(meth)(ret)
-            except:
-                pass
+        ret=functools.wraps(meth,assigned=tuple(set(functools.WRAPPER_ASSIGNMENTS)-{'__annotations__'}))(ret)
 
         try:
             sync_rtype = get_return_type(meth)
@@ -125,6 +118,7 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
             rtype = AsyncResult
         try:
             fresh_ann=ret.__annotations__
+            fresh_ann.update(meth.__annotations__)
             fresh_ann['return']='asyncio.Future[{}]'.format(rtype.__name__)
             ret.__qualname__='AsyncCBCollection.{}'.format(ret.__name__)
             setattr(ret,'__annotations__',fresh_ann)
