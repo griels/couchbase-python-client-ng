@@ -86,7 +86,7 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
     def _meth_factory(meth, _):
         import functools
         import boltons.funcutils
-        def ret(self,  # type: AsyncCBCollection
+        def wrapped_raw(self,  # type: AsyncCBCollection
                 *args,  # type: Any
                 **kwargs  # type: Any
                 ):
@@ -106,10 +106,16 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
             rv.set_callbacks(on_ok, on_err)
             return ft
 
+        try:
+            fresh_ann=wrapped_raw.__annotations__
+            fresh_ann.update(meth.__annotations__)
+        except:
+            pass
+
         from couchbase.asynchronous import get_return_type
         # noinspection PyProtectedMember
 
-        ret=functools.wraps(meth,assigned=tuple(set(functools.WRAPPER_ASSIGNMENTS)-{'__annotations__'}))(ret)
+        ret=functools.wraps(meth,assigned=tuple(set(functools.WRAPPER_ASSIGNMENTS)-{'__annotations__'}))(wrapped_raw)
 
         try:
             sync_rtype = get_return_type(meth)
@@ -117,8 +123,7 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
         except Exception as e:
             rtype = AsyncResult
         try:
-            fresh_ann=ret.__annotations__
-            fresh_ann.update(meth.__annotations__)
+            fresh_ann.update(**meth.__annotations__)
             fresh_ann['return']='asyncio.Future[{}]'.format(rtype.__name__)
             ret.__qualname__='AsyncCBCollection.{}'.format(ret.__name__)
             setattr(ret,'__annotations__',fresh_ann)
