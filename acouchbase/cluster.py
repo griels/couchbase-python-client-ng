@@ -109,12 +109,13 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
             rv.set_callbacks(on_ok, on_err)
             return ft
 
+        meth_annotations = get_type_hints(meth)
         try:
             fresh_ann=wrapped_raw.__annotations__
-            fresh_ann.update(meth.__annotations__)
         except:
-            pass
+            fresh_ann=dict()
 
+        fresh_ann.update(meth_annotations)
         from couchbase.asynchronous import get_return_type
         # noinspection PyProtectedMember
 
@@ -126,7 +127,7 @@ class AIOClientMixinType(type(AIOClientMixinBase)):
         except Exception as e:
             rtype = AsyncResult
         try:
-            fresh_ann.update(**meth.__annotations__)
+            #fresh_ann.update(**meth.__annotations__)
             fresh_ann['return']='asyncio.Future[{}]'.format(rtype.__name__)
             ret.__qualname__='AsyncCBCollection.{}'.format(ret.__name__)
             setattr(ret,'__annotations__',fresh_ann)
