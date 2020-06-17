@@ -72,7 +72,7 @@ class CMakeBuild(cbuild_config.CBuildCommon):
 
     @staticmethod
     def requires():
-        return "" if CMakeBuild.check_for_cmake() else ["cmake"]
+        return ["PyGithub"] +([] if CMakeBuild.check_for_cmake() else ["cmake"])
 
     def prep_build(self, ext):
         if not CMakeBuild.hasbuilt:
@@ -184,33 +184,10 @@ class CMakeBuild(cbuild_config.CBuildCommon):
 def gen_cmake_build(extoptions, pkgdata):
     from cmake_build import CMakeExtension, CMakeBuild
 
-    class LazyCommandClass(dict):
-        """
-        Lazy command class that defers operations requiring given cmdclass until
-        they've actually been downloaded and installed by setup_requires.
-        """
-        def __init__(self, cmdclass_real):
-            self.cmdclass_real=cmdclass_real
-
-        def __contains__(self, key):
-            return (
-                    key == 'build_ext'
-                    or super(LazyCommandClass, self).__contains__(key)
-            )
-
-        def __setitem__(self, key, value):
-            if key == 'build_ext':
-                raise AssertionError("build_ext overridden!")
-            super(LazyCommandClass, self).__setitem__(key, value)
-
-        def __getitem__(self, key):
-            if key != 'build_ext':
-                return super(LazyCommandClass, self).__getitem__(key)
-            return self.cmdclass_real
 
     CMakeBuild.hybrid = build_type in ['CMAKE_HYBRID']
     CMakeBuild.setup_build_info(extoptions, pkgdata)
     e_mods = [CMakeExtension(str(couchbase_core+'._libcouchbase'), '', **extoptions)]
-    return e_mods, CMakeBuild.requires(), LazyCommandClass(CMakeBuild)
+    return e_mods, CMakeBuild.requires(), cbuild_config.LazyCommandClass(CMakeBuild)
 
 

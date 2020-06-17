@@ -83,16 +83,60 @@ ssl_info = dict(major=ssl_major,
                 python_version=sys.version_info,
                 raw_version_info=".".join(map(str,ssl.OPENSSL_VERSION_INFO[:-2])))
 
+import datetime
+import time
+import traceback
 
 class DownloadableRepo(object):
     def __init__(self,
                  repository_name,  # type: str
-                 gh_client=None  # type: github.Github
+                 gh_client=None,  # type: github.Github
+                 timeout=None  # type: datetime.timedelta
                  ):
 
         import github
-        gh_client = gh_client or github.Github(login_or_token=os.getenv("PYCBC_GH_TOKEN_ENCRYPTED"))
-        self._ghrepo = gh_client.get_repo(repository_name)
+        self._deadline = datetime.datetime.now().__add__(timeout or datetime.timedelta(minutes=1))
+        self._last_op = None  # type: datetime.datetime
+        self.__rate_limit = None
+        self._gh_client = gh_client or github.Github(login_or_token=os.getenv("PYCBC_GH_TOKEN_ENCRYPTED"))
+        self._ghrepo = self.throttle_command(self._gh_client.get_repo, repository_name)
+
+    @property
+    def _rate_limit(self):
+        if not self.__rate_limit or self.__rate_limit.core.reset>datetime.datetime.now():
+            self._last_op = None
+            self.__rate_limit=self._gh_client.get_rate_limit()
+        return self.__rate_limit
+
+    @property
+    def min_wait(self):
+        return datetime.timedelta(seconds=60*60/self._rate_limit.core.limit)
+
+    @property
+    def op_wait_time(self):
+        if not self._last_op or self._last_op+self.min_wait>datetime.datetime.now():
+            return datetime.timedelta(seconds=0)
+        return self._last_op+self.min_wait-datetime.datetime.now()
+
+    def throttle_command(self, cmd, *args, **kwargs):
+        from github.GithubException import RateLimitExceededException
+        while True:
+            if not self._rate_limit.core.remaining:
+                remainder=self._rate_limit.core.reset-datetime.datetime.now()
+                if self._rate_limit.core.reset>self._deadline:
+                    raise TimeoutError("Can't download all files in time, reset is {} away, but deadline is {} away".format(remainder,self._deadline-datetime.datetime.now()))
+            else:
+                remainder = self.op_wait_time
+
+            if remainder:
+                logging.warning("Rate limit exceeded, waiting {}".format(remainder))
+                time.sleep(remainder.seconds)
+
+            self._last_op = datetime.datetime.now()
+            try:
+                return cmd(*args, **kwargs)
+            except RateLimitExceededException as e:
+                logging.warning(traceback.format_exc())
 
     def get_sha_for_tag(self,  # type: github.Repository
                         tag  # type: str
@@ -108,23 +152,26 @@ class DownloadableRepo(object):
         y = next(iter({x for x in self._ghrepo.get_tags() if x.name == tag}), None)
         return y.commit.sha if y else None
 
+
     def download_directory(self, sha, server_path, dest):
         """
         Download all contents at server_path with commit tag sha in
         the repository.
         """
         from github.GithubException import GithubException
-        contents = self._ghrepo.get_dir_contents(server_path, ref=sha)
+        contents = self.throttle_command(self._ghrepo.get_dir_contents, server_path, ref=sha)
+        os.makedirs(dest,exist_ok=True)
 
         for content in contents:
             print("Processing %s" % content.path)
             if content.type == 'dir':
-                self.download_directory(sha, content.path)
+                self.download_directory(sha, content.path, os.path.join(dest, content.path))
             else:
                 try:
                     path = content.path
-                    file_content = self._ghrepo.get_contents(path, ref=sha)
-                    with open(content.name, "wb") as file_out:
+
+                    file_content = self.throttle_command(self._ghrepo.get_contents, path, ref=sha)
+                    with open(os.path.join(dest, content.name), "wb") as file_out:
                         file_out.write(file_content.decoded_content)
                 except (GithubException, IOError) as exc:
                     logging.error('Error processing %s: %s', content.path, exc)
@@ -160,7 +207,7 @@ class Windows(object):
 
         def get_arch_content(self, dest, rel_path):
             if self.sha:
-                self.repo.download_directory(self.sha, posixpath.join(self.arch.value(), *rel_path), dest)
+                self.repo.download_directory(self.sha, posixpath.join(self.arch.value, *rel_path), dest)
 
     @classmethod
     def get_arch(cls):
@@ -168,7 +215,7 @@ class Windows(object):
 
     @classmethod
     def get_openssl(cls):
-        return Windows.OpenSSL(cls.get_arch())
+        return cls.OpenSSL(cls.get_arch())
 
 
 def get_system():
