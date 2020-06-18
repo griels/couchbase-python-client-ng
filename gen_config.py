@@ -14,6 +14,7 @@ import platform
 import posixpath
 from enum import Enum
 import argparse
+import urllib.request
 
 curdir = pathlib.Path(__file__).parent
 
@@ -127,12 +128,12 @@ class DownloadableRepo(object):
                     raise TimeoutError("Can't download all files in time, reset is {} away, but deadline is {} away".format(remainder,self._deadline-datetime.datetime.now()))
             else:
                 remainder = self.op_wait_time
-
+            logging.error("remainder = {}".format(remainder))
             if remainder:
                 logging.warning("Rate limit exceeded, waiting {}".format(remainder))
                 time.sleep(remainder.seconds)
-
             self._last_op = datetime.datetime.now()
+            assert(self._last_op)
             try:
                 return cmd(*args, **kwargs)
             except RateLimitExceededException as e:
@@ -161,20 +162,13 @@ class DownloadableRepo(object):
         from github.GithubException import GithubException
         contents = self.throttle_command(self._ghrepo.get_dir_contents, server_path, ref=sha)
         os.makedirs(dest,exist_ok=True)
-
+#        contents.get_dir_contents()[0].download_url
         for content in contents:
             print("Processing %s" % content.path)
             if content.type == 'dir':
                 self.download_directory(sha, content.path, os.path.join(dest, content.path))
             else:
-                try:
-                    path = content.path
-
-                    file_content = self.throttle_command(self._ghrepo.get_contents, path, ref=sha)
-                    with open(os.path.join(dest, content.name), "wb") as file_out:
-                        file_out.write(file_content.decoded_content)
-                except (GithubException, IOError) as exc:
-                    logging.error('Error processing %s: %s', content.path, exc)
+                urllib.request.urlretrieve(content.download_url, os.path.join(dest, content.name))
 
 
 class AbstractOpenSSL(abc.ABC):
