@@ -51,12 +51,11 @@ execute_process(
 file(READ ${OPENSSLCFG_FILE} OPENSSLCFG)
 sbeParseJson(openssl_cfg OPENSSLCFG)
 message("Need to find OpenSSL ${openssl_cfg.major} from\n${OPENSSLCFG}")
-if (NOT OPENSSL_ROOT_DIR)
-    set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
-endif()
+
+include(ExternalProject)
+set(PYCBC_USE_CONAN TRUE)
 function(get_ssl)
-    #find_program(CONAN conan)
-    if (OPENSSL_ROOT_DIR)
+    if (PYCBC_USE_CONAN)
         # Download automatically, you can also just copy the conan.cmake file
         if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
             message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
@@ -64,24 +63,16 @@ function(get_ssl)
                     "${CMAKE_BINARY_DIR}/conan.cmake")
         endif()
         include(${CMAKE_BINARY_DIR}/conan.cmake)
-
-
-        message("GOT CONAN COMMAND ${CONAN_COMMAND}")
-        #execute_process(
-        #        COMMAND     ${PYTHON_EXECUTABLE} -m conans.conan install openssl/${openssl_cfg.major}@  --generator cmake --build=missing  --install-folder ${openssl_cfg.ssl_root_dir} --options:build Pkg:shared=True)
+        conan_add_remote(NAME bintray
+                URL https://api.bintray.com/conan/conan-community/conan )
         conan_cmake_run(REQUIRES openssl/${openssl_cfg.major}
                 BASIC_SETUP
                 BUILD missing
                 INSTALL_FOLDER ${openssl_cfg.ssl_root_dir}
                 OPTIONS Pkg:shared=True)
-
-        include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake OPTIONAL)
+        include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake)
         conan_basic_setup()
-        file(GLOB  OPENSSL_FILES ${CONAN_OPENSSL_ROOT}/*)
-        file(COPY ${OPENSSL_FILES}
-             DESTINATION ${OPENSSL_ROOT_DIR})
-        #set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
-        set(OPENSSL_LIB CONAN_PKG::openssl)
+        set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
         message("Set OPENSSL_ROOT_DIR to ${OPENSSL_ROOT_DIR}")
     endif()
     if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
@@ -91,11 +82,11 @@ function(get_ssl)
         MESSAGE("++ 32 bit architecture")
         set(PKGARCH "win32")
     endif()
-#[[
+
     if (WIN32)
-        #if (NOT OPENSSL_ROOT_DIR)
-        #    set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
-        #endif()
+        if (NOT OPENSSL_ROOT_DIR)
+            set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
+        endif()
         if (NOT EXISTS ${OPENSSL_ROOT_DIR})
             message("OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR} does not exist, trying to find subdir matching")
             find_package(
@@ -103,17 +94,17 @@ function(get_ssl)
                     PATHS ${OPENSSL_ROOT_DIR}
             )
         endif()
-        if (NOT OpenSSL_DIR OR NOT EXISTS ${OpenSSL_DIR})
+        #[[if (NOT OpenSSL_DIR OR NOT EXISTS ${OpenSSL_DIR})
             message("Can't find relevant OpenSSL, downloading instead")
             execute_process(
                     COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py
             )
 
-#[=[
+
             find_package(
                     OpenSSL
                     PATHS ${OPENSSL_ROOT_DIR}
-            )]=]
+            )
             message("OpenSSL_DIR is now ${OpenSSL_DIR}")
 
             if (NOT OpenSSL_DIR)
@@ -126,9 +117,6 @@ function(get_ssl)
 
                         )
                 ExternalProject_Get_Property(OpenSSL source_dir)
-                set(OPENSSL_ROOT_DIR ${source_dir}/${PKGARCH})
-                message("Downloaded to ${OPENSSL_ROOT_DIR}")
-                set (LCB_SSL_OPTS -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR})
             endif()
         else()
             message("Found relevant OpenSSL ${OpenSSL_DIR}")
@@ -139,10 +127,8 @@ function(get_ssl)
                     INSTALL_COMMAND ""
                     TEST_COMMAND ""
                     )
-        endif()
-        set(OPENSSL_LIB OpenSSL)
-    endif()]]
-    return()
+        endif()]]
+    endif()
 endfunction()
 message("Got OpenSSL_DIR ${OpenSSL_DIR}")
 message("Got OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}")
@@ -250,15 +236,15 @@ if (LCB_SRC)
         else()
             set(WIN_PLATFORM "Visual Studio 14 2015")
         endif()
-        #if (NOT OPENSSL_ROOT_DIR)
-        #    set(OPENSSL_ROOT_DIR ${OpenSSL_DIR})
-        #endif()
-        #if (OPENSSL_ROOT_DIR)
+        if (NOT OPENSSL_ROOT_DIR)
+            set(OPENSSL_ROOT_DIR ${OpenSSL_DIR})
+        endif()
+        if (OPENSSL_ROOT_DIR AND EXISTS ${OPENSSL_ROOT_DIR})
             message("Found OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}")
             set (LCB_SSL_OPTS -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR})
-        #else()
-        #    message("Found no existent OPENSSL_ROOT_DIR")
-        #endif()
+        else()
+            message("Found no existent OPENSSL_ROOT_DIR")
+        endif()
         set(LCB_CMAKE_ARGS ${LCB_CMAKE_ARGS} -DLCB_NO_MOCK=1 ${LCB_SSL_OPTS})
         SET(LIBCOUCHBASE_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Release/${LIBCOUCHBASE_LIBRARY_NAME}")
         SET(LIBCOUCHBASE_DBG_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Debug/${LIBCOUCHBASE_DBG_LIBRARY_NAME}")
