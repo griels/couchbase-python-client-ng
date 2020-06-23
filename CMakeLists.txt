@@ -39,56 +39,92 @@ endif()
 set (OPENSSLCFG_FILE ${CMAKE_CURRENT_BINARY_DIR}/openssl_version.json)
 
 execute_process(
-   COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py ${CMAKE_CURRENT_BINARY_DIR}
+   COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py --temp_build_dir ${CMAKE_CURRENT_BINARY_DIR}
 )
 file(READ ${OPENSSLCFG_FILE} OPENSSLCFG)
 sbeParseJson(openssl_cfg OPENSSLCFG)
 message("Need to find OpenSSL ${openssl_cfg.major} from\n${OPENSSLCFG}")
-if (NOT OPENSSL_ROOT_DIR)
-    set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
-endif()
 
 include(ExternalProject)
-
-if (WIN32 AND NOT EXISTS ${OPENSSL_ROOT_DIR})
-    message("${OPENSSL_ROOT_DIR} does not exist, trying to find subdir matching")
-    find_package(
-            OpenSSL
-            PATHS ${OPENSSL_ROOT_DIR}
-    )
-    if (NOT OpenSSL_DIR OR NOT EXISTS ${OpenSSL_DIR})
-        message("Can't find relevant OpenSSL, downloading instead")
-        set (OpenSSL_DIR ${openssl_cfg.ssl_root_dir})
-
-        ExternalProject_Add(OpenSSL
-            URL "https://github.com/python/cpython-bin-deps/archive/openssl-bin-${openssl_cfg.major}.zip"
-                CONFIGURE_COMMAND ""
-                BUILD_COMMAND ""
-                INSTALL_COMMAND ""
-                TEST_COMMAND ""
-
-                )
-        ExternalProject_Get_Property(OpenSSL source_dir)
-        if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-            MESSAGE("++ 64 bit architecture")
-            set(PKGARCH "amd64")
-        else()
-            MESSAGE("++ 32 bit architecture")
-            set(PKGARCH "win32")
+set(PYCBC_USE_CONAN TRUE)
+function(get_ssl)
+    if (PYCBC_USE_CONAN)
+        # Download automatically, you can also just copy the conan.cmake file
+        if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+            message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+            file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
+                    "${CMAKE_BINARY_DIR}/conan.cmake")
         endif()
-        set(OpenSSL_DIR ${source_dir}/${PKGARCH})
-    else()
-        message("Found relevant OpenSSL ${OpenSSL_DIR}")
-        ExternalProject_Add(OpenSSL
-                SOURCE_DIR ${OpenSSL_DIR}
-                CONFIGURE_COMMAND ""
-                BUILD_COMMAND ""
-                INSTALL_COMMAND ""
-                TEST_COMMAND ""
-                )
+        include(${CMAKE_BINARY_DIR}/conan.cmake)
+        conan_add_remote(NAME bintray
+                URL https://api.bintray.com/conan/conan-community/conan )
+        conan_cmake_run(REQUIRES openssl/${openssl_cfg.major}
+                BASIC_SETUP
+                BUILD missing
+                INSTALL_FOLDER ${openssl_cfg.ssl_root_dir}
+                OPTIONS Pkg:shared=True)
+        include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake)
+        conan_basic_setup()
+        set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
+        message("Set OPENSSL_ROOT_DIR to ${OPENSSL_ROOT_DIR}")
     endif()
-endif()
+    if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+        MESSAGE("++ 64 bit architecture")
+        set(PKGARCH "amd64")
+    else()
+        MESSAGE("++ 32 bit architecture")
+        set(PKGARCH "win32")
+    endif()
+
+    if (WIN32)
+        if (NOT OPENSSL_ROOT_DIR)
+            set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
+        endif()
+        if (NOT EXISTS ${OPENSSL_ROOT_DIR})
+            message("OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR} does not exist, trying to find subdir matching")
+            find_package(
+                    OpenSSL
+                    PATHS ${OPENSSL_ROOT_DIR}
+            )
+        endif()
+        #[[if (NOT OpenSSL_DIR OR NOT EXISTS ${OpenSSL_DIR})
+            message("Can't find relevant OpenSSL, downloading instead")
+            execute_process(
+                    COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py
+            )
+
+
+            find_package(
+                    OpenSSL
+                    PATHS ${OPENSSL_ROOT_DIR}
+            )
+            message("OpenSSL_DIR is now ${OpenSSL_DIR}")
+
+            if (NOT OpenSSL_DIR)
+                ExternalProject_Add(OpenSSL
+                    URL "https://github.com/python/cpython-bin-deps/archive/openssl-bin-${openssl_cfg.major}.zip"
+                        CONFIGURE_COMMAND ""
+                        BUILD_COMMAND ""
+                        INSTALL_COMMAND ""
+                        TEST_COMMAND ""
+
+                        )
+                ExternalProject_Get_Property(OpenSSL source_dir)
+            endif()
+        else()
+            message("Found relevant OpenSSL ${OpenSSL_DIR}")
+            ExternalProject_Add(OpenSSL
+                    SOURCE_DIR ${OpenSSL_DIR}
+                    CONFIGURE_COMMAND ""
+                    BUILD_COMMAND ""
+                    INSTALL_COMMAND ""
+                    TEST_COMMAND ""
+                    )
+        endif()]]
+    endif()
+endfunction()
 message("Got OpenSSL_DIR ${OpenSSL_DIR}")
+message("Got OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}")
 
 if (FORCE_DEBUG OR (CMAKE_BUILD_TYPE MATCHES DEBUG))
     set(RELEASE_TYPE Debug)
@@ -112,19 +148,6 @@ if (WIN32)
 else(WIN32)
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -fPIC -fno-strict-aliasing -Wall -Wstrict-prototypes")
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-common -dynamic -DNDEBUG -g -fwrapv -Wswitch")
-endif()
-
-if ("$PYCBC_USE_CONAN")
-    # Download automatically, you can also just copy the conan.cmake file
-    include(${CMAKE_BINARY_DIR}/conan.cmake)
-    if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-        message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-        file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
-                "${CMAKE_BINARY_DIR}/conan.cmake")
-    endif()
-    conan_cmake_run(REQUIRES OpenSSL/1.0.2n@conan/stable
-            BASIC_SETUP
-            BUILD missing)
 endif()
 
 
@@ -188,6 +211,7 @@ endif()
 
 set(LCB_SRC TRUE)
 if (LCB_SRC)
+    get_ssl()
     SET(LCB_BUILD_DIR "${CMAKE_BINARY_DIR}/Release/lcb_build")
     SET(LCB_DBGBUILD_DIR "${CMAKE_BINARY_DIR}/Release/lcb_dbgbuild")
     if (CMAKE_BUILD_TYPE MATCHES DEBUG)
@@ -400,6 +424,8 @@ endif()
 
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 target_link_libraries(couchbase_python_client ${Boost_LIBRARIES}   ${LIBCOUCHBASE_FINAL_PATH}  ${PYTHON_LIBRARIES} -Wl,-rpath,${LIBCOUCHBASE_FINAL_DIRPATH})
+link_libraries(libcouchbase_src
+        CONAN_PKG::openssl)
 set_target_properties(
         couchbase_python_client
         PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS}"

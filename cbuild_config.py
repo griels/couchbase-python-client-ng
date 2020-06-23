@@ -30,6 +30,7 @@ from setuptools.command.build_ext import build_ext
 import pathlib
 import gen_config
 
+
 curdir = pathlib.Path(__file__).parent
 
 
@@ -260,7 +261,8 @@ class CBuildCommon(build_ext):
         pass
 
     def init_info_and_rpaths(self, ext):
-        gen_config.gen_config(self.build_temp, couchbase_core)
+        self.ssl_config=gen_config.gen_config(self.build_temp, couchbase_core=couchbase_core)
+
 
         self.info.setbase(self.build_temp)
         self.info.cfg = self.cfg_type()

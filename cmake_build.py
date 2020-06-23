@@ -72,7 +72,7 @@ class CMakeBuild(cbuild_config.CBuildCommon):
 
     @staticmethod
     def requires():
-        return ["PyGithub"] +([] if CMakeBuild.check_for_cmake() else ["cmake"])
+        return ["PyGithub","conan"] +([] if CMakeBuild.check_for_cmake() else ["cmake"])
 
     def prep_build(self, ext):
         if not CMakeBuild.hasbuilt:
@@ -134,9 +134,9 @@ class CMakeBuild(cbuild_config.CBuildCommon):
                 '-DPYTHON_VERSION_EXACT={}'.format('.'.join(map(str, sys.version_info[0:2])))] if python_libdir else []
             build_args = ['--config', cfg]
             if platform.system() == "Windows":
-                import gen_config
-                if gen_config.ssl_root_dir:
-                    cmake_args += ['-DOPENSSL_ROOT_DIR={}'.format(gen_config.ssl_root_dir)]
+                #import gen_config
+                #if self.ssl_config['ssl_root_dir'] and False:
+                #    cmake_args += ['-DOPENSSL_ROOT_DIR={}'.format(gen_config.ssl_root_dir)]
                 cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(
                     cfg.upper(),
                     extdir), '-DLCB_NO_MOCK=1']

@@ -73,16 +73,6 @@ class SSL_MinVer(IntEnum):
 
 ssl_letter = bytes.decode(bytes((str.encode('a', 'utf-8')[0] + ssl.OPENSSL_VERSION_INFO[-2] - 1,)), 'utf-8')
 ssl_major = "{}{}".format(".".join(map(str, ssl.OPENSSL_VERSION_INFO[:-2])), ssl_letter)
-ssl_root_dir_pattern = os.getenv("OPENSSL_ROOT_DIR",
-                                 str(curdir.joinpath('..', 'install', 'openssl-{}-cb1').absolute()))
-ssl_root_dir = ssl_root_dir_pattern.format(ssl_major)
-
-ssl_info = dict(major=ssl_major,
-                minor=SSL_MinVer(ssl.OPENSSL_VERSION_INFO[-1]).name.replace('_', ' '),
-                original=ssl.OPENSSL_VERSION,
-                ssl_root_dir=ssl_root_dir,
-                python_version=sys.version_info,
-                raw_version_info=".".join(map(str,ssl.OPENSSL_VERSION_INFO[:-2])))
 
 import datetime
 import time
@@ -128,7 +118,7 @@ class DownloadableRepo(object):
                     raise TimeoutError("Can't download all files in time, reset is {} away, but deadline is {} away".format(remainder,self._deadline-datetime.datetime.now()))
             else:
                 remainder = self.op_wait_time
-            logging.error("remainder = {}".format(remainder))
+            logging.info("remainder = {}".format(remainder))
             if remainder:
                 logging.warning("Rate limit exceeded, waiting {}".format(remainder))
                 time.sleep(remainder.seconds)
@@ -161,6 +151,8 @@ class DownloadableRepo(object):
         """
         from github.GithubException import GithubException
         contents = self.throttle_command(self._ghrepo.get_dir_contents, server_path, ref=sha)
+        if os.path.exists(dest):
+            return
         os.makedirs(dest,exist_ok=True)
 #        contents.get_dir_contents()[0].download_url
         for content in contents:
@@ -168,7 +160,10 @@ class DownloadableRepo(object):
             if content.type == 'dir':
                 self.download_directory(sha, content.path, os.path.join(dest, content.path))
             else:
-                urllib.request.urlretrieve(content.download_url, os.path.join(dest, content.name))
+                dl_url=content.download_url
+                dest_path=os.path.join(dest, content.name)
+                print("Donwloading {} to {} from {}".format(content.path, dest_path, dl_url))
+                urllib.request.urlretrieve(dl_url, dest_path)
 
 
 class AbstractOpenSSL(abc.ABC):
@@ -220,10 +215,14 @@ def get_system():
 
 def get_openssl():
     system = get_system()
-    return system().get_openssl() if system else None
+    try:
+        return system().get_openssl() if system else None
+    except Exception as e:
+        logging.warning("Couldn't initialise OpenSSL repository {}".format(traceback.format_exc()))
+    return None
 
 
-def gen_config(temp_build_dir=os.path.curdir, couchbase_core='couchbase_core'):
+def gen_config(temp_build_dir=None, ssl_relative_path=None, couchbase_core='couchbase_core'):
     build_dir = curdir.joinpath('build')
 
     if not os.path.exists(build_dir):
@@ -233,16 +232,37 @@ def gen_config(temp_build_dir=os.path.curdir, couchbase_core='couchbase_core'):
             ["#define LCB_MIN_VERSION 0x{}".format(''.join(map(lambda x: "{0:02d}".format(x), lcb_min_version))),
              '#define LCB_MIN_VERSION_TEXT "{}"'.format('.'.join(map(str, lcb_min_version))),
              '#define PYCBC_PACKAGE_NAME "{}"'.format(couchbase_core)]))
-    with open("openssl_version.json", "w+") as OUTPUT:
-        json.dump(ssl_info, OUTPUT)
 
-    openssl = get_openssl()
-    if openssl:
-        openssl.get_headers(temp_build_dir)
+    if temp_build_dir:
+        posix_temp_build_dir=  posixpath.normpath(temp_build_dir)
+        ssl_abs_path=posixpath.join(posix_temp_build_dir, ssl_relative_path or 'openssl')
 
+        print("From: temp_build_dir {} and ssl_relative_path {} Got ssl_abs_path {}".format(temp_build_dir, ssl_relative_path, ssl_abs_path))
+        #ssl_root_dir_pattern = os.getenv("OPENSSL_ROOT_DIR", ssl_abs_path)
+        ssl_root_dir = ssl_abs_path.format(ssl_major)
+
+        ssl_info = dict(major=ssl_major,
+                        minor=SSL_MinVer(ssl.OPENSSL_VERSION_INFO[-1]).name.replace('_', ' '),
+                        original=ssl.OPENSSL_VERSION,
+                        ssl_root_dir=ssl_root_dir,
+                        python_version=sys.version_info,
+                        raw_version_info=".".join(map(str,ssl.OPENSSL_VERSION_INFO[:-2])))
+        with open("openssl_version.json", "w+") as OUTPUT:
+            json.dump(ssl_info, OUTPUT)
+
+        if ssl_relative_path is not None:
+            openssl = get_openssl()
+            if openssl:
+                try:
+                    openssl.get_headers(ssl_abs_path)
+                except Exception as e:
+                    logging.warning("Couldn't get OpenSSL headers: {}".format(traceback.format_exc()))
+
+        return ssl_info
+    return None
 
 if __name__ == "__main__":
     parser=argparse.ArgumentParser()
-    parser.add_argument('temp_build_dir', type=str)
+    parser.add_argument('--temp_build_dir', type=str,default=None)
     parser.parse_args()
     gen_config(parser.parse_args().temp_build_dir)
