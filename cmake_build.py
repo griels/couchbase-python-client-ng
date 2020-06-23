@@ -150,10 +150,15 @@ class CMakeBuild(cbuild_config.CBuildCommon):
             try:
                 import conans.conan
                 extrapaths=";{}".format(conans.conan.__file__)
+                import posixpath
+                conan_path=";"+posixpath.normpath(os.path.dirname(conans.conan.__file__)).replace('\\','/')
+                extrapaths+=";"+conan_path
             except:
                 extrapaths=""
+                conan_path=""
             env['PYTHONPATH']=env.get('PYTHONPATH','')+extrapaths
-            cmake_args += ['-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON']
+            env['PATH']=env.get('PATH','')+conan_path
+            cmake_args += ['-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON','-DCONANPATH={}'.format(conan_path)]
             cxx_compile_args=filter(re.compile(r'^(?!-std\s*=\s*c(11|99)).*').match, ext.extra_compile_args)
             env['CXXFLAGS'] = '{} {} -DVERSION_INFO=\\"{}\\"'.format(
                 env.get('CXXFLAGS', ''), ' '.join(cxx_compile_args),

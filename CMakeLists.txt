@@ -56,11 +56,11 @@ function(get_ssl)
                     "${CMAKE_BINARY_DIR}/conan.cmake")
         endif()
         include(${CMAKE_BINARY_DIR}/conan.cmake)
-        conan_check()
         #if (CONAN_VERSION_OUTPUT)
-            conan_add_remote(NAME bintray
-                    URL https://api.bintray.com/conan/conan-community/conan )
+            #conan_add_remote(NAME bintray
+            #        URL https://api.bintray.com/conan/conan-community/conan )
             conan_cmake_run(REQUIRES openssl/${openssl_cfg.major}
+                    CONAN_COMMAND ${CONANPATH}/conan.py
                     BASIC_SETUP
                     BUILD missing
                     INSTALL_FOLDER ${openssl_cfg.ssl_root_dir}
