@@ -146,8 +146,13 @@ class CMakeBuild(cbuild_config.CBuildCommon):
             else:
                 cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg.upper()]
                 build_args += ['--', '-j2']
-
             env = os.environ.copy()
+            try:
+                import conans.conan
+                extrapaths=";{}".format(conans.conan.__file__)
+            except:
+                extrapaths=""
+            env['PYTHONPATH']=env.get('PYTHONPATH','')+extrapaths
             cmake_args += ['-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON']
             cxx_compile_args=filter(re.compile(r'^(?!-std\s*=\s*c(11|99)).*').match, ext.extra_compile_args)
             env['CXXFLAGS'] = '{} {} -DVERSION_INFO=\\"{}\\"'.format(

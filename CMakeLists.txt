@@ -56,17 +56,22 @@ function(get_ssl)
                     "${CMAKE_BINARY_DIR}/conan.cmake")
         endif()
         include(${CMAKE_BINARY_DIR}/conan.cmake)
-        conan_add_remote(NAME bintray
-                URL https://api.bintray.com/conan/conan-community/conan )
-        conan_cmake_run(REQUIRES openssl/${openssl_cfg.major}
-                BASIC_SETUP
-                BUILD missing
-                INSTALL_FOLDER ${openssl_cfg.ssl_root_dir}
-                OPTIONS Pkg:shared=True)
-        include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake)
-        conan_basic_setup()
-        set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
-        message("Set OPENSSL_ROOT_DIR to ${OPENSSL_ROOT_DIR}")
+        conan_check()
+        #if (CONAN_VERSION_OUTPUT)
+            conan_add_remote(NAME bintray
+                    URL https://api.bintray.com/conan/conan-community/conan )
+            conan_cmake_run(REQUIRES openssl/${openssl_cfg.major}
+                    BASIC_SETUP
+                    BUILD missing
+                    INSTALL_FOLDER ${openssl_cfg.ssl_root_dir}
+                    OPTIONS Pkg:shared=True)
+            include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake)
+            conan_basic_setup()
+            set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
+            message("Set OPENSSL_ROOT_DIR to ${OPENSSL_ROOT_DIR}")
+        #else()
+        #    message("Can't find Conan, falling back to other methods")
+        #endif()
     endif()
     if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
         MESSAGE("++ 64 bit architecture")

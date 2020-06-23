@@ -223,6 +223,7 @@ class LazyCommandClass(dict):
     they've actually been downloaded and installed by setup_requires.
     """
     def __init__(self, cmdclass_real):
+        super(LazyCommandClass, self).__init__()
         self.cmdclass_real=cmdclass_real
 
     def __contains__(self, key):
