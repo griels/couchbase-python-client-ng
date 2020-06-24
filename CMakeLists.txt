@@ -21,10 +21,14 @@ else()
     endif()
 
     if (PYTHON_VERSION_EXACT)
-        find_package(PythonInterp ${PYTHON_VERSION_EXACT} EXACT REQUIRED)
+        if (NOT PYTHON_EXECUTABLE)
+            find_package(PythonInterp ${PYTHON_VERSION_EXACT} EXACT REQUIRED)
+        endif()
         find_package(PythonLibs ${PYTHON_VERSION_EXACT} EXACT  REQUIRED)
     else(PYTHON_VERSION_EXACT)
-        find_package(PythonInterp REQUIRED)
+        if (NOT PYTHON_EXECUTABLE)
+            find_package(PythonInterp REQUIRED)
+        endif()
         find_package(PythonLibs ${PYTHON_LIBDIR_HINT} REQUIRED)
     endif()
 
@@ -59,14 +63,16 @@ function(get_ssl)
         #if (CONAN_VERSION_OUTPUT)
             #conan_add_remote(NAME bintray
             #        URL https://api.bintray.com/conan/conan-community/conan )
-            conan_cmake_run(REQUIRES openssl/${openssl_cfg.major}
-                    CONAN_COMMAND ${CONANPATH}/conan.py
-                    BASIC_SETUP
-                    BUILD missing
-                    INSTALL_FOLDER ${openssl_cfg.ssl_root_dir}
-                    OPTIONS Pkg:shared=True)
-            include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake)
-            conan_basic_setup()
+            if (CONAN_PATH)
+                set(CONAN_COMMAND ${CONAN_PATH}/conan.py)
+            else()
+                set(CONAN_COMMAND conan)
+            endif()
+            message("GOT CONAN COMMAND ${CONAN_COMMAND}")
+            execute_process(
+                    COMMAND     ${PYTHON_EXECUTABLE} ${CONAN_COMMAND} install openssl/${openssl_cfg.major}  --build=missing  --install-folder ${openssl_cfg.ssl_root_dir} --options:build Pkg:shared=True)
+            #include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake)
+            #conan_basic_setup()
             set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
             message("Set OPENSSL_ROOT_DIR to ${OPENSSL_ROOT_DIR}")
         #else()
