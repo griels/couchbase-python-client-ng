@@ -151,8 +151,6 @@ class CMakeBuild(cbuild_config.CBuildCommon):
             python_executable=posixpath.normpath(sys.executable).replace('\\','/')
             try:
                 import conans.conan
-                from conans.client.conan_api import ConanApp, ConanAPIV1
-                from conans.model.ref import ConanFileReference
                 extrapaths=";{}".format(conans.conan.__file__)
                 conan_main=conans.conan.__file__
                 conan_path=posixpath.normpath(os.path.dirname(conan_main)).replace('\\','/')
@@ -160,14 +158,17 @@ class CMakeBuild(cbuild_config.CBuildCommon):
                 import gen_config
                 ssl_info=gen_config.gen_config(temp_build_dir=self.build_temp)
                 cmake_args +=['-DCONAN_PATH={}'.format(conan_path)]
-                ref = ConanFileReference.loads("openssl/{}".format(ssl_info['major']), validate=False)
-                api_v1=ConanAPIV1()
-                result=api_v1.install_reference(ref,install_folder=ssl_info['ssl_root_dir'],update=True)
-                openssl_installed=next(iter((x for x in result['installed'] if x.get('recipe', {}).get('id', '').startswith('openssl'))), {}).get(
-                    'packages', {})
-                rootpath=next(iter(openssl_installed),{}).get('cpp_info',{}).get('rootpath')
-                if rootpath:
-                    cmake_args += ["-DOPENSSL_ROOT_DIR={}".format(rootpath.replace('\\','/'))]
+                if os.getenv("PYCBC_USE_CONAN_API"):
+                    from conans.client.conan_api import ConanApp, ConanAPIV1
+                    from conans.model.ref import ConanFileReference
+                    ref = ConanFileReference.loads("openssl/{}".format(ssl_info['major']), validate=False)
+                    api_v1=ConanAPIV1()
+                    result=api_v1.install_reference(ref,install_folder=ssl_info['ssl_root_dir'],update=True)
+                    openssl_installed=next(iter((x for x in result['installed'] if x.get('recipe', {}).get('id', '').startswith('openssl'))), {}).get(
+                        'packages', {})
+                    rootpath=next(iter(openssl_installed),{}).get('cpp_info',{}).get('rootpath')
+                    if rootpath:
+                        cmake_args += ["-DOPENSSL_ROOT_DIR={}".format(rootpath.replace('\\','/'))]
             except Exception as e:
                 import logging
                 import traceback
