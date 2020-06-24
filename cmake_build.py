@@ -24,8 +24,6 @@ import sys
 
 from distutils.version import LooseVersion
 
-from conans import ConanFile
-from conans.client.conan_api import ConanApp, ConanAPIV1
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
 
@@ -153,23 +151,17 @@ class CMakeBuild(cbuild_config.CBuildCommon):
             python_executable=posixpath.normpath(sys.executable).replace('\\','/')
             try:
                 import conans.conan
+                from conans.client.conan_api import ConanApp, ConanAPIV1
+                from conans.model.ref import ConanFileReference
                 extrapaths=";{}".format(conans.conan.__file__)
                 conan_main=conans.conan.__file__
                 conan_path=posixpath.normpath(os.path.dirname(conan_main)).replace('\\','/')
                 extrapaths+=";"+conan_path
-                #conan_executable="{} {}".format(posixpath.normpath(sys.executable), posixpath.normpath(conan_main)).replace('\\','/')
                 import gen_config
                 ssl_info=gen_config.gen_config(temp_build_dir=self.build_temp)
                 cmake_args +=['-DCONAN_PATH={}'.format(conan_path)]
-                import conans.util
-                import conans
-                import conans.client.conan_api
-                from conans.client.conan_api import Conan
-                from conans.model.ref import ConanFileReference
                 ref = ConanFileReference.loads("openssl/{}".format(ssl_info['major']), validate=False)
                 api_v1=ConanAPIV1()
-                #api_v1.remote_add("bintray","https://api.bintray.com/conan/conan-community/conan")
-                #conanapp=api_v1.create_app()  # type: ConanApp
                 result=api_v1.install_reference(ref,install_folder=ssl_info['ssl_root_dir'],update=True)
                 openssl_installed=next(iter((x for x in result['installed'] if x.get('recipe', {}).get('id', '').startswith('openssl'))), {}).get(
                     'packages', {})
@@ -182,7 +174,6 @@ class CMakeBuild(cbuild_config.CBuildCommon):
                 logging.error("Cannot find conan : {}".format(traceback.format_exc()))
                 extrapaths=""
                 conan_path=""
-                raise
             env['PYTHONPATH']=env.get('PYTHONPATH','')+extrapaths
             env['PATH']=env.get('PATH','')+conan_path
             cmake_args += ['-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON', '-DPYTHON_EXECUTABLE={}'.format(python_executable)]
