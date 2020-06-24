@@ -170,7 +170,12 @@ class CMakeBuild(cbuild_config.CBuildCommon):
                 api_v1=ConanAPIV1()
                 #api_v1.remote_add("bintray","https://api.bintray.com/conan/conan-community/conan")
                 #conanapp=api_v1.create_app()  # type: ConanApp
-                api_v1.install_reference(ref,install_folder=ssl_info['ssl_root_dir'])
+                result=api_v1.install_reference(ref,install_folder=ssl_info['ssl_root_dir'],update=True)
+                openssl_installed=next(iter((x for x in result['installed'] if x.get('recipe', {}).get('id', '').startswith('openssl'))), {}).get(
+                    'packages', {})
+                rootpath=next(iter(openssl_installed),{}).get('cpp_info',{}).get('rootpath')
+                if rootpath:
+                    cmake_args += ["-DOPENSSL_ROOT_DIR={}".format(rootpath.replace('\\','/'))]
             except Exception as e:
                 import logging
                 import traceback
