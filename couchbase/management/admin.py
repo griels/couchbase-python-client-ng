@@ -31,8 +31,7 @@ from couchbase_core._libcouchbase import FMT_JSON
 from couchbase_core.supportability import internal
 
 import re
-import couchbase
-couchbase.enable_logging()
+
 METHMAP = {
     'GET': LCB.LCB_HTTP_METHOD_GET,
     'PUT': LCB.LCB_HTTP_METHOD_PUT,
