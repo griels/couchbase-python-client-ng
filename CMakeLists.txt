@@ -43,14 +43,15 @@ endif()
 set (OPENSSLCFG_FILE ${CMAKE_CURRENT_BINARY_DIR}/openssl_version.json)
 
 execute_process(
-   COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py --temp_build_dir ${CMAKE_CURRENT_BINARY_DIR}
+   COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py --temp_build_dir ${CMAKE_CURRENT_BINARY_DIR} --ssl_relative_path openssl
 )
 file(READ ${OPENSSLCFG_FILE} OPENSSLCFG)
 sbeParseJson(openssl_cfg OPENSSLCFG)
 message("Need to find OpenSSL ${openssl_cfg.major} from\n${OPENSSLCFG}")
-
+if (NOT OPENSSL_ROOT_DIR)
+    set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
+endif()
 include(ExternalProject)
-set(PYCBC_USE_CONAN TRUE)
 function(get_ssl)
     if (PYCBC_USE_CONAN AND NOT OPENSSL_ROOT_DIR)
         # Download automatically, you can also just copy the conan.cmake file
@@ -73,7 +74,8 @@ function(get_ssl)
                     COMMAND     ${PYTHON_EXECUTABLE} ${CONAN_COMMAND} install openssl/${openssl_cfg.major}  --build=missing  --install-folder ${openssl_cfg.ssl_root_dir} --options:build Pkg:shared=True)
             include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake)
             conan_basic_setup()
-            set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
+            #set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
+            set(OPENSSL_LIB CONAN_PKG::openssl)
             message("Set OPENSSL_ROOT_DIR to ${OPENSSL_ROOT_DIR}")
         else()
             message("Can't find Conan, falling back to other methods")
@@ -88,9 +90,9 @@ function(get_ssl)
     endif()
 
     if (WIN32)
-        if (NOT OPENSSL_ROOT_DIR)
-            set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
-        endif()
+        #if (NOT OPENSSL_ROOT_DIR)
+        #    set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
+        #endif()
         if (NOT EXISTS ${OPENSSL_ROOT_DIR})
             message("OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR} does not exist, trying to find subdir matching")
             find_package(
@@ -104,11 +106,11 @@ function(get_ssl)
                     COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py
             )
 
-
+#[[
             find_package(
                     OpenSSL
                     PATHS ${OPENSSL_ROOT_DIR}
-            )
+            )]]
             message("OpenSSL_DIR is now ${OpenSSL_DIR}")
 
             if (NOT OpenSSL_DIR)
@@ -121,6 +123,9 @@ function(get_ssl)
 
                         )
                 ExternalProject_Get_Property(OpenSSL source_dir)
+                set(OPENSSL_ROOT_DIR ${source_dir}/${PKGARCH})
+                message("Downloaded to ${OPENSSL_ROOT_DIR}")
+                set (LCB_SSL_OPTS -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR})
             endif()
         else()
             message("Found relevant OpenSSL ${OpenSSL_DIR}")
@@ -132,6 +137,7 @@ function(get_ssl)
                     TEST_COMMAND ""
                     )
         endif()
+        set(OPENSSL_LIB OpenSSL)
     endif()
 endfunction()
 message("Got OpenSSL_DIR ${OpenSSL_DIR}")
@@ -240,15 +246,15 @@ if (LCB_SRC)
         else()
             set(WIN_PLATFORM "Visual Studio 14 2015")
         endif()
-        if (NOT OPENSSL_ROOT_DIR)
-            set(OPENSSL_ROOT_DIR ${OpenSSL_DIR})
-        endif()
-        if (OPENSSL_ROOT_DIR AND EXISTS ${OPENSSL_ROOT_DIR})
+        #if (NOT OPENSSL_ROOT_DIR)
+        #    set(OPENSSL_ROOT_DIR ${OpenSSL_DIR})
+        #endif()
+        #if (OPENSSL_ROOT_DIR)
             message("Found OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}")
             set (LCB_SSL_OPTS -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR})
-        else()
-            message("Found no existent OPENSSL_ROOT_DIR")
-        endif()
+        #else()
+        #    message("Found no existent OPENSSL_ROOT_DIR")
+        #endif()
         set(LCB_CMAKE_ARGS ${LCB_CMAKE_ARGS} -DLCB_NO_MOCK=1 ${LCB_SSL_OPTS})
         SET(LIBCOUCHBASE_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Release/${LIBCOUCHBASE_LIBRARY_NAME}")
         SET(LIBCOUCHBASE_DBG_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Debug/${LIBCOUCHBASE_DBG_LIBRARY_NAME}")
@@ -436,7 +442,7 @@ endif()
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 target_link_libraries(couchbase_python_client ${Boost_LIBRARIES}   ${LIBCOUCHBASE_FINAL_PATH}  ${PYTHON_LIBRARIES} -Wl,-rpath,${LIBCOUCHBASE_FINAL_DIRPATH})
 link_libraries(libcouchbase_src
-        CONAN_PKG::openssl)
+        OpenSSL)
 set_target_properties(
         couchbase_python_client
         PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS}"

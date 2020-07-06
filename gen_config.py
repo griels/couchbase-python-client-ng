@@ -264,5 +264,6 @@ def gen_config(temp_build_dir=None, ssl_relative_path=None, couchbase_core='couc
 if __name__ == "__main__":
     parser=argparse.ArgumentParser()
     parser.add_argument('--temp_build_dir', type=str,default=None)
+    parser.add_argument('--ssl_relative_path', type=str,default=None)
     parser.parse_args()
-    gen_config(parser.parse_args().temp_build_dir)
+    gen_config(**(parser.parse_args().__dict__))
