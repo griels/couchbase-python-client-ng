@@ -28,6 +28,7 @@ from setuptools import Extension
 from setuptools.command.build_ext import build_ext
 
 import cbuild_config
+from gen_config import win_cmake_path
 from cbuild_config import couchbase_core, build_type
 
 
@@ -150,34 +151,33 @@ class CMakeBuild(cbuild_config.CBuildCommon):
             import posixpath
             python_executable=posixpath.normpath(sys.executable).replace('\\','/')
             try:
-                import conans.conan
-                extrapaths=";{}".format(conans.conan.__file__)
-                conan_main=conans.conan.__file__
-                conan_path=posixpath.normpath(os.path.dirname(conan_main)).replace('\\','/')
-                extrapaths+=";"+conan_path
                 import gen_config
-                ssl_info=gen_config.gen_config(temp_build_dir=self.build_temp)
-                cmake_args +=['-DCONAN_PATH={}'.format(conan_path)]
-                if os.getenv("PYCBC_USE_CONAN_API"):
-                    from conans.client.conan_api import ConanApp, ConanAPIV1
-                    from conans.model.ref import ConanFileReference
-                    ref = ConanFileReference.loads("openssl/{}".format(ssl_info['major']), validate=False)
-                    api_v1=ConanAPIV1()
-                    result=api_v1.install_reference(ref,install_folder=ssl_info['ssl_root_dir'],update=True)
-                    openssl_installed=next(iter((x for x in result['installed'] if x.get('recipe', {}).get('id', '').startswith('openssl'))), {}).get(
-                        'packages', {})
-                    rootpath=next(iter(openssl_installed),{}).get('cpp_info',{}).get('rootpath')
-                    if rootpath:
-                        cmake_args += ["-DOPENSSL_ROOT_DIR={}".format(rootpath.replace('\\','/'))]
+                openssl_cfg=gen_config.gen_config(temp_build_dir=self.build_temp)
+                install_params = [
+                         'install',
+                         'openssl/{major}@'.format(**openssl_cfg),
+                         '--generator','cmake',
+                         '--build=missing',
+                         '--install-folder',
+                         '{ssl_root_dir}'.format(**openssl_cfg),
+                         '--options:build', 'Pkg:shared=True'
+                         ]
+                print('install_params {}'.format(install_params))
+                import conans.conan
+                env['PATH']=env['PATH']+";{}".format(os.path.dirname(conans.conan.__file__))
+                #conans.conan.main(install_params)
+                env['PYTHONPATH']=';'.join(sys.path)
+                os.makedirs(self.build_temp,exist_ok=True)
+                #subprocess.check_call([sys.executable,'-m','conans.conan']+install_params, stdout=sys.stdout, stderr=sys.stdout,
+                #                      cwd=win_cmake_path(os.path.abspath(self.build_temp)), env=env)
+
             except Exception as e:
                 import logging
                 import traceback
                 logging.error("Cannot find conan : {}".format(traceback.format_exc()))
                 extrapaths=""
                 conan_path=""
-            env['PYTHONPATH']=env.get('PYTHONPATH','')+extrapaths
-            env['PATH']=env.get('PATH','')+conan_path
-            cmake_args += ['-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON', '-DPYTHON_EXECUTABLE={}'.format(python_executable)]
+            cmake_args += ['--trace-source=CMakeLists.txt','--trace-expand','-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON', '-DPYTHON_EXECUTABLE={}'.format(python_executable)]
             cxx_compile_args=filter(re.compile(r'^(?!-std\s*=\s*c(11|99)).*').match, ext.extra_compile_args)
             env['CXXFLAGS'] = '{} {} -DVERSION_INFO=\\"{}\\"'.format(
                 env.get('CXXFLAGS', ''), ' '.join(cxx_compile_args),

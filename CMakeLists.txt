@@ -45,7 +45,8 @@ endif()
 set (OPENSSLCFG_FILE ${CMAKE_CURRENT_BINARY_DIR}/openssl_version.json)
 
 execute_process(
-   COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py --temp_build_dir ${CMAKE_CURRENT_BINARY_DIR} --ssl_relative_path openssl
+   COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py --temp_build_dir ${CMAKE_CURRENT_BINARY_DIR}
+        # --ssl_relative_path openssl
 )
 file(READ ${OPENSSLCFG_FILE} OPENSSLCFG)
 sbeParseJson(openssl_cfg OPENSSLCFG)
@@ -54,7 +55,8 @@ if (NOT OPENSSL_ROOT_DIR)
     set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
 endif()
 function(get_ssl)
-    if (PYCBC_USE_CONAN AND NOT OPENSSL_ROOT_DIR)
+    #find_program(CONAN conan)
+    if (OPENSSL_ROOT_DIR)
         # Download automatically, you can also just copy the conan.cmake file
         if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
             message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
@@ -62,25 +64,32 @@ function(get_ssl)
                     "${CMAKE_BINARY_DIR}/conan.cmake")
         endif()
         include(${CMAKE_BINARY_DIR}/conan.cmake)
-        if (CONAN_VERSION_OUTPUT)
-            conan_add_remote(NAME bintray
-                   URL https://api.bintray.com/conan/conan-community/conan )
-            if (CONAN_PATH)
-                set(CONAN_COMMAND ${CONAN_PATH}/conan.py)
-            else()
-                set(CONAN_COMMAND conan)
-            endif()
+        #if (CONAN_VERSION_OUTPUT)
+            #conan_add_remote(NAME bintray
+            #       URL https://api.bintray.com/conan/conan-community/conan )
+            #if (CONAN_PATH)
+            #    set(CONAN_COMMAND ${CONAN_PATH}/conan.py)
+            #else()
+            #    set(CONAN_COMMAND conan)
+            #endif()
             message("GOT CONAN COMMAND ${CONAN_COMMAND}")
             execute_process(
-                    COMMAND     ${PYTHON_EXECUTABLE} ${CONAN_COMMAND} install openssl/${openssl_cfg.major}  --build=missing  --install-folder ${openssl_cfg.ssl_root_dir} --options:build Pkg:shared=True)
+                    COMMAND     ${PYTHON_EXECUTABLE} -m conans.conan install openssl/${openssl_cfg.major}@  --generator cmake --build=missing  --install-folder ${openssl_cfg.ssl_root_dir} --options:build Pkg:shared=True)
+            #[[conan_cmake_run(REQUIRES openssl/${openssl_cfg.major}
+                    CONAN_COMMAND "${PYTHON_EXECUTABLE} -m conans.conan"
+                    OPTIONS --generator cmake
+                    BUILD missing
+                    #--install-folder ${openssl_cfg.ssl_root_dir}
+                    Pkg:shared=True)
+            ]]
             include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake)
             conan_basic_setup()
             #set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
             set(OPENSSL_LIB CONAN_PKG::openssl)
             message("Set OPENSSL_ROOT_DIR to ${OPENSSL_ROOT_DIR}")
-        else()
-            message("Can't find Conan, falling back to other methods")
-        endif()
+        #else()
+        #    message("Can't find Conan, falling back to other methods")
+        #endif()
     endif()
     if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
         MESSAGE("++ 64 bit architecture")

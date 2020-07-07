@@ -20,6 +20,10 @@ curdir = pathlib.Path(__file__).parent
 
 lcb_min_version_baseline = (3, 0, 1)
 
+def win_cmake_path(orig_path):
+    import posixpath
+    return posixpath.normpath(orig_path).replace('\\','/')
+
 
 def get_lcb_min_version():
     result = lcb_min_version_baseline
@@ -234,12 +238,12 @@ def gen_config(temp_build_dir=None, ssl_relative_path=None, couchbase_core='couc
              '#define PYCBC_PACKAGE_NAME "{}"'.format(couchbase_core)]))
 
     if temp_build_dir:
-        posix_temp_build_dir=  posixpath.normpath(temp_build_dir)
-        ssl_abs_path=posixpath.join(posix_temp_build_dir, ssl_relative_path or 'openssl')
+        posix_temp_build_dir=os.path.normpath(temp_build_dir)
+        ssl_abs_path=os.path.join(os.path.abspath(posix_temp_build_dir), ssl_relative_path or 'openssl')
 
         print("From: temp_build_dir {} and ssl_relative_path {} Got ssl_abs_path {}".format(temp_build_dir, ssl_relative_path, ssl_abs_path))
         #ssl_root_dir_pattern = os.getenv("OPENSSL_ROOT_DIR", ssl_abs_path)
-        ssl_root_dir = ssl_abs_path.format(ssl_major)
+        ssl_root_dir = win_cmake_path(ssl_abs_path.format(ssl_major))
 
         ssl_info = dict(major=ssl_major,
                         minor=SSL_MinVer(ssl.OPENSSL_VERSION_INFO[-1]).name.replace('_', ' '),
