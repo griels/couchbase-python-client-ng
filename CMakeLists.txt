@@ -64,17 +64,11 @@ function(get_ssl)
                     "${CMAKE_BINARY_DIR}/conan.cmake")
         endif()
         include(${CMAKE_BINARY_DIR}/conan.cmake)
-        #if (CONAN_VERSION_OUTPUT)
-            #conan_add_remote(NAME bintray
-            #       URL https://api.bintray.com/conan/conan-community/conan )
-            #if (CONAN_PATH)
-            #    set(CONAN_COMMAND ${CONAN_PATH}/conan.py)
-            #else()
-            #    set(CONAN_COMMAND conan)
-            #endif()
-            message("GOT CONAN COMMAND ${CONAN_COMMAND}")
-            execute_process(
-                    COMMAND     ${PYTHON_EXECUTABLE} -m conans.conan install openssl/${openssl_cfg.major}@  --generator cmake --build=missing  --install-folder ${openssl_cfg.ssl_root_dir} --options:build Pkg:shared=True)
+
+
+        message("GOT CONAN COMMAND ${CONAN_COMMAND}")
+        execute_process(
+                COMMAND     ${PYTHON_EXECUTABLE} -m conans.conan install openssl/${openssl_cfg.major}@  --generator cmake --build=missing  --install-folder ${openssl_cfg.ssl_root_dir} --options:build Pkg:shared=True)
             #[[conan_cmake_run(REQUIRES openssl/${openssl_cfg.major}
                     CONAN_COMMAND "${PYTHON_EXECUTABLE} -m conans.conan"
                     OPTIONS --generator cmake
@@ -82,14 +76,14 @@ function(get_ssl)
                     #--install-folder ${openssl_cfg.ssl_root_dir}
                     Pkg:shared=True)
             ]]
-            include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake)
-            conan_basic_setup()
-            #set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
-            set(OPENSSL_LIB CONAN_PKG::openssl)
-            message("Set OPENSSL_ROOT_DIR to ${OPENSSL_ROOT_DIR}")
-        #else()
-        #    message("Can't find Conan, falling back to other methods")
-        #endif()
+        include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake OPTIONAL)
+        conan_basic_setup()
+        file(GLOB  OPENSSL_FILES ${CONAN_OPENSSL_ROOT}/*)
+        file(COPY ${OPENSSL_FILES}
+             DESTINATION ${OPENSSL_ROOT_DIR})
+        #set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
+        set(OPENSSL_LIB CONAN_PKG::openssl)
+        message("Set OPENSSL_ROOT_DIR to ${OPENSSL_ROOT_DIR}")
     endif()
     if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
         MESSAGE("++ 64 bit architecture")
@@ -98,7 +92,7 @@ function(get_ssl)
         MESSAGE("++ 32 bit architecture")
         set(PKGARCH "win32")
     endif()
-
+#[[
     if (WIN32)
         #if (NOT OPENSSL_ROOT_DIR)
         #    set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
@@ -116,11 +110,11 @@ function(get_ssl)
                     COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py
             )
 
-#[[
+#[=[
             find_package(
                     OpenSSL
                     PATHS ${OPENSSL_ROOT_DIR}
-            )]]
+            )]=]
             message("OpenSSL_DIR is now ${OpenSSL_DIR}")
 
             if (NOT OpenSSL_DIR)
@@ -148,7 +142,8 @@ function(get_ssl)
                     )
         endif()
         set(OPENSSL_LIB OpenSSL)
-    endif()
+    endif()]]
+    return()
 endfunction()
 message("Got OpenSSL_DIR ${OpenSSL_DIR}")
 message("Got OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}")
@@ -274,7 +269,7 @@ if (LCB_SRC)
             COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/install
             COMMAND cd <SOURCE_DIR> && ${REF_CMDS}
 
-            COMMAND cd ${LCB_BUILD_DIR} && echo "in ${LCB_BUILD_DIR}" && cmake -DLCB_NO_PLUGINS=1  -B . -G ${WIN_PLATFORM} ${LCB_CMAKE_ARGS} -S <SOURCE_DIR>
+            COMMAND cd ${LCB_BUILD_DIR} && echo "in ${LCB_BUILD_DIR}" && cmake -DLCB_NO_PLUGINS=1 -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR} -B . -G ${WIN_PLATFORM} ${LCB_CMAKE_ARGS} -S <SOURCE_DIR>
             BUILD_COMMAND cd ${LCB_BUILD_DIR} && cmake --build ${LCB_BUILD_DIR} --config Release
 
             INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/install
