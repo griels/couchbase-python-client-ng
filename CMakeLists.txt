@@ -51,8 +51,9 @@ execute_process(
 file(READ ${OPENSSLCFG_FILE} OPENSSLCFG)
 sbeParseJson(openssl_cfg OPENSSLCFG)
 message("Need to find OpenSSL ${openssl_cfg.major} from\n${OPENSSLCFG}")
-
-include(ExternalProject)
+if (NOT OPENSSL_ROOT_DIR)
+    set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
+endif()
 set(PYCBC_USE_CONAN TRUE)
 function(get_ssl)
     if (PYCBC_USE_CONAN)
@@ -70,9 +71,14 @@ function(get_ssl)
                 BUILD missing
                 INSTALL_FOLDER ${openssl_cfg.ssl_root_dir}
                 OPTIONS Pkg:shared=True)
+
         include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake)
         conan_basic_setup()
-        set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
+        file(GLOB OPENSSL_FILES ${CONAN_OPENSSL_ROOT}/*)
+        file(COPY ${OPENSSL_FILES}
+             DESTINATION ${OPENSSL_ROOT_DIR})
+        #set(OPENSSL_ROOT_DIR ${CONAN_OPENSSL_ROOT})
+        set(OPENSSL_LIB CONAN_PKG::openssl)
         message("Set OPENSSL_ROOT_DIR to ${OPENSSL_ROOT_DIR}")
     endif()
     if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
