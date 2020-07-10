@@ -67,15 +67,14 @@ function(get_ssl)
 
 
         message("GOT CONAN COMMAND ${CONAN_COMMAND}")
-        execute_process(
-                COMMAND     ${PYTHON_EXECUTABLE} -m conans.conan install openssl/${openssl_cfg.major}@  --generator cmake --build=missing  --install-folder ${openssl_cfg.ssl_root_dir} --options:build Pkg:shared=True)
-            #[[conan_cmake_run(REQUIRES openssl/${openssl_cfg.major}
-                    CONAN_COMMAND "${PYTHON_EXECUTABLE} -m conans.conan"
-                    OPTIONS --generator cmake
-                    BUILD missing
-                    #--install-folder ${openssl_cfg.ssl_root_dir}
-                    Pkg:shared=True)
-            ]]
+        #execute_process(
+        #        COMMAND     ${PYTHON_EXECUTABLE} -m conans.conan install openssl/${openssl_cfg.major}@  --generator cmake --build=missing  --install-folder ${openssl_cfg.ssl_root_dir} --options:build Pkg:shared=True)
+        conan_cmake_run(REQUIRES openssl/${openssl_cfg.major}
+                BASIC_SETUP
+                BUILD missing
+                INSTALL_FOLDER ${openssl_cfg.ssl_root_dir}
+                OPTIONS Pkg:shared=True)
+
         include(${CMAKE_CURRENT_BINARY_DIR}/openssl/conanbuildinfo.cmake OPTIONAL)
         conan_basic_setup()
         file(GLOB  OPENSSL_FILES ${CONAN_OPENSSL_ROOT}/*)
@@ -447,7 +446,7 @@ endif()
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 target_link_libraries(couchbase_python_client ${Boost_LIBRARIES}   ${LIBCOUCHBASE_FINAL_PATH}  ${PYTHON_LIBRARIES} -Wl,-rpath,${LIBCOUCHBASE_FINAL_DIRPATH})
 link_libraries(libcouchbase_src
-        OpenSSL)
+        CONAN_PKG::openssl)
 set_target_properties(
         couchbase_python_client
         PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS}"
