@@ -145,17 +145,23 @@ class CMakeBuild(cbuild_config.CBuildCommon):
                 cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg.upper()]
                 build_args += ['--', '-j2']
             env = os.environ.copy()
-            import posixpath
-            python_executable=win_cmake_path(sys.executable)
+            python_executable = win_cmake_path(sys.executable)
             try:
                 import conans.conan
-                env['PATH']=env['PATH']+";{}".format(os.path.dirname(conans.conan.__file__))
-                env['PYTHONPATH']=';'.join(sys.path)
+                env['PATH'] = env['PATH']+";{}".format(os.path.dirname(conans.conan.__file__))
+                env['PYTHONPATH'] = ';'.join(sys.path)
             except Exception as e:
                 import logging
                 import traceback
                 logging.warning("Cannot find conan : {}".format(traceback.format_exc()))
-            cmake_args += ['--trace-source=CMakeLists.txt','--trace-expand','-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON', '-DPYTHON_EXECUTABLE={}'.format(python_executable)]
+            cmake_args += ['--trace-source=CMakeLists.txt',
+                           '--trace-expand',
+                           '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON',
+                           '-DPYTHON_EXECUTABLE={}'.format(python_executable)]
+            PYCBC_SSL_FETCH = env.get('PYCBC_SSL_FETCH')
+            if PYCBC_SSL_FETCH:
+                cmake_args += ['-DPYCBC_SSL_FETCH={}'.format(PYCBC_SSL_FETCH)]
+
             cxx_compile_args=filter(re.compile(r'^(?!-std\s*=\s*c(11|99)).*').match, ext.extra_compile_args)
             env['CXXFLAGS'] = '{} {} -DVERSION_INFO=\\"{}\\"'.format(
                 env.get('CXXFLAGS', ''), ' '.join(cxx_compile_args),
@@ -189,9 +195,6 @@ class CMakeBuild(cbuild_config.CBuildCommon):
 
 
 def gen_cmake_build(extoptions, pkgdata):
-    from cmake_build import CMakeExtension, CMakeBuild
-
-
     CMakeBuild.hybrid = build_type in ['CMAKE_HYBRID']
     CMakeBuild.setup_build_info(extoptions, pkgdata)
     e_mods = [CMakeExtension(str(couchbase_core+'._libcouchbase'), '', **extoptions)]
