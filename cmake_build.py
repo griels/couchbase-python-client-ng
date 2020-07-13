@@ -135,9 +135,6 @@ class CMakeBuild(cbuild_config.CBuildCommon):
                 '-DPYTHON_VERSION_EXACT={}'.format('.'.join(map(str, sys.version_info[0:2])))] if python_libdir else []
             build_args = ['--config', cfg]
             if platform.system() == "Windows":
-                #import gen_config
-                #if self.ssl_config['ssl_root_dir'] and False:
-                #    cmake_args += ['-DOPENSSL_ROOT_DIR={}'.format(gen_config.ssl_root_dir)]
                 cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(
                     cfg.upper(),
                     extdir), '-DLCB_NO_MOCK=1']
@@ -149,34 +146,15 @@ class CMakeBuild(cbuild_config.CBuildCommon):
                 build_args += ['--', '-j2']
             env = os.environ.copy()
             import posixpath
-            python_executable=posixpath.normpath(sys.executable).replace('\\','/')
+            python_executable=win_cmake_path(sys.executable)
             try:
-                import gen_config
-                openssl_cfg=gen_config.gen_config(temp_build_dir=self.build_temp)
-                install_params = [
-                         'install',
-                         'openssl/{major}@'.format(**openssl_cfg),
-                         '--generator','cmake',
-                         '--build=missing',
-                         '--install-folder',
-                         '{ssl_root_dir}'.format(**openssl_cfg),
-                         '--options:build', 'Pkg:shared=True'
-                         ]
-                print('install_params {}'.format(install_params))
                 import conans.conan
                 env['PATH']=env['PATH']+";{}".format(os.path.dirname(conans.conan.__file__))
-                #conans.conan.main(install_params)
                 env['PYTHONPATH']=';'.join(sys.path)
-                os.makedirs(self.build_temp,exist_ok=True)
-                #subprocess.check_call([sys.executable,'-m','conans.conan']+install_params, stdout=sys.stdout, stderr=sys.stdout,
-                #                      cwd=win_cmake_path(os.path.abspath(self.build_temp)), env=env)
-
             except Exception as e:
                 import logging
                 import traceback
-                logging.error("Cannot find conan : {}".format(traceback.format_exc()))
-                extrapaths=""
-                conan_path=""
+                logging.warning("Cannot find conan : {}".format(traceback.format_exc()))
             cmake_args += ['--trace-source=CMakeLists.txt','--trace-expand','-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON', '-DPYTHON_EXECUTABLE={}'.format(python_executable)]
             cxx_compile_args=filter(re.compile(r'^(?!-std\s*=\s*c(11|99)).*').match, ext.extra_compile_args)
             env['CXXFLAGS'] = '{} {} -DVERSION_INFO=\\"{}\\"'.format(

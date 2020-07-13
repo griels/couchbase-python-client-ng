@@ -23,14 +23,10 @@ else()
     endif()
 
     if (PYTHON_VERSION_EXACT)
-        if (NOT PYTHON_EXECUTABLE)
-            find_package(PythonInterp ${PYTHON_VERSION_EXACT} EXACT REQUIRED)
-        endif()
+        find_package(PythonInterp ${PYTHON_VERSION_EXACT} EXACT REQUIRED)
         find_package(PythonLibs ${PYTHON_VERSION_EXACT} EXACT  REQUIRED)
     else(PYTHON_VERSION_EXACT)
-        if (NOT PYTHON_EXECUTABLE)
-            find_package(PythonInterp REQUIRED)
-        endif()
+        find_package(PythonInterp REQUIRED)
         find_package(PythonLibs ${PYTHON_LIBDIR_HINT} REQUIRED)
     endif()
 
@@ -42,19 +38,42 @@ else()
         set(PYCBC_C_MOD_SUFFIX ".so")
     endif()
 endif()
-set (OPENSSLCFG_FILE ${CMAKE_CURRENT_BINARY_DIR}/openssl_version.json)
+if (FORCE_DEBUG OR (CMAKE_BUILD_TYPE MATCHES DEBUG))
+    set(RELEASE_TYPE Debug)
+else()
+    set(RELEASE_TYPE Release)
+endif()
 
-execute_process(
-   COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py --temp_build_dir ${CMAKE_CURRENT_BINARY_DIR}
-        # --ssl_relative_path openssl
-)
-file(READ ${OPENSSLCFG_FILE} OPENSSLCFG)
-sbeParseJson(openssl_cfg OPENSSLCFG)
-message("Need to find OpenSSL ${openssl_cfg.major} from\n${OPENSSLCFG}")
-find_package(
-        OpenSSL
-        PATHS ${OPENSSL_ROOT_DIR}
-)
+macro(use_cxx11)
+if (CMAKE_VERSION VERSION_LESS "3.1")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+endif ()
+else ()
+set (CMAKE_CXX_STANDARD 11)
+endif ()
+endmacro(use_cxx11)
+
+set (LCB_CFLAGS ${CFLAGS} -fPIC)
+set (LCB_CXXFLAGS ${CFLAGS} -fPIC)
+if (WIN32)
+else(WIN32)
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -fPIC -fno-strict-aliasing -Wall -Wstrict-prototypes")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-common -dynamic -DNDEBUG -g -fwrapv -Wswitch")
+endif()
+
+if ("$PYCBC_USE_CONAN")
+    # Download automatically, you can also just copy the conan.cmake file
+    if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+        message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+        file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
+                "${CMAKE_BINARY_DIR}/conan.cmake")
+    endif()
+    include(${CMAKE_BINARY_DIR}/conan.cmake)
+    conan_add_remote(NAME bintray
+    URL https://api.bintray.com/conan/conan-community/conan )
+endif()
+
 if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
     MESSAGE("++ 64 bit architecture")
     set(PKGARCH "amd64")
@@ -63,26 +82,20 @@ else()
     set(PKGARCH "win32")
 endif()
 
-if (NOT OPENSSL_ROOT_DIR)
-    if (OpenSSL_DIR)
-        set(OPENSSL_ROOT_DIR OpenSSL_DIR)
-    else()
-        set(OPENSSL_ROOT_DIR ${CMAKE_CURRENT_BINARY_DIR}/OpenSSL-prefix/src/OpenSSL/${PKGARCH})
-    endif()
-endif()
 
 #set(PYCBC_USE_CONAN TRUE)
+
 function(get_ssl)
+    set (OPENSSLCFG_FILE ${CMAKE_CURRENT_BINARY_DIR}/openssl_version.json)
+
+    execute_process(
+            COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py --temp_build_dir ${CMAKE_CURRENT_BINARY_DIR}
+    )
+    file(READ ${OPENSSLCFG_FILE} OPENSSLCFG)
+    sbeParseJson(openssl_cfg OPENSSLCFG)
+    message("Need to find OpenSSL ${openssl_cfg.major} from\n${OPENSSLCFG}")
+
     if (PYCBC_USE_CONAN)
-        # Download automatically, you can also just copy the conan.cmake file
-        if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
-            message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-            file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
-                    "${CMAKE_BINARY_DIR}/conan.cmake")
-        endif()
-        include(${CMAKE_BINARY_DIR}/conan.cmake)
-        conan_add_remote(NAME bintray
-                URL https://api.bintray.com/conan/conan-community/conan )
         conan_cmake_run(REQUIRES openssl/${openssl_cfg.major}
                 BASIC_SETUP
                 BUILD missing
@@ -112,10 +125,6 @@ function(get_ssl)
         endif()
         if (NOT OpenSSL_DIR OR NOT EXISTS ${OpenSSL_DIR})
             message("Can't find relevant OpenSSL, downloading instead")
-            #[[execute_process(
-                    COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py --temp_build_dir ${CMAKE_CURRENT_BINARY_DIR} --ssl_relative_path ${OPENSSL_ROOT_DIR}
-            )]]
-
 
             find_package(
                     OpenSSL
@@ -155,29 +164,6 @@ endfunction()
 message("Got OpenSSL_DIR ${OpenSSL_DIR}")
 message("Got OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}")
 
-if (FORCE_DEBUG OR (CMAKE_BUILD_TYPE MATCHES DEBUG))
-    set(RELEASE_TYPE Debug)
-else()
-    set(RELEASE_TYPE Release)
-endif()
-
-macro(use_cxx11)
-if (CMAKE_VERSION VERSION_LESS "3.1")
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
-endif ()
-else ()
-set (CMAKE_CXX_STANDARD 11)
-endif ()
-endmacro(use_cxx11)
-
-set (LCB_CFLAGS ${CFLAGS} -fPIC)
-set (LCB_CXXFLAGS ${CFLAGS} -fPIC)
-if (WIN32)
-else(WIN32)
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -fPIC -fno-strict-aliasing -Wall -Wstrict-prototypes")
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-common -dynamic -DNDEBUG -g -fwrapv -Wswitch")
-endif()
 
 
 
@@ -240,7 +226,19 @@ endif()
 
 set(LCB_SRC TRUE)
 if (LCB_SRC)
-    get_ssl()
+    if (NOT OPENSSL_ROOT_DIR)
+        find_package(
+                OpenSSL
+                PATHS ${OPENSSL_ROOT_DIR}
+        )
+        if (OpenSSL_DIR)
+            set(OPENSSL_ROOT_DIR OpenSSL_DIR)
+        else()
+            set(OPENSSL_ROOT_DIR ${CMAKE_CURRENT_BINARY_DIR}/OpenSSL-prefix/src/OpenSSL/${PKGARCH})
+            get_ssl()
+        endif()
+    endif()
+
     SET(LCB_BUILD_DIR "${CMAKE_BINARY_DIR}/Release/lcb_build")
     SET(LCB_DBGBUILD_DIR "${CMAKE_BINARY_DIR}/Release/lcb_dbgbuild")
     if (CMAKE_BUILD_TYPE MATCHES DEBUG)
