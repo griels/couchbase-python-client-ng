@@ -51,10 +51,27 @@ execute_process(
 file(READ ${OPENSSLCFG_FILE} OPENSSLCFG)
 sbeParseJson(openssl_cfg OPENSSLCFG)
 message("Need to find OpenSSL ${openssl_cfg.major} from\n${OPENSSLCFG}")
-if (NOT OPENSSL_ROOT_DIR)
-    set(OPENSSL_ROOT_DIR ${openssl_cfg.ssl_root_dir})
+find_package(
+        OpenSSL
+        PATHS ${OPENSSL_ROOT_DIR}
+)
+if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+    MESSAGE("++ 64 bit architecture")
+    set(PKGARCH "amd64")
+else()
+    MESSAGE("++ 32 bit architecture")
+    set(PKGARCH "win32")
 endif()
-set(PYCBC_USE_CONAN TRUE)
+
+if (NOT OPENSSL_ROOT_DIR)
+    if (OpenSSL_DIR)
+        set(OPENSSL_ROOT_DIR OpenSSL_DIR)
+    else()
+        set(OPENSSL_ROOT_DIR ${CMAKE_CURRENT_BINARY_DIR}/OpenSSL-prefix/src/OpenSSL/${PKGARCH})
+    endif()
+endif()
+
+#set(PYCBC_USE_CONAN TRUE)
 function(get_ssl)
     if (PYCBC_USE_CONAN)
         # Download automatically, you can also just copy the conan.cmake file
@@ -81,13 +98,6 @@ function(get_ssl)
         set(OPENSSL_LIB CONAN_PKG::openssl)
         message("Set OPENSSL_ROOT_DIR to ${OPENSSL_ROOT_DIR}")
     endif()
-    if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-        MESSAGE("++ 64 bit architecture")
-        set(PKGARCH "amd64")
-    else()
-        MESSAGE("++ 32 bit architecture")
-        set(PKGARCH "win32")
-    endif()
 
     if (WIN32)
         if (NOT OPENSSL_ROOT_DIR)
@@ -100,11 +110,11 @@ function(get_ssl)
                     PATHS ${OPENSSL_ROOT_DIR}
             )
         endif()
-        #[[if (NOT OpenSSL_DIR OR NOT EXISTS ${OpenSSL_DIR})
+        if (NOT OpenSSL_DIR OR NOT EXISTS ${OpenSSL_DIR})
             message("Can't find relevant OpenSSL, downloading instead")
-            execute_process(
-                    COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py
-            )
+            #[[execute_process(
+                    COMMAND     ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_config.py --temp_build_dir ${CMAKE_CURRENT_BINARY_DIR} --ssl_relative_path ${OPENSSL_ROOT_DIR}
+            )]]
 
 
             find_package(
@@ -123,6 +133,12 @@ function(get_ssl)
 
                         )
                 ExternalProject_Get_Property(OpenSSL source_dir)
+                set(GITHUB_OPENSSL_ROOT_DIR ${source_dir}/${PKGARCH})
+                message("Downloaded from Github zip: Set OPENSSL_ROOT_DIR to ${OPENSSL_ROOT_DIR}")
+                file(GLOB OPENSSL_FILES ${GITHUB_OPENSSL_ROOT_DIR}/*)
+                file(COPY ${OPENSSL_FILES}
+                        DESTINATION ${OPENSSL_ROOT_DIR})
+                message("Copied files from ${GITHUB_OPENSSL_ROOT_DIR} OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}: [${OPENSSL_FILES}]")
             endif()
         else()
             message("Found relevant OpenSSL ${OpenSSL_DIR}")
@@ -133,7 +149,7 @@ function(get_ssl)
                     INSTALL_COMMAND ""
                     TEST_COMMAND ""
                     )
-        endif()]]
+        endif()
     endif()
 endfunction()
 message("Got OpenSSL_DIR ${OpenSSL_DIR}")
@@ -249,7 +265,7 @@ if (LCB_SRC)
             message("Found OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}")
             set (LCB_SSL_OPTS -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR})
         else()
-            message("Found no existent OPENSSL_ROOT_DIR")
+            message("Found no existent OPENSSL_ROOT_DIR: ${OPENSSL_ROOT_DIR}")
         endif()
         set(LCB_CMAKE_ARGS ${LCB_CMAKE_ARGS} -DLCB_NO_MOCK=1 ${LCB_SSL_OPTS})
         SET(LIBCOUCHBASE_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Release/${LIBCOUCHBASE_LIBRARY_NAME}")

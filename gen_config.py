@@ -174,6 +174,9 @@ class AbstractOpenSSL(abc.ABC):
     def get_headers(self, dest=os.path.abspath(os.path.curdir)):
         self.get_arch_content(dest, ('include',))
 
+    def get_all(self, dest=os.path.abspath(os.path.curdir)):
+        self.get_arch_content(dest, tuple())
+
     @abstractmethod
     def get_arch_content(self, dest, rel_path):
         pass
@@ -258,7 +261,7 @@ def gen_config(temp_build_dir=None, ssl_relative_path=None, couchbase_core='couc
             openssl = get_openssl()
             if openssl:
                 try:
-                    openssl.get_headers(ssl_abs_path)
+                    openssl.get_all(ssl_abs_path)
                 except Exception as e:
                     logging.warning("Couldn't get OpenSSL headers: {}".format(traceback.format_exc()))
 
