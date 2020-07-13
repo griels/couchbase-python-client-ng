@@ -154,14 +154,17 @@ class CMakeBuild(cbuild_config.CBuildCommon):
                 import logging
                 import traceback
                 logging.warning("Cannot find conan : {}".format(traceback.format_exc()))
-            cmake_args += ['--trace-source=CMakeLists.txt',
-                           '--trace-expand',
+            cmake_args += [
                            '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON',
                            '-DPYTHON_EXECUTABLE={}'.format(python_executable)]
             PYCBC_SSL_FETCH = env.get('PYCBC_SSL_FETCH')
             if PYCBC_SSL_FETCH:
                 cmake_args += ['-DPYCBC_SSL_FETCH={}'.format(PYCBC_SSL_FETCH)]
-
+            PYCBC_CMAKE_DEBUG = env.get('PYCBC_CMAKE_DEBUG')
+            if PYCBC_CMAKE_DEBUG:
+                cmake_args += [
+                '--trace-source=CMakeLists.txt',
+                '--trace-expand']
             cxx_compile_args=filter(re.compile(r'^(?!-std\s*=\s*c(11|99)).*').match, ext.extra_compile_args)
             env['CXXFLAGS'] = '{} {} -DVERSION_INFO=\\"{}\\"'.format(
                 env.get('CXXFLAGS', ''), ' '.join(cxx_compile_args),
