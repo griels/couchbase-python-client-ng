@@ -217,32 +217,6 @@ class CBuildInfo:
         return lib_dirs
 
 
-class LazyCommandClass(dict):
-    """
-    Lazy command class that defers operations requiring given cmdclass until
-    they've actually been downloaded and installed by setup_requires.
-    """
-    def __init__(self, cmdclass_real):
-        super(LazyCommandClass, self).__init__()
-        self.cmdclass_real=cmdclass_real
-
-    def __contains__(self, key):
-        return (
-                key == 'build_ext'
-                or super(LazyCommandClass, self).__contains__(key)
-        )
-
-    def __setitem__(self, key, value):
-        if key == 'build_ext':
-            raise AssertionError("build_ext overridden!")
-        super(LazyCommandClass, self).__setitem__(key, value)
-
-    def __getitem__(self, key):
-        if key != 'build_ext':
-            return super(LazyCommandClass, self).__getitem__(key)
-        return self.cmdclass_real
-
-
 class CBuildCommon(build_ext):
     @classmethod
     def setup_build_info(cls, extoptions, pkgdata):
