@@ -400,9 +400,7 @@ lcb_STATUS pycbc_handle_query(const pycbc_Bucket *self,
             if (timeout) {
                 lcb_cmdquery_timeout(cmd, timeout);
             }
-            if (!(is_prepared)) {
-                lcb_cmdquery_adhoc(cmd, 1);
-            }
+            lcb_cmdquery_adhoc(cmd,  !(is_prepared));
             {
                 lcb_STATUS ma_status =
                         is_xbucket ? pycbc_cmdquery_multiauth(cmd, 1) : rc;
