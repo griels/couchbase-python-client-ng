@@ -41,9 +41,8 @@ and :class:`~couchbase.collection.Collection` classes.
 
     .. automethod:: view_query
 
-.. class:: Collection
-
-    .. automethod:: get
+.. autoclass:: Collection
+    :members:
 
 .. currentmodule:: acouchbase.iterator
 
