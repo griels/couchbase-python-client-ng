@@ -280,7 +280,7 @@ static void query_row_callback(lcb_t instance,
 #endif
 
 #define PYCBC_ADHOC(CMD, PREPARED)  \
-    if (PREPARED) {                 \
+    if (!(PREPARED)) {                 \
         lcb_cmdquery_adhoc(cmd, 1); \
     }
 #define PYCBC_QUERY_MULTIAUTH(CMD, IS_XBUCKET)                      \
@@ -400,7 +400,7 @@ lcb_STATUS pycbc_handle_query(const pycbc_Bucket *self,
             if (timeout) {
                 lcb_cmdquery_timeout(cmd, timeout);
             }
-            if (is_prepared) {
+            if (!(is_prepared)) {
                 lcb_cmdquery_adhoc(cmd, 1);
             }
             {
