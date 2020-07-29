@@ -88,12 +88,9 @@ class QueryProfile(Enum):
     PHASES = 'phases'
     TIMINGS = 'timings'
 
+identity = lambda x: x
 
 class QueryOptions(OptionBlockTimeOut):
-    VALID_OPTS = {'timeout', 'read_only', 'scan_consistency', 'adhoc', 'client_context_id', 'consistent_with',
-                  'max_parallelism', 'positional_parameters', 'named_parameters', 'pipeline_batch', 'pipeline_cap',
-                  'profile', 'raw', 'scan_wait', 'scan_cap', 'metrics'}
-
     @overload
     def __init__(self,
                  timeout=None,                # type: timedelta
@@ -161,6 +158,17 @@ class QueryOptions(OptionBlockTimeOut):
         """
         super(QueryOptions, self).__init__(**kwargs)
 
+
+
+    VALID_OPTS = {'timeout' : lambda query, value: timedelta.total_seconds,
+                  'read_only':identity,
+                  'scan_consistency': lambda x: x.value,
+                  'adhoc': identity,
+                  'client_context_id': None,
+                  'consistent_with', ,
+                  'max_parallelism', 'positional_parameters', 'named_parameters', 'pipeline_batch', 'pipeline_cap',
+                  'profile', 'raw', 'scan_wait', 'scan_cap', 'metrics'}
+
     def to_n1ql_query(self, statement, *options, **kwargs):
         # lets make a copy of the options, and update with kwargs...
         args = self.copy()
@@ -175,7 +183,7 @@ class QueryOptions(OptionBlockTimeOut):
         # now the named parameters.  NOTE: all the kwargs that are
         # not VALID_OPTS must be named parameters, and the kwargs
         # OVERRIDE the list of named_parameters
-        new_keys = list(filter(lambda x: x not in self.VALID_OPTS, args.keys()))
+        new_keys = list(filter(lambda x: x not in self. VALID_OPTS, args.keys()))
         named_parameters = args.pop('named_parameters', {})
         for k in new_keys:
             named_parameters[k] = args[k]
