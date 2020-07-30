@@ -55,7 +55,8 @@ def get(path,  # type: str
 
 def upsert(path,                    # type: str,
            value,                   # type: JSON
-           create_parents=False     # type: bool
+           create_parents=False,    # type: bool
+           xattr=False              # type: False
            ):
     # type: (...) -> Spec
     """
@@ -64,14 +65,16 @@ def upsert(path,                    # type: str,
     :param str path:  Path at which to upsert the value.
     :param JSON value:  Value to upsert.
     :param create_parents: Whether or not to create parents if needed.
+    :param xattr: whether this is an xattr path
 
     :return: Spec
     """
-    return SD.upsert(path, value, create_parents)
+    return SD.upsert(path, value, create_parents, xattr=xattr)
 
 
 def replace(path,       # type: str
-            value       # type: JSON
+            value,       # type: JSON
+            xattr=False # type: bool
             ):
     # type: (...) -> Spec
     """
@@ -79,14 +82,16 @@ def replace(path,       # type: str
 
     :param str path:  Path at which to replace the value.
     :param value: Value you would like at the path given.
+    :param xattr: whether this is an xattr path
     :return: Spec
     """
-    return SD.replace(path, value)
+    return SD.replace(path, value, xattr=xattr)
 
 
-def insert(path,            # type: str
-           value,           # type: JSON
-           create_parents=False     # type: bool
+def insert(path,                     # type: str
+           value,                    # type: JSON
+           create_parents=False,     # type: bool
+           xattr=False               # type: False
            ):
     # type: (...) -> Spec
     """
@@ -96,9 +101,10 @@ def insert(path,            # type: str
     :param JSON value: Value to insert at this path.
     :param create_parents: Whether or not to create the parents in the path,
         if they don't already exist.
+    :param xattr: whether this is an xattr path
     :return: Spec
     """
-    return SD.insert(path, value, create_parents)
+    return SD.insert(path, value, create_parents, xattr=xattr)
 
 
 def remove(path,    # type: str
