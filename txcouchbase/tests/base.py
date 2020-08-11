@@ -38,6 +38,7 @@ import re
 import inspect
 
 import couchbase.exceptions
+import distro
 
 
 candidate_pattern=re.compile(r'.*(twisted|tx|couchbase).*')
@@ -190,7 +191,6 @@ def gen_base(basecls,  # type: Type[AsyncClusterTestCase]
 
     return WrappedTest
 
-
 def skip_PYCBC_894(func):
     def wrapped_func(self,  # type: TestCase
                      *args, **kwargs):
@@ -198,6 +198,6 @@ def skip_PYCBC_894(func):
             return func(self, *args, **kwargs)
         except couchbase.exceptions.TimeoutException:
             raise SkipTest("Fails on MacOS - to be fixed: https://issues.couchbase.com/browse/PYCBC-894")
-    if sys.platform in ['darwin'] and not os.environ.get("PYCBC_894", None):
+    if re.compile(r'.*(darwin|centos|amazon|osx|macos).*').match(distro.id().lower()) and not os.environ.get("PYCBC_894", None):
         return wrapped_func
     return func
