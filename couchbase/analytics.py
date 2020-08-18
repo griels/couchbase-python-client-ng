@@ -75,6 +75,11 @@ class AnalyticsResult(iterable_wrapper(AnalyticsRequest)):
         super(AnalyticsResult, self).__init__(*args, **kwargs)
 
 
+class AnalyticsScanConsistency(enum.Enum):
+    NOT_BOUNDED = "not_bounded"
+    REQUEST_PLUS = "request_plus"
+
+
 class AnalyticsOptions(OptionBlockTimeOut):
     VALID_OPTS = {'timeout', 'read_only', 'scan_consistency', 'client_context_id', 'positional_parameters',
                   'named_parameters', 'raw'}
@@ -83,7 +88,7 @@ class AnalyticsOptions(OptionBlockTimeOut):
     def __init__(self,
                  timeout=None,  # type: timedelta
                  read_only=None,  # type: bool
-                 scan_consistency=None,  # type: QueryScanConsistency
+                 scan_consistency=None,  # type: AnalyticsScanConsistency
                  client_context_id=None,  # type: str
                  priority=None,  # type: bool
                  positional_parameters=None,  # type: Iterable[str]
@@ -134,7 +139,7 @@ class AnalyticsOptions(OptionBlockTimeOut):
             v = args.get(k, None)
             if v:
                 if k == 'scan_consistency':
-                    query.consistency = v.as_string()
+                    query.consistency = v.value
                 if k == 'timeout':
                     query.timeout = v
                 if k == 'read_only':
