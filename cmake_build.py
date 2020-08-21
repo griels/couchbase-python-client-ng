@@ -83,7 +83,7 @@ class CMakeBuild(cbuild_config.CBuildCommon):
             base_req.append('conan')
         if re.match(r'.*(GITHUB_API|ALL).*', PYCBC_SSL_FETCH):
             base_req.append('PyGithub')
-        return base_req + ([] if CMakeBuild.check_for_cmake() else ["cmake"])
+        return base_req + ([] if CMakeBuild.check_for_cmake() else ["cmake==3.18.0"])
 
     def prep_build(self, ext):
         if not CMakeBuild.hasbuilt:
