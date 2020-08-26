@@ -54,12 +54,15 @@ set (CMAKE_CXX_STANDARD 11)
 endif ()
 endmacro(use_cxx11)
 
-set (LCB_CFLAGS ${CFLAGS} -fPIC)
-set (LCB_CXXFLAGS ${CFLAGS} -fPIC)
+set (LCB_CFLAGS ${CFLAGS} -fPIC )
+set (LCB_CXXFLAGS ${CXXFLAGS} -fPIC)
 if (WIN32)
 else(WIN32)
-set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -fPIC -fno-strict-aliasing -Wall -Wstrict-prototypes")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -fPIC -fno-strict-aliasing -Wno-missing-braces -Wstrict-prototypes")
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-common -dynamic -DNDEBUG -g -fwrapv -Wswitch")
+set (CFLAGS "${CFLAGS} -Wno-missing-braces")
+set (CXXFLAGS "${CXXFLAGS} -Wno-missing-braces")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fPIC -fno-strict-aliasing -Wno-missing-braces -Wstrict-prototypes")
 endif()
 
 function(get_conan)
@@ -160,8 +163,11 @@ sbeParseJson(build_cfg BUILDCFG)
 message("environment LCB_TAG: $ENV{LCB_TAG}")
 
 set(PYCBC_SRC )
+if($ENV{HYBRID_BUILD})
+    set(HYBRID_BUILD $ENV{HYBRID_BUILD})
+endif()
 message("got HYBRID_BUILD=${HYBRID_BUILD}")
-if("${HYBRID_BUILD}")
+if("${HYBRID_BUILD}" MATCHES "TRUE")
     message("enabling hybrid build")
     set(ENABLE_HYBRID_BUILD TRUE)
 endif()
@@ -198,7 +204,6 @@ if (NOT LCB_TAG)
     message("using default tag(${LCB_TAG})")
 endif()
 message("lcb_tag: ${LCB_TAG}")
-set(REF_CMDS echo "no ref required")
 
 function(make_dir path)
     file(MAKE_DIRECTORY ${path})
@@ -304,7 +309,6 @@ if (LCB_SRC)
 
                 COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/install
 
-                COMMAND cd <SOURCE_DIR> && ${REF_CMDS}
                 COMMAND cd ${LCB_SELECTED_BUILD_DIR} && ${LCB_CMAKE_CONFIG_CMD}
                         -DCMAKE_BUILD_TYPE=${RELEASE_TYPE} -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>/${RELEASE_TYPE}
 
