@@ -597,13 +597,16 @@ static int get_common_objects(const lcb_RESPBASE *resp,
 
             if (!exists_ok) {
                 if ((*conn)->flags & PYCBC_CONN_F_WARNEXPLICIT) {
+#ifdef PYPY
+                    abort();
+#else
                     PyErr_WarnExplicit(PyExc_RuntimeWarning,
                                        "Found duplicate key",
                                        __FILE__,
                                        __LINE__,
                                        PYCBC_PACKAGE_NAME "._libcouchbase",
                                        NULL);
-
+#endif
                 } else {
                     PyErr_WarnEx(
                             PyExc_RuntimeWarning, "Found duplicate key", 1);
