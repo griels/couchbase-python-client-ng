@@ -560,7 +560,7 @@ class Cluster(CoreClient):
 
     # gets a random bucket from those the cluster has opened
     def _get_an_open_bucket(self, err_msg):
-        clients = [v() for k, v in self._cluster._buckets.items()]
+        clients = [v() for k, v in self._cluster.buckets.items()]
         clients = [v for v in clients if v]
         if clients:
             return choice(clients)
