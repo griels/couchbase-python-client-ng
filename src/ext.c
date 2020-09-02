@@ -793,6 +793,10 @@ void *calloc_and_log(const char *file,
             result);
     return result;
 }
+//#ifdef RPY_EXPORTED
+#define PyFrame_GetLineNumber(X) 0
+//#endif
+
 void pycbc_exception_log(const char *file,
                          const char *func,
                          int line,

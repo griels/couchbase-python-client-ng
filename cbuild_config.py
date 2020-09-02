@@ -114,6 +114,8 @@ def get_cbuild_options():
 def get_ext_options():
     extoptions, debug_symbols = get_cbuild_options()
     pkgdata = {}
+    if platform.python_implementation() == 'PyPy':
+        extoptions['extra_compile_args'] += ['PYPY']
     if sys.platform != 'win32':
         extoptions['extra_compile_args'] += ['-Wno-strict-prototypes', '-fPIC','-std=c11']
         extoptions['libraries'] = ['couchbase']

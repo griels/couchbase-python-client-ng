@@ -142,7 +142,7 @@ typedef int pycbc_strlen_t;
  * "plain" integer or string
  */
 #if PY_MAJOR_VERSION == 3
-#define PYCBC_POBJ_HEAD_INIT(t) { PyObject_HEAD_INIT(t) },
+#define PYCBC_POBJ_HEAD_INIT(t) PyObject_HEAD_INIT(t)
 
 /**
  * The IntFrom* macros get us a 'default' integer type from a long, etc.
