@@ -283,4 +283,8 @@ class _Cluster(object):
         def _warning(self, clash_param_dict, auth_type):
             warnings.warn(self._get_generic_complaint(clash_param_dict, auth_type))
 
+    @property
+    def buckets(self):
+        return self._buckets
+
 
