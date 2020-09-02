@@ -142,8 +142,11 @@ typedef int pycbc_strlen_t;
  * "plain" integer or string
  */
 #if PY_MAJOR_VERSION == 3
+#ifndef PYPY
 #define PYCBC_POBJ_HEAD_INIT(t) { PyObject_HEAD_INIT(t) },
-
+#else
+#define PYCBC_POBJ_HEAD_INIT(t) PyObject_HEAD_INIT(t)
+#endif
 /**
  * The IntFrom* macros get us a 'default' integer type from a long, etc.
  * Implemented (if not a simple macro) in numutil.c
