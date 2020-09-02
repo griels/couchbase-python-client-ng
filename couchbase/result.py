@@ -410,9 +410,6 @@ class MultiResult(dict):
         # type: (...) -> Type[MultiResult]
         return cls._gen_result_class(item)
 
-    @classmethod
-    def __getitem__(cls, item):
-        return cls._gen_result_class(item)
 
 ResultDeriv = TypeVar('ResultDeriv', bound=Union[Result, MultiResult, PingResult])
 R = TypeVar('R', bound=ResultDeriv)

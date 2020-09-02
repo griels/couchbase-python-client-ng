@@ -793,10 +793,6 @@ void *calloc_and_log(const char *file,
             result);
     return result;
 }
-//#ifdef RPY_EXPORTED
-#define PyFrame_GetLineNumber(X) 0
-//#endif
-
 void pycbc_exception_log(const char *file,
                          const char *func,
                          int line,
@@ -823,7 +819,11 @@ void pycbc_exception_log(const char *file,
                 PyFrameObject* frame = pTrace->tb_frame;
                 PyCodeObject* code = frame->f_code;
 
+#ifdef PYPY
+                int lineNr = 0;
+#else
                 int lineNr = PyFrame_GetLineNumber(frame);
+#endif
                 const char *sCodeName = PyUnicode_AsUTF8(code->co_name);
                 const char *sFileName = PyUnicode_AsUTF8(code->co_filename);
 
