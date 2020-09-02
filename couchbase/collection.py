@@ -282,7 +282,7 @@ def _wrap_multi_mutation_result(wrapped: CoreBucketOp
                                 ) -> CoreBucketOp:
     import boltons.funcutils
     def wrapper(target, keys, *options, **kwargs
-                ) -> MultiResult[MutationResult]:
+                ) -> 'MultiResult[MutationResult]':
         return get_multi_mutation_result(target.bucket, wrapped, keys, *options, **kwargs)
 
     return _inject_scope_and_collection(wrapper)
@@ -570,7 +570,7 @@ class CBCollection(wrapt.ObjectProxy):
                      ttl: int = 0,
                      format: int = None,
                      durability: DurabilityType = None
-                     ) -> MultiResult[MutationResult]:
+                     ) -> 'MultiResult[MutationResult]':
         pass
 
     @_inject_scope_and_collection
@@ -579,7 +579,7 @@ class CBCollection(wrapt.ObjectProxy):
                      keys: Dict[str,JSON],
                      *options: GetOptions,
                      **kwargs: Any
-                     ) -> MultiResult[MutationResult]:
+                     ) -> 'MultiResult[MutationResult]':
         """
         Write multiple items to the cluster. Multi version of :meth:`upsert`
 
@@ -626,7 +626,7 @@ class CBCollection(wrapt.ObjectProxy):
                      keys: Dict[str,JSON],
                      *options: GetOptions,
                      **kwargs: Any
-                     ) -> MultiResult[MutationResult]:
+                     ) -> 'MultiResult[MutationResult]':
         """
         Insert multiple items into the collection.
 
@@ -643,7 +643,7 @@ class CBCollection(wrapt.ObjectProxy):
                      keys: Iterable[str],
                      *options: GetOptions,
                      **kwargs: Any
-                     ) -> MultiResult[MutationResult]:
+                     ) -> 'MultiResult[MutationResult]':
         """
         Remove multiple items from the collection.
 
