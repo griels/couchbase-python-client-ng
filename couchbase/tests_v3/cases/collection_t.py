@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from couchbase_tests.base import CollectionTestCase
+from couchbase_tests.base import CollectionTestCase, CouchbaseTestCase
 from couchbase.cluster import ClusterOptions, ClassicAuthenticator, PasswordAuthenticator
 from couchbase.collection import GetOptions, UpsertOptions, ReplaceOptions, InsertOptions, \
     RemoveOptions
