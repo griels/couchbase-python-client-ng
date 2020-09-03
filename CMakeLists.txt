@@ -252,7 +252,7 @@ if (LCB_SRC)
         else()
             set(WIN_PLATFORM "Visual Studio 14 2015")
         endif()
-        set(LCB_CMAKE_ARGS ${LCB_CMAKE_ARGS} -DLCB_NO_MOCK=1 ${LCB_SSL_OPTS})
+        set(LCB_CMAKE_ARGS ${LCB_CMAKE_ARGS} -DLCB_NO_MOCK=1 ${LCB_SSL_OPTS} -DCMAKE_BUILD_PARALLEL_LEVEL=1)
         SET(LIBCOUCHBASE_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Release/${LIBCOUCHBASE_LIBRARY_NAME}")
         SET(LIBCOUCHBASE_DBG_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Debug/${LIBCOUCHBASE_DBG_LIBRARY_NAME}")
         ExternalProject_Add(libcouchbase_src
