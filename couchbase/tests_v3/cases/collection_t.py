@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from couchbase_tests.base import CollectionTestCase
+from couchbase_tests.base import CollectionTestCase, CouchbaseTestCase
 from couchbase.cluster import ClusterOptions, ClassicAuthenticator, PasswordAuthenticator
 from couchbase.collection import GetOptions, UpsertOptions, ReplaceOptions, InsertOptions, \
     RemoveOptions
@@ -262,11 +262,11 @@ class CollectionTests(CollectionTestCase):
         self.cb.unlock(self.KEY, cas)
         self.cb.upsert(self.KEY, self.CONTENT)
 
+    @CouchbaseTestCase.skip_fail_if_plat(r'.*(centos|am.?z.?n).*', "PYCBC-1026: Test skipped as on Centos/Amazon linux")
     def test_unlock_wrong_cas(self):
         cas = self.cb.get_and_lock(self.KEY, timedelta(seconds=15)).cas
-        self.try_n_times_till_exception(20, 1, self.cb.unlock, self.KEY, 100,
-                                        expected_exceptions=(TemporaryFailException,))
-        self.try_n_times(10, 3, self.cb.unlock, self.KEY, cas, expected_exceptions=(TemporaryFailException,))
+        self.assertRaises(TemporaryFailException, self.cb.unlock, self.KEY, 100)
+        self.cb.unlock(self.KEY, cas)
 
     def test_client_durable_upsert(self):
         num_replicas = self.bucket._bucket.configured_replica_count
