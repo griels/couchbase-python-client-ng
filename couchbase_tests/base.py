@@ -75,6 +75,9 @@ except ImportError:
     import unittest
 from basictracer import BasicTracer, SpanRecorder
 from couchbase_core._libcouchbase import PYCBC_TRACING
+import distro
+import re
+import traceback
 
 from typing import *
 
@@ -592,6 +595,20 @@ class CouchbaseTestCase(ResourcedTestCase):
             pass
 
         super(CouchbaseTestCase, self).assertRaisesRegexp(*args, **kwargs)
+
+    @staticmethod
+    def skip_fail_if_plat(plat_pat, message, expected_exc=(Exception,)):
+        def real_decorator(fn):
+            @wraps(fn)
+            def wrapper(*args, **kwargs):
+                try:
+                    fn(*args, **kwargs)
+                except expected_exc:
+                    if re.match(plat_pat, distro.id().lower()):
+                        raise SkipTest("{}: {}".format(message, traceback.format_exc()))
+                    raise
+            return wrapper
+        return real_decorator
 
 
 class ConnectionTestCaseBase(CouchbaseTestCase):
