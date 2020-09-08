@@ -271,18 +271,27 @@ class IterableWrapper(object):
         return self.meta
 
     def __iter__(self):
-        for row in self.buffered_rows:
-            yield row
-        parent_iter = self.basecls.__iter__(self)
-        while not self.done:
-            try:
-                next_item = next(parent_iter)
-                self.buffered_rows.append(next_item)
-                yield next_item
-            except (StopAsyncIteration, StopIteration) as e:
-                self.done = True
-                break
+        yield from tuple(self.basecls.__iter__(self))
+        #yield from self.basecls.__iter__(self)
+        # for row in self.buffered_rows:
+        #     yield row
+        # parent_iter = self.basecls.__iter__(self)
+        # while not self.done:
+        #     try:
+        #         next_item = next(parent_iter)
+        #         #self.buffered_rows.append(next_item)
+        #         yield next_item
+        #     except (StopAsyncIteration, StopIteration) as e:
+        #         self.done = True
+        #         break
 
+    def __del__(self):
+        del self.buffered_rows
+        try:
+            del self._mres
+            del self.__raw
+        except:
+            pass
 
 def iterable_wrapper(basecls  # type: Type[WrappedIterable]
                      ):

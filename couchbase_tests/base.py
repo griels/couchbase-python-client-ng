@@ -52,6 +52,10 @@ from couchbase_core.client import Client as CoreClient
 from couchbase_core.connstr import ConnectionString
 from couchbase.diagnostics import ServiceType, PingState
 
+import pathlib
+
+BASEDIR = pathlib.Path(__file__).parent.parent
+
 try:
     from unittest2.case import SkipTest
 except ImportError:
@@ -75,7 +79,6 @@ except ImportError:
     import unittest
 from basictracer import BasicTracer, SpanRecorder
 from couchbase_core._libcouchbase import PYCBC_TRACING
-import distro
 import re
 import traceback
 
@@ -200,8 +203,7 @@ PYCBC_CB_VERSION = 'PYCBC/' + cb_version
 
 CONFIG_FILE = 'tests.ini'  # in cwd
 if not os.path.exists(CONFIG_FILE):
-    import pathlib
-    CONFIG_FILE=pathlib.Path(__file__).parent.parent.joinpath(CONFIG_FILE).__str__()
+    CONFIG_FILE = BASEDIR.joinpath(CONFIG_FILE).__str__()
 ClientType = TypeVar('ClientType', bound=CoreClient)
 
 MockHackArgs = NamedTuple('MockHackArgs', [('auth', Authenticator), ('kwargs', Mapping[str,Any])])
@@ -598,18 +600,46 @@ class CouchbaseTestCase(ResourcedTestCase):
 
     @staticmethod
     def skip_fail_if_plat(plat_pat, message, expected_exc=(Exception,)):
+        try:
+            import distro
+            os_id = distro.id()
+        except ImportError:
+            import platform
+            os_id = platform.system()
+
+        os_id = os_id.lower()
+
         def real_decorator(fn):
             @wraps(fn)
             def wrapper(*args, **kwargs):
                 try:
                     fn(*args, **kwargs)
                 except expected_exc:
-                    if re.match(plat_pat, distro.id().lower()):
+                    if re.match(plat_pat, os_id):
                         raise SkipTest("{}: {}".format(message, traceback.format_exc()))
                     raise
             return wrapper
         return real_decorator
 
+
+    def gen_obj_graph(self, attrib, attrib_name, graphdir):
+        import objgraph
+
+        options = dict(refcounts=True, max_depth=3, too_many=10, shortnames=False)
+        import os
+        final_graph_dir=BASEDIR.joinpath(graphdir)
+        os.makedirs(final_graph_dir, exist_ok=True)
+        objgraph.show_refs(attrib,
+                           filename=os.path.join(final_graph_dir, '{}_{}_refs.dot'.format(self._testMethodName,
+                                                                                   attrib_name)),
+                           **options)
+        objgraph.show_backrefs(attrib,
+                               filename=os.path.join(final_graph_dir,
+                                                     '{}_{}_backrefs.dot'.format(self._testMethodName,
+                                                                                 attrib_name)),
+                               **options)
+        logging.info("got referrents {}".format(repr(gc.get_referents(attrib))))
+        logging.info("got referrers {}".format(repr(gc.get_referrers(attrib))))
 
 class ConnectionTestCaseBase(CouchbaseTestCase):
     def __init__(self, *args, **kwargs):
@@ -624,7 +654,6 @@ class ConnectionTestCaseBase(CouchbaseTestCase):
         if platform.python_implementation() == 'PyPy':
             return
         if os.environ.get("PYCBC_TRACE_GC") in ['FULL', 'GRAPH_ONLY']:
-            import objgraph
             graphdir = os.path.join(os.getcwd(), "ref_graphs")
             try:
                 os.makedirs(graphdir)
@@ -635,18 +664,7 @@ class ConnectionTestCaseBase(CouchbaseTestCase):
                 try:
                     logging.info("evaluating " + attrib_name)
                     attrib = eval("self." + attrib_name)
-                    options = dict(refcounts=True, max_depth=3, too_many=10, shortnames=False)
-                    objgraph.show_refs(attrib,
-                                       filename=os.path.join(graphdir, '{}_{}_refs.dot'.format(self._testMethodName,
-                                                                                               attrib_name)),
-                                       **options)
-                    objgraph.show_backrefs(attrib,
-                                           filename=os.path.join(graphdir,
-                                                                 '{}_{}_backrefs.dot'.format(self._testMethodName,
-                                                                                             attrib_name)),
-                                           **options)
-                    logging.info("got referrents {}".format(repr(gc.get_referents(attrib))))
-                    logging.info("got referrers {}".format(repr(gc.get_referrers(attrib))))
+                    self.gen_obj_graph(attrib, attrib_name, graphdir)
                 except:
                     pass
         gc.collect()
@@ -906,9 +924,12 @@ class ClusterTestCase(CouchbaseTestCase):
         # NOTE: ping is broken -- returns the Analytics in the Query.  So, for now, we
         # are _probably_ ok if we just make sure the 4 services are up.  Could be more
         # tricky if needed...
-        service_types = [ServiceType.KeyValue, ServiceType.Search, ServiceType.Query,
+        service_types = [ServiceType.KeyValue,
+                         #ServiceType.Search,
+                         ServiceType.Query,
                          #ServiceType.Analytics,
-                         ServiceType.View]
+                         #ServiceType.View
+                         ]
         resp = self.bucket.ping()
         # first make sure all are there:
         if all(k in resp.endpoints.keys() for k in service_types):

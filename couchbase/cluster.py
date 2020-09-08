@@ -14,7 +14,7 @@ from couchbase.diagnostics import DiagnosticsResult
 from couchbase.search import SearchResult, SearchOptions, SearchQuery
 from .analytics import AnalyticsResult
 from .n1ql import QueryResult
-from couchbase_core.n1ql import _N1QLQuery
+from couchbase_core.n1ql import _N1QLQuery, N1QLRequest
 from .options import OptionBlock, OptionBlockDeriv
 from .bucket import Bucket, CoreClient, PingOptions
 from couchbase_core.cluster import _Cluster as CoreCluster
@@ -590,21 +590,24 @@ class Cluster(CoreClient):
         # a QueryOptions.  Note if multiple QueryOptions are passed in for some strange reason,
         # all but the last are ignored.
         self._check_for_shutdown()
-        itercls = kwargs.pop('itercls', QueryResult)
-        opt = QueryOptions()
-        opts = list(options)
-        for o in opts:
-            if isinstance(o, QueryOptions):
-                opt = o
-                opts.remove(o)
+        itercls = kwargs.pop('itercls', N1QLRequest)
+        # opt = QueryOptions()
+        # opts = list(options)
+        # for o in opts:
+        #     if isinstance(o, QueryOptions):
+        #         opt = o
+        #         opts.remove(o)
 
         # if not a 6.5 cluster, we need to query against a bucket.  We think once
         # CCBC-1204 is addressed, we can just use the cluster's instance
-        return self._maybe_operate_on_an_open_bucket(CoreClient.query,
-                                                     QueryException,
-                                                     opt.to_n1ql_query(statement, *opts, **kwargs),
-                                                     itercls=itercls,
-                                                     err_msg="Query requires an open bucket")
+        query_obj=_N1QLQuery(statement, *options)
+        return CoreClient.query(self,query_obj)
+
+        # return self._maybe_operate_on_an_open_bucket(CoreClient.query,
+        #                                              QueryException,
+        #                                              _N1QLQuery(statement, *options),#opt.to_n1ql_query(statement, *opts, **kwargs),
+        #                                              itercls=itercls,
+        #                                              err_msg="Query requires an open bucket")
 
     # gets a random bucket from those the cluster has opened
     def _get_an_open_bucket(self, err_msg):
