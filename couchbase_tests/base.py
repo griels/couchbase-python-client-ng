@@ -906,9 +906,12 @@ class ClusterTestCase(CouchbaseTestCase):
         # NOTE: ping is broken -- returns the Analytics in the Query.  So, for now, we
         # are _probably_ ok if we just make sure the 4 services are up.  Could be more
         # tricky if needed...
-        service_types = [ServiceType.KeyValue, ServiceType.Search, ServiceType.Query,
+        service_types = [ServiceType.KeyValue,
+                         #ServiceType.Search,
+                         ServiceType.Query,
                          #ServiceType.Analytics,
-                         ServiceType.View]
+                         #ServiceType.View
+                         ]
         resp = self.bucket.ping()
         # first make sure all are there:
         if all(k in resp.endpoints.keys() for k in service_types):

@@ -152,3 +152,25 @@ class QueryTests(CollectionTestCase):
         result = self.cluster.query("SELECT * FROM `beer-sample` WHERE brewery_id LIKE $brewery LIMIT 1",
                                     QueryOptions(named_parameters={'brewery':'xxffqqlx'}), brewery='21st_am%')
         self.assertRows(result, 1)
+
+    def test_no_leak(self):
+        from couchbase.cluster import Cluster, ClusterOptions, QueryOptions, ClusterTimeoutOptions, QueryScanConsistency
+        # timeout = 10
+        # timeout_options = ClusterTimeoutOptions(kv_timeout=timeout,
+        #                                         query_timeout=timeout)
+        # options = ClusterOptions(authenticator=self.m)
+        # cluster = Cluster(connection_string='couchbase://172.23.96.142', options=options)
+        # bucket = cluster.bucket('bucket-1')
+        # collection = bucket.scope('scope-1').collection('collection-1')
+
+        doc = {'field1': "value1"}
+        for i in range(100):
+            key = str(i)
+            self.bucket.upsert(key, doc, persist_to=0, replicate_to=0, ttl=0)
+
+        statement = "SELECT * FROM default:`default` USE KEYS[$1];".format(self.cluster_info.bucket_name,self.coll._self_scope.name, self.coll._self_name)
+        for i in range(100):
+            args = [str(i)]
+            query_opts = QueryOptions(adhoc=False, scan_consistency=QueryScanConsistency.NOT_BOUNDED, positional_parameters=args)
+            tuple(self.cluster.query(statement, query_opts))
+
