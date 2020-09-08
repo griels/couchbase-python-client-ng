@@ -20,7 +20,7 @@ from unittest import SkipTest
 from couchbase.n1ql import UnsignedInt64
 from couchbase.cluster import QueryOptions, QueryProfile, QueryResult
 from couchbase.n1ql import QueryMetaData, QueryStatus, QueryWarning
-from couchbase_tests.base import CollectionTestCase
+from couchbase_tests.base import CollectionTestCase, BASEDIR
 
 
 class QueryTests(CollectionTestCase):
@@ -152,3 +152,84 @@ class QueryTests(CollectionTestCase):
         result = self.cluster.query("SELECT * FROM `beer-sample` WHERE brewery_id LIKE $brewery LIMIT 1",
                                     QueryOptions(named_parameters={'brewery':'xxffqqlx'}), brewery='21st_am%')
         self.assertRows(result, 1)
+
+    #import memory_profiler
+
+    #@memory_profiler.profile()
+    def test_no_leak(self):
+        import objgraph
+
+        import tracemalloc
+        tracemalloc.start()
+        from couchbase.cluster import Cluster, ClusterOptions, QueryOptions, ClusterTimeoutOptions, QueryScanConsistency
+        # timeout = 10
+        # timeout_options = ClusterTimeoutOptions(kv_timeout=timeout,
+        #                                         query_timeout=timeout)
+        # options = ClusterOptions(authenticator=self.m)
+        # cluster = Cluster(connection_string='couchbase://172.23.96.142', options=options)
+        # bucket = cluster.bucket('bucket-1')
+        # collection = bucket.scope('scope-1').collection('collection-1')
+        import gc
+        #gc.set_debug(gc.DEBUG_LEAK | gc.DEBUG_STATS)
+        import objgraph
+        doc = {'field1': "value1"}
+        for i in range(100):
+            key = str(i)
+            self.bucket.upsert(key, doc, persist_to=0, replicate_to=0, ttl=0)
+
+        statement = "SELECT * FROM default:`default` USE KEYS[$1];".format(self.cluster_info.bucket_name,self.coll._self_scope.name, self.coll._self_name)
+        for j in range(1):
+            for i in range(5):
+                args = [str(i)]
+                print("PRE : iteration {} key: {}".format(j, i))
+                objgraph.show_growth(shortnames=False, limit=10)
+                #query_opts = QueryOptions(adhoc=False, scan_consistency=QueryScanConsistency.NOT_BOUNDED, positional_parameters=args)
+                result=self.cluster.query(statement, *args)#, query_opts)
+                import weakref
+                #res_weak=weakref.ref(result)
+                #del query_opts
+                class weaklist(list):
+                    __slots__ = ('__weakref__',)
+                stuff=weaklist(result)
+                metadata=result.meta#.metadata()
+                #del metadata
+                #del result
+                #result.raw.rows.append('fish')
+                raw=weakref.ref(result)#.raw.rows[:1])#weaklist(result.raw.rows))
+
+                result.raw.rows.clear()
+                del result
+                del metadata
+                #del stuff
+                gc.collect()
+                print("POST: iteration {} key: {}".format(j, i))
+                objgraph.show_growth(shortnames=False)
+                value=raw()#res_weak()
+                if value:
+                    leaks=objgraph.get_leaking_objects(value)
+                    count = 0
+                    for entry in leaks:
+                        if isinstance(entry, list):# and len(entry) and isinstance(entry[0],dict):
+                            objgraph.show_chain(
+                                objgraph.find_backref_chain(entry, objgraph.is_proper_module),
+                                filename=str(BASEDIR.joinpath('ref_graphs','iter_{j}_{i}_leak_{count}_chain.png'.format(i=i, j=j,count=count))))
+                            count+=1
+                            if count>=10:
+                                break
+                #referents=gc.get_referents(value)
+                #referers=gc.get_referrers(value)
+
+                #print("""{} referents = {}
+                #{} referrers = {} """.format(value, referents, value, referers))
+                #try:
+                #    leaking=objgraph.get_leaking_objects(value)
+                #    print(len(leaking))
+                #except Exception as e:
+                #    raise
+            snapshot=tracemalloc.take_snapshot()
+            for x, stat in enumerate(snapshot.statistics('filename')[:5], 1):
+                import logging
+                print("top_current {x}: {stat}".format(x = x, stat = str(stat)))
+            print("\n")
+            gc.collect()
+        self.gen_obj_graph(self.cluster,'self.cluster','ref_graphs')

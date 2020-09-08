@@ -14,7 +14,7 @@ from couchbase.diagnostics import DiagnosticsResult
 from couchbase.search import SearchResult, SearchOptions, SearchQuery
 from .analytics import AnalyticsResult
 from .n1ql import QueryResult
-from couchbase_core.n1ql import _N1QLQuery
+from couchbase_core.n1ql import _N1QLQuery, N1QLRequest
 from .options import OptionBlock, OptionBlockDeriv, QueryBaseOptions, LockMode, identity, enum_value
 from .bucket import Bucket, CoreClient, PingOptions
 from couchbase_core.cluster import _Cluster as CoreCluster
