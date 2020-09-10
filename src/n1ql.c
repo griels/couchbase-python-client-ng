@@ -131,7 +131,7 @@ void convert_query_error_context(const lcb_QUERY_ERROR_CONTEXT* ctx,
         pycbc_dict_add_text_kv(err_context, "extended_ref", extended_ref);
     }
     mres->err_info = err_info;
-    Py_INCREF(err_info);
+    //Py_INCREF(err_info);
     Py_DECREF(err_context);
 }
 
