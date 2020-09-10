@@ -2,7 +2,56 @@
 #include <libcouchbase/ixmgmt.h>
 #include "oputil.h"
 #include "pycbc_http.h"
+void pycbc_extract_unlock_bucket(const pycbc_MultiResult *mres,
+                                 pycbc_Bucket **bucket,
+                                 pycbc_ViewResult **vres);
+void pycbc_get_headers_status(const lcb_RESPHTTP *htresp,
+                              const char *const **hdrs,
+                              short *htcode);
+void pycbc_add_row_or_data(pycbc_MultiResult *mres,
+                           pycbc_ViewResult *vres,
+                           const char *rows,
+                           size_t row_count,
+                           int is_final);
+void pycbc_add_query_error_context(const lcb_RESPQUERY* resp,
+                                  pycbc_MultiResult* mres);
+static void query_row_callback(lcb_t instance,
+                               int ign,
+                               const lcb_RESPQUERY *respbase)
+{
+    pycbc_MultiResult *mres = ((void *) 0);
+    pycbc_Bucket *bucket = ((void *) 0);
+    pycbc_ViewResult *vres = ((void *)0);
+    const char *const *hdrs = ((void *) 0);
+    short htcode = 0;
+    const lcb_RESPHTTP *htresp = ((void *) 0);
+    const lcb_RESPQUERY *resp = (const lcb_RESPQUERY *)respbase;
+    lcb_respquery_cookie(resp, (void **)&mres);
+    pycbc_extract_unlock_bucket(mres, &bucket, &vres);
+    lcb_respquery_http_response(resp, &htresp);
+    pycbc_get_headers_status(htresp, &hdrs, &htcode);
 
+    if (lcb_respquery_is_final(resp)) {
+        if (vres) {
+            pycbc_add_query_error_context(resp, mres);
+            pycbc_httpresult_complete(&vres->base,
+                                      mres,
+                                      lcb_respquery_status(resp),
+                                      htcode,
+                                      hdrs);
+        }
+    } else {
+        if (vres) {
+            const char *rows = ((void *) 0);
+            size_t row_count = 0;
+            int is_final = lcb_respquery_is_final(resp);
+            lcb_respquery_row(resp, &rows, &row_count);
+            pycbc_add_row_or_data(mres, vres, rows, row_count, is_final);
+            pycbc_viewresult_step(vres, mres, bucket, lcb_respquery_is_final(resp));
+        }
+        PYCBC_CONN_THR_BEGIN(bucket);
+    }
+}
 void pycbc_extract_unlock_bucket(const pycbc_MultiResult *mres,
                                  pycbc_Bucket **bucket,
                                  pycbc_ViewResult **vres)
@@ -91,7 +140,6 @@ void convert_analytics_error_context(const lcb_ANALYTICS_ERROR_CONTEXT* ctx,
         pycbc_dict_add_text_kv(err_context, "extended_ref", extended_ref);
     }
     mres->err_info = err_info;
-    Py_INCREF(err_info);
     Py_DECREF(err_context);
 }
 void convert_query_error_context(const lcb_QUERY_ERROR_CONTEXT* ctx,
@@ -240,42 +288,6 @@ static void analytics_row_callback(lcb_t instance, int ign, const lcb_RESPANALYT
     }
 }
 
-static void query_row_callback(lcb_t instance,
-                               int ign,
-                               const lcb_RESPQUERY *respbase)
-{
-    pycbc_MultiResult *mres = ((void *) 0);
-    pycbc_Bucket *bucket = ((void *) 0);
-    pycbc_ViewResult *vres = ((void *)0);
-    const char *const *hdrs = ((void *) 0);
-    short htcode = 0;
-    const lcb_RESPHTTP *htresp = ((void *) 0);
-    const lcb_RESPQUERY *resp = (const lcb_RESPQUERY *)respbase;
-    lcb_respquery_cookie(resp, (void **)&mres);
-    pycbc_extract_unlock_bucket(mres, &bucket, &vres);
-    lcb_respquery_http_response(resp, &htresp);
-    pycbc_get_headers_status(htresp, &hdrs, &htcode);
-    if (vres) {
-        const char *rows = ((void *) 0);
-        size_t row_count = 0;
-        int is_final = lcb_respquery_is_final(resp);
-        lcb_respquery_row(resp, &rows, &row_count);
-        pycbc_add_row_or_data(mres, vres, rows, row_count, is_final);
-        pycbc_viewresult_step(vres, mres, bucket, lcb_respquery_is_final(resp));
-    }
-    if (lcb_respquery_is_final(resp)) {
-        if (vres) {
-            pycbc_add_query_error_context(resp, mres);
-            pycbc_httpresult_complete(&vres->base,
-                                      mres,
-                                      lcb_respquery_status(resp),
-                                      htcode,
-                                      hdrs);
-        }
-    } else {
-        PYCBC_CONN_THR_BEGIN(bucket);
-    }
-}
 #endif
 
 #define PYCBC_ADHOC(CMD, PREPARED)  \
