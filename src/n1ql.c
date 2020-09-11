@@ -293,6 +293,7 @@ static void query_row_callback(lcb_t instance,
 #define PYCBC_ADHOC(CMD, PREPARED)  \
     lcb_cmdquery_adhoc(cmd, !(PREPARED));
 
+#define PYCBC_FLEX(CMD, IS_FLEX) lcb_cmdquery_flex_index(cmd, IS_FLEX);
 #define PYCBC_QUERY_MULTIAUTH(CMD, IS_XBUCKET)                      \
     {                                                               \
         lcb_STATUS ma_status =                                      \
@@ -304,36 +305,44 @@ static void query_row_callback(lcb_t instance,
         }                                                           \
     }
 
-#define PYCBC_HANDLE_QUERY(UC, LC, ADHOC, MULTIAUTH)      \
-    lcb_STATUS pycbc_handle_##LC(const pycbc_Bucket *self,      \
-                                 const char *params,            \
-                                 unsigned int nparams,          \
-                                 int is_prepared,               \
-                                 int is_xbucket,                \
-                                 pycbc_MultiResult *mres,       \
-                                 pycbc_ViewResult *vres)        \
-    {                                                           \
-        lcb_STATUS rc = LCB_SUCCESS;                            \
-        {                                                       \
-            CMDSCOPE_NG(UC, LC)                                 \
-            {                                                   \
-                lcb_cmd##LC##_callback(cmd, LC##_row_callback); \
-                lcb_cmd##LC##_query(cmd, params, nparams);      \
-                lcb_cmd##LC##_handle(cmd, &vres->base.u.LC);    \
-                ADHOC(cmd, is_prepared)                         \
-                MULTIAUTH(CMD, is_xbucket)                      \
-                PYCBC_TRACECMD_SCOPED_NULL(rc,                  \
-                                           LC,                  \
-                                           self->instance,      \
-                                           cmd,                 \
-                                           vres->base.u.LC,     \
-                                           context,             \
-                                           mres,                \
-                                           cmd)                \
-            }                                                   \
-        }                                                       \
-    GT_DONE:                                                    \
-        return rc;                                              \
+#define PYCBC_HANDLE_QUERY(UC, LC, ADHOC, MULTIAUTH, FLEX)           \
+    lcb_STATUS pycbc_handle_##LC(const pycbc_Bucket *self,           \
+                                 const char *params,                 \
+                                 unsigned int nparams,               \
+                                 int is_prepared,                    \
+                                 int is_xbucket,                     \
+                                 pycbc_MultiResult *mres,            \
+                                 pycbc_ViewResult *vres,             \
+                                 lcb_uint32_t timeout,               \
+                                 int flex_index,                     \
+                                 pycbc_stack_context_handle context) \
+    {                                                                \
+        lcb_STATUS rc = LCB_SUCCESS;                                 \
+        {                                                            \
+            CMDSCOPE_NG(UC, LC)                                      \
+            {                                                        \
+                lcb_cmd##LC##_callback(cmd, LC##_row_callback);      \
+                lcb_cmd##LC##_payload(cmd, params, nparams);         \
+                lcb_cmd##LC##_handle(cmd, &vres->base.u.LC);         \
+                if (timeout) {                                       \
+                    lcb_cmd##LC##_timeout(cmd, timeout);             \
+                }                                                    \
+                ADHOC(cmd, is_prepared)                              \
+                MULTIAUTH(CMD, is_xbucket)                           \
+                FLEX(CMD, flex_index)                                \
+                PYCBC_TRACECMD_SCOPED_NULL(rc,                       \
+                                           LC,                       \
+                                           self->instance,           \
+                                           cmd,                      \
+                                           vres->base.u.LC,          \
+                                           context,                  \
+                                           mres,                     \
+                                           cmd)                      \
+            }                                                        \
+        }                                                            \
+    GT_ERR:                                                          \
+    GT_DONE:                                                         \
+        return rc;                                                   \
     }
 
 typedef lcb_STATUS (*pycbc_query_handler)(const pycbc_Bucket *self,
@@ -344,12 +353,13 @@ typedef lcb_STATUS (*pycbc_query_handler)(const pycbc_Bucket *self,
                                           pycbc_MultiResult *mres,
                                           pycbc_ViewResult *vres,
                                           lcb_uint32_t timeout,
+                                          int flex_index,
                                           pycbc_stack_context_handle);
 #undef PYCBC_QUERY_GEN
 #ifdef PYCBC_QUERY_GEN
-PYCBC_HANDLE_QUERY(ANALYTICS, analytics, PYCBC_DUMMY, PYCBC_DUMMY);
+PYCBC_HANDLE_QUERY(ANALYTICS, analytics, PYCBC_DUMMY, PYCBC_DUMMY, PYCBC_DUMMY);
 PYCBC_HANDLE_QUERY(
-        QUERY, query, PYCBC_ADHOC, PYCBC_QUERY_MULTIAUTH);
+        QUERY, query, PYCBC_ADHOC, PYCBC_QUERY_MULTIAUTH, PYCBC_FLEX);
 
 #else
 lcb_STATUS pycbc_handle_analytics(const pycbc_Bucket *self,
@@ -360,6 +370,7 @@ lcb_STATUS pycbc_handle_analytics(const pycbc_Bucket *self,
                                   pycbc_MultiResult *mres,
                                   pycbc_ViewResult *vres,
                                   lcb_uint32_t timeout,
+                                  int flex_index,
                                   pycbc_stack_context_handle context)
 {
     (void)is_prepared;
@@ -398,6 +409,7 @@ lcb_STATUS pycbc_handle_query(const pycbc_Bucket *self,
                               pycbc_MultiResult *mres,
                               pycbc_ViewResult *vres,
                               lcb_uint32_t timeout,
+                              int flex_index,
                               pycbc_stack_context_handle context)
 {
     lcb_STATUS rc = LCB_SUCCESS;
@@ -417,15 +429,16 @@ lcb_STATUS pycbc_handle_query(const pycbc_Bucket *self,
                 if (ma_status) {
                 }
             }
-            PYCBC_TRACECMD_SCOPED_NULL(rc,
-                                       query,
-                                       self->instance,
-                                       cmd,
-                                       vres->base.u.query,
-                                       context,
-                                       mres,
-                                       cmd)
         }
+        lcb_cmdquery_flex_index(cmd, flex_index);
+        PYCBC_TRACECMD_SCOPED_NULL(rc,
+                                   query,
+                                   self->instance,
+                                   cmd,
+                                   vres->base.u.query,
+                                   context,
+                                   mres,
+                                   cmd)
     }
 
 GT_ERR:
@@ -445,7 +458,8 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
                 int is_prepared,
                 int is_xbucket,
                 int is_analytics,
-                PyObject* timeout_O)
+                PyObject *timeout_O,
+                int flex_index)
 {
     PyObject *ret = NULL;
     pycbc_MultiResult *mres = NULL;
@@ -479,8 +493,16 @@ TRACED_FUNCTION(LCBTRACE_OP_REQUEST_ENCODING,
     static pycbc_query_handler handlers[] = {pycbc_handle_query,
                                              pycbc_handle_analytics};
     Py_INCREF(vres);
-    rc = (handlers[is_analytics])(
-            self, params, nparams, is_prepared, is_xbucket, mres, vres, timeout, context);
+    rc = (handlers[is_analytics])(self,
+                                  params,
+                                  nparams,
+                                  is_prepared,
+                                  is_xbucket,
+                                  mres,
+                                  vres,
+                                  timeout,
+                                  flex_index,
+                                  context);
     if (rc != LCB_SUCCESS) {
         PYCBC_EXC_WRAP(PYCBC_EXC_LCBERR, rc, "Couldn't schedule n1ql query");
         goto GT_DONE;
@@ -503,11 +525,19 @@ pycbc_Bucket__n1ql_query(pycbc_Bucket *self, PyObject *args, PyObject *kwargs)
     int prepared = 0, cross_bucket = 0;
     PyObject *result = NULL;
     PyObject* timeout_O = NULL;
-    static char *kwlist[] = { "params", "prepare", "cross_bucket", "timeout", NULL };
-    if (!PyArg_ParseTupleAndKeywords(
-        args, kwargs, "s#|iiO", kwlist, &params,
-        &nparams, &prepared, &cross_bucket, &timeout_O)) {
-
+    int flex_index = 0;
+    static char *kwlist[] = {
+            "params", "prepare", "cross_bucket", "timeout", "flex_index", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "s#|iiOi",
+                                     kwlist,
+                                     &params,
+                                     &nparams,
+                                     &prepared,
+                                     &cross_bucket,
+                                     &timeout_O,
+                                     &flex_index)) {
         PYCBC_EXCTHROW_ARGS();
         return NULL;
     }
@@ -521,7 +551,8 @@ pycbc_Bucket__n1ql_query(pycbc_Bucket *self, PyObject *args, PyObject *kwargs)
                               prepared,
                               cross_bucket,
                               0,
-                              timeout_O);
+                              timeout_O,
+                              flex_index);
     return result;
 }
 
@@ -550,7 +581,8 @@ PyObject *pycbc_Bucket__cbas_query(pycbc_Bucket *self,
                                   0,
                                   0,
                                   1,
-                                  timeout_O);
+                                  timeout_O,
+                                  0);
     }
     return result;
 }
