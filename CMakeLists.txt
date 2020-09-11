@@ -156,6 +156,12 @@ message("Got OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR}")
 
 
 set(CMAKE_MACOSX_RPATH 1)
+set(LCB_REPO_PROTOCOL http)
+if (LCB_REPO_USERNAME)
+    set(LCB_REPO_AT "@")
+else(LCB_REPO_USERNAME)
+    set(LCB_REPO_AT "")
+endif()
 
 set(BUILD_CFG_FILE cbuild_cfg.json)
 file(READ ${BUILD_CFG_FILE} BUILDCFG)
@@ -187,6 +193,12 @@ endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPYCBC_LCB_API=${PYCBC_LCB_API}")
 set(LCB_REPO ${build_cfg.comp_options.lcb_archive_repo})
 message("repo: ${LCB_REPO}")
+set(LCB_GIT_REPO ${build_cfg.comp_options.repo.git.url})
+message("repo: ${LCB_GIT_REPO}")
+if (NOT LCB_GIT_REPO)
+    set(LCB_GIT_REPO ${LCB_REPO_PROTOCOL}://${LCB_REPO_AT}${LCB_REPO_USERNAME}review.couchbase.org/libcouchbase)
+endif()
+
 if (NOT LCB_REPO)
     message("lcb_archive_repo not found in config, using default")
     set(LCB_REPO "https://github.com/couchbase/libcouchbase" )
@@ -235,6 +247,41 @@ if (LCB_SRC)
     endif()
 
     SET(LCB_BUILD_DIR "${CMAKE_BINARY_DIR}/Release/lcb_build")
+
+    message("got build_cfg ${build_cfg}")
+    message("got build_cfg.patches.git ${build_cfg.patches.git.repo} ${build_cfg.patches.git.ref}")
+
+    set(PATCH_REPO ${build_cfg.comp_options.git.patches.repo})
+    if (PATCH_REPO)
+    else()
+        set(PATCH_REPO ${build_cfg.comp_options.repo.git.url})
+    endif()
+    set(PATCH_REF ${build_cfg.comp_options.patches.git.ref})
+    set(PATCH_SHA ${build_cfg.comp_options.patches.git.sha})
+    if (NOT PATCH_SHA)
+        set(PATCH_SHA FETCH_HEAD)
+    endif()
+    if (PATCH_REF)
+        set (PATCH_TYPE ${build_cfg.patches.git.type})
+        if (NOT PATCH_TYPE)
+            set (PATCH_TYPE checkout)
+        endif()
+        if (NOT PYCBC_GIT_EMAIL)
+            set (GIT_USER_CMDS git config user.email \"buildbot@couchbase.com\"
+                    && git config user.name \"Couchbase Buildbot\")
+        else()
+            set (GIT_USER_CMDS echo "Using custom git email")
+        endif()
+        set (PATCH_COMMAND ${GIT_USER_CMDS}
+                && git fetch ${PATCH_REPO} ${PATCH_REF}
+                && git reset --hard
+                && git clean -f
+                && git ${PATCH_TYPE} ${PATCH_SHA})
+    else()
+        set (PATCH_COMMAND echo "no patch required")
+    endif()
+    message("Got PATCH_COMMAND ${PATCH_COMMAND}")
+        SET(LCB_BUILD_DIR "${CMAKE_BINARY_DIR}/Release/lcb_build")
     SET(LCB_DBGBUILD_DIR "${CMAKE_BINARY_DIR}/Release/lcb_dbgbuild")
     if (CMAKE_BUILD_TYPE MATCHES DEBUG)
         set(LCB_SELECTED_BUILD_DIR ${LCB_DBGBUILD_DIR})
@@ -256,6 +303,9 @@ if (LCB_SRC)
         SET(LIBCOUCHBASE_DBG_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Debug/${LIBCOUCHBASE_DBG_LIBRARY_NAME}")
         ExternalProject_Add(libcouchbase_src
             URL "${LCB_REPO}/archive/${LCB_TAG}.zip"
+            GIT_REPOSITORY ${LCB_GIT_REPO}
+            GIT_TAG ${LCB_TAG}
+            PATCH_COMMAND ${PATCH_COMMAND}
             CONFIGURE_COMMAND ${CMAKE_COMMAND} -E make_directory ${LCB_BUILD_DIR}
             COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_BINARY_DIR}/install
 
@@ -303,6 +353,9 @@ if (LCB_SRC)
 
         ExternalProject_Add(libcouchbase_src
                 URL "${LCB_REPO}/archive/${LCB_TAG}.zip"
+                GIT_REPOSITORY ${LCB_GIT_REPO}
+                GIT_TAG ${LCB_TAG}
+                PATCH_COMMAND ${PATCH_COMMAND}
                 CONFIGURE_COMMAND ${CMAKE_COMMAND} -E make_directory "${LCB_BUILD_DIR}"
                 make_dir ${LCB_SELECTED_BUILD_DIR}
 
