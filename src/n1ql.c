@@ -5,6 +5,20 @@
 
 void pycbc_extract_unlock_bucket(const pycbc_MultiResult *mres,
                                  pycbc_Bucket **bucket,
+                                 pycbc_ViewResult **vres);
+void pycbc_get_headers_status(const lcb_RESPHTTP *htresp,
+                              const char *const **hdrs,
+                              short *htcode);
+void pycbc_add_row_or_data(pycbc_MultiResult *mres,
+                           pycbc_ViewResult *vres,
+                           const char *rows,
+                           size_t row_count,
+                           int is_final);
+void pycbc_add_query_error_context(const lcb_RESPQUERY* resp,
+                                  pycbc_MultiResult* mres);
+
+void pycbc_extract_unlock_bucket(const pycbc_MultiResult *mres,
+                                 pycbc_Bucket **bucket,
                                  pycbc_ViewResult **vres)
 {
     if (mres) {
@@ -91,7 +105,6 @@ void convert_analytics_error_context(const lcb_ANALYTICS_ERROR_CONTEXT* ctx,
         pycbc_dict_add_text_kv(err_context, "extended_ref", extended_ref);
     }
     mres->err_info = err_info;
-    Py_INCREF(err_info);
     Py_DECREF(err_context);
 }
 void convert_query_error_context(const lcb_QUERY_ERROR_CONTEXT* ctx,
@@ -239,7 +252,6 @@ static void analytics_row_callback(lcb_t instance, int ign, const lcb_RESPANALYT
         PYCBC_CONN_THR_BEGIN(bucket);
     }
 }
-
 static void query_row_callback(lcb_t instance,
                                int ign,
                                const lcb_RESPQUERY *respbase)
@@ -255,14 +267,6 @@ static void query_row_callback(lcb_t instance,
     pycbc_extract_unlock_bucket(mres, &bucket, &vres);
     lcb_respquery_http_response(resp, &htresp);
     pycbc_get_headers_status(htresp, &hdrs, &htcode);
-    if (vres) {
-        const char *rows = ((void *) 0);
-        size_t row_count = 0;
-        int is_final = lcb_respquery_is_final(resp);
-        lcb_respquery_row(resp, &rows, &row_count);
-        pycbc_add_row_or_data(mres, vres, rows, row_count, is_final);
-        pycbc_viewresult_step(vres, mres, bucket, lcb_respquery_is_final(resp));
-    }
     if (lcb_respquery_is_final(resp)) {
         if (vres) {
             pycbc_add_query_error_context(resp, mres);
@@ -273,6 +277,14 @@ static void query_row_callback(lcb_t instance,
                                       hdrs);
         }
     } else {
+        const char *rows = ((void *) 0);
+        size_t row_count = 0;
+        int is_final = lcb_respquery_is_final(resp);
+        lcb_respquery_row(resp, &rows, &row_count);
+        if (vres) {
+            pycbc_add_row_or_data(mres, vres, rows, row_count, is_final);
+            pycbc_viewresult_step(vres, mres, bucket, lcb_respquery_is_final(resp));
+        }
         PYCBC_CONN_THR_BEGIN(bucket);
     }
 }
