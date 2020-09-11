@@ -20,7 +20,7 @@ from unittest import SkipTest
 from couchbase.n1ql import UnsignedInt64
 from couchbase.cluster import QueryOptions, QueryProfile, QueryResult
 from couchbase.n1ql import QueryMetaData, QueryStatus, QueryWarning
-from couchbase_tests.base import CollectionTestCase
+from couchbase_tests.base import CollectionTestCase, BASEDIR, ClusterTestCase
 
 
 class QueryTests(CollectionTestCase):
@@ -152,3 +152,40 @@ class QueryTests(CollectionTestCase):
         result = self.cluster.query("SELECT * FROM `beer-sample` WHERE brewery_id LIKE $brewery LIMIT 1",
                                     QueryOptions(named_parameters={'brewery':'xxffqqlx'}), brewery='21st_am%')
         self.assertRows(result, 1)
+
+
+class QueryLeakTest(CollectionTestCase):
+    def test_no_leak(self):
+        import objgraph
+
+        import tracemalloc
+        tracemalloc.start()
+
+        import gc
+        doc = {'field1': "value1"}
+        for i in range(100):
+            key = str(i)
+            self.bucket.upsert(key, doc, persist_to=0, replicate_to=0, ttl=0)
+
+        if self.is_realserver:
+            statement = "SELECT * FROM default:`default` USE KEYS[$1];".format(self.cluster_info.bucket_name,self.coll._self_scope.name, self.coll._self_name)
+        else:
+            statement = "'SELECT mockrow'"
+        for i in range(5):
+            args = [str(i)] if self.is_realserver else []
+            print("PRE: key: {}".format(i))
+            result=self.cluster.query(statement, *args)
+            stuff=list(result)
+            metadata=result.meta
+            del stuff
+            del result
+            del metadata
+            gc.collect()
+            print("POST: key: {}".format(i))
+            objgraph.show_growth(shortnames=False)
+            snapshot=tracemalloc.take_snapshot()
+            for x, stat in enumerate(snapshot.statistics('filename')[:5], 1):
+                print("top_current {x}: {stat}".format(x=x, stat=str(stat)))
+            print("\n")
+            gc.collect()
+        self.gen_obj_graph(self.cluster,'self.cluster','ref_graphs')
