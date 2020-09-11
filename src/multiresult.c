@@ -327,9 +327,10 @@ int pycbc_multiresult_maybe_raise2(pycbc_MultiResult *self,
      */
     if (PyObject_IsInstance(value, pycbc_helpers.default_exception)) {
         PyObject_SetAttrString(value, "all_results", (PyObject*)self);
-        Py_XDECREF(self->exceptions);
+        //PYCBC_XDECREF(self->exceptions);
     }
     Py_XDECREF(self->errop);
+    PYCBC_XDECREF(self->exceptions);
     self->exceptions = NULL;
     self->errop = NULL;
 
