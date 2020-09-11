@@ -157,7 +157,7 @@ class QueryTests(CollectionTestCase):
 
     #@memory_profiler.profile()
     def test_no_leak(self):
-        raise SkipTest()
+        #raise SkipTest()
         import objgraph
 
         import tracemalloc
@@ -179,7 +179,7 @@ class QueryTests(CollectionTestCase):
             self.bucket.upsert(key, doc, persist_to=0, replicate_to=0, ttl=0)
 
         statement = "SELECT * FROM default:`default` USE KEYS[$1];".format(self.cluster_info.bucket_name,self.coll._self_scope.name, self.coll._self_name)
-        for j in range(1):
+        for j in range(10):
             for i in range(5):
                 args = [str(i)]
                 print("PRE : iteration {} key: {}".format(j, i))
@@ -228,9 +228,10 @@ class QueryTests(CollectionTestCase):
                 #except Exception as e:
                 #    raise
             snapshot=tracemalloc.take_snapshot()
+            #tracemalloc.get_traced_memory()
             for x, stat in enumerate(snapshot.statistics('filename')[:5], 1):
                 import logging
                 print("top_current {x}: {stat}".format(x = x, stat = str(stat)))
-            print("\n")
+            print("End of iteration {}\n".format(j))
             gc.collect()
         self.gen_obj_graph(self.cluster,'self.cluster','ref_graphs')
