@@ -179,10 +179,38 @@ class BucketManager(GenericManager):
             method='POST',
             **forward_args(kwargs, *options))
 
+import enum
+
+class EphemeralEvictionPolicyType(enum.Enum):
+    NOT_RECENTLY_USED="nruEviction"
+    NO_EVICTION="noEviction"
+
+class CouchbaseEvictionPolicyType(enum.Enum):
+    FULL="fullEviction"
+    VALUE_ONLY="valueOnly"
+
+
+class EvictionPolicyType(EphemeralEvictionPolicyType, CouchbaseEvictionPolicyType):
+    pass
+
+class BucketType(enum.Enum):
+    COUCHBASE = "couchabse"
+    MEMCACHED = "memcached"
+    EPHEMERAL = "ephemeral"
 
 class BucketSettings(dict):
     @overload
-    def __init__(self, name=None, flush_enabled=None, ram_quota_mb=None, num_replicas=None, replica_index=None, bucket_type=None, eviction_policy=None, max_ttl=None, compression_mode=None):
+    def __init__(self,
+                 name=None,  # type: str
+                 flush_enabled=None,  # type: bool
+                 ram_quota_mb=None,  # type: int
+                 num_replicas=None,  # type: int
+                 replica_index=None,  #
+                 bucket_type=None,
+                 eviction_policy=None,
+                 max_ttl=None,
+                 compression_mode=None
+                 ):
         pass
 
     def __init__(self, **raw_info):
@@ -198,6 +226,15 @@ class BucketSettings(dict):
 
         # if created by a call from the user, we need to convert the names to the camel-case versions...
         # we really could do this via a package, but I hate to add a dependency just for this
+        T = TypeVar('T', bound=Any)
+        R = TypeVar('R', bound=Any)
+        class Converter(Protocol):
+            def __call__(self,
+                         x  # type: T
+                         ):
+                # type: (...) -> R
+                pass
+        mapping=Dict[str, ]
         key_tuple = [ ('flushEnabled', 'flush_enabled'),
                       ('numReplicas', 'num_replicas'),
                       ('ramQuotaMB', 'ram_quota_mb'),
@@ -283,7 +320,7 @@ class BucketSettings(dict):
     @property
     def compression_mode(self):
         # type: (...) -> int
-        """""""{off | passive | active} - The compression mode to use."""
+        """{off | passive | active} - The compression mode to use."""
         return self.get('compressionMode')
 
     @property
