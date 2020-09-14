@@ -1,9 +1,11 @@
 from couchbase.management.admin import Admin
-from ..options import OptionBlockTimeOut, forward_args
+from ..options import OptionBlockTimeOut, forward_args, identity
 from couchbase.management.generic import GenericManager
 from typing import *
 from couchbase_core import abstractmethod, mk_formstr
 from couchbase.exceptions import HTTPException, ErrorMapper, BucketAlreadyExistsException, BucketDoesNotExistException
+import enum
+import datetime
 
 
 class BucketManagerErrorHandler(ErrorMapper):
@@ -180,9 +182,39 @@ class BucketManager(GenericManager):
             **forward_args(kwargs, *options))
 
 
+class EvictionPolicyType(enum.Enum):
+    NOT_RECENTLY_USED="nruEviction"
+    NO_EVICTION="noEviction"
+    FULL="fullEviction"
+    VALUE_ONLY="valueOnly"
+
+
+class BucketType(enum.Enum):
+    COUCHBASE = "couchbase"
+    MEMCACHED = "memcached"
+    EPHEMERAL = "ephemeral"
+
+
+class CompressionMode(enum.Enum):
+    OFF = "off"
+    PASSIVE = "passive"
+    ACTIVE = "active"
+
+
 class BucketSettings(dict):
     @overload
-    def __init__(self, name=None, flush_enabled=None, ram_quota_mb=None, num_replicas=None, replica_index=None, bucket_type=None, eviction_policy=None, max_ttl=None, compression_mode=None):
+    def __init__(self,
+                 name=None,  # type: str
+                 flush_enabled=None,  # type: bool
+                 ram_quota_mb=None,  # type: int
+                 num_replicas=None,  # type: int
+                 replica_index=None,  # type: int
+                 bucket_type=None,  # type: BucketType
+                 eviction_policy=None,  # type: EvictionPolicyType
+                 max_ttl=None,  # type: datetime.timedelta
+                 compression_mode=None  # type: CompressionMode
+                 ):
+        # type: (...) -> None
         pass
 
     def __init__(self, **raw_info):
@@ -198,6 +230,19 @@ class BucketSettings(dict):
 
         # if created by a call from the user, we need to convert the names to the camel-case versions...
         # we really could do this via a package, but I hate to add a dependency just for this
+
+
+        mapping = {'flushEnabled': {'flush_enabled': identity},
+                   'numReplicas': {'num_replicas': identity},
+                   'ramQuotaMB': {'ram_quota_mb': identity},
+                   'replicaIndex': {'replica_index': identity},
+                   'bucketType': {'bucket_type': BucketType.value},
+                   'maxTTL': {'max_ttl': timedelta.total_seconds},
+                   'compressionMode': {'compression_mode': CompressionMode.value},
+                   'conflictResolutionType': {'conflict_resolution_type': identity},
+                   'evictionPolicy': {'eviction_policy': EvictionPolicyType.value},
+                   'name': {'name': identity}
+                   }
         key_tuple = [ ('flushEnabled', 'flush_enabled'),
                       ('numReplicas', 'num_replicas'),
                       ('ramQuotaMB', 'ram_quota_mb'),
@@ -283,7 +328,7 @@ class BucketSettings(dict):
     @property
     def compression_mode(self):
         # type: (...) -> int
-        """""""{off | passive | active} - The compression mode to use."""
+        """{off | passive | active} - The compression mode to use."""
         return self.get('compressionMode')
 
     @property
