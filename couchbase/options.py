@@ -314,8 +314,8 @@ class QueryBaseOptions(OptionBlockTimeOut):
                 setattr(query, target, transform(v))
         return query
 
-def identity(input):
-    return input
+from couchbase_core.mapper import identity
+
 
 def enum_value(input):
     return input.value
