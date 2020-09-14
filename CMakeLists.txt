@@ -302,7 +302,7 @@ if (LCB_SRC)
         SET(LIBCOUCHBASE_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Release/${LIBCOUCHBASE_LIBRARY_NAME}")
         SET(LIBCOUCHBASE_DBG_LIBRARY_FILE "${LCB_BUILD_DIR}/lib/Debug/${LIBCOUCHBASE_DBG_LIBRARY_NAME}")
         ExternalProject_Add(libcouchbase_src
-            URL "${LCB_REPO}/archive/${LCB_TAG}.zip"
+            #URL "${LCB_REPO}/archive/${LCB_TAG}.zip"
             GIT_REPOSITORY ${LCB_GIT_REPO}
             GIT_TAG ${LCB_TAG}
             PATCH_COMMAND ${PATCH_COMMAND}
@@ -352,7 +352,7 @@ if (LCB_SRC)
         SET(_parallelism 4)
 
         ExternalProject_Add(libcouchbase_src
-                URL "${LCB_REPO}/archive/${LCB_TAG}.zip"
+                #URL "${LCB_REPO}/archive/${LCB_TAG}.zip"
                 GIT_REPOSITORY ${LCB_GIT_REPO}
                 GIT_TAG ${LCB_TAG}
                 PATCH_COMMAND ${PATCH_COMMAND}
