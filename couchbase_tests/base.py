@@ -323,7 +323,7 @@ class ConnectionConfiguration(object):
                 config.getboolean('mock', 'enabled')):
 
             self.mock_enabled = True
-            self.mockpath = config.get("mock", "path")
+            self.mockpath = BASEDIR.joinpath(config.get("mock", "path"))
             if config.has_option("mock", "url"):
                 self.mockurl = config.get("mock", "url")
             else:
