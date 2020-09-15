@@ -190,8 +190,8 @@ class CouchbaseEvictionPolicyType(enum.Enum):
     VALUE_ONLY="valueOnly"
 
 
-class EvictionPolicyType(EphemeralEvictionPolicyType, CouchbaseEvictionPolicyType):
-    pass
+#class EvictionPolicyType(EphemeralEvictionPolicyType, CouchbaseEvictionPolicyType):
+#    pass
 
 class BucketType(enum.Enum):
     COUCHBASE = "couchabse"
