@@ -155,7 +155,11 @@ class QueryTests(CollectionTestCase):
 
 
 class QueryLeakTest(CollectionTestCase):
+    def setUp(self, default_collections=None, real_collections=None, **kwargs):
+        super(QueryLeakTest, self).setUp()
     def test_no_leak(self):
+        if self.is_mock:
+            raise SkipTest("N1QL doesn't work on mock")
         import objgraph
 
         import tracemalloc
@@ -165,7 +169,7 @@ class QueryLeakTest(CollectionTestCase):
         doc = {'field1': "value1"}
         for i in range(100):
             key = str(i)
-            self.bucket.upsert(key, doc, persist_to=0, replicate_to=0, ttl=0)
+            self.bucket.default_collection().upsert(key, doc)
 
         if self.is_realserver:
             statement = "SELECT * FROM default:`default` USE KEYS[$1];".format(self.cluster_info.bucket_name,self.coll._self_scope.name, self.coll._self_name)
