@@ -42,8 +42,19 @@ class BucketManager(GenericManager):
         :raises: InvalidArgumentsException
         """
         # prune the missing settings...
-        params = ({k:v for k,v in settings.items() if (v is not None)})
-
+        params = settings.as_dict({k:v for k,v in settings.items() if (v is not None)})
+        final_opts = dict(**Admin.bc_defaults)
+        final_opts.update(**{k: v for k, v in kwargs.items() if (v is not None)})
+        params = {
+            'name': name,
+            'bucketType': final_opts['bucket_type'],
+            'authType': 'sasl',
+            'saslPassword': final_opts['bucket_password'],
+            'flushEnabled': int(final_opts['flush_enabled']),
+            'ramQuotaMB': final_opts['ram_quota']
+        }
+        if final_opts['bucket_type'] in ('couchbase', 'membase', 'ephemeral'):
+            params['replicaNumber'] = final_opts['replicas']
         # insure flushEnabled is an int
         params['flushEnabled'] = int(params.get('flushEnabled', None))
 
@@ -201,6 +212,73 @@ class CompressionMode(enum.Enum):
     ACTIVE = "active"
 
 
+Src = TypeVar('Src')
+Dest = TypeVar('Dest')
+
+class Functor(Protocol[Src,Dest]):
+    def __call__(self,
+                 src  # type: Src
+                 ):
+        # type: (...) -> Dest
+        pass
+
+class ReversibleFunctor(Generic[Src,Dest]):
+    def __init__(self,
+                 src_to_dest,  # type:  Functor[Src,Dest],
+                 dest_to_src = None,  # type: Functor[Dest,Src]
+                 parent = None  # type: ReversibleFunctor[Dest,Src]
+        ):
+        # type: (...) -> None
+        self._src_to_dest=src_to_dest
+        if parent:
+            self._inverse = parent
+        else:
+            self._inverse = ReversibleFunctor(dest_to_src,parent=self)
+
+    def __neg__(self):
+        # type: (...) -> ReversibleFunctor[Dest,Src]
+        return self._inverse
+
+    def __call__(self,
+                 src  # type: Src
+                 ):
+        # type: (...) -> Dest
+        return self._src_to_dest(src)
+
+class IdentityFunctor(ReversibleFunctor):
+    def __init__(self):
+        super(IdentityFunctor, self).__init__(identity, identity)
+
+id_functor = IdentityFunctor()
+
+class ReversibleNamedFunctor(Generic[Src,Dest]):
+    def __init__(self,
+                 reversible_functor,  # type: ReversibleFunctor
+                 src_name,  # type: str
+                 dest_name = None  # type: str
+                 ):
+        # type: (...) -> None
+        self._src_name=src_name
+        self._functor = reversible_functor
+        self._inverse = ReversibleNamedFunctor(-reversible_functor, dest_name, src_name)
+
+    def src_name(self):
+        return self._src_name
+
+    def dest_name(self):
+        return self._inverse.src_name()
+
+class NamedIdentityFunctor(ReversibleNamedFunctor):
+    def __init__(self, src_name, dest_name = None):
+        super(NamedIdentityFunctor, self).__init__(id_functor, src_name, dest_name=dest_name)
+
+Enum_Type = TypeVar('Enum_Type', bound=enum.Enum)
+class ReversibleEnumFunctor(ReversibleFunctor[Enum_Type]):
+    def __init__(self):
+        ReversibleFunctor.__init__(self, Enum_Type.value, Enum_Type.name)
+
+x=ReversibleEnumFunctor[EvictionPolicyType].__init__()
+x.__neg__
 class BucketSettings(dict):
     @overload
     def __init__(self,
@@ -232,17 +310,7 @@ class BucketSettings(dict):
         # we really could do this via a package, but I hate to add a dependency just for this
 
 
-        mapping = {'flushEnabled': {'flush_enabled': identity},
-                   'numReplicas': {'num_replicas': identity},
-                   'ramQuotaMB': {'ram_quota_mb': identity},
-                   'replicaIndex': {'replica_index': identity},
-                   'bucketType': {'bucket_type': BucketType.value},
-                   'maxTTL': {'max_ttl': timedelta.total_seconds},
-                   'compressionMode': {'compression_mode': CompressionMode.value},
-                   'conflictResolutionType': {'conflict_resolution_type': identity},
-                   'evictionPolicy': {'eviction_policy': EvictionPolicyType.value},
-                   'name': {'name': identity}
-                   }
+
         key_tuple = [ ('flushEnabled', 'flush_enabled'),
                       ('numReplicas', 'num_replicas'),
                       ('ramQuotaMB', 'ram_quota_mb'),
@@ -253,8 +321,32 @@ class BucketSettings(dict):
                       ('conflictResolutionType', 'conflict_resolution_type'),
                       ('evictionPolicy', 'eviction_policy'),
                       ('name', 'name') ]
-        self.__pop_if_there(raw_info, key_tuple)
+        #self.__pop_if_there(raw_info, key_tuple)
+        self.update(self.from_raw(raw_info))
 
+
+    mapping =  {'flushEnabled': NamedIdentityFunctor('flush_enabled'),
+               'numReplicas': NamedIdentityFunctor('num_replicas'),
+               'ramQuotaMB': NamedIdentityFunctor('ram_quota_mb'),
+               'replicaIndex': NamedIdentityFunctor('replica_index'),
+               'bucketType': ReversibleNamedFunctor(){'bucket_type': BucketType.value},
+               'maxTTL': {'max_ttl': datetime.timedelta.total_seconds},
+               'compressionMode': {'compression_mode': CompressionMode.value},
+               'conflictResolutionType': {'conflict_resolution_type': identity},
+               'evictionPolicy': {'eviction_policy': EvictionPolicyType.value},
+               'name': {'name': identity}
+               }
+    def from_raw(self,
+                 raw_info  # type: Mapping[str, Any]
+                 ):
+        # type: (...) -> Dict[str, Any]
+        converted = {}
+        for k, v in raw_info.items():
+            # default is the current value of self[k[0]]
+            entry=BucketSettings.mapping.get(k,{k:identity})
+            converted[
+            self[k[0]] = raw_info.get(k[1], self[k[0]])
+        return converted
     def __pop_if_there(self, raw_info, keys):
       for k in keys:
         if isinstance(k, tuple):
