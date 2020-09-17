@@ -1,4 +1,6 @@
 from couchbase.management.admin import Admin
+from couchbase_core.mapper import NamedIdentity, NamedStringEnumBijection, NamedTimedeltaBijection, BijectiveMapping, \
+    NamedDivision
 from ..options import OptionBlockTimeOut, forward_args, identity
 from couchbase.management.generic import GenericManager
 from typing import *
@@ -46,7 +48,6 @@ class BucketManager(GenericManager):
         final_opts = dict(**Admin.bc_defaults)
         final_opts.update(**{k: v for k, v in kwargs.items() if (v is not None)})
         params = {
-            'name': name,
             'bucketType': final_opts['bucket_type'],
             'authType': 'sasl',
             'saslPassword': final_opts['bucket_password'],
@@ -139,8 +140,8 @@ class BucketManager(GenericManager):
         :raises: BucketNotFoundException
         :raises: InvalidArgumentsException
         """
-        return BucketSettings(
-          **self._admin_bucket.http_request(
+        return BucketSettings.from_raw(
+          self._admin_bucket.http_request(
               path='/pools/default/buckets/' + bucket_name,
               method='GET',
               **forward_args(kwargs, *options)
@@ -212,81 +213,26 @@ class CompressionMode(enum.Enum):
     ACTIVE = "active"
 
 
-Src = TypeVar('Src')
-Dest = TypeVar('Dest')
-
-class Functor(Protocol[Src,Dest]):
-    def __call__(self,
-                 src  # type: Src
-                 ):
-        # type: (...) -> Dest
-        pass
-
-class ReversibleFunctor(Generic[Src,Dest]):
-    def __init__(self,
-                 src_to_dest,  # type:  Functor[Src,Dest],
-                 dest_to_src = None,  # type: Functor[Dest,Src]
-                 parent = None  # type: ReversibleFunctor[Dest,Src]
-        ):
-        # type: (...) -> None
-        self._src_to_dest=src_to_dest
-        if parent:
-            self._inverse = parent
-        else:
-            self._inverse = ReversibleFunctor(dest_to_src,parent=self)
-
-    def __neg__(self):
-        # type: (...) -> ReversibleFunctor[Dest,Src]
-        return self._inverse
-
-    def __call__(self,
-                 src  # type: Src
-                 ):
-        # type: (...) -> Dest
-        return self._src_to_dest(src)
-
-class IdentityFunctor(ReversibleFunctor):
-    def __init__(self):
-        super(IdentityFunctor, self).__init__(identity, identity)
-
-id_functor = IdentityFunctor()
-
-class ReversibleNamedFunctor(Generic[Src,Dest]):
-    def __init__(self,
-                 reversible_functor,  # type: ReversibleFunctor
-                 src_name,  # type: str
-                 dest_name = None  # type: str
-                 ):
-        # type: (...) -> None
-        self._src_name=src_name
-        self._functor = reversible_functor
-        self._inverse = ReversibleNamedFunctor(-reversible_functor, dest_name, src_name)
-
-    def src_name(self):
-        return self._src_name
-
-    def dest_name(self):
-        return self._inverse.src_name()
-
-class NamedIdentityFunctor(ReversibleNamedFunctor):
-    def __init__(self, src_name, dest_name = None):
-        super(NamedIdentityFunctor, self).__init__(id_functor, src_name, dest_name=dest_name)
-
-Enum_Type = TypeVar('Enum_Type', bound=enum.Enum)
-class ReversibleEnumFunctor(ReversibleFunctor[Enum_Type]):
-    def __init__(self):
-        ReversibleFunctor.__init__(self, Enum_Type.value, Enum_Type.name)
-
-x=ReversibleEnumFunctor[EvictionPolicyType].__init__()
-x.__neg__
 class BucketSettings(dict):
+    mapping = BijectiveMapping({'flushEnabled': NamedIdentity('flush_enabled'),
+                                'numReplicas': NamedIdentity('num_replicas'),
+                                'ramQuotaMB': NamedDivision('ram_quota_mb', 1024 * 1024),
+                                'replicaNumber': NamedIdentity('num_replicas'),
+                                'replicaIndex': NamedIdentity('replica_index'),
+                                'bucketType': NamedStringEnumBijection(BucketType, 'bucket_type'),
+                                'maxTTL': NamedTimedeltaBijection('max_ttl'),
+                                'compressionMode': NamedStringEnumBijection(CompressionMode, 'compression_mode'),
+                                'conflictResolutionType': NamedIdentity('conflict_resolution_type'),
+                                'evictionPolicy': NamedStringEnumBijection(EvictionPolicyType, 'eviction_policy'),
+                                'name': NamedIdentity('name')})
+
     @overload
     def __init__(self,
                  name=None,  # type: str
                  flush_enabled=None,  # type: bool
                  ram_quota_mb=None,  # type: int
                  num_replicas=None,  # type: int
-                 replica_index=None,  # type: int
+                 replica_index=None,  # type: bool
                  bucket_type=None,  # type: BucketType
                  eviction_policy=None,  # type: EvictionPolicyType
                  max_ttl=None,  # type: datetime.timedelta
@@ -300,73 +246,28 @@ class BucketSettings(dict):
         :param info:
         :param raw_info:
         """
+        super(BucketSettings, self).__init__(self.from_raw(raw_info))
 
-        # TODO: do we need this?
-        # dict.__init__(self, Admin.bc_defaults)
-        # if created from the bucket info coming back from get_bucket, we need to convert some things here...
-        self.__convert_from_raw(raw_info)
-
-        # if created by a call from the user, we need to convert the names to the camel-case versions...
-        # we really could do this via a package, but I hate to add a dependency just for this
-
-
-
-        key_tuple = [ ('flushEnabled', 'flush_enabled'),
-                      ('numReplicas', 'num_replicas'),
-                      ('ramQuotaMB', 'ram_quota_mb'),
-                      ('replicaIndex', 'replica_index'),
-                      ('bucketType', 'bucket_type'),
-                      ('maxTTL', 'max_ttl'),
-                      ('compressionMode', 'compression_mode'),
-                      ('conflictResolutionType', 'conflict_resolution_type'),
-                      ('evictionPolicy', 'eviction_policy'),
-                      ('name', 'name') ]
-        #self.__pop_if_there(raw_info, key_tuple)
-        self.update(self.from_raw(raw_info))
-
-
-    mapping =  {'flushEnabled': NamedIdentityFunctor('flush_enabled'),
-               'numReplicas': NamedIdentityFunctor('num_replicas'),
-               'ramQuotaMB': NamedIdentityFunctor('ram_quota_mb'),
-               'replicaIndex': NamedIdentityFunctor('replica_index'),
-               'bucketType': ReversibleNamedFunctor(){'bucket_type': BucketType.value},
-               'maxTTL': {'max_ttl': datetime.timedelta.total_seconds},
-               'compressionMode': {'compression_mode': CompressionMode.value},
-               'conflictResolutionType': {'conflict_resolution_type': identity},
-               'evictionPolicy': {'eviction_policy': EvictionPolicyType.value},
-               'name': {'name': identity}
-               }
-    def from_raw(self,
+    @classmethod
+    def from_raw(cls,
                  raw_info  # type: Mapping[str, Any]
                  ):
         # type: (...) -> Dict[str, Any]
-        converted = {}
-        for k, v in raw_info.items():
-            # default is the current value of self[k[0]]
-            entry=BucketSettings.mapping.get(k,{k:identity})
-            converted[
-            self[k[0]] = raw_info.get(k[1], self[k[0]])
-        return converted
-    def __pop_if_there(self, raw_info, keys):
-      for k in keys:
-        if isinstance(k, tuple):
-          # default is the current value of self[k[0]]
-          self[k[0]] = raw_info.get(k[1], self[k[0]])
-        else:
-          # you passed in a list of strings, so default is none and the keys are same
-          self[k] = raw_info.get(k, None)
+        converted = BucketSettings.mapping.to_dest(raw_info)
+        result= cls(**converted)
+        result.__convert_from_raw(raw_info)
+        return result
 
     def __convert_from_raw(self, raw_info):
-      key_tuple = [ 'name', 'numReplicas', 'replicaIndex', 'replicaIndex', 'bucketType', 'maxTTL', 'compressionMode', 'conflictResolutionType', 'evictionPolicy']
-      self.__pop_if_there(raw_info, key_tuple)
-      quota = raw_info.get('quota', {})
-      # convert rawRAM to MB
-      if 'rawRAM' in quota:
-        self['ramQuotaMB'] = quota.get('rawRAM')/1024/1024
-      else:
-        self['ramQuotaMB'] = None
-      controllers = raw_info.get('controllers', {})
-      self['flushEnabled'] = ('flush' in controllers)
+
+        quota = raw_info.get('quota', {})
+        # convert rawRAM to MB
+        if 'rawRAM' in quota:
+            self['ram_quota_mb'] = quota.get('rawRAM') / 1024 / 1024
+        else:
+            self['ram_quota_mb'] = None
+        controllers = raw_info.get('controllers', {})
+        self['flush_enabled'] = ('flush' in controllers)
 
     @property
     def name(self):
@@ -378,25 +279,25 @@ class BucketSettings(dict):
     def flush_enabled(self):
         # type: (...) -> bool
         """Whether or not flush should be enabled on the bucket. Default to false."""
-        return self.get('flushEnabled', False)
+        return self.get('flush_enabled', False)
 
     @property
     def ram_quota_mb(self):
         # type: (...) -> int
         """Ram Quota in mb for the bucket. (rawRAM in the server payload)"""
-        return self.get('ramQuotaMB')
+        return self.get('ram_quota_mb')
 
     @property
     def num_replicas(self):
         # type: (...) -> int
         """NumReplicas (int) - The number of replicas for documents."""
-        return self.get('replicaNumber')
+        return self.get('replica_number')
 
     @property
     def replica_index(self):
         # type: (...) -> bool
         """ Whether replica indexes should be enabled for the bucket."""
-        return self.get('replicaIndex')
+        return self.get('replica_index')
 
     @property
     def bucket_type(self):
@@ -409,23 +310,23 @@ class BucketSettings(dict):
     def eviction_policy(self):
         # type: (...) -> int
         """{fullEviction | valueOnly}. The eviction policy to use."""
-        return self.get('evictionPolicy')
+        return self.get('eviction_policy')
 
     @property
     def max_ttl(self):
         # type: (...) -> int
         """Value for the maxTTL of new documents created without a ttl."""
-        return self.get('maxTTL')
+        return self.get('max_ttl')
 
     @property
     def compression_mode(self):
         # type: (...) -> int
         """{off | passive | active} - The compression mode to use."""
-        return self.get('compressionMode')
+        return self.get('compression_mode')
 
     @property
     def as_dict(self):
-        return self
+        return self.mapping.to_src(self)
 
 
 class CreateBucketSettings(BucketSettings):
@@ -438,7 +339,7 @@ class CreateBucketSettings(BucketSettings):
 
     @property
     def conflict_resolution_type(self):
-        return self.get('conflictResolutionType')
+        return self.get('conflict_resolution_type')
 
 
 class CreateBucketOptions(OptionBlockTimeOut):
