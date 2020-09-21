@@ -85,16 +85,17 @@ class NamedBijection(Generic[Src, Dest]):
 class NamedIdentity(NamedBijection):
     def __init__(self, dest_name):
         super(NamedIdentity, self).__init__(id_bijection, dest_name)
-
+    def __call__(self, X: Src) -> Src:
+        return id_bijection(X)
 
 Enum_Type = TypeVar('Enum_Type', bound=Type[enum.Enum])
 
 
-class StringEnumBijection(Generic[Enum_Type], Bijection[Enum_Type,str]):
+class StringEnum(Generic[Enum_Type], Bijection[Enum_Type, str]):
     def __init__(self,
                  type: Enum_Type):
         self._type=type
-        super(StringEnumBijection, self).__init__(self.to_dest, self.to_src)
+        super(StringEnum, self).__init__(self.to_dest, self.to_src)
 
     def to_dest(self, src):
         return src.value
@@ -105,16 +106,16 @@ class StringEnumBijection(Generic[Enum_Type], Bijection[Enum_Type,str]):
         return self._type[dest]
 
 
-class NamedStringEnumBijection(Generic[Enum_Type], NamedBijection[Enum_Type,str]):
+class NamedStringEnum(Generic[Enum_Type], NamedBijection[Enum_Type, str]):
     def __init__(self,
                  type: Enum_Type,
                  src_name, dest_name=None):
-        super(NamedStringEnumBijection, self).__init__(StringEnumBijection(type), src_name=src_name, dest_name=dest_name)
+        super(NamedStringEnum, self).__init__(StringEnum(type), src_name=src_name, dest_name=dest_name)
 
 
 def named_string_enum_bijection(enum_type,  # type: Enum_Type
                                 src_name, dest_name):
-    return NamedStringEnumBijection(enum_type, src_name=src_name, dest_name=dest_name)
+    return NamedStringEnum(enum_type, src_name=src_name, dest_name=dest_name)
 
 
 def seconds_to_timedelta(seconds: float) -> datetime.timedelta:
@@ -125,12 +126,12 @@ def timedelta_to_seconds(td: datetime.timedelta) -> float:
     return td.total_seconds()
 
 
-class TimedeltaBijection(Bijection):
+class Timedelta(Bijection):
     def __init__(self):
-        super(TimedeltaBijection, self).__init__(timedelta_to_seconds, seconds_to_timedelta)
+        super(Timedelta, self).__init__(timedelta_to_seconds, seconds_to_timedelta)
 
 
-td_bijection = TimedeltaBijection()
+td_bijection = Timedelta()
 
 
 class NamedTimedeltaBijection(NamedBijection[datetime.timedelta,int]):
@@ -138,18 +139,23 @@ class NamedTimedeltaBijection(NamedBijection[datetime.timedelta,int]):
         super(NamedTimedeltaBijection, self).__init__(td_bijection, dest_name, src_name=src_name)
 
 
-class DivisionBijection(Bijection[float,float]):
+class Division(Bijection[float, float]):
     def __init__(self, divisor):
-        super(DivisionBijection, self).__init__(lambda x: x/divisor, lambda x: x*divisor)
+        super(Division, self).__init__(lambda x: x / divisor, lambda x: x * divisor)
 
 
 class NamedDivision(NamedBijection):
     def __init__(self, dest_name, divisor):
-        super(NamedDivision, self).__init__(DivisionBijection(divisor), dest_name)
+        super(NamedDivision, self).__init__(Division(divisor), dest_name)
+
+
+Orig_Mapping = TypeVar('OrigMapping', bound=Mapping[str, Any])
 
 
 class BijectiveMapping(object):
-    def __init__(self, fwd_mapping):
+    def __init__(self,
+                 fwd_mapping: Orig_Mapping
+                 ):
         self.mapping=fwd_mapping
         self.reverse_mapping = {v.dest_name():v.inverse(k) for k,v in fwd_mapping.items()}
 

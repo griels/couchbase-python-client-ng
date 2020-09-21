@@ -1,6 +1,6 @@
 from couchbase.management.admin import Admin
-from couchbase_core.mapper import NamedIdentity, NamedStringEnumBijection, NamedTimedeltaBijection, BijectiveMapping, \
-    NamedDivision
+from couchbase_core.mapper import NamedIdentity, NamedStringEnum, NamedTimedeltaBijection, BijectiveMapping, \
+    NamedDivision, Identity, Division, StringEnum, Timedelta
 from ..options import OptionBlockTimeOut, forward_args, identity
 from couchbase.management.generic import GenericManager
 from typing import *
@@ -214,17 +214,17 @@ class CompressionMode(enum.Enum):
 
 
 class BucketSettings(dict):
-    mapping = BijectiveMapping({'flushEnabled': NamedIdentity('flush_enabled'),
-                                'numReplicas': NamedIdentity('num_replicas'),
-                                'ramQuotaMB': NamedDivision('ram_quota_mb', 1024 * 1024),
-                                'replicaNumber': NamedIdentity('num_replicas'),
-                                'replicaIndex': NamedIdentity('replica_index'),
-                                'bucketType': NamedStringEnumBijection(BucketType, 'bucket_type'),
-                                'maxTTL': NamedTimedeltaBijection('max_ttl'),
-                                'compressionMode': NamedStringEnumBijection(CompressionMode, 'compression_mode'),
-                                'conflictResolutionType': NamedIdentity('conflict_resolution_type'),
-                                'evictionPolicy': NamedStringEnumBijection(EvictionPolicyType, 'eviction_policy'),
-                                'name': NamedIdentity('name')})
+    mapping = BijectiveMapping({'flushEnabled': {'flush_enabled': Identity},
+                                'numReplicas': {'num_replicas': Identity},
+                                'rawRam': {'ram_quota_mb': Identity},
+                                'replicaNumber': {'num_replicas': Identity},
+                                'replicaIndex': {'replica_index': Identity},
+                                'bucketType': {'bucket_type': StringEnum(BucketType)},
+                                'maxTTL': {'max_ttl': Timedelta},
+                                'compressionMode': {'compression_mode': StringEnum(CompressionMode)},
+                                'conflictResolutionType': {'conflict_resolution_type': Identity},
+                                'evictionPolicy': {'eviction_policy': EvictionPolicyType},
+                                'name': {'name': Identity}})
 
     @overload
     def __init__(self,
