@@ -301,13 +301,11 @@ class UserManager(GenericManager):
                                         **forward_args(kwargs, *options))
 
 
-RawRole = NamedTuple('RawRole', [('name', str), ('bucket', str)])
+RawRole = NamedTuple('RawRole', [('name', str), ('bucket', str), ('scope', str), ('collection', str)])
 
 
 class Role(with_metaclass(ABCMeta, Mapped)):
-    """A role identifies a specific permission. CAVEAT,  # type: The properties of a role are likely to change with the introduction of collection-level permissions. Until then
-    here's what the accessor methods look like:
-    """
+    """A role identifies a specific permission."""
     factory = RawRole
 
     @staticmethod
@@ -316,16 +314,41 @@ class Role(with_metaclass(ABCMeta, Mapped)):
 
     @staticmethod
     def mappings():
-        return {'role': 'name'}
+        return {'role': 'name',
+                "bucket_name": "bucket",
+                "scope_name": "scope",
+                "collection_name": "collection"}
 
     @property
     @abstractmethod
-    def name(self):
+    def name(self) -> str:
+        """
+        The name of the role.
+        """
         pass
 
     @property
     @abstractmethod
-    def bucket(self):
+    def bucket(self) -> Optional[str]:
+        """
+        The bucket name associated with the role, if any.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def scope(self) -> Optional[str]:
+        """
+        The scope name associated with the role, if any.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def collection(self) -> Optional[str]:
+        """
+        The collection name associated with the role, if any.
+        """
         pass
 
     def __iter__(self):
@@ -536,7 +559,7 @@ class RawUserAndMetadata(UserAndMetadata):
     def effective_roles(self):
         # type: (...) -> Set[Role]
         """all roles, regardless of origin."""
-        return set(map(Role, self._raw_data.get('effective_roles')))
+        return set(map(Role.decode, self._raw_data.get('effective_roles')))
 
     @property
     def effective_roles_and_origins(self):
