@@ -48,45 +48,8 @@ class Identity(Bijection):
         super(Identity, self).__init__(identity, identity)
 
 
-id_bijection = Identity()
+identity_bijection = Identity()
 
-
-class NamedBijection(Generic[Src, Dest]):
-    def __init__(self,
-                 reversible_functor,  # type: Bijection[Src,Dest]
-                 dest_name,  # type: str
-                 src_name=None,  # type: str
-                 parent=None  # type: NamedBijection
-                 ):
-        # type: (...) -> None
-        self._dest_name = dest_name
-        self._functor = reversible_functor
-        if parent:
-            self._inverse = parent
-        else:
-            self._inverse = NamedBijection(-reversible_functor, dest_name, src_name, self)
-
-    def dest_name(self):
-        return self._dest_name
-
-    def src_name(self):
-        return self._inverse.dest_name()
-
-    def __call__(self, X: Src) -> Dest:
-        return self._functor(X)
-
-    def __neg__(self):
-        return self._inverse
-
-    def inverse(self, new_dest_name):
-        return NamedBijection(-self._functor, new_dest_name, self._dest_name)
-
-
-class NamedIdentity(NamedBijection):
-    def __init__(self, dest_name):
-        super(NamedIdentity, self).__init__(id_bijection, dest_name)
-    def __call__(self, X: Src) -> Src:
-        return id_bijection(X)
 
 Enum_Type = TypeVar('Enum_Type', bound=Type[enum.Enum])
 
@@ -106,18 +69,6 @@ class StringEnum(Generic[Enum_Type], Bijection[Enum_Type, str]):
         return self._type[dest]
 
 
-class NamedStringEnum(Generic[Enum_Type], NamedBijection[Enum_Type, str]):
-    def __init__(self,
-                 type: Enum_Type,
-                 src_name, dest_name=None):
-        super(NamedStringEnum, self).__init__(StringEnum(type), src_name=src_name, dest_name=dest_name)
-
-
-def named_string_enum_bijection(enum_type,  # type: Enum_Type
-                                src_name, dest_name):
-    return NamedStringEnum(enum_type, src_name=src_name, dest_name=dest_name)
-
-
 def seconds_to_timedelta(seconds: float) -> datetime.timedelta:
     return datetime.timedelta(seconds=seconds)
 
@@ -131,22 +82,12 @@ class Timedelta(Bijection):
         super(Timedelta, self).__init__(timedelta_to_seconds, seconds_to_timedelta)
 
 
-td_bijection = Timedelta()
-
-
-class NamedTimedeltaBijection(NamedBijection[datetime.timedelta,int]):
-    def __init__(self, src_name, dest_name=None):
-        super(NamedTimedeltaBijection, self).__init__(td_bijection, dest_name, src_name=src_name)
+timedelta_bijection = Timedelta()
 
 
 class Division(Bijection[float, float]):
     def __init__(self, divisor):
         super(Division, self).__init__(lambda x: x / divisor, lambda x: x * divisor)
-
-
-class NamedDivision(NamedBijection):
-    def __init__(self, dest_name, divisor):
-        super(NamedDivision, self).__init__(Division(divisor), dest_name)
 
 
 Orig_Mapping = TypeVar('OrigMapping', bound=Mapping[str, Any])
@@ -157,14 +98,18 @@ class BijectiveMapping(object):
                  fwd_mapping: Orig_Mapping
                  ):
         self.mapping=fwd_mapping
-        self.reverse_mapping = {v.dest_name():v.inverse(k) for k,v in fwd_mapping.items()}
+        self.reverse_mapping=dict()
+        for src_key, transform_dict in fwd_mapping.items():
+            for dest_key, transform in transform_dict.items():
+                self.reverse_mapping[dest_key] = {src_key: -transform}
 
     @staticmethod
     def convert(mapping, raw_info):
         converted = {}
         for k, v in raw_info.items():
-            entry = mapping.get(k, NamedIdentity(k))
-            converted[entry.dest_name()] = entry(v)
+            entry = mapping.get(k, {k:Identity})
+            for dest, transform in entry.items():
+                converted[dest] = transform(v)
         return converted
 
     def to_dest(self, src_data):

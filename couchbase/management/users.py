@@ -300,13 +300,11 @@ class UserManager(GenericManager):
                                         **forward_args(kwargs, *options))
 
 
-RawRole = NamedTuple('RawRole', [('name', str), ('bucket', str)])
+RawRole = NamedTuple('RawRole', [('name', str), ('bucket', str), ('scope', str), ('collection', str)])
 
 
 class Role(with_metaclass(ABCMeta, Mapped)):
-    """A role identifies a specific permission. CAVEAT,  # type: The properties of a role are likely to change with the introduction of collection-level permissions. Until then
-    here's what the accessor methods look like:
-    """
+    """A role identifies a specific permission."""
     factory = RawRole
 
     @staticmethod
@@ -330,7 +328,7 @@ class Role(with_metaclass(ABCMeta, Mapped)):
 
     @property
     @abstractmethod
-    def bucket(self) -> str:
+    def bucket(self) -> Optional[str]:
         """
         The bucket name associated with the role, if any.
         """
@@ -338,7 +336,7 @@ class Role(with_metaclass(ABCMeta, Mapped)):
 
     @property
     @abstractmethod
-    def scope(self) -> str:
+    def scope(self) -> Optional[str]:
         """
         The scope name associated with the role, if any.
         """
@@ -346,7 +344,7 @@ class Role(with_metaclass(ABCMeta, Mapped)):
 
     @property
     @abstractmethod
-    def collection(self) -> str:
+    def collection(self) -> Optional[str]:
         """
         The collection name associated with the role, if any.
         """

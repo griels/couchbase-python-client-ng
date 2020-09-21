@@ -1,6 +1,6 @@
 from couchbase.management.admin import Admin
-from couchbase_core.mapper import NamedIdentity, NamedStringEnum, NamedTimedeltaBijection, BijectiveMapping, \
-    NamedDivision, Identity, Division, StringEnum, Timedelta
+from couchbase_core.mapper import BijectiveMapping, \
+    StringEnum, identity_bijection as Identity, timedelta_bijection as Timedelta
 from ..options import OptionBlockTimeOut, forward_args, identity
 from couchbase.management.generic import GenericManager
 from typing import *
@@ -223,7 +223,7 @@ class BucketSettings(dict):
                                 'maxTTL': {'max_ttl': Timedelta},
                                 'compressionMode': {'compression_mode': StringEnum(CompressionMode)},
                                 'conflictResolutionType': {'conflict_resolution_type': Identity},
-                                'evictionPolicy': {'eviction_policy': EvictionPolicyType},
+                                'evictionPolicy': {'eviction_policy': StringEnum(EvictionPolicyType)},
                                 'name': {'name': Identity}})
 
     @overload
