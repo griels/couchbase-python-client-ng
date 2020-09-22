@@ -34,6 +34,7 @@ class ServiceType(Enum):
 class PingState(Enum):
     OK = 'ok'
     TIMEOUT = 'timeout'
+    ERROR = 'error'
 
 
 class EndPointDiagnostics(object):
