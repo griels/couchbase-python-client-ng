@@ -71,7 +71,6 @@ class Identity(Bijection[Src,Src, identity, identity]):
             raise InvalidArgumentException("Argument must be of type {} but got {}".format(self._type, x))
         return x
 
-
 Enum_Type = TypeVar('Enum_Type', bound=enum.Enum)
 
 
@@ -192,3 +191,16 @@ class BijectiveMapping(object):
         :return: the converted data
         """
         return self.convert(self.reverse_mapping, dest_data)
+
+
+class SrcToObject(Generic[Src, Dest]):
+    pass
+class ObjectToSrc(Generic[Dest, Src]):
+    pass
+class Object(Bijection[Src, Dest, SrcToObject[Src,Dest], ObjectToSrc[Dest,Src]], dict):
+    def __init__(self, mapping: Mapping[str, Any]):
+        super(Object, self).__init__(src_to_dest=Src, dest_to_src=Dest)
+        dict.__init__(self, mapping)
+
+
+
