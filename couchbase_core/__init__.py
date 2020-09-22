@@ -215,7 +215,7 @@ class Mapped(with_metaclass(ABCMeta)):
         try:
             return cls.factory(**final_args)
         except Exception as e:
-            pass
+            raise
     factory = None
 
     @staticmethod
