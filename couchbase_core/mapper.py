@@ -71,7 +71,6 @@ class Identity(Bijection[Src,Src, identity, identity]):
             raise InvalidArgumentException("Argument must be of type {} but got {}".format(self._type, x))
         return x
 
-
 Enum_Type = TypeVar('Enum_Type', bound=enum.Enum)
 
 
@@ -142,7 +141,7 @@ class Division(Bijection[float, float, float.__mul__, float.__mul__]):
         super(Division, self).__init__((1/divisor).__mul__, divisor.__mul__)
 
 
-Orig_Mapping = TypeVar('OrigMapping', bound=Mapping[str, Mapping[str, Bijection]])
+Orig_Mapping = TypeVar('OrigMapping', bound=Union['Object[',Mapping[str, Mapping[str, Bijection]]])
 
 
 class BijectiveMapping(object):
@@ -196,3 +195,28 @@ class BijectiveMapping(object):
         :return: the converted data
         """
         return self.convert(self.reverse_mapping, dest_data)
+
+
+class SrcToObject(Generic[Src, Dest]):
+    pass
+
+
+class ObjectToSrc(Generic[Dest, Src]):
+    pass
+
+
+class Object(Bijection[Src, Dest, SrcToObject[Src,Dest], ObjectToSrc[Dest,Src]], dict):
+
+    class Partial(Bijection[Src, Dest, SrcToObject[Src,Dest], ObjectToSrc[Dest,Src]], dict):
+        def __init__(self,
+                     source_type: Type[Src], mapping: Mapping[str, Any]):
+            self._src_type=source_type
+            super(Object.Partial, self).__init__(src_to_dest=source_type, dest_to_src=None)
+            dict.__init__(self, mapping)
+
+    def __init__(self,
+                 source_type: Type[Src], mapping: Mapping[str, Any]):
+        self._src_type=source_type
+
+        super(Object, self).__init__(src_to_dest=source_type, dest_to_src=Object.Partial())
+        dict.__init__(self, mapping)
