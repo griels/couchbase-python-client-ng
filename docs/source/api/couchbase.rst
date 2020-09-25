@@ -712,6 +712,8 @@ Attributes
     .. autoattribute:: lockmode
 
 .. currentmodule:: couchbase.cluster
+.. autoclass:: Compression
+    :members:
 .. class:: Cluster
 
     .. autoattribute:: query_timeout

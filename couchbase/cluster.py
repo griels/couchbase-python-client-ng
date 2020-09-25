@@ -225,22 +225,7 @@ class ClusterTimeoutOptions(dict):
 
 class Compression(Enum):
     """
-    Can be one of:
-        NONE:
-            The client will not compress or decompress the data.
-        IN:
-            The data coming back from the server will be decompressed, if it was compressed.
-        OUT:
-            The data coming into server will be compressed.
-        INOUT:
-            The data will be compressed on way in, decompressed on way out of server.
-        FORCE:
-            By default the library will send a HELLO command to the server to determine whether compression
-            is supported or not.  Because commands may be
-            pipelined prior to the scheduing of the HELLO command it is possible that the first few commands may not be
-            compressed when schedule due to the library not yet having negotiated settings with the server. Setting this flag
-            will force the client to assume that all servers support compression despite a HELLO not having been intially
-            negotiated.
+    Compression mode.
     """
     @classmethod
     def from_int(cls, val):
@@ -259,11 +244,31 @@ class Compression(Enum):
         else:
             raise InvalidArgumentException("cannot convert {} to a Compression".format(val))
 
-    NONE='off'
-    IN='inflate_only'
-    OUT='deflate_only'
-    INOUT='on'
-    FORCE='force'
+    NONE = 'off'
+    """
+    The client will not compress or decompress the data.
+    """
+    IN = 'inflate_only'
+    """
+    The data coming back from the server will be decompressed, if it was compressed.
+    """
+    OUT = 'deflate_only'
+    """
+    The data coming into server will be compressed.
+    """
+    INOUT = 'on'
+    """
+    The data will be compressed on way in, decompressed on way out of server.
+    """
+    FORCE = 'force'
+    """
+    By default the library will send a HELLO command to the server to determine whether compression
+    is supported or not.  Because commands may be
+    pipelined prior to the scheduing of the HELLO command it is possible that the first few commands may not be
+    compressed when schedule due to the library not yet having negotiated settings with the server. Setting this flag
+    will force the client to assume that all servers support compression despite a HELLO not having been intially
+    negotiated.
+    """
 
 
 class ClusterTracingOptions(dict):
