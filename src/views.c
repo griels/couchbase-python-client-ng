@@ -496,6 +496,7 @@ ViewResult_dealloc(pycbc_ViewResult *vres)
 {
     PYCBC_DEBUG_LOG("Deallocing ViewResult %S at %p", vres, vres)
     Py_CLEAR(vres->rows);
+    PYCBC_XDECREF(vres->rows);
     Py_XDECREF(vres->context_capsule);
     Py_TYPE(vres)->tp_base->tp_dealloc((PyObject*)vres);
 }
