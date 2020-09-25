@@ -253,6 +253,14 @@ static void query_row_callback(lcb_t instance,
     pycbc_extract_unlock_bucket(mres, &bucket, &vres);
     lcb_respquery_http_response(resp, &htresp);
     pycbc_get_headers_status(htresp, &hdrs, &htcode);
+    if (vres) {
+        const char *rows = ((void *) 0);
+        size_t row_count = 0;
+        int is_final = lcb_respquery_is_final(resp);
+        lcb_respquery_row(resp, &rows, &row_count);
+        pycbc_add_row_or_data(mres, vres, rows, row_count, is_final);
+        pycbc_viewresult_step(vres, mres, bucket, lcb_respquery_is_final(resp));
+    }
     if (lcb_respquery_is_final(resp)) {
         if (vres) {
             pycbc_add_query_error_context(resp, mres);
@@ -263,14 +271,14 @@ static void query_row_callback(lcb_t instance,
                                       hdrs);
         }
     } else {
-        const char *rows = ((void *) 0);
+/*        const char *rows = ((void *) 0);
         size_t row_count = 0;
         int is_final = lcb_respquery_is_final(resp);
         lcb_respquery_row(resp, &rows, &row_count);
         if (vres) {
             pycbc_add_row_or_data(mres, vres, rows, row_count, is_final);
             pycbc_viewresult_step(vres, mres, bucket, lcb_respquery_is_final(resp));
-        }
+        }*/
         PYCBC_CONN_THR_BEGIN(bucket);
     }
 }

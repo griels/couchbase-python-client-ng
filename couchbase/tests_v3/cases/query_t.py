@@ -162,6 +162,9 @@ class QueryLeakTest(CollectionTestCase):
         super(QueryLeakTest, self).setUp()
 
     def test_no_leak(self):
+        import tracemalloc
+        tracemalloc.start(25)
+        snapshot = tracemalloc.take_snapshot()
         doc = {'field1': "value1"}
         for i in range(100):
             key = str(i)
@@ -173,7 +176,7 @@ class QueryLeakTest(CollectionTestCase):
                                                                                self.coll._self_name)
         else:
             statement = "'SELECT mockrow'"
-        counts = Counter({"builtins.dict": 1, "builtins.list": 1})
+        counts = Counter({"builtins.dict": 1, "builtins.list": 2})
 
         objgraph.growth(shortnames=False)
 
@@ -201,3 +204,16 @@ class QueryLeakTest(CollectionTestCase):
             print("\n")
             del growth
             gc.collect()
+        snapshot2 = tracemalloc.take_snapshot()
+
+        top_stats = snapshot2.compare_to(snapshot, 'lineno')
+        import logging
+        logging.error("[ Top 10 differences ]")
+        for stat in top_stats[:10]:
+            logging.error(stat)
+        # pick the biggest memory block
+        top_stats = snapshot2.statistics('traceback')
+        stat = top_stats[0]
+        logging.error("%s memory blocks: %.1f KiB" % (stat.count, stat.size / 1024))
+        for line in stat.traceback.format():
+            logging.error(line)
