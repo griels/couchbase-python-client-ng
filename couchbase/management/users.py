@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from couchbase_core.mapper import BijectiveMapping, Identity, Object, KwArg
+from couchbase_core.mapper import BijectiveMapping, Identity, Object
 from couchbase.management.admin import Admin
 from couchbase.options import timedelta, forward_args
 from couchbase.management.generic import GenericManager
@@ -381,8 +381,8 @@ class RoleAndDescription(with_metaclass(ABCMeta, Mapped)):
     This is additional information only present in the "list available roles" response."""
 
     factory = RawRoleAndDescription
-    mapping = BijectiveMapping({'role': Object(Role,{'scope': {'scope_name':Identity(str)},
-         'collection': {'collection_name': Identity(str)}})})
+    #mapping = BijectiveMapping({'role': Object(Role,{'scope': {'scope_name':Identity(str)},
+    #     'collection': {'collection_name': Identity(str)}})})
 
     @staticmethod
     def defaults():
@@ -392,7 +392,7 @@ class RoleAndDescription(with_metaclass(ABCMeta, Mapped)):
     def mappings():
         return {'desc':'description', 'name': 'display_name'}
 
-    role=property(fget=lambda self: RoleAndDescription.mapping.convert(self))
+    #role=property(fget=lambda self: RoleAndDescription.mapping.convert(self))
     @abstractmethod
     def role(self):
         # type: (...) -> Role

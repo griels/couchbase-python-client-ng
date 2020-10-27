@@ -141,7 +141,7 @@ class Division(Bijection[float, float, float.__mul__, float.__mul__]):
         super(Division, self).__init__((1/divisor).__mul__, divisor.__mul__)
 
 
-Orig_Mapping = TypeVar('OrigMapping', bound=Union['Object[',Mapping[str, Mapping[str, Bijection]]])
+Orig_Mapping = TypeVar('OrigMapping', bound=Union['Object[Any, Any, Any, Any]',Mapping[str, Mapping[str, Bijection]]])
 
 
 class BijectiveMapping(object):
@@ -220,3 +220,7 @@ class Object(Bijection[Src, Dest, SrcToObject[Src,Dest], ObjectToSrc[Dest,Src]],
 
         super(Object, self).__init__(src_to_dest=source_type, dest_to_src=Object.Partial())
         dict.__init__(self, mapping)
+
+
+def KwArg():
+    return None

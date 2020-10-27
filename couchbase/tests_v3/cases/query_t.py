@@ -195,11 +195,12 @@ class QueryLeakTest(CollectionTestCase):
             except:
                 pass
             growth = objgraph.growth(shortnames=False)
+            print("growth is {}".format(growth))
             if i > 0:
                 for entry in growth:
                     key = entry[0]
                     if key in ('builtins.dict', 'builtins.list'):
-                        self.assertGreaterEqual(counts[key], entry[2],
+                        self.assertLessEqual(entry[2], counts[key],
                                                 "{} count should not grow more than {}".format(key, counts[key]))
             print("\n")
             del growth

@@ -221,7 +221,7 @@ void convert_view_error_context(const lcb_VIEW_ERROR_CONTEXT* ctx,
         pycbc_dict_add_text_kv(err_context, "extended_ref", extended_ref);
     }
     mres->err_info = err_info;
-    Py_INCREF(err_info);
+    //Py_INCREF(err_info);
     Py_DECREF(err_context);
 }
 
@@ -464,6 +464,7 @@ pycbc_ViewResult *pycbc_propagate_view_result(
     if (PYCBC_CHECK_CONTEXT(context)) {
         kwargs = PyDict_New();
         PyDict_SetItemString(kwargs, "context", pycbc_Context_capsule(context));
+        //PYCBC_DECREF(kwargs);
     }
     vres = (pycbc_ViewResult *)PyObject_CallFunction(
             (PyObject *)&pycbc_ViewResultType, "OO", Py_None, kwargs);
