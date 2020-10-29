@@ -300,7 +300,7 @@ class UserManager(GenericManager):
                                         **forward_args(kwargs, *options))
 
 
-RawRole = NamedTuple('RawRole', [('name', str), ('bucket', str), ('scope', str), ('collection', str)])
+RawRole = TypedDict('RawRole', {'name': str, 'bucket':str, 'scope': str, 'collection': str},total=False)
 
 
 class Role(with_metaclass(ABCMeta, Mapped)):
