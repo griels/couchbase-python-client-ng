@@ -4,7 +4,7 @@ nose2
 pbr==1.8.1
 numpydoc==0.4; python_version>='3.0'
 sphinx>=2.1.0; python_version>='3.5'
-sphinx==1.8.5; python_version<'3.5'
+sphinx==3.0.4; python_version<'3.5'
 testresources>=0.2.7
 jsonschema==2.6.0
 configparser==3.5.0
@@ -19,3 +19,6 @@ python-vagrant>=0.5.15
 pytest
 git+https://github.com/couchbaselabs/sphinx-autodoc-typehints.git; python_version>='3.0'
 git+https://github.com/couchbaselabs/mypy.git@stub-merge; python_version>'3.10'
+certifi>=2022.12.7 # not directly required, pinned by Snyk to avoid a vulnerability
+pygments>=2.7.4 # not directly required, pinned by Snyk to avoid a vulnerability
+setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
